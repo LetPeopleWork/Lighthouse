@@ -1,0 +1,2737 @@
+{
+"counters": {
+"C": 1,
+"D": 19,
+"F": 216,
+"K": 9,
+"L": 6,
+"P": 4,
+"S": 5,
+"T": 6,
+"Y": 6
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F59",
+"driven_ports": [
+"F58"
+],
+"driving_port": "F57"
+},
+"claims": [
+{
+"admitted_input": "F80",
+"bypass": "F82",
+"constructor": "OrganisationSetupPatternRoles declarations plus NamespaceMoveLaw",
+"consumer": "Every ArchUnit rule reading a declared field",
+"harm": "F79",
+"id": "C1",
+"owner": "OrganisationSetupMembershipArchUnitTest",
+"proposition": "F78",
+"public_observation": "F81"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F87",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F86"
+},
+{
+"axis": "Inhabitation",
+"basis": "F89",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F88"
+},
+{
+"axis": "PublicReachability",
+"basis": "F91",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F90"
+},
+{
+"axis": "Liveness",
+"basis": "F92",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F90"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"slices": [
+"S2",
+"S3"
+],
+"text": "F38"
+},
+{
+"id": "K2",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F39"
+},
+{
+"id": "K3",
+"slices": [
+"S1",
+"S5"
+],
+"text": "F40"
+},
+{
+"id": "K4",
+"slices": [
+"S1"
+],
+"text": "F41"
+},
+{
+"id": "K5",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F42"
+},
+{
+"id": "K6",
+"slices": [
+"S1"
+],
+"text": "F43"
+},
+{
+"id": "K7",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F44"
+},
+{
+"id": "K8",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F45"
+},
+{
+"id": "K9",
+"slices": [
+"S1",
+"S4",
+"S5"
+],
+"text": "F46"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F19"
+},
+{
+"id": "D2",
+"slices": [
+"S2",
+"S3"
+],
+"text": "F20"
+},
+{
+"id": "D3",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F21"
+},
+{
+"id": "D4",
+"slices": [
+"S2",
+"S3"
+],
+"text": "F22"
+},
+{
+"id": "D5",
+"slices": [
+"S1"
+],
+"text": "F23"
+},
+{
+"id": "D6",
+"slices": [
+"S1"
+],
+"text": "F24"
+},
+{
+"id": "D7",
+"slices": [
+"S3",
+"S5"
+],
+"text": "F25"
+},
+{
+"id": "D8",
+"slices": [
+"S1",
+"S5"
+],
+"text": "F26"
+},
+{
+"id": "D9",
+"slices": [
+"S3",
+"S4"
+],
+"text": "F27"
+},
+{
+"id": "D10",
+"slices": [
+"S4"
+],
+"text": "F28"
+},
+{
+"id": "D11",
+"slices": [
+"S2",
+"S3",
+"S4"
+],
+"text": "F29"
+},
+{
+"id": "D12",
+"slices": [
+"S2",
+"S3"
+],
+"text": "F30"
+},
+{
+"id": "D13",
+"slices": [
+"S3"
+],
+"text": "F31"
+},
+{
+"id": "D14",
+"slices": [
+"S2",
+"S3",
+"S5"
+],
+"text": "F32"
+},
+{
+"id": "D15",
+"slices": [
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F33"
+},
+{
+"id": "D16",
+"slices": [
+"S5"
+],
+"text": "F34"
+},
+{
+"id": "D17",
+"slices": [
+"S1",
+"S4",
+"S5"
+],
+"text": "F35"
+},
+{
+"id": "D18",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S5"
+],
+"text": "F36"
+},
+{
+"id": "D19",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F37"
+}
+],
+"equality": [
+{
+"definition": "F64",
+"under": "rule list comparison"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "OrganisationSetupMembershipArchUnitTest",
+"statement": "F65",
+"treatment": {
+"cases": [
+"F66",
+"F67",
+"F68",
+"F69",
+"F70",
+"F71",
+"F72",
+"F73"
+],
+"kind": "Finite",
+"reason": "F74"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F55"
+},
+{
+"analysis": "contract_tests",
+"reason": "F56"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F61",
+"description": "F60",
+"result_type": "NUnit outcome with failure message"
+},
+{
+"cannot_distinguish": "F63",
+"description": "F62",
+"result_type": "set of (type, namespace)"
+}
+],
+"refuted": [
+{
+"cause": "F76",
+"counterexample": "F77",
+"statement": "F75"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:105",
+"reason": "F47",
+"symbol": "NamespaceMoveLaw"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:33",
+"reason": "F48",
+"symbol": "PatternDeclaration"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:150",
+"reason": "F49",
+"symbol": "TypesLiveInTheirLayer"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:176",
+"reason": "F50",
+"symbol": "DomainReachesOnlyTheKernelAndTheBaseLibrary"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IlDependencies.cs:13",
+"reason": "F51",
+"symbol": "IlDependencies"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleWording.cs:7",
+"reason": "F52",
+"symbol": "ModuleWording"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs:1",
+"reason": "F53",
+"symbol": "ReportsMembership"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:25",
+"reason": "F54",
+"symbol": "ReportsPattern"
+}
+],
+"risks": [
+{
+"allowed": "F95",
+"forbidden": "F96",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "OrganisationSetupMembershipArchUnitTest",
+"preserved": "F94",
+"residue": "F97",
+"source": "F93"
+},
+{
+"allowed": "F100",
+"forbidden": "F101",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "S1 crafter and reviewer",
+"preserved": "F99",
+"residue": "F102",
+"source": "F98"
+},
+{
+"allowed": "F105",
+"forbidden": "F106",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "S1 and S5 crafters",
+"preserved": "F104",
+"residue": "F107",
+"source": "F103"
+},
+{
+"allowed": "F110",
+"forbidden": "F111",
+"id": "Y4",
+"kind": "Bypass",
+"owner": "Epic 6264 rules owner",
+"preserved": "F109",
+"residue": "F112",
+"source": "F108"
+},
+{
+"allowed": "F115",
+"forbidden": "F116",
+"id": "Y5",
+"kind": "SinglePointOfFailure",
+"owner": "S1 and S5 crafters",
+"preserved": "F114",
+"residue": "F117",
+"source": "F113"
+},
+{
+"allowed": "F120",
+"forbidden": "F121",
+"id": "Y6",
+"kind": "Stressor",
+"owner": "Candidate reviewer",
+"preserved": "F119",
+"residue": "F122",
+"source": "F118"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"state": "F83"
+},
+{
+"kind": "Excluded",
+"owner": "OrganisationSetupMembershipArchUnitTest",
+"state": "F84"
+},
+{
+"kind": "Unknown",
+"owner": "Epic 6264 rules owner",
+"state": "F85"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembershipArchUnitTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
+"move": "F127",
+"preserved": "F128",
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+},
+"public_oracle": {
+"expected": "F125",
+"falsifier": "F126",
+"promises": [
+"P1"
+],
+"stimulus": "F124"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupMembershipArchUnitTest",
+"id": "T1",
+"obligation": "F146",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembershipArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:57",
+"reason": "F134"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:25",
+"reason": "F135"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:34",
+"reason": "F136"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs:26",
+"reason": "F137"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs:12",
+"reason": "F138"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:23",
+"reason": "F139"
+}
+],
+"laws": [
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "OrganisationSetupMembershipArchUnitTest",
+"statement": "F140",
+"treatment": {
+"cases": [
+"F141",
+"F142",
+"F143",
+"F144"
+],
+"kind": "Finite",
+"reason": "F145"
+}
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:105",
+"reason": "F129",
+"symbol": "NamespaceMoveLaw"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:57",
+"reason": "F130",
+"symbol": "OrganisationSetUp"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:34",
+"reason": "F131",
+"symbol": "WeeklyRecurrenceAndItsNestedTypesPattern"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs:26",
+"reason": "F132",
+"symbol": "AnImplementationNamespace"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs:12",
+"reason": "F133",
+"symbol": "ServiceImplementationNamespace"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPatternRoles.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupStringsTheMoveRenames.cs"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
+"reason": "F123"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+"reason": "F123"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs",
+"reason": "F123"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs",
+"reason": "F123"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs",
+"reason": "F123"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupMembershipArchUnitTest",
+"dotnet build Lighthouse.Backend"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarOrderingAndOptionalFeaturesLiveInOrganisationSetupArchUnitTest.cs",
+"public_oracle": {
+"expected": "F155",
+"falsifier": "F156",
+"promises": [
+"P2"
+],
+"stimulus": "F154"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~CalendarOrderingAndOptionalFeaturesLiveInOrganisationSetupArchUnitTest",
+"id": "T2",
+"obligation": "F165",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarOrderingAndOptionalFeaturesLiveInOrganisationSetupArchUnitTest.cs"
+}
+],
+"laws": [
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "CalendarOrderingAndOptionalFeaturesLiveInOrganisationSetupArchUnitTest",
+"statement": "F160",
+"treatment": {
+"cases": [
+"F161",
+"F162",
+"F163"
+],
+"kind": "Finite",
+"reason": "F164"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F157"
+},
+{
+"analysis": "reuse",
+"reason": "F158"
+},
+{
+"analysis": "impact",
+"reason": "F159"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/WeeklyRecurrence.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WeeklyRecurrence.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/RecurringBlackoutRuleExtensions.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RecurringBlackoutRuleExtensions.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/BlackoutPeriodService.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BlackoutPeriodService.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/RecurringBlackoutRuleService.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RecurringBlackoutRuleService.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureOrdering.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeatureOrdering.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureOrderingPolicyProvider.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeatureOrderingPolicyProvider.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankingService.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeatureRankingService.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankSeeder.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeatureRankSeeder.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/IBlackoutPeriodService.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IBlackoutPeriodService.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/IRecurringBlackoutRuleService.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IRecurringBlackoutRuleService.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/IFeatureOrdering.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IFeatureOrdering.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/IFeatureOrderingPolicyProvider.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IFeatureOrderingPolicyProvider.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/IFeatureRankingService.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IFeatureRankingService.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/IFeatureRankSeeder.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IFeatureRankSeeder.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/FeatureOrderingApplier.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OptionalFeatures/FeatureOrderingApplier.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/DefaultOptionalFeatureApplier.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OptionalFeatures/DefaultOptionalFeatureApplier.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/OptionalFeatureApplierRegistry.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OptionalFeatures/OptionalFeatureApplierRegistry.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/IOptionalFeatureApplier.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/OptionalFeatures/IOptionalFeatureApplier.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/BlackoutPeriodServiceTest.cs",
+"reason": "F149"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/BlackoutPeriodServiceTest.cs",
+"reason": "F150"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/RecurringBlackoutRuleServiceTest.cs",
+"reason": "F149"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/RecurringBlackoutRuleServiceTest.cs",
+"reason": "F150"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/FeatureRankSeederTest.cs",
+"reason": "F149"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/FeatureRankSeederTest.cs",
+"reason": "F150"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/WeeklyRecurrenceTest.cs",
+"reason": "F149"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WeeklyRecurrenceTest.cs",
+"reason": "F150"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/RecurringBlackoutRuleExtensionsTest.cs",
+"reason": "F149"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/RecurringBlackoutRuleExtensionsTest.cs",
+"reason": "F150"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F151"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs",
+"reason": "F152"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/BlackoutPeriodsControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerArchiveTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerUtcTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryRulesControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliverySourcesControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeatureListControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeatureListRowsTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeaturesControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FeatureMoveAuthOffIntegrationTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastFilterBacktestIntegrationTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastFilterTeamForecastIntegrationTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckAtThePortTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckQueryCountTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckWallClockProbe.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAtThePortTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/OptionalFeaturesControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioMetricsControllerTests.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/RecurringBlackoutRulesControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamMetricsControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersAtTheEdgeOfTheirLimitsTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersFollowTheProcessBehaviourChartTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/SeededForecastsStayTheSameTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/NamedCycleTime/NamedCycleTimePopulationTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureOrderingSingleSourceArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InstantsUnaffectedByZoneTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OptionalFeatureApplierSeamArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OverTimeReconstructionSeamArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneUnitTestPlacementTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementLivesInItsModuleArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembership.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/OptionalFeatureToggledEventTests.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ClosedInRangeCharacterisationTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/InstanceDayItemBucketingTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/MetricsAsOfGroupNameTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/NamedCycleTimeAnswerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceSnapshotTests.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceTests.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/WorkItemAgeAsOfDateTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/ForecastFilterFeatureForecastIntegrationTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/ForecastRealityCheckServiceTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryForecastPublishingServiceTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryMetricValuesProjectorTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandlerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Refinement/Application/RefinementCalendarTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Refinement/Application/RefinementNeedCalculatorTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Refinement/Application/RefinementViewQueryTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DependencyVerdictIdentityTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/AppSettingServiceTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BlackoutForecastShiftWriteBackTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/FeatureGraphReaderRelationalTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/FeatureListReaderRelationalTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/FeaturesWithReferenceIdsRelationalTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/ForecastConfirmationRepositoryRelationalTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/ForecastGatherReaderRelationalTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/SurveyNudgeSettingsTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/FeatureOrderingTestHelper.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/AppSettingsController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/BlackoutPeriodsController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioDto.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DeliveryRulesController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DeliverySourcesController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/FeatureListRows.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/FeaturesController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/ForecastController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/OptionalFeaturesController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/RecurringBlackoutRulesController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamFeatureSizeMetricsController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/AppSettings/AppSettingKeys.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/ManualRankComparer.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/OptionalFeatures/OptionalFeatureKeys.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastRealityCheckService.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryMetricValuesProjector.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/Application/RefinementCadenceCalendar.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/Application/RefinementCalendar.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/Application/RefinementNeedCalculator.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/AppSettingService.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeaturePositionMap.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackTriggerService.cs",
+"reason": "F153"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~CalendarOrderingAndOptionalFeaturesLiveInOrganisationSetupArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~Blackout|FullyQualifiedName~Terminology|FullyQualifiedName~ManualSorting|FullyQualifiedName~OptionalFeature|FullyQualifiedName~AppSetting|FullyQualifiedName~ConnectionSave|FullyQualifiedName~ConnectionUsage|FullyQualifiedName~FeatureRank|FullyQualifiedName~WeeklyRecurrence\"",
+"dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+},
+"S3": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest.cs",
+"public_oracle": {
+"expected": "F169",
+"falsifier": "F170",
+"promises": [
+"P2"
+],
+"stimulus": "F168"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest",
+"id": "T3",
+"obligation": "F177",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest.cs"
+}
+],
+"laws": [
+{
+"id": "L4",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest",
+"statement": "F173",
+"treatment": {
+"cases": [
+"F174",
+"F175"
+],
+"kind": "Finite",
+"reason": "F176"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F157"
+},
+{
+"analysis": "reuse",
+"reason": "F171"
+},
+{
+"analysis": "impact",
+"reason": "F172"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/AppSettingService.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/AppSettingService.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/TerminologyService.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TerminologyService.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/IAppSettingService.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IAppSettingService.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/ITerminologyService.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITerminologyService.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/ConnectionSaveService.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Connections/ConnectionSaveService.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/ChangedConnectionDefault.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Connections/ChangedConnectionDefault.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/WorkTrackingSystemConnectionUsage.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingSystemConnectionUsage.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/IConnectionSaveService.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IConnectionSaveService.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/IWorkTrackingSystemConnectionUsage.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IWorkTrackingSystemConnectionUsage.cs",
+"reason": "F148"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/AppSettingServiceTest.cs",
+"reason": "F149"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/AppSettingServiceTest.cs",
+"reason": "F150"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/TerminologyServiceTest.cs",
+"reason": "F149"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TerminologyServiceTest.cs",
+"reason": "F150"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Connections/ConnectionSaveServiceTest.cs",
+"reason": "F149"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Connections/ConnectionSaveServiceTest.cs",
+"reason": "F150"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Connections/WorkTrackingSystemConnectionUsageTest.cs",
+"reason": "F149"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingSystemConnectionUsageTest.cs",
+"reason": "F150"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F166"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs",
+"reason": "F167"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/AppSettingsControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Helpers/OwnerSettingRefusalsTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckQueryCountTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckWallClockProbe.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice08HealthThatChecksItselfSpecifications.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfoliosControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/SurveyNudgeControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TerminologyControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WriteBack/WorkTrackingSystemConnectionControllerWriteBackTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WriteBack/WriteBackLicenseGateTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersAtTheEdgeOfTheirLimitsTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersFollowTheProcessBehaviourChartTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/NamedCycleTime/NamedCycleTimePopulationTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectionFetchShapeChangedSinglePublisherArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InstantsUnaffectedByZoneTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneUnitTestPlacementTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimes.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.NeedParity.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ClosedInRangeCharacterisationTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/InstanceDayItemBucketingTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/MetricsAsOfGroupNameTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/NamedCycleTimeAnswerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/PortfolioMetricsServiceTests.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceSnapshotTests.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceTests.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/WorkItemAgeAsOfDateTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/ForecastFilterFeatureForecastIntegrationTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandlerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandlerTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/RefreshLogServiceTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/SystemInfoServiceTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/UsageDataConsentServiceTests.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/Slice01SkippedEntityLogTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/SurveyNudgeSettingsTest.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/PortDoubles.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/AppSettingsController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/OwnerSettingRefusals.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/SurveyNudgeController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TerminologyController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PortfolioMetricsService.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/ConnectionHealth/ConnectionHealthCadence.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/RefreshLogService.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/Host/SystemInfoService.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/Seeding/InstallTimestampSeeder.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataConsentService.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
+"reason": "F153"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~Blackout|FullyQualifiedName~Terminology|FullyQualifiedName~ManualSorting|FullyQualifiedName~OptionalFeature|FullyQualifiedName~AppSetting|FullyQualifiedName~ConnectionSave|FullyQualifiedName~ConnectionUsage|FullyQualifiedName~FeatureRank|FullyQualifiedName~WeeklyRecurrence\"",
+"dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+},
+"S4": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs",
+"public_oracle": {
+"expected": "F183",
+"falsifier": "F184",
+"promises": [
+"P3"
+],
+"stimulus": "F182"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupIsAnOpenHostArchUnitTest",
+"id": "T4",
+"obligation": "F195",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs"
+},
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupModuleBoundariesArchUnitTest",
+"id": "T5",
+"obligation": "F196",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs"
+}
+],
+"laws": [
+{
+"id": "L5",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "OrganisationSetupIsAnOpenHostArchUnitTest",
+"statement": "F188",
+"treatment": {
+"cases": [
+"F189",
+"F190",
+"F191",
+"F192",
+"F193"
+],
+"kind": "Finite",
+"reason": "F194"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F185"
+},
+{
+"analysis": "reuse",
+"reason": "F186"
+},
+{
+"analysis": "impact",
+"reason": "F187"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs",
+"reason": "F178"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupUnitTestPlacementTest.cs",
+"reason": "F179"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs",
+"reason": "F180"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
+"reason": "F181"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs",
+"reason": "F181"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs",
+"reason": "F181"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs",
+"reason": "F181"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs",
+"reason": "F181"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs",
+"reason": "F181"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs",
+"reason": "F181"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+"reason": "F181"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupIsAnOpenHostArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupModuleBoundariesArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupUnitTestPlacementTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet build Lighthouse.Backend"
+]
+},
+"S5": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupRulesNameOnlyTheModuleArchUnitTest.cs",
+"public_oracle": {
+"expected": "F200",
+"falsifier": "F201",
+"promises": [
+"P4"
+],
+"stimulus": "F199"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupRulesNameOnlyTheModuleArchUnitTest",
+"id": "T6",
+"obligation": "F216",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupRulesNameOnlyTheModuleArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:57",
+"reason": "F206"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:62",
+"reason": "F207"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:34",
+"reason": "F208"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs:26",
+"reason": "F208"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs:12",
+"reason": "F208"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:25",
+"reason": "F208"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "ARCHITECTURE.md:90",
+"reason": "F209"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "docs/feature/epic-6264-modular-monolith/feature-delta.md:197",
+"reason": "F209"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "docs/feature/epic-6264-modular-monolith/slices/slice-45-s03i-package-organisation-set-up.md:1",
+"reason": "F209"
+}
+],
+"laws": [
+{
+"id": "L6",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "OrganisationSetupRulesNameOnlyTheModuleArchUnitTest",
+"statement": "F211",
+"treatment": {
+"cases": [
+"F212",
+"F213",
+"F214"
+],
+"kind": "Finite",
+"reason": "F215"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F210"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:105",
+"reason": "F202",
+"symbol": "NamespaceMoveLaw"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:34",
+"reason": "F203",
+"symbol": "WeeklyRecurrenceAndItsNestedTypesPattern"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs:26",
+"reason": "F203",
+"symbol": "AnImplementationNamespace"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs:12",
+"reason": "F203",
+"symbol": "ServiceImplementationNamespace"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:25",
+"reason": "F203",
+"symbol": "ReportsPattern"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:57",
+"reason": "F204",
+"symbol": "OrganisationSetUp"
+},
+{
+"decision": "Extend",
+"locator": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:63",
+"reason": "F205",
+"symbol": "Organisation set-up"
+},
+{
+"decision": "Extend",
+"locator": "ARCHITECTURE.md:90",
+"reason": "F205",
+"symbol": "Organisation set-up"
+},
+{
+"decision": "Extend",
+"locator": "docs/feature/epic-6264-modular-monolith/feature-delta.md:197",
+"reason": "F205",
+"symbol": "Organisation set-up"
+},
+{
+"decision": "Extend",
+"locator": "docs/feature/epic-6264-modular-monolith/slices/slice-45-s03i-package-organisation-set-up.md:1",
+"reason": "F205",
+"symbol": "Organisation set-up"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
+"reason": "F197"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+"reason": "F197"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs",
+"reason": "F197"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs",
+"reason": "F197"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs",
+"reason": "F197"
+},
+{
+"change": "Extend",
+"path": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md",
+"reason": "F198"
+},
+{
+"change": "Extend",
+"path": "ARCHITECTURE.md",
+"reason": "F198"
+},
+{
+"change": "Extend",
+"path": "docs/feature/epic-6264-modular-monolith/feature-delta.md",
+"reason": "F198"
+},
+{
+"change": "Extend",
+"path": "docs/feature/epic-6264-modular-monolith/slices/slice-45-s03i-package-organisation-set-up.md",
+"reason": "F198"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupRulesNameOnlyTheModuleArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+}
+}
+},
+"facts": {
+"F1": "ADO Story #6468 S03i Package Organisation set-up: move the 27 Organisation set-up files from the loose Services.Implementation and Services.Interfaces namespaces into Modules/OrganisationSetup/{Domain, Application, Application/Connections, Application/OptionalFeatures} as they are (namespaces and usings only), with every rule seeing the move before it happens and naming the module only after it; downstream modules reach set-up by namespace; set-up gets its own boundary rules and a TeamDeleted ratchet. No behaviour, schema or configuration change. Design: docs/feature/story-6468-s03i-package-organisation-set-up/feature-delta.md.",
+"F10": "Calendar, Feature ordering and ranking and the optional features live in Modules/OrganisationSetup with their unit tests, and every rule stays green",
+"F100": "Behavioural law evaluation of fields, equality branch for string constants, four fully qualified Program.cs lines rewritten, usings added for implicit same-namespace resolutions",
+"F101": "A field with no type name escaping the law; a registration left on the old namespace",
+"F102": "Run-time-built names escape the sweep",
+"F103": "Negated: S03e-S03h left the counts as measured; 6474 has not started; narrowing OrganisationSetUp keeps Work Items as strict",
+"F104": "Design premises",
+"F105": "Counts re-measured and recorded at S1; stray loose types moved to a separate StrayLooseServices constant with their own list in S5",
+"F106": "S1 starting on a partial merge or after 6474 slice 03; Work Items losing a forbidden edge in S5",
+"F107": "None",
+"F108": "IL reader misses event declarations and named attribute arguments",
+"F109": "Edges visible in method bodies, fields, signatures and catch clauses",
+"F11": "Settings, terminology, connection defaults and connection usage live in Modules/OrganisationSetup with their unit tests, and every rule stays green",
+"F110": "Unrecorded edges stay unguarded",
+"F111": "Claiming those edges are checked",
+"F112": "Unknown edges through event declarations or attribute arguments",
+"F113": "OrganisationSetupPattern in the module map is the one owner of which namespaces are set-up",
+"F114": "All rules agree on set-up",
+"F115": "One edit narrows every reader",
+"F116": "A rule keeping its own loose-namespace copy",
+"F117": "None after S5",
+"F118": "Second set (walkthrough, not execution): reflection by name string, DI by open generic over Services.Implementation, registry discovery by namespace, persisted type names",
+"F119": "Runtime behaviour",
+"F12": "Downstream modules reach Organisation set-up by right, set-up has its own boundary rules and test placement, and the TeamDeleted ratchet holds",
+"F120": "None needed",
+"F121": "A runtime lookup by old namespace",
+"F122": "None found: short-name reflection is rename-safe, no open-generic registration, registry uses DI IEnumerable, none of the 27 is persisted",
+"F123": "Context field widened to old or new, or read from the single OrganisationSetupPattern (D-7)",
+"F124": "Run the Architecture tests on the compiled assembly before any file moves: OrganisationSetupMembershipArchUnitTest evaluates the membership map, the preservation law over every declared and undeclared rule field, and the literal sweep with its fixed rename list.",
+"F125": "RED before the S1 rule edits: WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp is named as a Context field whose old subject (Lighthouse.Backend.Services.Interfaces) matches and whose new subject (Lighthouse.Backend.Modules.OrganisationSetup.Application) does not, and RecurringBlackoutEventsSeamArchUnitTest.ServiceImplementationNamespace (plus any other matching field) is named as undeclared. GREEN after classifying and widening: every listed type found in its old or new namespace, every Domain candidate reaching only kernel and base library, every Context field matching old and new, every Place field matching no new namespace, every rename-list literal present in old or new form and no unlisted old literal.",
+"F126": "A planted type with a listed name left in neither namespace, a Place field widened to Modules.OrganisationSetup, an undeclared field matching an old namespace, or an unlisted old full-name literal each fails naming the offender.",
+"F127": "Widen and classify the Context patterns (old or new) and add OrganisationSetupPattern to the module map before any production file moves; makes the S2 and S3 moves visible to every rule.",
+"F128": "Every existing Architecture rule verdict; production untouched.",
+"F129": "Set-up map and pattern declarations feed the shared law.",
+"F13": "Every rule names Organisation set-up by Modules.OrganisationSetup only and the architecture documents show it packaged",
+"F130": "Existing Context field widened, then read from OrganisationSetupPattern.",
+"F131": "Existing full-name Context field widened with the new full name.",
+"F132": "Existing Context field widened with Modules.OrganisationSetup.",
+"F133": "Existing Context field widened to old or set-up Application.",
+"F134": "OrganisationSetUp reads OrganisationSetupPattern (old or new); composite at 163 follows by reference; as a forbidden-unless-listed target it gets stricter.",
+"F135": "Module map gains OrganisationSetupPattern.",
+"F136": "WeeklyRecurrence full-name pattern widened to the new Domain full name; ServicesImplementationPattern line 24 classified at S1.",
+"F137": "AnImplementationNamespace widened with Modules.OrganisationSetup.",
+"F138": "ServiceImplementationNamespace widened to old or set-up Application; already applied with ResideInNamespaceMatching.",
+"F139": "S1 is test-side only.",
+"F14": "The rules see the move before it happens",
+"F140": "Membership: every type of the map exists in its old or new namespace; a Domain candidate reaches only the kernel and the base library; every staying file is named with owner and reason and holds a file.",
+"F141": "27 moving types, old or new namespace",
+"F142": "Domain candidates WeeklyRecurrence, RecurringBlackoutRuleExtensions",
+"F143": "Staying: four seeders, FeaturePositionMap pair, repositories, Models, controllers, updaters, write-back",
+"F144": "Implicit IL edges of the movers and of RefinementCadenceCalendar",
+"F145": "Closed finite set read from the IL.",
+"F146": "Rules see the move before it happens: membership, preservation law with Context and Place roles, literal sweep.",
+"F147": "Moved as it is, namespace = folder (D-1)",
+"F148": "Old file removed by the move",
+"F149": "Unit test moves beside its subject (D-10)",
+"F15": "The first half of set-up lives in its module",
+"F150": "Old test file removed by the move",
+"F151": "Set-up usings added; the three fully qualified optional-feature registrations rewritten (D-11)",
+"F152": "Nine SourceFilesThatStay entries deleted in the move commit; FeatureOrdering, IFeatureOrdering, FeatureRank, IFeatureRank prefixes dropped",
+"F153": "Consumer: using line or renamed old-name literal only",
+"F154": "Run CalendarOrderingAndOptionalFeaturesLiveInOrganisationSetupArchUnitTest on the compiled assembly.",
+"F155": "RED before the move: each of the 18 calendar, ordering and ranking and optional-feature types is named as still in Services.Implementation or Services.Interfaces. GREEN after: WeeklyRecurrence and RecurringBlackoutRuleExtensions in Modules.OrganisationSetup.Domain (as the IL decided at S1), the 12 services and ports in Modules.OrganisationSetup.Application, the 4 optional-feature types in Application.OptionalFeatures, none left in the old namespaces, and every other Architecture rule plus the unchanged behaviour tests green.",
+"F156": "Leaving one of the 18 in its old namespace, or placing a Domain candidate in Application, fails naming that type and its expected namespace.",
+"F157": "The slice is itself a preserving move; S1 widened the rules as its prefactoring.",
+"F158": "Every S2 target is an existing type, test or consumer moved or re-pointed as it is; no new responsibility, so nothing to reuse or create; the shared reuse rows cover the rule machinery.",
+"F159": "Closure (per-path rows cannot cite not-yet-existing paths): 18 production files Migrated to Modules/OrganisationSetup/{Domain, Application, Application/OptionalFeatures}; 5 unit tests Migrated to Tests/Modules/OrganisationSetup; Program.cs Changed (usings, namespace text of the three optional-feature registrations at 1447-1449; order and lifetimes unchanged); PromisesUnitTestPlacementTest Changed (entries 82-90 and four prefixes at 97 leave in the move commit); every consumer target Changed in using lines or renamed old-name literals only; csproj, suppressions, editorconfig, appsettings and CI targets UnchangedCompatible.",
+"F16": "The second half of set-up lives in its module",
+"F160": "Each of the 18 group types lives only in its new set-up namespace.",
+"F161": "2 Domain types",
+"F162": "12 Application services and ports",
+"F163": "4 Application.OptionalFeatures types",
+"F164": "Closed set of 18 type names read from the IL.",
+"F165": "Calendar, ordering and ranking and optional features live in Modules/OrganisationSetup in their layer.",
+"F166": "Set-up usings added; the fully qualified ConnectionSaveService registration rewritten (D-11)",
+"F167": "EdgesOfTheModuleIntoOtherContexts gets the one ConnectionHealthCadence to IAppSettingService entry (D-8)",
+"F168": "Run SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest on the compiled assembly.",
+"F169": "RED before the move: each of the 9 settings, terminology and connection types is named as still in the old namespaces. GREEN after: AppSettingService, TerminologyService and their two ports in Modules.OrganisationSetup.Application; ConnectionSaveService, ChangedConnectionDefault, WorkTrackingSystemConnectionUsage and their two ports in Application.Connections; none left in the old namespaces; TrackerIntegrationModuleBoundariesArchUnitTest.EdgesOfTheModuleIntoOtherContexts holds the ConnectionHealthCadence to IAppSettingService edge; every other Architecture rule and the unchanged behaviour tests green.",
+"F17": "Set-up is an open host with its own rules",
+"F170": "Leaving one of the 9 in its old namespace fails naming it; omitting the Tracker integration edge fails the Tracker integration rule naming ConnectionHealthCadence.",
+"F171": "Every S3 target is an existing type, test or consumer moved or re-pointed as it is (TypesLiveInTheirLayer and the shared rule machinery are reused by the oracle); no new responsibility to reuse or create.",
+"F172": "Closure (per-path rows cannot cite not-yet-existing paths): 9 production files Migrated to Modules/OrganisationSetup/{Application, Application/Connections}; 4 unit tests Migrated (including API/TerminologyServiceTest); Program.cs Changed (usings, namespace text of the ConnectionSaveService registration at 1464); TrackerIntegrationModuleBoundariesArchUnitTest Changed (one ConnectionHealthCadence to IAppSettingService entry at 142); ConnectionSaveService log category Changed with its namespace; every consumer target Changed in using lines or renamed old-name literals only.",
+"F173": "Each of the 9 group types lives only in its new set-up namespace.",
+"F174": "4 Application types",
+"F175": "5 Application.Connections types",
+"F176": "Closed set of 9 type names read from the IL.",
+"F177": "Settings, terminology and connections live in Modules/OrganisationSetup in their layer; Tracker integration reaches set-up only along its listed edge.",
+"F178": "R-OS1..R-OS6 on ModuleRules with IL baselines (D-9)",
+"F179": "Moved unit tests stay beside the module (D-10)",
+"F18": "The rules name set-up by its module only",
+"F180": "Planted offenders for the set-up rules",
+"F181": "Set-up Application and Domain legal by namespace; listed set-up edges leave (D-8); Tracker integration keeps its one edge",
+"F182": "Run OrganisationSetupIsAnOpenHostArchUnitTest on the compiled test and production assemblies.",
+"F183": "RED while WorkItemsModuleBoundariesArchUnitTest.EdgesOfTheApplicationIntoAccessLicensingOrganisationSetUpAndTheUpdateQueue holds the RefreshLogService to IAppSettingService and WorkItemService to IFeatureOrdering edges or Promises outbound list holds DeliveryMetricValuesProjector to IBlackoutPeriodService, naming each set-up edge still listed. GREEN after both modules admit set-up Application and Domain by namespace and the three entries leave, and TrackerIntegrationModuleBoundariesArchUnitTest.EdgesOfTheModuleIntoOtherContexts holds exactly the ConnectionHealthCadence to IAppSettingService edge.",
+"F184": "A planted Tracker integration type calling IAppSettingService fails the Tracker integration rule; a planted controller constructing BlackoutConfigurationChanged fails R-OS5; a planted Work Items type calling a set-up adapter fails; a second Tracker integration edge or an emptied list fails the exact-list check.",
+"F185": "Test-side rule additions and list shrinks only; no preserving move precedes them.",
+"F186": "New rule files copy existing shapes (ModuleRulesCatchANewOffenderArchUnitTest falsifiers, TrackerIntegrationUnitTestPlacementTest placement, ModuleRules rules, recorded in the shared reuse); extended rule files keep their rules and only gain the set-up allowance or lose listed edges.",
+"F187": "Closure (two targets are new files): OrganisationSetupModuleBoundariesArchUnitTest and OrganisationSetupUnitTestPlacementTest created; WorkItemsModuleBoundariesArchUnitTest (list at 148 loses two set-up edges), PromisesModuleBoundariesArchUnitTest (145 loses one; planted fixture 410/755 follows), Flow metrics, Forecasting, Refinement and Reports rules (set-up admitted by namespace), ModuleBoundariesArchUnitTest, ModuleRulesCatchANewOffenderArchUnitTest (planted offenders) Changed; TrackerIntegrationModuleBoundariesArchUnitTest Changed only to assert its exact one edge; production TeamController:117 UnchangedCompatible (TeamDeleted listed by R-OS5).",
+"F188": "Downstream modules reach set-up Application and Domain without a list entry; Tracker integration reaches set-up only along exactly one listed edge; set-up events are constructed only in set-up Application except the listed TeamController edge.",
+"F189": "Work Items list holds no set-up edge",
+"F19": "D-0 No schema and no behaviour change: no entity, DbSet, migration, route, DTO, setting key, seeded value, terminology default, usage-data event or configuration key changes; observed by ef-model-unchanged and an empty diff under the migrations projects, Lighthouse.Frontend, Lighthouse.EndToEndTests and Models.",
+"F190": "Promises list holds no set-up edge",
+"F191": "Tracker integration list equals the ConnectionHealthCadence edge",
+"F192": "Planted Tracker integration caller fails",
+"F193": "Planted controller publishing BlackoutConfigurationChanged fails",
+"F194": "Finite edge sets read from the IL and inline lists compared both ways.",
+"F195": "Organisation set-up is an open host: downstream by namespace, Tracker integration along one listed edge.",
+"F196": "R-OS1..R-OS5 set-up boundary rules and unit-test placement.",
+"F197": "Context field narrowed to Modules.OrganisationSetup; stray loose types to their own constant and list where still reached",
+"F198": "Architecture documents show Organisation set-up packaged (prose, reviewed, no test)",
+"F199": "Run OrganisationSetupRulesNameOnlyTheModuleArchUnitTest: the S1 law and sweep evaluated with an empty rename and allowance list over the test project, excluding by exact path only itself, OrganisationSetupMembership.cs, OrganisationSetupMembershipArchUnitTest.cs, OrganisationSetupPatternRoles.cs, OrganisationSetupStringsTheMoveRenames.cs and the planted-offender fixtures.",
+"F2": "Organisation set-up is the tenth context packaged in its own module and guarded by its own rules, so the units and levels of the next Feature are built inside it.",
+"F20": "D-1 Layout: Modules/OrganisationSetup/{Domain, Application, Application/Connections, Application/OptionalFeatures}, namespace = folder. A type goes to Domain only if its IL edges reach only the kernel, the base library and other set-up Domain types (expected WeeklyRecurrence and RecurringBlackoutRuleExtensions; the IL measured at S1 decides). Services and ports go to Application; the connection save, ChangedConnectionDefault, the connection usage and their two ports to Application/Connections; the three appliers, the registry and IOptionalFeatureApplier to Application/OptionalFeatures. No Application/Policies and no Adapters. Rejected: sub-folders per concern (Epic 6474 decides inner folders), one flat Application (drops the two existing groupings).",
+"F200": "RED at S5 start, naming each Context field still matching an old namespace or full name of a moved type and each literal still naming an old full name or path. GREEN once every Context field names Modules.OrganisationSetup only and every old literal is renamed; the exclusion list equals exactly those paths and each exists; Place fields still match no moved type.",
+"F201": "Re-adding an old Services alternative to a Context field, an old full-name literal in a rule file, or an extra path in the exclusion list fails naming it.",
+"F202": "The oracle reuses the S1 law and map read-only with an empty list.",
+"F203": "Context field narrowed to Modules.OrganisationSetup only.",
+"F204": "Narrowed; stray loose types still reached get their own StrayLooseServices constant and list.",
+"F205": "Existing architecture document brought to current: set-up packaged in Modules/OrganisationSetup.",
+"F206": "OrganisationSetUp narrowed; stray loose types still reached move to StrayLooseServices with their own list; no loosening.",
+"F207": "Row 62 packaged, row 63 note, line 289, Left open 845-851 brought to current; ARCHITECTURE.md section 4 row and rules bullet; catalogue and brief.",
+"F208": "Context field narrowed; S1 widening removed.",
+"F209": "Prose updated to show set-up packaged; reviewed, no test.",
+"F21": "D-2 Membership: the 27 files of the five moving groups move; every staying set-up file is named in OrganisationSetupMembership with owner and reason: the four context seeders, FeaturePositionMap and IFeaturePositionMap (feature-list read side), the repositories, the Models types, API controllers, helpers and DTOs, TeamUpdater and PortfolioUpdater (Epic 6474), the write-back round (#6657). The optional-features mechanism moves with ordering.",
+"F210": "Narrowing rule fields and updating documents; no preserving move precedes them.",
+"F211": "No Context field matches an old subject of a moved type and no test-project literal names an old full name or path of the 27, outside the exact self-exclusion list.",
+"F212": "Each Context field of the S1 declarations",
+"F213": "Each S1 rename-list literal",
+"F214": "Exclusion list equals the named paths and each exists",
+"F215": "Finite fields and files of the test project.",
+"F216": "Rules name Organisation set-up by Modules.OrganisationSetup only.",
+"F22": "D-3 Models: every set-up Models type stays in the kernel (EF entities, types reached by entities, wire types, events handled by other contexts); ManualRankComparer stays by default for S04b.",
+"F23": "D-4 Repositories stay in Services/*/Repositories, named in the membership with owner (S05c Team, S05d Portfolio, S05e connections, Organisation set-up for settings, terminology and blackouts) and target Modules/OrganisationSetup/Adapters/Persistence when S05 or S10 reshape repositories.",
+"F24": "D-5 The four context seeders (AppSettingSeeder, TerminologySeeder, OptionalFeatureSeeder, CategoryListNormalisationSeeder) stay in Services/Implementation/Seeding, owner Organisation set-up, target module start-up (S09a). Rejected: moving them to Adapters/Seeding (a second seeding decision in the Epic).",
+"F25": "D-6 Nothing of Team and Portfolio moves; no unit, level or event change. Their settings services move (AppSettingService, ConnectionSaveService, WorkTrackingSystemConnectionUsage). The brief IN line narrows accordingly (amended in S5).",
+"F26": "D-7 Rules first: EXTEND the shared NamespaceMoveLaw (it already carries PatternDeclaration Context, Place and Composite roles) with an Organisation set-up map and a per-pattern declaration. For every regex-valued const or static readonly string field and every moved type, the law evaluates the field against its declared subject (Namespace or FullName; an undeclared field is evaluated on both and a match on either fails until declared). A field whose old subject matches carries a role: Context must also match the new subject (S1 widens Namespace fields with the alternative for Modules.OrganisationSetup, FullName fields with the new full name), Place must not match the new subject. Composite fields are declared CompositeOf their component and follow it by reference. String fields equal to an old namespace or old full name take roles by equality. Inline method-body literals are caught only by the literal sweep, whose rename list is fixed at S1 from the pre-move grep. Rejected: a text sweep alone (misses the loose-namespace patterns, which name no type) and plain widening of every match (wrong for Place patterns).",
+"F27": "D-8 Open host by namespace: S4 makes the set-up Application and Domain namespaces a legal outbound target in the Work Items, Flow metrics, Forecasting, Promises, Refinement and Reports rules; their listed set-up edges leave the lists (Work Items 2, Promises 1, others measured). Tracker integration keeps set-up forbidden with one listed edge in TrackerIntegrationModuleBoundariesArchUnitTest.EdgesOfTheModuleIntoOtherContexts: ConnectionHealthCadence to IAppSettingService, owner S09a / Epic 6474. Rejected: legal by namespace for Tracker integration (contradicts the acknowledged-cycle decision); keeping every edge listed.",
+"F28": "D-9 New rules: OrganisationSetupModuleBoundariesArchUnitTest on the shared ModuleRules (R-OS1 layer membership, R-OS2 Domain reaches kernel and base library only, R-OS3 Application reaches no API, module adapter or downstream context except listed edges, EF Core only along listed edges, R-OS4 Tracker integration reaches set-up only along its listed edge, R-OS5 set-up events constructed only in set-up Application except the listed TeamController to TeamDeleted edge, R-OS6 downstream allowance by namespace), lists inline by full type name, compared both ways, only shrink, ModuleWording for Organisation set-up. FeatureOrderingSingleSource, RecurringBlackoutEventsSeam, ConnectionFetchShapeChangedSinglePublisher, OptionalFeatureApplierSeam, BlackoutForecastShiftSeam and CategoryListOwnershipGuard keep every assertion and change only through classified patterns and renamed literals.",
+"F29": "D-10 The 9 unit tests move with production to Lighthouse.Backend.Tests/Modules/OrganisationSetup/{Domain, Application, Application/Connections} (namespace = folder), including the misplaced API/TerminologyServiceTest and Services/BlackoutPeriodServiceTest; OrganisationSetupUnitTestPlacementTest keeps them there from S4. API, integration, ManualSorting, container and seeder tests stay and change only using lines. The test-improvement rule is waived for move-only and using-only edits; a mock-heavy moved test is noted for the reviewer, not rewritten.",
+"F3": "Every architecture rule keeps its verdict for every moving Organisation set-up type through the move, and every rule pattern that matches a moving type's old name is classified as standing for the context or for the place.",
+"F30": "D-11 DI: same registrations, order and lifetimes. Program.cs gains up to three using lines for the set-up namespaces and rewrites only the namespace text of the four fully qualified registrations (the three optional-feature lines and the ConnectionSaveService line); the loose usings stay. No AddOrganisationSetup (S09a).",
+"F31": "D-12 The ConnectionSaveService log category changes with its namespace; no override, filter or harness reads it.",
+"F32": "D-13 Commit per slice, moves in refactor(organisation-setup) commits apart from edits; push S1-S5 together once all five are green, so the Program.cs change triggers one live connector run.",
+"F33": "D-14 Behaviour-free proof reuses admitted probes: architecture-rules (all rules green, set-up rules green by namespace), ef-model-unchanged, backend-tests on the unchanged-assertion API, integration, ManualSorting, BlackoutForecastShift and RecurringBlackoutRules classes, test-selection-show for Modules/OrganisationSetup paths and Program.cs. No new compare command.",
+"F34": "D-15 Mutation bar: last, on frozen code, Stryker.NET over Modules/OrganisationSetup with the x64 runner, compared with the same files on the pre-move revision: no survivor or no-coverage mutant added in the moved code; the 80 percent project bar reported.",
+"F35": "D-16 Formal verification: no Quint, TLA+ or Agda model selected. Claims C1 membership (each listed type in exactly its listed namespace), C2 preservation (Context implies the new subject matches whenever the old one does; Place implies the new subject never matches) and C3 the boundary rules are relations over a finite closed set (compiled types x membership map x rule fields) with no state, transition, concurrency, time, fairness or unbounded input; a model over a hand-copied abstraction would be weaker than deciding the relation on the compiled assembly. Each is decided exhaustively by NUnit over the IL in the default suite. PBT not applicable (closed finite domain). Formal result NOT_SELECTED, DESIGN PASS, runtime DESIGNED_NOT_BUILT; no install or waiver needed. Default taken by the maintainer (open question 10).",
+"F36": "Oracle files: each slice has its own oracle file in Lighthouse.Backend.Tests/Architecture; no slice edits an earlier slice oracle or support of this feature. Therefore the S1 membership test accepts a listed type in its old or new namespace, the S1 law states preservation as an implication (it stays green after S5 narrows), and each S1 rename-list entry is an old and new literal pair that the S1 sweep accepts in either form; S2 and S3 tighten through their own oracles (only the new namespace for their group), S5 asserts the old forms are gone through its own oracle reading the S1 map read-only.",
+"F37": "Carriers and owners, all test-side in Lighthouse.Backend.Tests/Architecture: OrganisationSetupMembership (moving types with layer, old and new namespace; staying files with owner and reason; implicit IL edges), OrganisationSetupPatternRoles (PatternDeclaration per field), OrganisationSetupStringsTheMoveRenames (old and new literal pairs), the shared NamespaceMoveLaw (decision), KernelRuleVerdict from ModuleRules (verdict and offender message), ModuleWording (failure wording). Production carriers are unchanged: the moved services, ports and the kernel Models keep their types; only namespaces change. Cross-layer algebra: domain, application, adapter and infrastructure states and operations are unchanged; the only changed observation is the type full name and namespace, observed through the rules.",
+"F38": "Behaviour-free: production edits are namespace lines, using lines and the namespace text of the four fully qualified Program.cs registrations only; registration order, lifetimes and pairs unchanged. Any other production edit disproves the hypothesis and returns to DESIGN.",
+"F39": "No rule is loosened and no list grows except the one Tracker integration edge that the move makes cross a module boundary; lists are inline, compared both ways, and only shrink.",
+"F4": "The Organisation set-up types live in Modules/OrganisationSetup in their measured layer, their unit tests beside them, and the application behaves exactly as before.",
+"F40": "Widen then narrow: S1 widens every Context pattern to old or new; S5 narrows it to Modules.OrganisationSetup only. Place patterns are never edited and are asserted to match no moved type.",
+"F41": "Every regex or string field that matches a moving type old name carries an explicit Context or Place classification with a reason; an unclassified match fails.",
+"F42": "One oracle file per slice; an approved oracle or its support file is never edited, not even a using line; oracles name types as strings.",
+"F43": "Start condition (S1 first action): S03e, S03f, S03g and S03h merged by the three checks, the content grep deciding; Epic 6474 slice 03 not landed (no UnitCreated or UnitDeleted, TeamController still publishes TeamDeleted). A failed content or 6474 check stops S1; every count in the design is re-measured at S1 and differences are recorded.",
+"F44": "No schema, route, DTO, setting key, configuration key or usage-data event changes; no bound or range of any stored or validated input changes (none is introduced or narrowed).",
+"F45": "Test rules: the Lighthouse test-writing skill wins over nWave timing and PBT density; no nWave scenario tags in code; arch rule tests assert by the failure naming the offender, not by counts; each module rule asserts its subject set is not empty; each list position has a made-up offender in a fixture namespace such as Lighthouse.Backend.Modules.OrganisationSetupFixtures. Default per-test budgets; no derogation, no infrastructure suite.",
+"F46": "Exemptions for a moved type are exact (that type and its nested types by full name), never a whole namespace or layer; every rule edit is proved by a reverted throwaway probe recorded as a craft command.",
+"F47": "One owner of the preservation law across module moves; set-up adds its map and pattern declarations rather than a second law.",
+"F48": "Context, Place and Composite roles already exist from S03h; set-up declares its fields with them.",
+"F49": "Layer membership rule with former-home check, used by the Forecasting and Work Items layout oracles.",
+"F5": "Downstream modules reach Organisation set-up by namespace without a list entry, Tracker integration only along its one listed edge, Organisation set-up has its own boundary rules read from the IL, and no second controller can publish a set-up event unseen.",
+"F50": "R-OS2 and the S1 Domain-candidate check.",
+"F51": "Rules read edges from the compiled IL; TypesIn returns nested types, so exact-set checks reduce to top-level names.",
+"F52": "Failure wording for set-up rules.",
+"F53": "Shape copied for OrganisationSetupMembership (namespace-agnostic membership with staying files).",
+"F54": "The module map gains one OrganisationSetupPattern beside ReportsPattern, the single owner of which namespaces are Organisation set-up; WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp reads it instead of its own loose-namespace copy.",
+"F55": "No shared wire, schema or configuration contract changes (D-0); the HTTP API the clients read is unchanged and every producer and consumer of the moved types is in the one deployable and changes in the same commit.",
+"F56": "Single deployable; callers of the moved types change in the same commit and are covered by the slice oracles and the unchanged acceptance tests; no persisted or wire data names a moved type.",
+"F57": "Compiled production assembly read through LighthouseArchitecture.Production and IlDependencies (in-process); nearest executable argv: dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture. Behaviour observed through the unchanged application-service acceptance tests and host tests.",
+"F58": "Production driven ports unchanged: repositories in Services/*/Repositories, LighthouseAppContext, the domain-event dispatcher, Work Items fetch fingerprint (listed edge), Tracker integration query port, the clock.",
+"F59": "Organisation set-up depends down only on the kernel, platform infrastructure, the repositories and Tracker integration query port; downstream contexts reach set-up Application and Domain by namespace; Tracker integration reaches set-up only along one listed edge.",
+"F6": "Every rule that stands for Organisation set-up names it by Modules.OrganisationSetup only, and no rule constant or literal still names a moved type by its old place.",
+"F60": "Architecture rule verdict over the compiled assembly: pass, or failure naming each offender type, edge or field with WHAT, WHY and HOW.",
+"F61": "Behaviour of the moved code (covered by the unchanged acceptance tests); references the IL does not record (event declarations, named attribute arguments).",
+"F62": "Namespace and full name of each listed set-up type found in the compiled assembly.",
+"F63": "Source file path of a type (checked by the placement tests through the test assembly symbols).",
+"F64": "Two edge or type lists are equal when they hold the same full-name strings as sets, compared both ways; nested types reduce to their top-level type.",
+"F65": "Preservation: for every declared rule field and every moved type, if the field matches the old subject then a Context field also matches the new subject and a Place field does not; an undeclared field matching either subject fails.",
+"F66": "WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp, Namespace, Context: old Services.Interfaces matches, new set-up Application must match",
+"F67": "RecurringBlackoutEventsSeamArchUnitTest.ServiceImplementationNamespace, Namespace, Context: undeclared today, fails until declared",
+"F68": "RefinementModuleArchUnitTest.WeeklyRecurrenceAndItsNestedTypesPattern, FullName, Context",
+"F69": "RefinementModuleArchUnitTest.ServicesImplementationPattern, Namespace, role measured at S1",
+"F7": "The 27 Organisation set-up files of the design's membership, their unit tests, Program.cs usings and registrations, the rule files whose patterns name them, and the architecture documents at the end.",
+"F70": "TrackerIntegrationApplicationLayoutArchUnitTest.AnImplementationNamespace, Namespace, Context",
+"F71": "Promises place patterns, Namespace, Place: never match a new set-up namespace",
+"F72": "WorkItemsApplicationLayoutArchUnitTest.WhereTheTypesLivedBefore, source text, Place",
+"F73": "AccessLicensingOrganisationSetUpAndTheUpdateQueue, Composite of OrganisationSetUp",
+"F74": "Closed finite domain: compiled rule fields x 27 moved types, decided exhaustively on the IL.",
+"F75": "Every pattern that matches a moved type old namespace must also match its new namespace (plain widening, as in S03h).",
+"F76": "Carrier distinction missing: the old home is the loose Services namespace shared with types that stay, so a pattern on it may stand for the place, not the context.",
+"F77": "PromisesLayoutArchUnitTest.WhereTheServicesLivedBefore stands for nothing of Promises left in Services; widening it to Modules.OrganisationSetup would make it start following set-up.",
+"F78": "No existing architecture rule silently stops seeing an Organisation set-up type when it moves.",
+"F79": "A rule passes over an empty or shrunken subject set and a forbidden edge ships unseen.",
+"F8": "Team and Portfolio as units, levels, UnitCreated and UnitDeleted (the next Feature's slice 03); the repositories, the four context seeders and the Models entities, which stay; any behaviour, schema, route or configuration change; fixing the controller-published TeamDeleted event.",
+"F80": "Compiled test assembly rule fields and the set-up membership map",
+"F81": "dotnet test --filter FullyQualifiedName~OrganisationSetupMembershipArchUnitTest fails naming an undeclared or unpreserved field",
+"F82": "Inline method-body literals (reflection cannot see them; covered only by the literal sweep); patterns built at run time from segments; rules that select types by short name.",
+"F83": "Moved type in its old namespace (S1) or in its new namespace (S2/S3 per group); Context field matching old and new (S1-S4) or new only (S5).",
+"F84": "Listed moved type in neither namespace; Context field matching old but not new; Place field matching a new set-up namespace; undeclared field matching a moved type.",
+"F85": "Dependencies the IL reader does not record (event declarations, named attribute arguments) between moved types and downstream modules.",
+"F86": "Organisation set-up rule preservation and membership",
+"F87": "Excluded states fail the S1 law and membership tests by construction of the exhaustive check over the finite domain.",
+"F88": "Organisation set-up module",
+"F89": "The 27 existing files are the admitted input; the move constructs each type in its new namespace; the membership map names each one.",
+"F9": "Before anything moves, the Organisation set-up membership is measured from the IL and every rule pattern matching an old name is classified and, where it stands for the context, widened to old and new",
+"F90": "Set-up rules",
+"F91": "Compiled assembly to membership and law to ArchUnit rules to dotnet test Architecture exit and message.",
+"F92": "Not applicable: no state, time, concurrency or eventual-progress claim; each rule is a synchronous finite decision.",
+"F93": "Negated: a pattern on the old home stands for the context",
+"F94": "Every rule verdict for every moved type",
+"F95": "Place patterns stop matching moved types after the move",
+"F96": "A Place pattern following set-up, or a Context pattern losing it",
+"F97": "None once every matching field is declared",
+"F98": "Negated: a text sweep finds every pattern; patterns are regexes; registrations use short names; only usings move",
+"F99": "Rule subjects and DI wiring"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F6"
+}
+],
+"scope_in": [
+"F7"
+],
+"scope_out": [
+"F8"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F9",
+"promises": [
+"P1"
+],
+"work": {
+"size": "M",
+"value": "F14"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F10",
+"promises": [
+"P2"
+],
+"work": {
+"size": "M",
+"value": "F15"
+}
+},
+{
+"depends_on": [
+"S2"
+],
+"id": "S3",
+"observation": "F11",
+"promises": [
+"P2"
+],
+"work": {
+"size": "M",
+"value": "F16"
+}
+},
+{
+"depends_on": [
+"S3"
+],
+"id": "S4",
+"observation": "F12",
+"promises": [
+"P3"
+],
+"work": {
+"size": "M",
+"value": "F17"
+}
+},
+{
+"depends_on": [
+"S4"
+],
+"id": "S5",
+"observation": "F13",
+"promises": [
+"P4"
+],
+"work": {
+"size": "S",
+"value": "F18"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6468-s03i-package-organisation-set-up",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}

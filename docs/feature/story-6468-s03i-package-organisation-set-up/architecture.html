@@ -1,0 +1,3865 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>:root{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+    --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+    --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+    --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+    --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+  }
+}
+:root[data-theme="light"]{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+:root[data-theme="dark"]{
+  --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+  --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+  --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+  --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+  --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--nwave-font-stack);
+  font-size:15px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:2.5rem 1.5rem 6rem;
+  display:flex;flex-direction:column;gap:1.1rem}
+.brandbar{background:#11141a;border-radius:4px;padding:.7rem 1rem;display:flex;align-items:center}
+.brandbar-logo{height:1.9rem;width:auto;display:block}
+.provenance{
+  display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:baseline;
+  background:var(--accent-soft);border-left:3px solid var(--accent);
+  padding:.7rem .95rem;border-radius:0 4px 4px 0;font-size:.8rem;color:var(--muted);
+}
+.provenance strong{color:var(--ink);font-weight:600}
+.provenance code{background:none;padding:0;color:var(--accent)}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.22;margin:0;font-weight:640}
+h1{font-size:1.9rem;letter-spacing:-.018em;margin-top:.6rem}
+h2{font-size:1.28rem;letter-spacing:-.01em;margin-top:2.2rem;
+  padding-bottom:.4rem;border-bottom:1px solid var(--rule)}
+h3{font-size:1.02rem;margin-top:1.5rem;color:var(--accent)}
+h4{font-size:.9rem;margin-top:1.1rem;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted)}
+p{margin:0;max-width:74ch}
+ul,ol{margin:0;padding-left:1.3rem;display:flex;flex-direction:column;gap:.35rem;max-width:74ch}
+hr{border:0;border-top:1px solid var(--rule);margin:1.6rem 0;width:100%}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;
+  background:var(--accent-soft);padding:.1em .34em;border-radius:3px}
+pre{background:var(--panel);border:1px solid var(--rule);border-radius:5px;
+  padding:1rem 1.1rem;overflow-x:auto;margin:0;font-size:.78rem;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+blockquote{margin:0;padding:.75rem 1rem;background:var(--panel);
+  border-left:3px solid var(--quar);border-radius:0 4px 4px 0;color:var(--muted);max-width:74ch}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.83rem;
+  font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--panel);text-align:left;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);font-weight:620;padding:.6rem .75rem;
+  border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:.55rem .75rem;border-bottom:1px solid var(--rule);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+.chip{display:inline-block;padding:.12em .55em;border-radius:100px;
+  font-size:.7rem;font-weight:650;letter-spacing:.03em;white-space:nowrap;
+  border:1px solid currentColor}
+.s-ready{color:var(--ready)} .s-wip{color:var(--wip)} .s-done{color:var(--done)}
+.s-quar{color:var(--quar)} .s-cont{color:var(--cont)} .s-guard{color:var(--guard)}
+.s-dsn{color:var(--dsn)}
+.v-keep{color:var(--keep)} .v-simp{color:var(--simp)}
+.v-drop{color:var(--drop)} .v-unk{color:var(--unk)}
+/* --- directory tree: connectors drawn with borders, not characters,
+   so the chips stay aligned regardless of name length --- */
+.treewrap{border:1px solid var(--rule);border-radius:5px;background:var(--panel);
+  padding:.9rem 1.1rem;overflow-x:auto}
+ul.tree{list-style:none;margin:0;padding:0;display:block;max-width:none;
+  font-size:.83rem;line-height:1.5}
+ul.tree ul.tree{margin-left:.62rem;padding-left:.95rem;border-left:1px solid var(--rule)}
+ul.tree li{position:relative;padding:.16rem 0 .16rem .95rem;margin:0}
+ul.tree ul.tree>li::before{content:"";position:absolute;left:-.95rem;top:.72rem;
+  width:.82rem;border-top:1px solid var(--rule)}
+ul.tree ul.tree>li:last-child::after{content:"";position:absolute;left:-1.02rem;
+  top:.75rem;bottom:0;width:1px;background:var(--panel)}
+ul.tree summary{cursor:pointer;list-style:none;padding:.16rem 0;margin-left:-.95rem;
+  padding-left:.95rem;border-radius:3px}
+ul.tree summary::-webkit-details-marker{display:none}
+ul.tree summary::before{content:"▾";position:absolute;left:-.15rem;color:var(--muted);
+  font-size:.7rem;transition:transform .12s ease}
+ul.tree details:not([open])>summary::before{content:"▸"}
+ul.tree summary:hover{background:var(--accent-soft)}
+ul.tree summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.t-id{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:650;
+  color:var(--accent);margin-right:.55rem;white-space:nowrap}
+.t-name{color:var(--ink);margin-right:.55rem}
+.t-badge{display:inline-block;font-size:.7rem;color:var(--muted);
+  border:1px solid var(--rule);border-radius:3px;padding:.02em .4em;
+  margin-right:.35rem;white-space:nowrap}
+li.t-branch>details>summary .t-id{font-size:.86rem;letter-spacing:.01em}
+/* --- colore del TESTO per stato: si legge la riga intera, non solo la chip --- */
+li.row-s-done>.t-name,li.row-s-done>details>summary .t-name{color:var(--done);
+  text-decoration:line-through;text-decoration-thickness:1px;opacity:.82}
+li.row-s-done>.t-id,li.row-s-done>details>summary .t-id{color:var(--done)}
+li.row-s-wip>.t-name,li.row-s-wip>details>summary .t-name{color:var(--wip);font-weight:560}
+li.row-s-wip>.t-id,li.row-s-wip>details>summary .t-id{color:var(--wip)}
+li.row-s-wip>details>summary{background:color-mix(in srgb,var(--wip) 9%,transparent);
+  border-left:2px solid var(--wip);margin-left:-1.15rem;padding-left:1.1rem}
+li.row-s-quar>.t-name,li.row-s-quar>details>summary .t-name{color:var(--muted);opacity:.72}
+li.row-s-cont>.t-name,li.row-s-cont>details>summary .t-name{color:var(--cont)}
+li.row-s-dsn>.t-name,li.row-s-dsn>details>summary .t-name{color:var(--dsn)}
+li.row-s-dsn>.t-id,li.row-s-dsn>details>summary .t-id{color:var(--dsn)}
+/* leaf with detail: closed by default, so the tree stays scannable
+   and the full row is a click away instead of a table to search */
+li.t-has-detail>details>summary::before{content:"›";font-size:.85rem}
+li.t-has-detail>details[open]>summary::before{content:"⌄";font-size:.7rem}
+li.t-has-detail>details[open]>summary{background:var(--accent-soft)}
+dl.t-detail{display:grid;grid-template-columns:auto 1fr;gap:.28rem .9rem;
+  margin:.45rem 0 .6rem .3rem;padding:.6rem .8rem;font-size:.78rem;
+  background:var(--paper);border:1px solid var(--rule);border-radius:4px}
+dl.t-detail dt{color:var(--muted);font-size:.7rem;text-transform:uppercase;
+  letter-spacing:.05em;font-weight:620;white-space:nowrap;padding-top:.06rem}
+dl.t-detail dd{margin:0;color:var(--ink)}
+@media (max-width:640px){.wrap{padding:1.5rem 1rem 4rem}h1{font-size:1.5rem}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200.0001 281.99999" width="1200" height="282">
+  <!-- nWave wordmark (nWave-logo-tYW) — yellow n + white Wave, for dark backgrounds -->
+  <g transform="matrix(1.4449288,0,0,1.4449288,-451.84019,-521.62622)">
+    <path
+      d="m 452.34925,552.58492 q -15.46668,0 -25.60003,-10.13335 -10.13334,-10.13334 -10.13334,-26.40003 0,-8.00001 2.13333,-18.66669 2.13334,-10.93335 4.80001,-21.86669 2.93334,-10.93335 5.60001,-19.46669 2.93333,-8.80001 4,-12.80002 3.46667,-11.20001 2.93334,-16.53335 -0.53334,-5.60001 -3.73334,-7.46668 -3.2,-1.86667 -7.73334,-1.86667 -5.86668,0 -13.06669,4.80001 -7.2,4.8 -15.73335,18.13335 -2.66667,4.26668 -8.00001,13.86669 -5.33334,9.33334 -12.00001,21.60002 -6.40001,12.00002 -13.33335,25.33337 -6.93334,13.06668 -13.06668,25.33336 -6.13335,12.00002 -10.66668,21.06669 -2.93334,5.86668 -8.80001,6.40001 -5.86668,0.8 -10.66668,-2.66667 -4.53334,-3.73334 -4.26668,-10.13334 2.13334,-29.86671 6.40001,-60.00008 4.53334,-30.13337 11.73335,-60.00007 1.6,-6.13334 5.86667,-8.26668 4.53334,-2.13333 9.33335,-0.8 5.06667,1.33334 8.00001,5.33334 3.2,3.73334 1.86667,9.60001 -2.66667,11.46668 -5.33334,23.4667 -2.40001,11.73335 -4.53334,23.46669 8.26667,-15.46668 15.20002,-28.2667 7.20001,-12.80001 10.93334,-18.66669 9.86668,-15.46668 22.13336,-25.06669 12.53335,-9.60001 28.00004,-9.60001 15.73335,0 24.53336,8.53334 8.80001,8.26668 10.93335,21.60003 2.13333,13.33334 -2.40001,28.2667 -1.06666,3.73333 -3.73333,12.53335 -2.40001,8.53334 -5.06668,19.20002 -2.66667,10.40001 -4.8,19.73336 -1.86667,9.06667 -1.86667,13.86668 0,4.26667 1.6,8.00001 1.86667,3.46667 8.53334,3.46667 5.06668,0 11.20002,-2.93334 6.40001,-3.2 13.06668,-9.33334 4.53334,-4.26667 9.33335,-3.46667 4.8,0.8 8.00001,4.53334 3.46667,3.73333 3.73333,8.80001 0.53334,4.8 -4,8.80001 -9.06668,8.26667 -19.46669,13.60001 -10.13335,5.06668 -21.8667,5.06668 z"
+      fill="#fbcf09" aria-label="n" />
+    <path
+      fill="#ffffff"
+      d="m 491.73113,362.45678 h 29.19637 q 4.52157,0 7.49288,2.19618 3.1005,2.067 4.134,5.68425 L 564.3345,482.0844 q 1.16269,4.134 2.067,9.04313 1.0335,4.77993 1.93782,10.20581 1.0335,-5.42588 2.19618,-10.20581 1.29188,-4.90913 2.71294,-9.04313 l 36.68925,-111.74719 q 1.0335,-2.97131 4.00481,-5.42587 3.1005,-2.45456 7.49288,-2.45456 h 10.20581 q 4.52156,0 7.49288,2.19618 2.97131,2.067 4.134,5.68425 l 36.43087,111.74719 q 2.84213,8.268 4.90913,18.34463 0.90431,-5.03832 1.80862,-9.68907 1.0335,-4.65075 2.067,-8.65556 l 31.78013,-111.74719 q 0.90431,-3.22968 4.00481,-5.55506 3.1005,-2.32537 7.49287,-2.32537 h 27.25857 L 701.01488,549.2619 H 669.62232 L 628.79907,421.62465 q -0.77513,-2.45456 -1.67944,-5.29669 -0.77513,-2.84212 -1.55025,-6.07181 -0.77513,3.22969 -1.67944,6.07181 -0.77512,2.84213 -1.55025,5.29669 L 581.12888,549.2619 H 549.73632 Z M 868.7002,549.2619 h -14.33981 q -4.52156,0 -7.10531,-1.29187 -2.58375,-1.42107 -3.87563,-5.55507 l -2.84212,-9.43068 q -5.03832,4.52156 -9.94744,8.00962 -4.77994,3.35888 -9.94744,5.68425 -5.1675,2.32538 -10.98094,3.48806 -5.81343,1.16269 -12.91875,1.16269 -8.39718,0 -15.5025,-2.19619 -7.10531,-2.32537 -12.27281,-6.84693 -5.03831,-4.52157 -7.88044,-11.23932 -2.84212,-6.71775 -2.84212,-15.63168 0,-7.49288 3.87562,-14.72738 4.00482,-7.36369 13.17713,-13.17712 9.17231,-5.94263 24.41644,-9.81825 15.24412,-3.87563 37.85193,-4.39238 v -7.75125 q 0,-13.30631 -5.68425,-19.6365 -5.55506,-6.45937 -16.27762,-6.45937 -7.75125,0 -12.91875,1.80862 -5.1675,1.80863 -9.04313,4.134 -3.74643,2.19619 -6.97612,4.00481 -3.22969,1.80863 -7.10531,1.80863 -3.22969,0 -5.55507,-1.67944 -2.32537,-1.67944 -3.74643,-4.134 l -5.81344,-10.20581 q 22.86619,-20.92838 55.16306,-20.92838 11.62688,0 20.67,3.87563 9.17231,3.74644 15.5025,10.59337 6.33019,6.71775 9.55988,16.14844 3.35887,9.43069 3.35887,20.67 z m -62.01,-19.89487 q 4.90913,0 9.04313,-0.90432 4.134,-0.90431 7.75125,-2.71293 3.74643,-1.80863 7.10531,-4.39238 3.48806,-2.71294 6.97612,-6.33019 v -22.34943 q -13.95225,0.64593 -23.38293,2.45456 -9.3015,1.67944 -14.98575,4.39237 -5.68425,2.71294 -8.13882,6.33019 -2.32537,3.61725 -2.32537,7.88044 0,8.39719 4.90912,12.01444 5.03832,3.61725 13.04794,3.61725 z m 155.15439,19.89487 h -28.938 l -52.7085,-132.54637 h 26.48344 q 3.48806,0 5.81344,1.67943 2.45456,1.67944 3.35887,4.26319 l 25.57913,70.79475 q 2.19618,6.201 3.61725,12.14363 1.55025,5.94262 2.71293,11.88525 1.16269,-5.94263 2.58375,-11.88525 1.55025,-5.94263 3.87563,-12.14363 l 26.22506,-70.79475 q 0.90431,-2.58375 3.22969,-4.26319 2.32537,-1.67943 5.55506,-1.67943 h 25.19156 z M 1083.7976,414.64853 q 12.5312,0 22.9954,4.00481 10.5934,4.00481 18.2155,11.75606 7.622,7.62206 11.8852,18.86138 4.2632,11.11012 4.2632,25.44993 0,3.61725 -0.3876,6.07182 -0.2583,2.32537 -1.1627,3.74643 -0.7751,1.29188 -2.1961,1.93782 -1.4211,0.51675 -3.6173,0.51675 h -81.9049 q 1.4211,20.41162 10.981,29.9715 9.5598,9.55987 25.3207,9.55987 7.7513,0 13.3063,-1.80862 5.6843,-1.80863 9.8183,-4.00482 4.2632,-2.19618 7.3637,-4.00481 3.2297,-1.80862 6.201,-1.80862 1.9378,0 3.3588,0.77512 1.4211,0.77513 2.4546,2.19619 l 9.3015,11.62687 q -5.2967,6.201 -11.8852,10.46419 -6.5886,4.134 -13.8231,6.71775 -7.1053,2.45456 -14.5982,3.48806 -7.3637,1.0335 -14.3398,1.0335 -13.8231,0 -25.7083,-4.52156 -11.8853,-4.65075 -20.67,-13.56469 -8.7848,-9.04312 -13.8231,-22.22025 -5.0383,-13.30631 -5.0383,-30.74662 0,-13.56469 4.3924,-25.44994 4.3924,-12.01444 12.5312,-20.79919 8.268,-8.91393 20.024,-14.08143 11.8853,-5.1675 26.7418,-5.1675 z m 0.646,22.86618 q -13.9523,0 -21.8327,7.88044 -7.8804,7.88044 -10.0766,22.34944 h 59.943 q 0,-6.201 -1.6795,-11.62688 -1.6794,-5.55506 -5.1675,-9.68906 -3.488,-4.134 -8.7847,-6.45937 -5.2967,-2.45457 -12.402,-2.45457 z"
+      aria-label="Wave" />
+  </g>
+</svg>
+
+<h1>Architecture brief: story-6468-s03i-package-organisation-set-up</h1>
+
+<h2>Paradigm</h2>
+
+<p>object_oriented</p>
+
+<h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>D-0 No schema and no behaviour change: no entity, DbSet, migration, route, DTO, setting key, seeded value, terminology default, usage-data event or configuration key changes; observed by ef-model-unchanged and an empty diff under the migrations projects, Lighthouse.Frontend, Lighthouse.EndToEndTests and Models.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h4>D2</h4>
+
+<pre><code>D-1 Layout: Modules/OrganisationSetup/{Domain, Application, Application/Connections, Application/OptionalFeatures}, namespace = folder. A type goes to Domain only if its IL edges reach only the kernel, the base library and other set-up Domain types (expected WeeklyRecurrence and RecurringBlackoutRuleExtensions; the IL measured at S1 decides). Services and ports go to Application; the connection save, ChangedConnectionDefault, the connection usage and their two ports to Application/Connections; the three appliers, the registry and IOptionalFeatureApplier to Application/OptionalFeatures. No Application/Policies and no Adapters. Rejected: sub-folders per concern (Epic 6474 decides inner folders), one flat Application (drops the two existing groupings).
+</code></pre>
+<p>Governed slices: S2, S3</p>
+
+<h4>D3</h4>
+
+<pre><code>D-2 Membership: the 27 files of the five moving groups move; every staying set-up file is named in OrganisationSetupMembership with owner and reason: the four context seeders, FeaturePositionMap and IFeaturePositionMap (feature-list read side), the repositories, the Models types, API controllers, helpers and DTOs, TeamUpdater and PortfolioUpdater (Epic 6474), the write-back round (#6657). The optional-features mechanism moves with ordering.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>D4</h4>
+
+<pre><code>D-3 Models: every set-up Models type stays in the kernel (EF entities, types reached by entities, wire types, events handled by other contexts); ManualRankComparer stays by default for S04b.
+</code></pre>
+<p>Governed slices: S2, S3</p>
+
+<h4>D5</h4>
+
+<pre><code>D-4 Repositories stay in Services/*/Repositories, named in the membership with owner (S05c Team, S05d Portfolio, S05e connections, Organisation set-up for settings, terminology and blackouts) and target Modules/OrganisationSetup/Adapters/Persistence when S05 or S10 reshape repositories.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>D6</h4>
+
+<pre><code>D-5 The four context seeders (AppSettingSeeder, TerminologySeeder, OptionalFeatureSeeder, CategoryListNormalisationSeeder) stay in Services/Implementation/Seeding, owner Organisation set-up, target module start-up (S09a). Rejected: moving them to Adapters/Seeding (a second seeding decision in the Epic).
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>D7</h4>
+
+<pre><code>D-6 Nothing of Team and Portfolio moves; no unit, level or event change. Their settings services move (AppSettingService, ConnectionSaveService, WorkTrackingSystemConnectionUsage). The brief IN line narrows accordingly (amended in S5).
+</code></pre>
+<p>Governed slices: S3, S5</p>
+
+<h4>D8</h4>
+
+<pre><code>D-7 Rules first: EXTEND the shared NamespaceMoveLaw (it already carries PatternDeclaration Context, Place and Composite roles) with an Organisation set-up map and a per-pattern declaration. For every regex-valued const or static readonly string field and every moved type, the law evaluates the field against its declared subject (Namespace or FullName; an undeclared field is evaluated on both and a match on either fails until declared). A field whose old subject matches carries a role: Context must also match the new subject (S1 widens Namespace fields with the alternative for Modules.OrganisationSetup, FullName fields with the new full name), Place must not match the new subject. Composite fields are declared CompositeOf their component and follow it by reference. String fields equal to an old namespace or old full name take roles by equality. Inline method-body literals are caught only by the literal sweep, whose rename list is fixed at S1 from the pre-move grep. Rejected: a text sweep alone (misses the loose-namespace patterns, which name no type) and plain widening of every match (wrong for Place patterns).
+</code></pre>
+<p>Governed slices: S1, S5</p>
+
+<h4>D9</h4>
+
+<pre><code>D-8 Open host by namespace: S4 makes the set-up Application and Domain namespaces a legal outbound target in the Work Items, Flow metrics, Forecasting, Promises, Refinement and Reports rules; their listed set-up edges leave the lists (Work Items 2, Promises 1, others measured). Tracker integration keeps set-up forbidden with one listed edge in TrackerIntegrationModuleBoundariesArchUnitTest.EdgesOfTheModuleIntoOtherContexts: ConnectionHealthCadence to IAppSettingService, owner S09a / Epic 6474. Rejected: legal by namespace for Tracker integration (contradicts the acknowledged-cycle decision); keeping every edge listed.
+</code></pre>
+<p>Governed slices: S3, S4</p>
+
+<h4>D10</h4>
+
+<pre><code>D-9 New rules: OrganisationSetupModuleBoundariesArchUnitTest on the shared ModuleRules (R-OS1 layer membership, R-OS2 Domain reaches kernel and base library only, R-OS3 Application reaches no API, module adapter or downstream context except listed edges, EF Core only along listed edges, R-OS4 Tracker integration reaches set-up only along its listed edge, R-OS5 set-up events constructed only in set-up Application except the listed TeamController to TeamDeleted edge, R-OS6 downstream allowance by namespace), lists inline by full type name, compared both ways, only shrink, ModuleWording for Organisation set-up. FeatureOrderingSingleSource, RecurringBlackoutEventsSeam, ConnectionFetchShapeChangedSinglePublisher, OptionalFeatureApplierSeam, BlackoutForecastShiftSeam and CategoryListOwnershipGuard keep every assertion and change only through classified patterns and renamed literals.
+</code></pre>
+<p>Governed slices: S4</p>
+
+<h4>D11</h4>
+
+<pre><code>D-10 The 9 unit tests move with production to Lighthouse.Backend.Tests/Modules/OrganisationSetup/{Domain, Application, Application/Connections} (namespace = folder), including the misplaced API/TerminologyServiceTest and Services/BlackoutPeriodServiceTest; OrganisationSetupUnitTestPlacementTest keeps them there from S4. API, integration, ManualSorting, container and seeder tests stay and change only using lines. The test-improvement rule is waived for move-only and using-only edits; a mock-heavy moved test is noted for the reviewer, not rewritten.
+</code></pre>
+<p>Governed slices: S2, S3, S4</p>
+
+<h4>D12</h4>
+
+<pre><code>D-11 DI: same registrations, order and lifetimes. Program.cs gains up to three using lines for the set-up namespaces and rewrites only the namespace text of the four fully qualified registrations (the three optional-feature lines and the ConnectionSaveService line); the loose usings stay. No AddOrganisationSetup (S09a).
+</code></pre>
+<p>Governed slices: S2, S3</p>
+
+<h4>D13</h4>
+
+<pre><code>D-12 The ConnectionSaveService log category changes with its namespace; no override, filter or harness reads it.
+</code></pre>
+<p>Governed slices: S3</p>
+
+<h4>D14</h4>
+
+<pre><code>D-13 Commit per slice, moves in refactor(organisation-setup) commits apart from edits; push S1-S5 together once all five are green, so the Program.cs change triggers one live connector run.
+</code></pre>
+<p>Governed slices: S2, S3, S5</p>
+
+<h4>D15</h4>
+
+<pre><code>D-14 Behaviour-free proof reuses admitted probes: architecture-rules (all rules green, set-up rules green by namespace), ef-model-unchanged, backend-tests on the unchanged-assertion API, integration, ManualSorting, BlackoutForecastShift and RecurringBlackoutRules classes, test-selection-show for Modules/OrganisationSetup paths and Program.cs. No new compare command.
+</code></pre>
+<p>Governed slices: S2, S3, S4, S5</p>
+
+<h4>D16</h4>
+
+<pre><code>D-15 Mutation bar: last, on frozen code, Stryker.NET over Modules/OrganisationSetup with the x64 runner, compared with the same files on the pre-move revision: no survivor or no-coverage mutant added in the moved code; the 80 percent project bar reported.
+</code></pre>
+<p>Governed slices: S5</p>
+
+<h4>D17</h4>
+
+<pre><code>D-16 Formal verification: no Quint, TLA+ or Agda model selected. Claims C1 membership (each listed type in exactly its listed namespace), C2 preservation (Context implies the new subject matches whenever the old one does; Place implies the new subject never matches) and C3 the boundary rules are relations over a finite closed set (compiled types x membership map x rule fields) with no state, transition, concurrency, time, fairness or unbounded input; a model over a hand-copied abstraction would be weaker than deciding the relation on the compiled assembly. Each is decided exhaustively by NUnit over the IL in the default suite. PBT not applicable (closed finite domain). Formal result NOT_SELECTED, DESIGN PASS, runtime DESIGNED_NOT_BUILT; no install or waiver needed. Default taken by the maintainer (open question 10).
+</code></pre>
+<p>Governed slices: S1, S4, S5</p>
+
+<h4>D18</h4>
+
+<pre><code>Oracle files: each slice has its own oracle file in Lighthouse.Backend.Tests/Architecture; no slice edits an earlier slice oracle or support of this feature. Therefore the S1 membership test accepts a listed type in its old or new namespace, the S1 law states preservation as an implication (it stays green after S5 narrows), and each S1 rename-list entry is an old and new literal pair that the S1 sweep accepts in either form; S2 and S3 tighten through their own oracles (only the new namespace for their group), S5 asserts the old forms are gone through its own oracle reading the S1 map read-only.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S5</p>
+
+<h4>D19</h4>
+
+<pre><code>Carriers and owners, all test-side in Lighthouse.Backend.Tests/Architecture: OrganisationSetupMembership (moving types with layer, old and new namespace; staying files with owner and reason; implicit IL edges), OrganisationSetupPatternRoles (PatternDeclaration per field), OrganisationSetupStringsTheMoveRenames (old and new literal pairs), the shared NamespaceMoveLaw (decision), KernelRuleVerdict from ModuleRules (verdict and offender message), ModuleWording (failure wording). Production carriers are unchanged: the moved services, ports and the kernel Models keep their types; only namespaces change. Cross-layer algebra: domain, application, adapter and infrastructure states and operations are unchanged; the only changed observation is the type full name and namespace, observed through the rules.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Behaviour-free: production edits are namespace lines, using lines and the namespace text of the four fully qualified Program.cs registrations only; registration order, lifetimes and pairs unchanged. Any other production edit disproves the hypothesis and returns to DESIGN.
+</code></pre>
+<p>Governed slices: S2, S3</p>
+
+<h4>K2</h4>
+
+<pre><code>No rule is loosened and no list grows except the one Tracker integration edge that the move makes cross a module boundary; lists are inline, compared both ways, and only shrink.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h4>K3</h4>
+
+<pre><code>Widen then narrow: S1 widens every Context pattern to old or new; S5 narrows it to Modules.OrganisationSetup only. Place patterns are never edited and are asserted to match no moved type.
+</code></pre>
+<p>Governed slices: S1, S5</p>
+
+<h4>K4</h4>
+
+<pre><code>Every regex or string field that matches a moving type old name carries an explicit Context or Place classification with a reason; an unclassified match fails.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>K5</h4>
+
+<pre><code>One oracle file per slice; an approved oracle or its support file is never edited, not even a using line; oracles name types as strings.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h4>K6</h4>
+
+<pre><code>Start condition (S1 first action): S03e, S03f, S03g and S03h merged by the three checks, the content grep deciding; Epic 6474 slice 03 not landed (no UnitCreated or UnitDeleted, TeamController still publishes TeamDeleted). A failed content or 6474 check stops S1; every count in the design is re-measured at S1 and differences are recorded.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>K7</h4>
+
+<pre><code>No schema, route, DTO, setting key, configuration key or usage-data event changes; no bound or range of any stored or validated input changes (none is introduced or narrowed).
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h4>K8</h4>
+
+<pre><code>Test rules: the Lighthouse test-writing skill wins over nWave timing and PBT density; no nWave scenario tags in code; arch rule tests assert by the failure naming the offender, not by counts; each module rule asserts its subject set is not empty; each list position has a made-up offender in a fixture namespace such as Lighthouse.Backend.Modules.OrganisationSetupFixtures. Default per-test budgets; no derogation, no infrastructure suite.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h4>K9</h4>
+
+<pre><code>Exemptions for a moved type are exact (that type and its nested types by full name), never a whole namespace or layer; every rule edit is proved by a reverted throwaway probe recorded as a craft command.
+</code></pre>
+<p>Governed slices: S1, S4, S5</p>
+
+<h3>Reuse</h3>
+
+<p>NamespaceMoveLaw</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:105</p>
+
+<p>Extend</p>
+
+<pre><code>One owner of the preservation law across module moves; set-up adds its map and pattern declarations rather than a second law.
+</code></pre>
+
+<p>PatternDeclaration</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:33</p>
+
+<p>Reuse</p>
+
+<pre><code>Context, Place and Composite roles already exist from S03h; set-up declares its fields with them.
+</code></pre>
+
+<p>TypesLiveInTheirLayer</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:150</p>
+
+<p>Reuse</p>
+
+<pre><code>Layer membership rule with former-home check, used by the Forecasting and Work Items layout oracles.
+</code></pre>
+
+<p>DomainReachesOnlyTheKernelAndTheBaseLibrary</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:176</p>
+
+<p>Reuse</p>
+
+<pre><code>R-OS2 and the S1 Domain-candidate check.
+</code></pre>
+
+<p>IlDependencies</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IlDependencies.cs:13</p>
+
+<p>Reuse</p>
+
+<pre><code>Rules read edges from the compiled IL; TypesIn returns nested types, so exact-set checks reduce to top-level names.
+</code></pre>
+
+<p>ModuleWording</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleWording.cs:7</p>
+
+<p>Reuse</p>
+
+<pre><code>Failure wording for set-up rules.
+</code></pre>
+
+<p>ReportsMembership</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Shape copied for OrganisationSetupMembership (namespace-agnostic membership with staying files).
+</code></pre>
+
+<p>ReportsPattern</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:25</p>
+
+<p>Extend</p>
+
+<pre><code>The module map gains one OrganisationSetupPattern beside ReportsPattern, the single owner of which namespaces are Organisation set-up; WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp reads it instead of its own loose-namespace copy.
+</code></pre>
+
+<h3>Impact</h3>
+
+<p>None.</p>
+
+<h3>Agreement</h3>
+
+<p>None.</p>
+
+<h3>Not applicable</h3>
+
+<p>agreement</p>
+
+<pre><code>No shared wire, schema or configuration contract changes (D-0); the HTTP API the clients read is unchanged and every producer and consumer of the moved types is in the one deployable and changes in the same commit.
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>Single deployable; callers of the moved types change in the same commit and are covered by the slice oracles and the unchanged acceptance tests; no persisted or wire data names a moved type.
+</code></pre>
+
+<h3>Boundaries</h3>
+
+<pre><code>Compiled production assembly read through LighthouseArchitecture.Production and IlDependencies (in-process); nearest executable argv: dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture. Behaviour observed through the unchanged application-service acceptance tests and host tests.
+</code></pre>
+
+<h4>Driven ports</h4>
+
+<pre><code>Production driven ports unchanged: repositories in Services/*/Repositories, LighthouseAppContext, the domain-event dispatcher, Work Items fetch fingerprint (listed edge), Tracker integration query port, the clock.
+</code></pre>
+
+<pre><code>Organisation set-up depends down only on the kernel, platform infrastructure, the repositories and Tracker integration query port; downstream contexts reach set-up Application and Domain by namespace; Tracker integration reaches set-up only along one listed edge.
+</code></pre>
+
+<h4>Failures</h4>
+
+<p>None.</p>
+
+<h3>Observations</h3>
+
+<pre><code>Architecture rule verdict over the compiled assembly: pass, or failure naming each offender type, edge or field with WHAT, WHY and HOW.
+</code></pre>
+
+<p>NUnit outcome with failure message</p>
+
+<pre><code>Behaviour of the moved code (covered by the unchanged acceptance tests); references the IL does not record (event declarations, named attribute arguments).
+</code></pre>
+
+<pre><code>Namespace and full name of each listed set-up type found in the compiled assembly.
+</code></pre>
+
+<p>set of (type, namespace)</p>
+
+<pre><code>Source file path of a type (checked by the placement tests through the test assembly symbols).
+</code></pre>
+
+<h3>Equality</h3>
+
+<p>rule list comparison</p>
+
+<pre><code>Two edge or type lists are equal when they hold the same full-name strings as sets, compared both ways; nested types reduce to their top-level type.
+</code></pre>
+
+<h3>Constructors</h3>
+
+<p>None.</p>
+
+<h3>Laws</h3>
+
+<h4>L1</h4>
+
+<pre><code>Preservation: for every declared rule field and every moved type, if the field matches the old subject then a Context field also matches the new subject and a Place field does not; an undeclared field matching either subject fails.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>OrganisationSetupMembershipArchUnitTest</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp, Namespace, Context: old Services.Interfaces matches, new set-up Application must match
+</code></pre>
+
+<pre><code>RecurringBlackoutEventsSeamArchUnitTest.ServiceImplementationNamespace, Namespace, Context: undeclared today, fails until declared
+</code></pre>
+
+<pre><code>RefinementModuleArchUnitTest.WeeklyRecurrenceAndItsNestedTypesPattern, FullName, Context
+</code></pre>
+
+<pre><code>RefinementModuleArchUnitTest.ServicesImplementationPattern, Namespace, role measured at S1
+</code></pre>
+
+<pre><code>TrackerIntegrationApplicationLayoutArchUnitTest.AnImplementationNamespace, Namespace, Context
+</code></pre>
+
+<pre><code>Promises place patterns, Namespace, Place: never match a new set-up namespace
+</code></pre>
+
+<pre><code>WorkItemsApplicationLayoutArchUnitTest.WhereTheTypesLivedBefore, source text, Place
+</code></pre>
+
+<pre><code>AccessLicensingOrganisationSetUpAndTheUpdateQueue, Composite of OrganisationSetUp
+</code></pre>
+
+<pre><code>Closed finite domain: compiled rule fields x 27 moved types, decided exhaustively on the IL.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<pre><code>Every pattern that matches a moved type old namespace must also match its new namespace (plain widening, as in S03h).
+</code></pre>
+
+<pre><code>Carrier distinction missing: the old home is the loose Services namespace shared with types that stay, so a pattern on it may stand for the place, not the context.
+</code></pre>
+
+<pre><code>PromisesLayoutArchUnitTest.WhereTheServicesLivedBefore stands for nothing of Promises left in Services; widening it to Modules.OrganisationSetup would make it start following set-up.
+</code></pre>
+
+<h3>Claims</h3>
+
+<h4>C1</h4>
+
+<pre><code>No existing architecture rule silently stops seeing an Organisation set-up type when it moves.
+</code></pre>
+
+<pre><code>A rule passes over an empty or shrunken subject set and a forbidden edge ships unseen.
+</code></pre>
+
+<p>OrganisationSetupMembershipArchUnitTest</p>
+
+<pre><code>Compiled test assembly rule fields and the set-up membership map
+</code></pre>
+
+<p>OrganisationSetupPatternRoles declarations plus NamespaceMoveLaw</p>
+
+<p>Every ArchUnit rule reading a declared field</p>
+
+<pre><code>dotnet test --filter FullyQualifiedName~OrganisationSetupMembershipArchUnitTest fails naming an undeclared or unpreserved field
+</code></pre>
+
+<pre><code>Inline method-body literals (reflection cannot see them; covered only by the literal sweep); patterns built at run time from segments; rules that select types by short name.
+</code></pre>
+
+<h3>States</h3>
+
+<p>Admitted</p>
+
+<pre><code>Moved type in its old namespace (S1) or in its new namespace (S2/S3 per group); Context field matching old and new (S1-S4) or new only (S5).
+</code></pre>
+
+<p>None.</p>
+
+<p>Excluded</p>
+
+<pre><code>Listed moved type in neither namespace; Context field matching old but not new; Place field matching a new set-up namespace; undeclared field matching a moved type.
+</code></pre>
+
+<p>OrganisationSetupMembershipArchUnitTest</p>
+
+<p>Unknown</p>
+
+<pre><code>Dependencies the IL reader does not record (event declarations, named attribute arguments) between moved types and downstream modules.
+</code></pre>
+
+<p>Epic 6264 rules owner</p>
+
+<h3>Models</h3>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<pre><code>Organisation set-up rule preservation and membership
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Excluded states fail the S1 law and membership tests by construction of the exhaustive check over the finite domain.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Organisation set-up module
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>The 27 existing files are the admitted input; the move constructs each type in its new namespace; the membership map names each one.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Set-up rules
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Compiled assembly to membership and law to ArchUnit rules to dotnet test Architecture exit and message.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Set-up rules
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Not applicable: no state, time, concurrency or eventual-progress claim; each rule is a synchronous finite decision.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negated: a pattern on the old home stands for the context
+</code></pre>
+
+<pre><code>Every rule verdict for every moved type
+</code></pre>
+
+<pre><code>Place patterns stop matching moved types after the move
+</code></pre>
+
+<pre><code>A Place pattern following set-up, or a Context pattern losing it
+</code></pre>
+
+<pre><code>None once every matching field is declared
+</code></pre>
+
+<p>OrganisationSetupMembershipArchUnitTest</p>
+
+<h4>Y2</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negated: a text sweep finds every pattern; patterns are regexes; registrations use short names; only usings move
+</code></pre>
+
+<pre><code>Rule subjects and DI wiring
+</code></pre>
+
+<pre><code>Behavioural law evaluation of fields, equality branch for string constants, four fully qualified Program.cs lines rewritten, usings added for implicit same-namespace resolutions
+</code></pre>
+
+<pre><code>A field with no type name escaping the law; a registration left on the old namespace
+</code></pre>
+
+<pre><code>Run-time-built names escape the sweep
+</code></pre>
+
+<p>S1 crafter and reviewer</p>
+
+<h4>Y3</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negated: S03e-S03h left the counts as measured; 6474 has not started; narrowing OrganisationSetUp keeps Work Items as strict
+</code></pre>
+
+<pre><code>Design premises
+</code></pre>
+
+<pre><code>Counts re-measured and recorded at S1; stray loose types moved to a separate StrayLooseServices constant with their own list in S5
+</code></pre>
+
+<pre><code>S1 starting on a partial merge or after 6474 slice 03; Work Items losing a forbidden edge in S5
+</code></pre>
+
+<pre><code>None
+</code></pre>
+
+<p>S1 and S5 crafters</p>
+
+<h4>Y4</h4>
+
+<p>Bypass</p>
+
+<pre><code>IL reader misses event declarations and named attribute arguments
+</code></pre>
+
+<pre><code>Edges visible in method bodies, fields, signatures and catch clauses
+</code></pre>
+
+<pre><code>Unrecorded edges stay unguarded
+</code></pre>
+
+<pre><code>Claiming those edges are checked
+</code></pre>
+
+<pre><code>Unknown edges through event declarations or attribute arguments
+</code></pre>
+
+<p>Epic 6264 rules owner</p>
+
+<h4>Y5</h4>
+
+<p>SinglePointOfFailure</p>
+
+<pre><code>OrganisationSetupPattern in the module map is the one owner of which namespaces are set-up
+</code></pre>
+
+<pre><code>All rules agree on set-up
+</code></pre>
+
+<pre><code>One edit narrows every reader
+</code></pre>
+
+<pre><code>A rule keeping its own loose-namespace copy
+</code></pre>
+
+<pre><code>None after S5
+</code></pre>
+
+<p>S1 and S5 crafters</p>
+
+<h4>Y6</h4>
+
+<p>Stressor</p>
+
+<pre><code>Second set (walkthrough, not execution): reflection by name string, DI by open generic over Services.Implementation, registry discovery by namespace, persisted type names
+</code></pre>
+
+<pre><code>Runtime behaviour
+</code></pre>
+
+<pre><code>None needed
+</code></pre>
+
+<pre><code>A runtime lookup by old namespace
+</code></pre>
+
+<pre><code>None found: short-name reflection is rename-safe, no open-generic registration, registry uses DI IEnumerable, none of the 27 is persisted
+</code></pre>
+
+<p>Candidate reviewer</p>
+
+<h3>Architectural tests</h3>
+
+<p>None.</p>
+
+<h3>Contract tests</h3>
+
+<p>None.</p>
+
+<h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Context field widened to old or new, or read from the single OrganisationSetupPattern (D-7)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Context field widened to old or new, or read from the single OrganisationSetupPattern (D-7)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Context field widened to old or new, or read from the single OrganisationSetupPattern (D-7)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Context field widened to old or new, or read from the single OrganisationSetupPattern (D-7)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Context field widened to old or new, or read from the single OrganisationSetupPattern (D-7)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembershipArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupMembershipArchUnitTest
+dotnet build Lighthouse.Backend
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPatternRoles.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupStringsTheMoveRenames.cs</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run the Architecture tests on the compiled assembly before any file moves: OrganisationSetupMembershipArchUnitTest evaluates the membership map, the preservation law over every declared and undeclared rule field, and the literal sweep with its fixed rename list.
+</code></pre>
+
+<pre><code>RED before the S1 rule edits: WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp is named as a Context field whose old subject (Lighthouse.Backend.Services.Interfaces) matches and whose new subject (Lighthouse.Backend.Modules.OrganisationSetup.Application) does not, and RecurringBlackoutEventsSeamArchUnitTest.ServiceImplementationNamespace (plus any other matching field) is named as undeclared. GREEN after classifying and widening: every listed type found in its old or new namespace, every Domain candidate reaching only kernel and base library, every Context field matching old and new, every Place field matching no new namespace, every rename-list literal present in old or new form and no unlisted old literal.
+</code></pre>
+
+<pre><code>A planted type with a listed name left in neither namespace, a Place field widened to Modules.OrganisationSetup, an undeclared field matching an old namespace, or an unlisted old full-name literal each fails naming the offender.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>Widen and classify the Context patterns (old or new) and add OrganisationSetupPattern to the module map before any production file moves; makes the S2 and S3 moves visible to every rule.
+</code></pre>
+
+<pre><code>Every existing Architecture rule verdict; production untouched.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs</p>
+
+<h5>Verification</h5>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>NamespaceMoveLaw</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:105</p>
+
+<p>Extend</p>
+
+<pre><code>Set-up map and pattern declarations feed the shared law.
+</code></pre>
+
+<p>OrganisationSetUp</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:57</p>
+
+<p>Extend</p>
+
+<pre><code>Existing Context field widened, then read from OrganisationSetupPattern.
+</code></pre>
+
+<p>WeeklyRecurrenceAndItsNestedTypesPattern</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:34</p>
+
+<p>Extend</p>
+
+<pre><code>Existing full-name Context field widened with the new full name.
+</code></pre>
+
+<p>AnImplementationNamespace</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs:26</p>
+
+<p>Extend</p>
+
+<pre><code>Existing Context field widened with Modules.OrganisationSetup.
+</code></pre>
+
+<p>ServiceImplementationNamespace</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs:12</p>
+
+<p>Extend</p>
+
+<pre><code>Existing Context field widened to old or set-up Application.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:57</p>
+
+<p>Changed</p>
+
+<pre><code>OrganisationSetUp reads OrganisationSetupPattern (old or new); composite at 163 follows by reference; as a forbidden-unless-listed target it gets stricter.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:25</p>
+
+<p>Changed</p>
+
+<pre><code>Module map gains OrganisationSetupPattern.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:34</p>
+
+<p>Changed</p>
+
+<pre><code>WeeklyRecurrence full-name pattern widened to the new Domain full name; ServicesImplementationPattern line 24 classified at S1.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs:26</p>
+
+<p>Changed</p>
+
+<pre><code>AnImplementationNamespace widened with Modules.OrganisationSetup.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs:12</p>
+
+<p>Changed</p>
+
+<pre><code>ServiceImplementationNamespace widened to old or set-up Application; already applied with ResideInNamespaceMatching.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:23</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>S1 is test-side only.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>None.</p>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L2</h6>
+
+<pre><code>Membership: every type of the map exists in its old or new namespace; a Domain candidate reaches only the kernel and the base library; every staying file is named with owner and reason and holds a file.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>OrganisationSetupMembershipArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>27 moving types, old or new namespace
+</code></pre>
+
+<pre><code>Domain candidates WeeklyRecurrence, RecurringBlackoutRuleExtensions
+</code></pre>
+
+<pre><code>Staying: four seeders, FeaturePositionMap pair, repositories, Models, controllers, updaters, write-back
+</code></pre>
+
+<pre><code>Implicit IL edges of the movers and of RefinementCadenceCalendar
+</code></pre>
+
+<pre><code>Closed finite set read from the IL.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T1</h6>
+
+<pre><code>Rules see the move before it happens: membership, preservation law with Context and Place roles, literal sweep.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembershipArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupMembershipArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/WeeklyRecurrence.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WeeklyRecurrence.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/RecurringBlackoutRuleExtensions.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RecurringBlackoutRuleExtensions.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/BlackoutPeriodService.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BlackoutPeriodService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/RecurringBlackoutRuleService.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RecurringBlackoutRuleService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureOrdering.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeatureOrdering.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureOrderingPolicyProvider.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeatureOrderingPolicyProvider.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankingService.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeatureRankingService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankSeeder.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeatureRankSeeder.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/IBlackoutPeriodService.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IBlackoutPeriodService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/IRecurringBlackoutRuleService.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IRecurringBlackoutRuleService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/IFeatureOrdering.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IFeatureOrdering.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/IFeatureOrderingPolicyProvider.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IFeatureOrderingPolicyProvider.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/IFeatureRankingService.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IFeatureRankingService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/IFeatureRankSeeder.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IFeatureRankSeeder.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/FeatureOrderingApplier.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OptionalFeatures/FeatureOrderingApplier.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/DefaultOptionalFeatureApplier.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OptionalFeatures/DefaultOptionalFeatureApplier.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/OptionalFeatureApplierRegistry.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OptionalFeatures/OptionalFeatureApplierRegistry.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/IOptionalFeatureApplier.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/OptionalFeatures/IOptionalFeatureApplier.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/BlackoutPeriodServiceTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>Unit test moves beside its subject (D-10)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/BlackoutPeriodServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old test file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/RecurringBlackoutRuleServiceTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>Unit test moves beside its subject (D-10)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/RecurringBlackoutRuleServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old test file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/FeatureRankSeederTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>Unit test moves beside its subject (D-10)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/FeatureRankSeederTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old test file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/WeeklyRecurrenceTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>Unit test moves beside its subject (D-10)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WeeklyRecurrenceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old test file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/RecurringBlackoutRuleExtensionsTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>Unit test moves beside its subject (D-10)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/RecurringBlackoutRuleExtensionsTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old test file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Set-up usings added; the three fully qualified optional-feature registrations rewritten (D-11)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Nine SourceFilesThatStay entries deleted in the move commit; FeatureOrdering, IFeatureOrdering, FeatureRank, IFeatureRank prefixes dropped
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/BlackoutPeriodsControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerArchiveTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerUtcTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryRulesControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliverySourcesControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeatureListControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeatureListRowsTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeaturesControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FeatureMoveAuthOffIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastFilterBacktestIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastFilterTeamForecastIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckAtThePortTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckQueryCountTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckWallClockProbe.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAtThePortTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/OptionalFeaturesControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioMetricsControllerTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/RecurringBlackoutRulesControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamMetricsControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersAtTheEdgeOfTheirLimitsTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersFollowTheProcessBehaviourChartTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/SeededForecastsStayTheSameTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/NamedCycleTime/NamedCycleTimePopulationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureOrderingSingleSourceArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InstantsUnaffectedByZoneTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OptionalFeatureApplierSeamArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OverTimeReconstructionSeamArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneUnitTestPlacementTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementLivesInItsModuleArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembership.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/OptionalFeatureToggledEventTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ClosedInRangeCharacterisationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/InstanceDayItemBucketingTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/MetricsAsOfGroupNameTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/NamedCycleTimeAnswerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceSnapshotTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/WorkItemAgeAsOfDateTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/ForecastFilterFeatureForecastIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/ForecastRealityCheckServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryForecastPublishingServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryMetricValuesProjectorTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandlerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Refinement/Application/RefinementCalendarTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Refinement/Application/RefinementNeedCalculatorTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Refinement/Application/RefinementViewQueryTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DependencyVerdictIdentityTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/AppSettingServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BlackoutForecastShiftWriteBackTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/FeatureGraphReaderRelationalTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/FeatureListReaderRelationalTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/FeaturesWithReferenceIdsRelationalTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/ForecastConfirmationRepositoryRelationalTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/ForecastGatherReaderRelationalTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/SurveyNudgeSettingsTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/FeatureOrderingTestHelper.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/AppSettingsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/BlackoutPeriodsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioDto.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DeliveryRulesController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DeliverySourcesController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/FeatureListRows.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/FeaturesController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/ForecastController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/OptionalFeaturesController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/RecurringBlackoutRulesController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamFeatureSizeMetricsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/AppSettings/AppSettingKeys.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/ManualRankComparer.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/OptionalFeatures/OptionalFeatureKeys.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastRealityCheckService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryMetricValuesProjector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/Application/RefinementCadenceCalendar.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/Application/RefinementCalendar.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/Application/RefinementNeedCalculator.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/AppSettingService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeaturePositionMap.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackTriggerService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarOrderingAndOptionalFeaturesLiveInOrganisationSetupArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~CalendarOrderingAndOptionalFeaturesLiveInOrganisationSetupArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+dotnet build Lighthouse.Backend
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~Blackout|FullyQualifiedName~Terminology|FullyQualifiedName~ManualSorting|FullyQualifiedName~OptionalFeature|FullyQualifiedName~AppSetting|FullyQualifiedName~ConnectionSave|FullyQualifiedName~ConnectionUsage|FullyQualifiedName~FeatureRank|FullyQualifiedName~WeeklyRecurrence&quot;
+dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration&quot;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run CalendarOrderingAndOptionalFeaturesLiveInOrganisationSetupArchUnitTest on the compiled assembly.
+</code></pre>
+
+<pre><code>RED before the move: each of the 18 calendar, ordering and ranking and optional-feature types is named as still in Services.Implementation or Services.Interfaces. GREEN after: WeeklyRecurrence and RecurringBlackoutRuleExtensions in Modules.OrganisationSetup.Domain (as the IL decided at S1), the 12 services and ports in Modules.OrganisationSetup.Application, the 4 optional-feature types in Application.OptionalFeatures, none left in the old namespaces, and every other Architecture rule plus the unchanged behaviour tests green.
+</code></pre>
+
+<pre><code>Leaving one of the 18 in its old namespace, or placing a Domain candidate in Application, fails naming that type and its expected namespace.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>None.</p>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>The slice is itself a preserving move; S1 widened the rules as its prefactoring.
+</code></pre>
+
+<p>reuse</p>
+
+<pre><code>Every S2 target is an existing type, test or consumer moved or re-pointed as it is; no new responsibility, so nothing to reuse or create; the shared reuse rows cover the rule machinery.
+</code></pre>
+
+<p>impact</p>
+
+<pre><code>Closure (per-path rows cannot cite not-yet-existing paths): 18 production files Migrated to Modules/OrganisationSetup/{Domain, Application, Application/OptionalFeatures}; 5 unit tests Migrated to Tests/Modules/OrganisationSetup; Program.cs Changed (usings, namespace text of the three optional-feature registrations at 1447-1449; order and lifetimes unchanged); PromisesUnitTestPlacementTest Changed (entries 82-90 and four prefixes at 97 leave in the move commit); every consumer target Changed in using lines or renamed old-name literals only; csproj, suppressions, editorconfig, appsettings and CI targets UnchangedCompatible.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L3</h6>
+
+<pre><code>Each of the 18 group types lives only in its new set-up namespace.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>CalendarOrderingAndOptionalFeaturesLiveInOrganisationSetupArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>2 Domain types
+</code></pre>
+
+<pre><code>12 Application services and ports
+</code></pre>
+
+<pre><code>4 Application.OptionalFeatures types
+</code></pre>
+
+<pre><code>Closed set of 18 type names read from the IL.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T2</h6>
+
+<pre><code>Calendar, ordering and ranking and optional features live in Modules/OrganisationSetup in their layer.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarOrderingAndOptionalFeaturesLiveInOrganisationSetupArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~CalendarOrderingAndOptionalFeaturesLiveInOrganisationSetupArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/AppSettingService.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/AppSettingService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/TerminologyService.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TerminologyService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/IAppSettingService.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IAppSettingService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/ITerminologyService.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITerminologyService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/ConnectionSaveService.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Connections/ConnectionSaveService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/ChangedConnectionDefault.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Connections/ChangedConnectionDefault.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/WorkTrackingSystemConnectionUsage.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingSystemConnectionUsage.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/IConnectionSaveService.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IConnectionSaveService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/IWorkTrackingSystemConnectionUsage.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved as it is, namespace = folder (D-1)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IWorkTrackingSystemConnectionUsage.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/AppSettingServiceTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>Unit test moves beside its subject (D-10)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/AppSettingServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old test file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/TerminologyServiceTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>Unit test moves beside its subject (D-10)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TerminologyServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old test file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Connections/ConnectionSaveServiceTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>Unit test moves beside its subject (D-10)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Connections/ConnectionSaveServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old test file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Connections/WorkTrackingSystemConnectionUsageTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>Unit test moves beside its subject (D-10)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingSystemConnectionUsageTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Old test file removed by the move
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Set-up usings added; the fully qualified ConnectionSaveService registration rewritten (D-11)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>EdgesOfTheModuleIntoOtherContexts gets the one ConnectionHealthCadence to IAppSettingService entry (D-8)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/AppSettingsControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Helpers/OwnerSettingRefusalsTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckQueryCountTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckWallClockProbe.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice08HealthThatChecksItselfSpecifications.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfoliosControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/SurveyNudgeControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TerminologyControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/WriteBack/WorkTrackingSystemConnectionControllerWriteBackTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/WriteBack/WriteBackLicenseGateTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersAtTheEdgeOfTheirLimitsTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersFollowTheProcessBehaviourChartTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/NamedCycleTime/NamedCycleTimePopulationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectionFetchShapeChangedSinglePublisherArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InstantsUnaffectedByZoneTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneUnitTestPlacementTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimes.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.NeedParity.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ClosedInRangeCharacterisationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/InstanceDayItemBucketingTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/MetricsAsOfGroupNameTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/NamedCycleTimeAnswerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/PortfolioMetricsServiceTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceSnapshotTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/WorkItemAgeAsOfDateTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/ForecastFilterFeatureForecastIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandlerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandlerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/RefreshLogServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/SystemInfoServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/UsageDataConsentServiceTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/Slice01SkippedEntityLogTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/SurveyNudgeSettingsTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/PortDoubles.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/AppSettingsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/Helpers/OwnerSettingRefusals.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/SurveyNudgeController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TerminologyController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PortfolioMetricsService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/ConnectionHealth/ConnectionHealthCadence.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/RefreshLogService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/Host/SystemInfoService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/Seeding/InstallTimestampSeeder.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataConsentService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Consumer: using line or renamed old-name literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+dotnet build Lighthouse.Backend
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~Blackout|FullyQualifiedName~Terminology|FullyQualifiedName~ManualSorting|FullyQualifiedName~OptionalFeature|FullyQualifiedName~AppSetting|FullyQualifiedName~ConnectionSave|FullyQualifiedName~ConnectionUsage|FullyQualifiedName~FeatureRank|FullyQualifiedName~WeeklyRecurrence&quot;
+dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration&quot;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest on the compiled assembly.
+</code></pre>
+
+<pre><code>RED before the move: each of the 9 settings, terminology and connection types is named as still in the old namespaces. GREEN after: AppSettingService, TerminologyService and their two ports in Modules.OrganisationSetup.Application; ConnectionSaveService, ChangedConnectionDefault, WorkTrackingSystemConnectionUsage and their two ports in Application.Connections; none left in the old namespaces; TrackerIntegrationModuleBoundariesArchUnitTest.EdgesOfTheModuleIntoOtherContexts holds the ConnectionHealthCadence to IAppSettingService edge; every other Architecture rule and the unchanged behaviour tests green.
+</code></pre>
+
+<pre><code>Leaving one of the 9 in its old namespace fails naming it; omitting the Tracker integration edge fails the Tracker integration rule naming ConnectionHealthCadence.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>None.</p>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>The slice is itself a preserving move; S1 widened the rules as its prefactoring.
+</code></pre>
+
+<p>reuse</p>
+
+<pre><code>Every S3 target is an existing type, test or consumer moved or re-pointed as it is (TypesLiveInTheirLayer and the shared rule machinery are reused by the oracle); no new responsibility to reuse or create.
+</code></pre>
+
+<p>impact</p>
+
+<pre><code>Closure (per-path rows cannot cite not-yet-existing paths): 9 production files Migrated to Modules/OrganisationSetup/{Application, Application/Connections}; 4 unit tests Migrated (including API/TerminologyServiceTest); Program.cs Changed (usings, namespace text of the ConnectionSaveService registration at 1464); TrackerIntegrationModuleBoundariesArchUnitTest Changed (one ConnectionHealthCadence to IAppSettingService entry at 142); ConnectionSaveService log category Changed with its namespace; every consumer target Changed in using lines or renamed old-name literals only.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L4</h6>
+
+<pre><code>Each of the 9 group types lives only in its new set-up namespace.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>4 Application types
+</code></pre>
+
+<pre><code>5 Application.Connections types
+</code></pre>
+
+<pre><code>Closed set of 9 type names read from the IL.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T3</h6>
+
+<pre><code>Settings, terminology and connections live in Modules/OrganisationSetup in their layer; Tracker integration reaches set-up only along its listed edge.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S4</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>R-OS1..R-OS6 on ModuleRules with IL baselines (D-9)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupUnitTestPlacementTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>Moved unit tests stay beside the module (D-10)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Planted offenders for the set-up rules
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Set-up Application and Domain legal by namespace; listed set-up edges leave (D-8); Tracker integration keeps its one edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Set-up Application and Domain legal by namespace; listed set-up edges leave (D-8); Tracker integration keeps its one edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Set-up Application and Domain legal by namespace; listed set-up edges leave (D-8); Tracker integration keeps its one edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Set-up Application and Domain legal by namespace; listed set-up edges leave (D-8); Tracker integration keeps its one edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Set-up Application and Domain legal by namespace; listed set-up edges leave (D-8); Tracker integration keeps its one edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Set-up Application and Domain legal by namespace; listed set-up edges leave (D-8); Tracker integration keeps its one edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Set-up Application and Domain legal by namespace; listed set-up edges leave (D-8); Tracker integration keeps its one edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Set-up Application and Domain legal by namespace; listed set-up edges leave (D-8); Tracker integration keeps its one edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupIsAnOpenHostArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupModuleBoundariesArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupUnitTestPlacementTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+dotnet build Lighthouse.Backend
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run OrganisationSetupIsAnOpenHostArchUnitTest on the compiled test and production assemblies.
+</code></pre>
+
+<pre><code>RED while WorkItemsModuleBoundariesArchUnitTest.EdgesOfTheApplicationIntoAccessLicensingOrganisationSetUpAndTheUpdateQueue holds the RefreshLogService to IAppSettingService and WorkItemService to IFeatureOrdering edges or Promises outbound list holds DeliveryMetricValuesProjector to IBlackoutPeriodService, naming each set-up edge still listed. GREEN after both modules admit set-up Application and Domain by namespace and the three entries leave, and TrackerIntegrationModuleBoundariesArchUnitTest.EdgesOfTheModuleIntoOtherContexts holds exactly the ConnectionHealthCadence to IAppSettingService edge.
+</code></pre>
+
+<pre><code>A planted Tracker integration type calling IAppSettingService fails the Tracker integration rule; a planted controller constructing BlackoutConfigurationChanged fails R-OS5; a planted Work Items type calling a set-up adapter fails; a second Tracker integration edge or an emptied list fails the exact-list check.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>None.</p>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>Test-side rule additions and list shrinks only; no preserving move precedes them.
+</code></pre>
+
+<p>reuse</p>
+
+<pre><code>New rule files copy existing shapes (ModuleRulesCatchANewOffenderArchUnitTest falsifiers, TrackerIntegrationUnitTestPlacementTest placement, ModuleRules rules, recorded in the shared reuse); extended rule files keep their rules and only gain the set-up allowance or lose listed edges.
+</code></pre>
+
+<p>impact</p>
+
+<pre><code>Closure (two targets are new files): OrganisationSetupModuleBoundariesArchUnitTest and OrganisationSetupUnitTestPlacementTest created; WorkItemsModuleBoundariesArchUnitTest (list at 148 loses two set-up edges), PromisesModuleBoundariesArchUnitTest (145 loses one; planted fixture 410/755 follows), Flow metrics, Forecasting, Refinement and Reports rules (set-up admitted by namespace), ModuleBoundariesArchUnitTest, ModuleRulesCatchANewOffenderArchUnitTest (planted offenders) Changed; TrackerIntegrationModuleBoundariesArchUnitTest Changed only to assert its exact one edge; production TeamController:117 UnchangedCompatible (TeamDeleted listed by R-OS5).
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L5</h6>
+
+<pre><code>Downstream modules reach set-up Application and Domain without a list entry; Tracker integration reaches set-up only along exactly one listed edge; set-up events are constructed only in set-up Application except the listed TeamController edge.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>OrganisationSetupIsAnOpenHostArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Work Items list holds no set-up edge
+</code></pre>
+
+<pre><code>Promises list holds no set-up edge
+</code></pre>
+
+<pre><code>Tracker integration list equals the ConnectionHealthCadence edge
+</code></pre>
+
+<pre><code>Planted Tracker integration caller fails
+</code></pre>
+
+<pre><code>Planted controller publishing BlackoutConfigurationChanged fails
+</code></pre>
+
+<pre><code>Finite edge sets read from the IL and inline lists compared both ways.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T4</h6>
+
+<pre><code>Organisation set-up is an open host: downstream by namespace, Tracker integration along one listed edge.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupIsAnOpenHostArchUnitTest
+</code></pre>
+
+<h6>T5</h6>
+
+<pre><code>R-OS1..R-OS5 set-up boundary rules and unit-test placement.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupModuleBoundariesArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S5</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Context field narrowed to Modules.OrganisationSetup; stray loose types to their own constant and list where still reached
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Context field narrowed to Modules.OrganisationSetup; stray loose types to their own constant and list where still reached
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Context field narrowed to Modules.OrganisationSetup; stray loose types to their own constant and list where still reached
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Context field narrowed to Modules.OrganisationSetup; stray loose types to their own constant and list where still reached
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Context field narrowed to Modules.OrganisationSetup; stray loose types to their own constant and list where still reached
+</code></pre>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md</p>
+
+<p>Extend</p>
+
+<pre><code>Architecture documents show Organisation set-up packaged (prose, reviewed, no test)
+</code></pre>
+
+<p>ARCHITECTURE.md</p>
+
+<p>Extend</p>
+
+<pre><code>Architecture documents show Organisation set-up packaged (prose, reviewed, no test)
+</code></pre>
+
+<p>docs/feature/epic-6264-modular-monolith/feature-delta.md</p>
+
+<p>Extend</p>
+
+<pre><code>Architecture documents show Organisation set-up packaged (prose, reviewed, no test)
+</code></pre>
+
+<p>docs/feature/epic-6264-modular-monolith/slices/slice-45-s03i-package-organisation-set-up.md</p>
+
+<p>Extend</p>
+
+<pre><code>Architecture documents show Organisation set-up packaged (prose, reviewed, no test)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupRulesNameOnlyTheModuleArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupRulesNameOnlyTheModuleArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+dotnet build Lighthouse.Backend
+dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration&quot;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run OrganisationSetupRulesNameOnlyTheModuleArchUnitTest: the S1 law and sweep evaluated with an empty rename and allowance list over the test project, excluding by exact path only itself, OrganisationSetupMembership.cs, OrganisationSetupMembershipArchUnitTest.cs, OrganisationSetupPatternRoles.cs, OrganisationSetupStringsTheMoveRenames.cs and the planted-offender fixtures.
+</code></pre>
+
+<pre><code>RED at S5 start, naming each Context field still matching an old namespace or full name of a moved type and each literal still naming an old full name or path. GREEN once every Context field names Modules.OrganisationSetup only and every old literal is renamed; the exclusion list equals exactly those paths and each exists; Place fields still match no moved type.
+</code></pre>
+
+<pre><code>Re-adding an old Services alternative to a Context field, an old full-name literal in a rule file, or an extra path in the exclusion list fails naming it.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>NamespaceMoveLaw</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:105</p>
+
+<p>Reuse</p>
+
+<pre><code>The oracle reuses the S1 law and map read-only with an empty list.
+</code></pre>
+
+<p>WeeklyRecurrenceAndItsNestedTypesPattern</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:34</p>
+
+<p>Extend</p>
+
+<pre><code>Context field narrowed to Modules.OrganisationSetup only.
+</code></pre>
+
+<p>AnImplementationNamespace</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs:26</p>
+
+<p>Extend</p>
+
+<pre><code>Context field narrowed to Modules.OrganisationSetup only.
+</code></pre>
+
+<p>ServiceImplementationNamespace</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs:12</p>
+
+<p>Extend</p>
+
+<pre><code>Context field narrowed to Modules.OrganisationSetup only.
+</code></pre>
+
+<p>ReportsPattern</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:25</p>
+
+<p>Extend</p>
+
+<pre><code>Context field narrowed to Modules.OrganisationSetup only.
+</code></pre>
+
+<p>OrganisationSetUp</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:57</p>
+
+<p>Extend</p>
+
+<pre><code>Narrowed; stray loose types still reached get their own StrayLooseServices constant and list.
+</code></pre>
+
+<p>Organisation set-up</p>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:63</p>
+
+<p>Extend</p>
+
+<pre><code>Existing architecture document brought to current: set-up packaged in Modules/OrganisationSetup.
+</code></pre>
+
+<p>Organisation set-up</p>
+
+<p>ARCHITECTURE.md:90</p>
+
+<p>Extend</p>
+
+<pre><code>Existing architecture document brought to current: set-up packaged in Modules/OrganisationSetup.
+</code></pre>
+
+<p>Organisation set-up</p>
+
+<p>docs/feature/epic-6264-modular-monolith/feature-delta.md:197</p>
+
+<p>Extend</p>
+
+<pre><code>Existing architecture document brought to current: set-up packaged in Modules/OrganisationSetup.
+</code></pre>
+
+<p>Organisation set-up</p>
+
+<p>docs/feature/epic-6264-modular-monolith/slices/slice-45-s03i-package-organisation-set-up.md:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing architecture document brought to current: set-up packaged in Modules/OrganisationSetup.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:57</p>
+
+<p>Changed</p>
+
+<pre><code>OrganisationSetUp narrowed; stray loose types still reached move to StrayLooseServices with their own list; no loosening.
+</code></pre>
+
+<p>docs</p>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:62</p>
+
+<p>Changed</p>
+
+<pre><code>Row 62 packaged, row 63 note, line 289, Left open 845-851 brought to current; ARCHITECTURE.md section 4 row and rules bullet; catalogue and brief.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:34</p>
+
+<p>Changed</p>
+
+<pre><code>Context field narrowed; S1 widening removed.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs:26</p>
+
+<p>Changed</p>
+
+<pre><code>Context field narrowed; S1 widening removed.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs:12</p>
+
+<p>Changed</p>
+
+<pre><code>Context field narrowed; S1 widening removed.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:25</p>
+
+<p>Changed</p>
+
+<pre><code>Context field narrowed; S1 widening removed.
+</code></pre>
+
+<p>docs</p>
+
+<p>ARCHITECTURE.md:90</p>
+
+<p>Changed</p>
+
+<pre><code>Prose updated to show set-up packaged; reviewed, no test.
+</code></pre>
+
+<p>docs</p>
+
+<p>docs/feature/epic-6264-modular-monolith/feature-delta.md:197</p>
+
+<p>Changed</p>
+
+<pre><code>Prose updated to show set-up packaged; reviewed, no test.
+</code></pre>
+
+<p>docs</p>
+
+<p>docs/feature/epic-6264-modular-monolith/slices/slice-45-s03i-package-organisation-set-up.md:1</p>
+
+<p>Changed</p>
+
+<pre><code>Prose updated to show set-up packaged; reviewed, no test.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>Narrowing rule fields and updating documents; no preserving move precedes them.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L6</h6>
+
+<pre><code>No Context field matches an old subject of a moved type and no test-project literal names an old full name or path of the 27, outside the exact self-exclusion list.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>OrganisationSetupRulesNameOnlyTheModuleArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Each Context field of the S1 declarations
+</code></pre>
+
+<pre><code>Each S1 rename-list literal
+</code></pre>
+
+<pre><code>Exclusion list equals the named paths and each exists
+</code></pre>
+
+<pre><code>Finite fields and files of the test project.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T6</h6>
+
+<pre><code>Rules name Organisation set-up by Modules.OrganisationSetup only.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupRulesNameOnlyTheModuleArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupRulesNameOnlyTheModuleArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h2>ADRs</h2>
+
+<p>None.</p>
+
+</body></html>
