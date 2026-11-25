@@ -90,6 +90,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
                 }
                 """;
 
+            private static readonly DateTime TheDayOfTheRefresh = new(2026, 11, 25, 0, 0, 0, DateTimeKind.Utc);
             private static readonly JsonSerializerOptions AsTheRouteReadsIt = new() { PropertyNameCaseInsensitive = true };
 
             private readonly JsonObject settings = JsonNode.Parse(TheSettingsOfAnOlderClient)!.AsObject();
@@ -186,15 +187,15 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
                 using (Assert.EnterMultipleScope())
                 {
                     Assert.That(refreshed.FeatureWork.Sum(work => work.RemainingWorkItems), Is.EqualTo(childWorkItems),
-                        $"Feature G should show its real {childWorkItems} remaining Work Items, because with default sizing off no default size replaces a real child count. Let the override-state rule select no Feature while the switch is off.");
+                        $"Feature {TheFeatureReference} should show its real {childWorkItems} remaining Work Items, because with default sizing off no default size replaces a real child count. Make the override-state rule select no Feature while the switch is off, so the real work stays.");
                     Assert.That(refreshed.FeatureWork.Sum(work => work.TotalWorkItems), Is.EqualTo(childWorkItems),
-                        $"Feature G should have a total of {childWorkItems}, because its Team keeps the work its child Work Items really hold.");
+                        $"Feature {TheFeatureReference} should have a total of {childWorkItems}, because its Team keeps the work its child Work Items really hold. Do not clear that work while the switch is off.");
                     Assert.That(refreshed.Teams.Count(), Is.EqualTo(1),
-                        "Only the Team that owns the child Work Items should carry work for Feature G, because no default is spread across Teams.");
+                        $"Only the Team that owns the child Work Items should carry work for Feature {TheFeatureReference}, because no default is spread across Teams. Leave the real work with its Team and add no other.");
                     Assert.That(refreshed.IsUsingDefaultFeatureSize, Is.False,
-                        "Feature G should not be flagged as sized by the default, because no default was applied to it.");
+                        $"Feature {TheFeatureReference} should not be flagged as sized by the default, because no default was applied to it. Apply no default while the switch is off.");
                     Assert.That(refreshed.Size, Is.EqualTo(childWorkItems),
-                        $"Feature G should have size {childWorkItems}, because that is its real child count.");
+                        $"Feature {TheFeatureReference} should have size {childWorkItems}, because that is its real child count. Size it from its real child Work Items.");
                 }
             }
 
@@ -205,9 +206,9 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
                 using (Assert.EnterMultipleScope())
                 {
                     Assert.That(refreshed.FeatureWork.Sum(work => work.RemainingWorkItems), Is.EqualTo(defaultSize),
-                        $"Feature G should show the default size of {defaultSize}, because with default sizing on a Feature in an override state is re-sized as today.");
+                        $"Feature {TheFeatureReference} should show the default size of {defaultSize}, because with default sizing on a Feature in an override state is re-sized as today. Keep applying the override rule while the switch is on.");
                     Assert.That(refreshed.IsUsingDefaultFeatureSize, Is.True,
-                        "Feature G should be flagged as sized by the default, because that flag drives the warning that the count is an assumption.");
+                        $"Feature {TheFeatureReference} should be flagged as sized by the default, because that flag drives the warning that the count is an assumption. Keep flagging it while the switch is on.");
                 }
             }
 
@@ -226,7 +227,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
                 var ocean = new Portfolio { Id = 100, Name = "Ocean" };
                 ocean.WorkItemTypes.Add("Feature");
                 ocean.WorkTrackingSystemConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira };
-                ocean.UpdateTime = DateTime.UtcNow;
+                ocean.UpdateTime = TheDayOfTheRefresh;
                 return ocean;
             }
         }

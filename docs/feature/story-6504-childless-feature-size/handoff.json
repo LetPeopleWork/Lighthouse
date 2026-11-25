@@ -131,20 +131,7 @@
 "disposition": {
 "kind": "Tested",
 "obligations": [
-"L1/F106",
-"L1/F107",
-"L1/F108",
-"L1/F109",
-"L1/F110",
-"L2/F113",
-"L2/F114",
-"L2/F115",
-"L3/F118",
-"L3/F119",
-"L3/F120",
-"L3/F121",
-"L3/F122",
-"L4/F125"
+"L1/F108"
 ],
 "still_passes_if": "F356",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingOverrideStatesTest.cs::A_Feature_in_an_override_state_keeps_its_real_child_count_while_default_sizing_is_off"
@@ -160,7 +147,7 @@
 "disposition": {
 "kind": "Tested",
 "obligations": [
-"L1/F106"
+"L2/F115"
 ],
 "still_passes_if": "F360",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingOverrideStatesTest.cs::A_Feature_in_an_override_state_with_one_child_is_still_sized_by_the_default_while_default_sizing_is_on"

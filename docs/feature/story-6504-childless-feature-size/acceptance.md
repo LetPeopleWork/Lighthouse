@@ -255,19 +255,6 @@ An override rule that ignores the switch but only differs when real count is bel
 ###### Obligations
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 ##### Covers
 
 P6
