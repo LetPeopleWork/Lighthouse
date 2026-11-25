@@ -53,7 +53,7 @@ Existing Portfolios keep their value and forecasts do not move
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Data\/NewPortfolioStartingValueTest\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/DefaultFeatureSizing\/NewPortfolioStartingValueTest\.cs
 
 ```text
 A save without the field flips the stored value
@@ -184,7 +184,7 @@ P3
 P5
 
 ```text
-A Portfolio is created without naming the switch, naming on and naming off, and clones of an on and an off Portfolio are created, on real SQLite saved and reloaded
+A Portfolio is created through the create route without naming the switch, naming on and naming off, and clones of an on and an off Portfolio are created, on real SQLite saved and reloaded
 ```
 
 ```text
@@ -199,10 +199,10 @@ API, Clients and clone behave as promised
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Data\/NewPortfolioStartingValueTest\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/DefaultFeatureSizing\/NewPortfolioStartingValueTest\.cs
 
 ```text
-Absent is stored on by the column default, or an explicit true is stored off
+Absent is stored on by the column default or the route, or an explicit true is stored off
 ```
 
 ###### Obligations

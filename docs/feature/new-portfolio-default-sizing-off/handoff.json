@@ -27,7 +27,7 @@
 "L1/F122"
 ],
 "still_passes_if": "F175",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Data/NewPortfolioStartingValueTest.cs"
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DefaultFeatureSizing/NewPortfolioStartingValueTest.cs"
 },
 "expected": "F173",
 "stimulus": "F172",
@@ -109,11 +109,11 @@
 "L1/F120",
 "L1/F121"
 ],
-"still_passes_if": "F195",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Data/NewPortfolioStartingValueTest.cs"
+"still_passes_if": "F197",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DefaultFeatureSizing/NewPortfolioStartingValueTest.cs"
 },
 "expected": "F193",
-"stimulus": "F192",
+"stimulus": "F196",
 "user_result": "F194"
 }
 ]
@@ -122,7 +122,7 @@
 "C": 1,
 "D": 11,
 "E": 7,
-"F": 195,
+"F": 197,
 "K": 5,
 "L": 2,
 "P": 7,
@@ -800,10 +800,10 @@
 "F19": "the clone has the switch on; and a clone of a Portfolio with the switch off has it off",
 "F190": "Features without child Work Items show no inferred size in a new Portfolio",
 "F191": "The switch reads off but the refresh still applies the Default Feature Size",
-"F192": "A Portfolio is created without naming the switch, naming on and naming off, and clones of an on and an off Portfolio are created, on real SQLite saved and reloaded",
 "F193": "Absent gives off, named values are kept and clones copy the source value",
 "F194": "API, Clients and clone behave as promised",
-"F195": "Absent is stored on by the column default, or an explicit true is stored off",
+"F196": "A Portfolio is created through the create route without naming the switch, naming on and naming off, and clones of an on and an off Portfolio are created, on real SQLite saved and reloaded",
+"F197": "Absent is stored on by the column default or the route, or an explicit true is stored off",
 "F2": "A person who creates a Portfolio sees Features without child Work Items counted as 0, not as an inferred guess, unless they switch default Feature sizing on.",
 "F20": "A person can switch Default Feature sizing on for a new Portfolio",
 "F21": "a new Portfolio has the switch off",

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Data;
@@ -7,11 +8,17 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Update;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Lighthouse.Backend.Tests.TestDoubles;
 
-namespace Lighthouse.Backend.Tests
+namespace Lighthouse.Backend.Tests.Acceptance.DefaultFeatureSizing
 {
     /// <summary>
     /// What default Feature sizing holds for a Portfolio once it is stored and read back, on the real SQLite
@@ -165,15 +172,25 @@ namespace Lighthouse.Backend.Tests
             {
                 using var scope = harness.NewScope();
                 var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-                var repository = new PortfolioRepository(context, NullLogger<PortfolioRepository>.Instance);
-
                 payload["workTrackingSystemConnectionId"] = ConnectionIn(context);
-                var newPortfolio = new Portfolio();
-                newPortfolio.SyncWithPortfolioSettings(Read(payload), Mock.Of<IRepository<Team>>());
+                var connections = new WorkTrackingSystemConnectionRepository(context, NullLogger<WorkTrackingSystemConnectionRepository>.Instance);
+                var controller = new PortfoliosController(
+                    new PortfolioRepository(context, NullLogger<PortfolioRepository>.Instance),
+                    new TeamRepository(context, NullLogger<TeamRepository>.Instance),
+                    Mock.Of<IPortfolioUpdater>(),
+                    Mock.Of<IWorkTrackingConnectorFactory>(),
+                    connections,
+                    Mock.Of<IRbacAdministrationService>(),
+                    FeatureOrderingTestHelper.FollowingTheTracker(),
+                    new FakeLighthouseClock(TestToday.FrozenNow),
+                    new OwnerSettingRefusals(connections, Mock.Of<ITerminologyService>()));
 
-                repository.Add(newPortfolio);
-                await repository.Save();
-                return newPortfolio.Id;
+                var response = await controller.CreatePortfolio(Read(payload));
+
+                var created = (response.Result as OkObjectResult)?.Value as PortfolioSettingDto;
+                Assert.That(created, Is.Not.Null,
+                    $"The create route should answer with the created settings, but answered {response.Result}. Accept a payload that names no switch.");
+                return created!.Id;
             }
 
             private int ConnectionIn(LighthouseAppContext context)

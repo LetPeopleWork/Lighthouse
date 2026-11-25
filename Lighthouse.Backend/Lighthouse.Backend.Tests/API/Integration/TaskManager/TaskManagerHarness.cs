@@ -267,6 +267,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             {
                 Name = name,
                 WorkTrackingSystemConnection = sp.GetRequiredService<IRepository<WorkTrackingSystemConnection>>().GetById(connectionId)!,
+                InfersDefaultFeatureSize = true,
                 DoneItemsCutoffDays = 365,
                 DataRetrievalValue = "project = TEST",
                 WorkItemTypes = ["Epic"],
