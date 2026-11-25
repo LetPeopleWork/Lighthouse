@@ -95,3 +95,8 @@ Authority: `architecture.md` (rendered from `handoff.json`), Quint model and rec
 
 - **Platform risk:** none. One additive NOT NULL DEFAULT true column on Portfolios (expand-only, `Create-Migration.ps1` for every provider); no new service, configuration, port, secret or CI change.
 - **Usage-data event:** `DefaultFeatureSizingSwitchedOff = 29`, name-only, no properties. The frontend sends it once when a Portfolio settings save that changes the switch from on to off is accepted; not on switching on, on saving an unchanged off, or on create. It counts how many Portfolios actually opt out of default sizing, the outcome this Story exists for. S1 emits it and adds the catalog row to `docs/settings/usagedata.md` ("Nothing. Not which Portfolio, not how many Features, not whose").
+
+## DELIVER notes (AFK)
+
+- **Oracle folders:** the S1 and S2 oracles live in `Lighthouse.Backend.Tests/Modules/WorkItems/Application/` as siblings, not under `Tests/Acceptance/<feature>/`: both drive `IWorkItemService.UpdateFeaturesForPortfolio` with the existing `WorkItemServiceTestBuilder` style of that folder. Retained as a non-blocking review note for the final review.
+- **S1 slice review blocker** (override rule still active while the switch is off, with its control greyed out) is resolved by S2, whose oracle fails before and passes after; nothing is pushed between slices.
