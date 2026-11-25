@@ -14,10 +14,10 @@
 > features (Epic 6455 "deeper hierarchies" first). They are **not** refactoring work: no packaging Story builds
 > Signals, the promise lifecycle events, levels above the Feature, or organisation-wide defaults for SLE and staleness.
 >
-> **Moved so far (2026-11-24):** Flow metrics, by the pilot Story 6358, Forecasting, by Story 6361, Work Items,
-> by Story 6360, Tracker integration, by Story 6359, Promises, by Story 6362, Access and Licensing, by Story 6363, and Refinement (its leaf form), by Story 6365.
+> **Moved so far (2026-11-25):** Flow metrics, by the pilot Story 6358, Forecasting, by Story 6361, Work Items,
+> by Story 6360, Tracker integration, by Story 6359, Promises, by Story 6362, Access and Licensing, by Story 6363, Refinement (its leaf form), by Story 6365, and Reports, by Story 6366.
 > The platform lane, which is not a context, was packaged on 2026-11-24 by Story 6364 (see the row *(Platform lane)*).
-> For these eight contexts this ADR describes today's code, apart from what is still marked target only (per-level granularity, forecasts composed over
+> For these nine contexts this ADR describes today's code, apart from what is still marked target only (per-level granularity, forecasts composed over
 > more than one level above the leaf, the leaf unit's capacity inputs in Forecasting's own extension, the Team and
 > Portfolio refresh pipelines that still sit in the update code, and the entities, events and DTOs that stay in `Models`
 > and `API/DTO`). Every other context is still where §4 places it.
@@ -68,7 +68,7 @@ set-up, the Deliveries go to Promises. RBAC/Identity splits into Access and Lice
 | **Promises** | **core** | A promise is a target date someone committed to for a set of items on one level, compared against the forecast, with a history of how it ended (kept, missed, renegotiated by moving the target or cutting scope). It includes planning: deciding what fits before committing ("what can we promise by the end of the PI?"). In the user's language one promise is a **Delivery**. A Delivery holds items of the level it hangs off; today's Deliveries are this rule on the Feature level. | Deliveries, their rules, sources (Jira Releases), notes, closure pins and metric snapshots | The Delivery half of Portfolio/Delivery | **Packaged** in `Modules/Promises` by Story 6362 (2026-11-17): the Delivery rule service, the source resolver and its preview, the source sync, forecast publishing, the forecast block and its renderer, the metric-values projector, and the two reactions to "forecasts updated" (snapshot recording, forecast publishing). Its entities (`Delivery`, `DeliveryClosureRecord`, `DeliveryMetricSnapshot`, `DeliveryNote`), the kernel Delivery types, the source types the connector port reads and its wire DTOs still sit in `Models` and `API/DTO`; only the forecast block's two types moved. Delivery persistence (the two repositories and `RecordableDeliveries`) stays with the platform repositories until S05d; the Portfolio refresh still calls the rule and sync services inline until Epic 6474 slice 12. Promise lifecycle events and Deliveries on levels above the Feature are **target only** |
 | **Signals** | supporting | Turns state into attention: red, amber and green on two levels, the health of a unit or level (for example how many of its items are blocked or stale) and the promise (a Feature's or Delivery's likelihood of hitting its date). It owns thresholds, the current state and the history of when a signal changed, and it suggests when a promise should be renegotiated. One context so that the threshold-and-history mechanism is built once, not twice in Metrics and Promises. | Signal thresholds, current states, change history | None | **Target only.** Nothing to package; SLE risk stays in Flow metrics until the first Signals feature |
 | **Refinement** | supporting | At the leaf, a way of working: which Work Items are in refinement, how many more the Team needs, sizing votes and stages. On levels above the leaf a different form may come, sizing items approximately for reference-class forecasting, where it would feed Forecasting. | The Refinement settings, the sizing log, stage resolution, the need band | Refinement | **Packaged** in `Modules/Refinement` by Story 6365 (2026-11-24), in its leaf form: `NeedBand` in `Domain`; the list, view query, need calculator, calendars, resolution, stage rules, SLE yardstick, voter identity, the sizing log commands and refusal, and their three ports in `Application`. Its entities, the sizing-log repository pair and its wire DTOs still sit in `Models`, `Services` and `API/DTO`, and the controllers stay in `API`. Refinement above the leaf is target |
-| **Reports** | supporting | Turns live numbers into a frozen record for others. Then & Now is the first report type; more follow (metric charts, signals). It conforms to Flow metrics for numbers and is the outbound channel to people outside Lighthouse (PDF export today; scheduled delivery in future). | Reports and their frozen windows (Then), templates, the metric catalog | Reports | **Packaged**; scheduled delivery and further report types are target |
+| **Reports** | supporting | Turns live numbers into a frozen record for others. Then & Now is the first report type; more follow (metric charts, signals). It conforms to Flow metrics for numbers and is the outbound channel to people outside Lighthouse (PDF export today; scheduled delivery in future). | Reports and their frozen windows (Then), templates, the metric catalog | Reports | **Packaged** in `Modules/Reports` by Story 6366 (2026-11-25): `ReportCapPolicy`, `ReportSeriesReading` and `ReportWindowPolicy` in `Domain`; the queries, commands, bulk commands and remover, the Then & Now template, the owner lookup, the two series and their eleven ports in `Application`; the metric catalog and its metrics in `Application/Metrics`. The `Report` entity, its payload and read models (`Models/Reports`), `ReportRepository` and the three controllers still sit in `Models`, `Services` and `API`. Scheduled delivery and further report types are target |
 | **Access** | generic | Who may do what: organisation-wide roles (System Admin, broad readers, Admin on all) plus membership per unit. It follows the units that exist and has no story of its own beyond that. *Not allowed* is Access; *not relevant* (which level a person sees by default) is not. | Users, roles, unit memberships, IdP group mappings, API keys, embed sessions | RBAC / Identity (minus licensing) | **Packaged** in `Modules/Access` by Story 6363 (2026-11-22): RBAC administration, the current user's profile, API keys, embed sessions, the OIDC group snapshot writer, the auth mode resolver and configuration validator, Feature move authorization, and the ASP.NET guards, markers and authentication handlers in `Adapters/Http`. Its entities, the types the controllers read or return, the six repositories, the two seeders and the controllers still sit in `Models`, `Services`, `Seeding` and `API`; only four small value types of `Models` moved. Membership per unit on any level is target |
 | **Licensing** | generic | Whether Premium is available and how many units the free tier allows, published as facts the others react to: licence loaded, licence in its last 30 days, licence expired. | The licence, its verification, the free-tier limits | RBAC / Identity (`Services.*.Licensing`, the premium gate), as ARCHITECTURE.md §4 and the `Services.Implementation.Licensing` namespace show. The board's "inside Platform" was a slip | **Packaged** (small) in `Modules/Licensing` by Story 6363 (2026-11-22): the licence service and verifier with their ports, the public key beside the verifier, and the licence guard attribute in `Adapters/Http`. The licence entity and its DTOs stay in `Models` and `API/DTO`. The three licence events are **target**; today all three facts are derived on read |
 | *(Platform lane)* | **not a context** | Composition-root infrastructure below the domain: the encryption key ring, backups and restore, demo data, version update, log level, usage-data consent and forwarding, start-up housekeeping, the `DbContext` and database management, the domain-event dispatcher, the update queue's mechanics, health and graceful shutdown. No user names any of it as part of the story. | The infrastructure the contexts run on | Platform / Persistence, and the host band | **Packaged** in `Lighthouse.Backend.Platform.<Area>` by Story 6364 (2026-11-24), still part of the composition root and not a context. Eleven areas, no layers: `Encryption`, `DatabaseManagement`, `DemoData`, `Seeding`, `Persistence` (the race-tolerant save), `UsageData`, `Logging`, `Releases`, `DomainEvents`, `Host` (the host facilities) and `UpdateQueue` (the queue's mechanics only). The lane has its own direction rules R-PL1 to R-PL4 and a placement rule (see "Edges measured by packaging the platform lane"). Still outside it, each with a named owner: `Data` and its migrations, every repository, the Team and Portfolio update pipelines (`TeamUpdater`, `PortfolioUpdater`, `UpdateServiceBase<T>`), the context seeders and the Organisation set-up files such as `AppSettingService` |
@@ -523,12 +523,51 @@ What the Story changed in the neighbours' rules and checks:
 
 - No rule constant or string literal in the test project still names Refinement by its former `Services` place, and no
   `Modules.Refinement` alternative matches a look-alike namespace (`RefinementRulesNameOnlyTheModuleArchUnitTest`, and the
-  look-alike check in the module's rule class). Reports, which has not moved, keeps its `Services` alternative in the Access,
-  Licensing and Tracker integration lists.
+  look-alike check in the module's rule class). Reports, which had not moved yet, kept its `Services` alternative in the Access,
+  Licensing and Tracker integration lists; Story 6366 dropped it (see below).
 - The unit tests of the moved types sit under `Tests/Modules/Refinement/{Domain,Application}`; the tests that stay in place
   (the sizing-log repository test, the controller and acceptance tests) are named with their owner.
 - `RefinementModuleArchUnitTest` keeps its own guards (stateless services, the read path, the append-only sizing log), which
   the layer and edge rules do not cover.
+
+### Edges measured by packaging Reports (2026-11-25)
+
+Story 6366 moved 36 Reports types out of `Services/{Interfaces,Implementation}/Reports` into `Modules/Reports`, decided
+per type from the compiled code: a type whose edges reach only the kernel, the .NET base library and other Reports
+`Domain` types went to `Domain` (`ReportCapPolicy`, `ReportSeriesReading`, `ReportWindowPolicy`); the metrics went to
+`Application/Metrics`; every other type, the ports beside their use cases, went to `Application`. Each of the 31 moved
+production files is identical to its old self apart from its namespace and `using` lines. `Models/Reports` (7 types) and
+`ReportRepository` stay where they are. The rule patterns were widened to the new namespace before the move, kept their
+verdicts through it under a preservation law, and were narrowed to `Modules.Reports` alone after it. The module's own
+rules sit in `Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs`, on `ModuleRules`, with a
+falsifier per rule and per list position.
+
+| Rule | What it allows | Baseline (outside types, or edges) |
+|---|---|---|
+| R-RP1, layout | Every listed Reports type lives in its layer, and none is left under `Services` | 36 types: `Domain` 3 (`ReportCapPolicy`, `ReportSeriesReading`, `ReportWindowPolicy`), `Application` 25, `Application.Metrics` 8 |
+| R-RP2, Domain outbound | `Domain` reaches only the kernel and the .NET base library | empty |
+| R-RP3, Domain inbound | Outside types reach `Domain` only from `API`, the composition root and Reports' `Application` | empty |
+| R-RP4, Application inbound | Outside types reach `Application` only from `API`, the composition root and the listed type | 1: `ReportRepository` (it implements `IReportReader` and `IReportWriter`) |
+| R-RP5, forbidden code | `Application` reaches no EF Core, `Data`, `API`, module `Adapters`, Tracker integration, Access or update code, except the listed EF Core edges | 3 edges: `ReportBulkCommands` to `DbUpdateException`; `ReportBulkRemover` to `DbUpdateException` and `DbUpdateConcurrencyException`. The third sits in a `catch` clause and became visible when the IL reader learned to read catch clauses during this Story |
+| R-RP6, listed edges | `Application` reaches Flow metrics' `Domain`, Licensing, Organisation set-up data and the platform only through one inline list, by full type name, compared both ways; Flow metrics' `Application` is legal | 12 edges: `DailySeriesSummary` to `PercentileCalculator`; `ReportCommands` and `ReportQueries` to `ILicenseService`; `PortfolioReportMetricSeries`, `ReportOwnerLookup` and `TeamReportMetricSeries` to `IRepository<T>`; and `ILighthouseClock` from `PortfolioReportMetricSeries`, `ReportBulkCommands`, `ReportCommands`, `ReportQueries`, `TeamReportMetricSeries` and `ThenAndNowTemplate` |
+
+What the Story changed in the neighbours' rules and checks:
+
+- Every rule names Reports by `Modules.Reports` alone; no rule constant or string literal in the test project still names
+  Reports by its former `Services` place, and no alternative matches a look-alike namespace
+  (`ReportsRulesNameOnlyTheModuleArchUnitTest`).
+- The joint Tracker integration pattern drops Reports from its `Services` alternative, but keeps Auth, Authorization and
+  Licensing there. This was a host decision in AFK mode, because two rows of the Access and Licensing rules demand that
+  a Tracker integration type reaching the old places is still caught. Keeping them loosens nothing; revisit it if the old
+  places are confirmed empty for good.
+- The IL reader now sees the types named in `catch` clauses. Before, an edge that exists only in a `catch` was invisible
+  to every rule that reads the IL.
+- The unit tests of the moved types sit under `Tests/Modules/Reports/{Domain,Application,Application/Metrics}`; the tests
+  that stay in place (the acceptance and host tests, the controller tests, the repository test) are named with their owner.
+- The `ThenAndNowTemplate` logger category now carries the new namespace, so a log filter on the old category name no
+  longer matches.
+- `ReportsModuleArchUnitTest` keeps its own guards (the read and write ports, only the composition root names the
+  repository), which the layer and edge rules do not cover.
 
 ### Ratchet candidates
 

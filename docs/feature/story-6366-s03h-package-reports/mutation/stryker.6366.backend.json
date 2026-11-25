@@ -1,0 +1,18 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Modules/Reports/Domain/**/*.cs",
+      "**/Modules/Reports/Application/**/*.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Lighthouse.Backend.Tests.Modules.Reports|FullyQualifiedName~Tests.API.Integration.Reports|FullyQualifiedName~Tests.Acceptance.BaselineReportCreation|FullyQualifiedName~Tests.API.ReportsControllerTest|FullyQualifiedName~Tests.API.TeamReportsControllerTest|FullyQualifiedName~Tests.API.ReportOwnerWriteAccessTest|FullyQualifiedName~ReportRepositoryTest)&FullyQualifiedName!~Slice01TeamReportScenarios&FullyQualifiedName!~Slice02ThenInThePastScenarios&FullyQualifiedName!~Slice04ThroughputAndShownMetricsScenarios&FullyQualifiedName!~Slice05WipAndWorkItemAgeScenarios&FullyQualifiedName!~Slice05bCycleTime95thScenarios&FullyQualifiedName!~Slice06PortfolioReportScenarios&FullyQualifiedName!~Slice07NowLengthScenarios&FullyQualifiedName!~Slice08DeleteAndCommunityCapScenarios&FullyQualifiedName!~Slice10EditReportScenarios&FullyQualifiedName!~ReportsWithoutSignInScenarios&FullyQualifiedName!~ReportCreationTimingProbe&FullyQualifiedName!~BulkReports&FullyQualifiedName!~CreateForSeveralTeamsScenarios&FullyQualifiedName!~EveryReportInOnePlaceScenarios&FullyQualifiedName!~PortfoliosJoinTheSelectionScenarios&FullyQualifiedName!~RemoveReportsInBulkScenarios&FullyQualifiedName!~ChangesDuringABulkRun&FullyQualifiedName!~Dogfood&FullyQualifiedName!~WriteBack&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 6,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
