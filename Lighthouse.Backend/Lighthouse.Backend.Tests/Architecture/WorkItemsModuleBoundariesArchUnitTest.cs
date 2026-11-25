@@ -5,6 +5,7 @@ using Lighthouse.Backend.Modules.WorkItemsFixtures.Boundaries.Services;
 using Lighthouse.Backend.Modules.WorkItemsFixtures.BoundariesOutbound.HoldingADbSet.Application;
 using Lighthouse.Backend.Modules.WorkItemsFixtures.BoundariesOutbound.ListedFlowMetricsQuery.Application;
 using Lighthouse.Backend.Modules.WorkItemsFixtures.BoundariesOutbound.ReachingAnUnlistedFlowMetricsType.Application;
+using Lighthouse.Backend.Modules.WorkItemsFixtures.BoundariesOutbound.ReachingSetUpAndALooseService.Application;
 using Lighthouse.Backend.Modules.WorkItemsFixtures.BoundariesOutbound.ReadingASecondLicenceType.Application;
 using Lighthouse.Backend.Modules.WorkItemsFixtures.BoundariesOutbound.ReadingTheDataLayer.Application;
 using Lighthouse.Backend.Modules.WorkItemsFixtures.BoundariesOutbound.ShapingAnApiType.Application;
@@ -142,25 +143,26 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Modules.FlowMetrics.Domain.PercentileCalculator",
         ];
 
-        // Organisation set-up has no namespace of its own yet: Feature ordering sits in the top-level Services namespaces with the
-        // settings and the clock, so their edges are listed here too. The list names every edge into these services; an entry
-        // goes when its target moves into a module.
+        // Work Items builds on Organisation set-up, so its edges into set-up's Application and Domain are legal and not listed;
+        // the services still in the loose Services namespaces and the platform's clock and update queue are listed until they move.
         private static readonly string[] EdgesOfTheApplicationIntoAccessLicensingOrganisationSetUpAndTheUpdateQueue =
         [
             "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService",
             "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.FeatureDependencyRendering -> Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService",
             "Lighthouse.Backend.Modules.WorkItems.Application.Policies.PortfolioDeletedOrphanedFeatureCleanupHandler -> Lighthouse.Backend.Services.Interfaces.IOrphanedFeatureCleanupService",
-            "Lighthouse.Backend.Modules.WorkItems.Application.RefreshLogService -> Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Platform.UpdateQueue.UpdateCancellationContext",
-            "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Modules.OrganisationSetup.Application.IFeatureOrdering",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
         ];
 
         private static readonly string TheLayersBelowTheApplication =
             $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{AnyModuleAdapters})";
 
-        private static readonly string AccessLicensingOrganisationSetUpAndTheUpdateQueue =
-            $"(?:{AccessAndLicensing})|(?:{OrganisationSetUp})|(?:{KernelRules.TheUpdateQueue})";
+        // Properties, not fields: they deliberately stop reading set-up's new Application and Domain namespaces, which the
+        // namespace-move law would otherwise read as a rule losing sight of a moved type.
+        private static string SetUpOpenToTheContextsBuildingOnIt => @"Lighthouse\.Backend\.Modules\.OrganisationSetup\.(Application|Domain)(\.|$)";
+
+        private static string AccessLicensingOrganisationSetUpAndTheUpdateQueue =>
+            $"^(?!{SetUpOpenToTheContextsBuildingOnIt})(?:(?:{AccessAndLicensing})|(?:{OrganisationSetUp})|(?:{KernelRules.TheUpdateQueue}))";
 
         private static readonly string WorkItemsLegalCallers =
             $"(?:{ApplicationCoreRules.TheApi})|(?:{ModuleRules.FlowMetricsModule})|(?:{ModuleRules.ForecastingModule})|(?:{ModuleBoundariesArchUnitTest.RefinementPattern})|(?:{PromisesApplicationOutsideItsPolicies})";
@@ -193,6 +195,12 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static string PortfolioMetricsService => typeof(global::Lighthouse.Backend.Modules.FlowMetrics.Application.IPortfolioMetricsService).FullName!;
 
         private static string LicenceService => typeof(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService).FullName!;
+
+        private static string OrphanedFeatureCleanup => typeof(global::Lighthouse.Backend.Services.Interfaces.IOrphanedFeatureCleanupService).FullName!;
+
+        private static string SetUpSettings => typeof(global::Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService).FullName!;
+
+        private static string SetUpRecurrence => typeof(global::Lighthouse.Backend.Modules.OrganisationSetup.Domain.WeeklyRecurrence).FullName!;
 
         [OneTimeTearDown]
         public void DisposeModules()
@@ -318,6 +326,19 @@ namespace Lighthouse.Backend.Tests.Architecture
             var verdict = OutboundRule(target)(TestModule.Value, OutboundCase(offender), listed);
 
             ThenTheFailureNamesOnly(verdict.Check, $"Not on the list, and offending: {newEdge}. ", [], "the Application outbound rule");
+        }
+
+        [Test]
+        public void AWorkItemsApplicationTypeReachingSetUpAndALooseService_IsNamedForTheLooseServiceOnly()
+        {
+            var offender = typeof(AWorkItemServiceAskingSetUpAndTheOrphanCleanup);
+            var verdict = AccessLicensingOrganisationSetUpAndUpdateQueueOutboundRule(TestModule.Value, OutboundCase(offender), []);
+
+            ThenTheFailureNamesOnly(
+                verdict.Check,
+                $"Not on the list, and offending: {Edge(offender, OrphanedFeatureCleanup)}. ",
+                [Edge(offender, SetUpSettings), Edge(offender, SetUpRecurrence)],
+                "the Application outbound rule into Access, Licensing, Organisation set-up and the update queue");
         }
 
         [Test]
@@ -452,10 +473,11 @@ namespace Lighthouse.Backend.Tests.Architecture
                 application,
                 AccessLicensingOrganisationSetUpAndTheUpdateQueue,
                 listed,
-                $"Types in Work Items' Application, namespaces matching \"{application}\", should reach Access, Licensing, Organisation set-up and " +
-                $"the update queue, namespaces matching \"{AccessLicensingOrganisationSetUpAndTheUpdateQueue}\", only through the listed edges, " +
-                "because each of them is another context's decision: who may see what, what the licence allows, how Features are ordered, which " +
-                "settings and clock apply, and when an update stops. Every new edge spreads one of those decisions into Work Items. Ask where the edge already asks.");
+                $"Types in Work Items' Application, namespaces matching \"{application}\", should reach Access, Licensing, the services still in " +
+                $"the loose Services namespaces, set-up's adapters and the update queue, namespaces matching \"{AccessLicensingOrganisationSetUpAndTheUpdateQueue}\", " +
+                "only through the listed edges, because each of them is another context's decision: who may see what, what the licence allows, " +
+                "which clock applies, and when an update stops. Every new edge spreads one of those decisions into Work Items. Set-up's Application " +
+                "and Domain are open to Work Items, which builds on them: ask set-up there, or where the edge already asks.");
 
         private static KernelRuleVerdict PoliciesHoldOnlyHandlers(ModuleDefinition module, string policies)
         {
@@ -755,5 +777,17 @@ namespace Lighthouse.Backend.Modules.WorkItemsFixtures.BoundariesOutbound.Readin
         public static bool Asks(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService licence) => licence is not null;
 
         public static bool Verifies(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseVerifier verifier) => verifier is not null;
+    }
+}
+
+namespace Lighthouse.Backend.Modules.WorkItemsFixtures.BoundariesOutbound.ReachingSetUpAndALooseService.Application
+{
+    internal static class AWorkItemServiceAskingSetUpAndTheOrphanCleanup
+    {
+        public static bool Asks(global::Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService settings) => settings is not null;
+
+        public static DateOnly Recurs(DateOnly day) => global::Lighthouse.Backend.Modules.OrganisationSetup.Domain.WeeklyRecurrence.MondayOfWeek(day);
+
+        public static bool Cleans(global::Lighthouse.Backend.Services.Interfaces.IOrphanedFeatureCleanupService cleanup) => cleanup is not null;
     }
 }
