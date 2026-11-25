@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Models
 
         public int DefaultAmountOfWorkItemsPerFeature { get; set; } = 25;
 
-        public bool InfersDefaultFeatureSize { get; set; } = false;
+        public bool InfersDefaultFeatureSize { get; set; }
 
         public void StartOnConnection(WorkTrackingSystemConnection connection)
         {
