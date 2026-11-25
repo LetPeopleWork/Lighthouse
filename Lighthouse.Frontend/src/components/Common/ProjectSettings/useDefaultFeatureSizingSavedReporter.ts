@@ -1,11 +1,10 @@
 import { useCallback, useRef } from "react";
-import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
+import {
+	type IPortfolioSettings,
+	infersDefaultFeatureSize,
+} from "../../../models/Portfolio/PortfolioSettings";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
-
-// A Portfolio saved before the switch existed reads as on.
-const infersSize = (settings: IPortfolioSettings) =>
-	settings.infersDefaultFeatureSize ?? true;
 
 /**
  * Reports an accepted save that switches default Feature sizing from on to off.
@@ -19,7 +18,7 @@ export const useDefaultFeatureSizingSavedReporter = () => {
 
 	const settingsLoaded = useCallback(
 		<Settings extends IPortfolioSettings>(settings: Settings) => {
-			lastSavedInfers.current = infersSize(settings);
+			lastSavedInfers.current = infersDefaultFeatureSize(settings);
 			return settings;
 		},
 		[],
@@ -27,7 +26,7 @@ export const useDefaultFeatureSizingSavedReporter = () => {
 
 	const settingsSaved = useCallback(
 		(settings: IPortfolioSettings) => {
-			const infers = infersSize(settings);
+			const infers = infersDefaultFeatureSize(settings);
 			if (lastSavedInfers.current && !infers) {
 				reportUsage({
 					name: UsageDataEventName.DefaultFeatureSizingSwitchedOff,

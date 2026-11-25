@@ -24,3 +24,8 @@ export interface IPortfolioSettings extends IBaseSettings {
 	ignoreDependencies: boolean;
 	infersDefaultFeatureSize?: boolean;
 }
+
+/** A Portfolio saved before the switch existed has no value and reads as on. */
+export const infersDefaultFeatureSize = (
+	settings: IPortfolioSettings | null | undefined,
+): boolean => settings?.infersDefaultFeatureSize ?? true;

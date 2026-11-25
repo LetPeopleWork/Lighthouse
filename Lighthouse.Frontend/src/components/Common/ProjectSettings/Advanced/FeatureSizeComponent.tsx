@@ -5,6 +5,7 @@ import { useContext, useEffect, useState } from "react";
 import {
 	DEFAULT_PERCENTILE_HISTORY_DAYS,
 	type IPortfolioSettings,
+	infersDefaultFeatureSize,
 } from "../../../../models/Portfolio/PortfolioSettings";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking/AdditionalFieldDefinition";
@@ -40,7 +41,7 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
-	const infersSize = projectSettings?.infersDefaultFeatureSize ?? true;
+	const infersSize = infersDefaultFeatureSize(projectSettings);
 	const sizingOff = !infersSize;
 
 	useEffect(() => {
