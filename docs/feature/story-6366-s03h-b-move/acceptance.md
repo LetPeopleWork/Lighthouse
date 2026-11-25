@@ -91,6 +91,101 @@ A behaviour change inside a moved file, which the unchanged acceptance, integrat
 ###### Obligations
 
 
+### S2
+
+##### Covers
+
+P3
+
+```text
+Run the Reports unit-test placement check over the compiled test assembly and the source tree
+```
+
+```text
+Each of the 18 Reports unit tests is found by name in its layer namespace (2 Domain, 5 Metrics, 11 Application) and in the folder of that namespace; the old folder is empty; the module test folder holds only those 18; the port, host, wire-contract and repository tests stay where they are, outside the module namespace
+```
+
+```text
+The Reports unit tests sit beside the module they test, and the other Reports tests are untouched
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsUnitTestsBesideTheModuleArchUnitTest\.cs
+
+```text
+A class kept under the old folder or namespace while a copy sits in the module is not accepted; a test moved into the wrong layer, renamed, missing or a staying test moved is not accepted
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P4
+
+```text
+Run the same placement check, which only inspects where tests live, not their assertions
+```
+
+```text
+No staying acceptance, port, host, wire-contract or repository test is moved or lost, so their unchanged assertions keep running
+```
+
+```text
+Reports behaviour seen by users and clients is untouched
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsUnitTestsBesideTheModuleArchUnitTest\.cs
+
+```text
+Behaviour changes are not seen by this check; the unchanged Reports acceptance and wire tests and the full suite observe that
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Run the placement check of the 31 moved Reports production files (feature slice S1's oracle, preserved)
+```
+
+```text
+Production types sit in their module layer namespaces and folders, old production folders hold no moving file, the rename list is empty
+```
+
+```text
+Reports code lives in its module and behaviour is untouched
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsLivesInItsModuleArchUnitTest\.cs
+
+```text
+Pure placement: behaviour changes are seen by the unchanged acceptance and wire tests, not here
+```
+
+###### Obligations
+
+
+
+
+
+
+
 ## Expectations
 
 ### Rows

@@ -49,13 +49,69 @@
 "stimulus": "F148",
 "user_result": "F146"
 }
+],
+"S2": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2",
+"L2/F48"
+],
+"still_passes_if": "F154",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsUnitTestsBesideTheModuleArchUnitTest.cs"
+},
+"expected": "F152",
+"stimulus": "F151",
+"user_result": "F153"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F158",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsUnitTestsBesideTheModuleArchUnitTest.cs"
+},
+"expected": "F156",
+"stimulus": "F155",
+"user_result": "F157"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F40",
+"L1/F41",
+"L1/F42",
+"L1/F43",
+"L2/F46",
+"L2/F47"
+],
+"still_passes_if": "F162",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsLivesInItsModuleArchUnitTest.cs"
+},
+"expected": "F160",
+"stimulus": "F159",
+"user_result": "F161"
+}
 ]
 },
 "counters": {
 "C": 1,
 "D": 7,
 "E": 5,
-"F": 150,
+"F": 162,
 "K": 2,
 "L": 2,
 "P": 4,
@@ -1742,7 +1798,19 @@
 "F149": "ReportRepository, the stored models, controllers, owner-write access and DTOs stay in their namespaces; this test is only the staying-types proxy, while the unchanged Reports acceptance, integration and wire suites observe that routes, answers and the stored model are unchanged",
 "F15": "B2: the 18 Reports unit tests live in Tests/Modules/Reports/Domain, /Application and /Application/Metrics, namespace equal to folder, and the port, host, wire-contract and repository tests stay.",
 "F150": "A behaviour change inside a moved file, which the unchanged acceptance, integration and wire suites observe and not this test",
+"F151": "Run the Reports unit-test placement check over the compiled test assembly and the source tree",
+"F152": "Each of the 18 Reports unit tests is found by name in its layer namespace (2 Domain, 5 Metrics, 11 Application) and in the folder of that namespace; the old folder is empty; the module test folder holds only those 18; the port, host, wire-contract and repository tests stay where they are, outside the module namespace",
+"F153": "The Reports unit tests sit beside the module they test, and the other Reports tests are untouched",
+"F154": "A class kept under the old folder or namespace while a copy sits in the module is not accepted; a test moved into the wrong layer, renamed, missing or a staying test moved is not accepted",
+"F155": "Run the same placement check, which only inspects where tests live, not their assertions",
+"F156": "No staying acceptance, port, host, wire-contract or repository test is moved or lost, so their unchanged assertions keep running",
+"F157": "Reports behaviour seen by users and clients is untouched",
+"F158": "Behaviour changes are not seen by this check; the unchanged Reports acceptance and wire tests and the full suite observe that",
+"F159": "Run the placement check of the 31 moved Reports production files (feature slice S1's oracle, preserved)",
 "F16": "The Reports unit tests sit beside the module they test",
+"F160": "Production types sit in their module layer namespaces and folders, old production folders hold no moving file, the rename list is empty",
+"F161": "Reports code lives in its module and behaviour is untouched",
+"F162": "Pure placement: behaviour changes are seen by the unchanged acceptance and wire tests, not here",
 "F17": "Architecture rules probe with the Reports filter stays green after the move, so the layering rules that govern Reports still hold for a user of the build. Exact namespace and folder placement of each moved type is not shown by any admitted probe and is left to the whole-candidate review.",
 "F2": "Reports is packaged in Modules/Reports and nothing a user, a tracker or the database sees changes",
 "F20": "ef-model-unchanged shows the EF model is unchanged with no migration added by the move, so a user of the database sees no schema change.",
