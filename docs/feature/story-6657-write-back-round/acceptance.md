@@ -183,6 +183,186 @@ Only the old-name alternatives of the round pattern are exercised by these fixtu
 
 
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+The compiled code is read for the write-back round's eight types, the loose Services namespaces and the new Forecasting WriteBack namespace
+```
+
+```text
+Each type is found in Forecasting Application WriteBack only; a type left in Services, in both places, in the flat Application, or an extra type in the new namespace is named by its full name
+```
+
+```text
+The write-back round lives in Forecasting and nothing of it stays in the loose services
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRoundLivesInForecastingArchUnitTest\.cs\:\:EveryRoundTypeLivesInForecastingsWriteBackNamespaceAndNowhereElse
+
+```text
+A type moved to the flat Forecasting Application instead of WriteBack, or a ninth type added next to the round
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Made-up type sets are judged: one type still old, one in both places, one extra, one in the flat Application, one newcomer under Services, and a clean move
+```
+
+```text
+Exactly the offender is named for each wrong set and nothing is named for the clean one
+```
+
+```text
+A placement check that stays silent on a wrong move cannot pass
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRoundLivesInForecastingArchUnitTest\.cs\:\:ThePlacementCheckNamesEachWayTheMoveGoesWrong
+
+```text
+A check that names every type in every case, or none
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P2
+
+```text
+The test project's files are listed and the eight write-back unit-test files are looked up in the old and new test folders, and their namespace is read
+```
+
+```text
+All eight sit in the Forecasting Application WriteBack test folder, none in the old Services test folder, each declaring its folder's namespace
+```
+
+```text
+The round's unit tests sit beside the round
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRoundLivesInForecastingArchUnitTest\.cs\:\:TheEightRoundUnitTestFilesSitBesideTheirSubjectAndDeclareTheNamespaceOfTheirFolder
+
+```text
+A file moved but keeping the old test namespace is caught; a copy left in the old folder is caught
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Made-up project file lists are judged: a test file left in the old folder, in both, nowhere, and all in place
+```
+
+```text
+Exactly the left-behind or missing file is named; nothing for the clean list
+```
+
+```text
+A test file left behind cannot go unnoticed
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRoundLivesInForecastingArchUnitTest\.cs\:\:TheTestFileCheckNamesEachTestFileLeftBehind
+
+```text
+A check that only counts files
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Work Items' list of loose services it must not reach is matched against the round's old and new full names
+```
+
+```text
+The real list sees every new full name and no old one
+```
+
+```text
+Work Items stays barred from reaching the round after it moves to Forecasting
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRoundLivesInForecastingArchUnitTest\.cs\:\:WorkItemsStillRefusesTheRoundByItsNewFullNamesAndNoLongerNamesItsOldOnes
+
+```text
+Renaming only the implementation entries and leaving the three ports on the old place is caught (names each missing new name)
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A made-up Work Items list that names only the old round place is judged
+```
+
+```text
+Nine findings: the old name it still sees and the eight new names it does not
+```
+
+```text
+A Work Items check that finds nothing cannot pass
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRoundLivesInForecastingArchUnitTest\.cs\:\:TheWorkItemsCheckNamesARoundTypeItsListDoesNotSeeInItsNewPlace
+
+```text
+A check that returns no findings for any list
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

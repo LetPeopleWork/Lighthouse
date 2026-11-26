@@ -102,13 +102,115 @@
 "stimulus": "F197",
 "user_result": "F199"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4",
+"T4"
+],
+"still_passes_if": "F204",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::EveryRoundTypeLivesInForecastingsWriteBackNamespaceAndNowhereElse"
+},
+"expected": "F202",
+"stimulus": "F201",
+"user_result": "F203"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4",
+"L4/F169",
+"L4/F170",
+"L4/F171"
+],
+"still_passes_if": "F208",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::ThePlacementCheckNamesEachWayTheMoveGoesWrong"
+},
+"expected": "F206",
+"stimulus": "F205",
+"user_result": "F207"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T4"
+],
+"still_passes_if": "F212",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::TheEightRoundUnitTestFilesSitBesideTheirSubjectAndDeclareTheNamespaceOfTheirFolder"
+},
+"expected": "F210",
+"stimulus": "F209",
+"user_result": "F211"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4"
+],
+"still_passes_if": "F216",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::TheTestFileCheckNamesEachTestFileLeftBehind"
+},
+"expected": "F214",
+"stimulus": "F213",
+"user_result": "F215"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T4"
+],
+"still_passes_if": "F220",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::WorkItemsStillRefusesTheRoundByItsNewFullNamesAndNoLongerNamesItsOldOnes"
+},
+"expected": "F218",
+"stimulus": "F217",
+"user_result": "F219"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T4"
+],
+"still_passes_if": "F224",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::TheWorkItemsCheckNamesARoundTypeItsListDoesNotSeeInItsNewPlace"
+},
+"expected": "F222",
+"stimulus": "F221",
+"user_result": "F223"
+}
 ]
 },
 "counters": {
 "C": 1,
 "D": 19,
 "E": 3,
-"F": 200,
+"F": 224,
 "K": 6,
 "L": 4,
 "P": 3,
@@ -1948,8 +2050,32 @@
 "F2": "The last named exception of the Promises packaging leaves Services; the round sits inside the context that owns it, so S09a sees it there",
 "F20": "D-6 Tests move with production: the 8 unit-test files move in S2 to Tests/Modules/Forecasting/Application/WriteBack, namespace equals folder; RoundWriteBackDuringDatabaseMaintenanceTest stays with the update code unless S1 finds it constructs only round types. Acceptance, host and container tests stay; only their using lines change. Improve-the-tests-you-touch is waived for move-only and using-only edits.",
 "F200": "Only the old-name alternatives of the round pattern are exercised by these fixtures; the new place is covered by the falsifier row.",
+"F201": "The compiled code is read for the write-back round's eight types, the loose Services namespaces and the new Forecasting WriteBack namespace",
+"F202": "Each type is found in Forecasting Application WriteBack only; a type left in Services, in both places, in the flat Application, or an extra type in the new namespace is named by its full name",
+"F203": "The write-back round lives in Forecasting and nothing of it stays in the loose services",
+"F204": "A type moved to the flat Forecasting Application instead of WriteBack, or a ninth type added next to the round",
+"F205": "Made-up type sets are judged: one type still old, one in both places, one extra, one in the flat Application, one newcomer under Services, and a clean move",
+"F206": "Exactly the offender is named for each wrong set and nothing is named for the clean one",
+"F207": "A placement check that stays silent on a wrong move cannot pass",
+"F208": "A check that names every type in every case, or none",
+"F209": "The test project's files are listed and the eight write-back unit-test files are looked up in the old and new test folders, and their namespace is read",
 "F21": "D-7 Platform lane to Forecasting edges (UpdateQueueService and its nested HeldUpdate creating, handing over and flushing the round) are listed in Forecasting's inbound list, not in the platform lane's list, as DatabaseMaintenanceGate is in Flow metrics. Inverting the flush behind a queue-owned port is noted for S09a, not done here.",
+"F210": "All eight sit in the Forecasting Application WriteBack test folder, none in the old Services test folder, each declaring its folder's namespace",
+"F211": "The round's unit tests sit beside the round",
+"F212": "A file moved but keeping the old test namespace is caught; a copy left in the old folder is caught",
+"F213": "Made-up project file lists are judged: a test file left in the old folder, in both, nowhere, and all in place",
+"F214": "Exactly the left-behind or missing file is named; nothing for the clean list",
+"F215": "A test file left behind cannot go unnoticed",
+"F216": "A check that only counts files",
+"F217": "Work Items' list of loose services it must not reach is matched against the round's old and new full names",
+"F218": "The real list sees every new full name and no old one",
+"F219": "Work Items stays barred from reaching the round after it moves to Forecasting",
 "F22": "D-8 Update code to Forecasting edges are listed (TeamUpdater, UpdateServiceBase with its generic arity; PortfolioUpdater already listed); owner Epic 6474 slice 12.",
+"F220": "Renaming only the implementation entries and leaving the three ports on the old place is caught (names each missing new name)",
+"F221": "A made-up Work Items list that names only the old round place is judged",
+"F222": "Nine findings: the old name it still sees and the eight new names it does not",
+"F223": "A Work Items check that finds nothing cannot pass",
+"F224": "A check that returns no findings for any list",
 "F23": "D-9 Order: after Story 6468, before Story 6382 (S09a); the move does not wait for S09a. S1 first runs the three merged checks for 6365, 6366 and 6468 and stops if any fails.",
 "F24": "D-10 Commit per slice, moves in refactor(forecasting) commits apart from edits; push S1 to S3 together once all three are green, so the Program.cs change triggers one live connector run.",
 "F25": "D-11 Behaviour-free proof reuses the admitted probes: architecture-rules (all), ef-model-unchanged, backend-tests on the unchanged write-back acceptance and host test classes on both revisions, test-selection-show for Modules/Forecasting paths and Program.cs. No new compare command.",

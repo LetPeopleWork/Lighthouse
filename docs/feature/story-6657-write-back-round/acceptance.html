@@ -308,6 +308,162 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The compiled code is read for the write-back round&#x27;s eight types, the loose Services namespaces and the new Forecasting WriteBack namespace
+</code></pre>
+
+<pre><code>Each type is found in Forecasting Application WriteBack only; a type left in Services, in both places, in the flat Application, or an extra type in the new namespace is named by its full name
+</code></pre>
+
+<pre><code>The write-back round lives in Forecasting and nothing of it stays in the loose services
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::EveryRoundTypeLivesInForecastingsWriteBackNamespaceAndNowhereElse</p>
+
+<pre><code>A type moved to the flat Forecasting Application instead of WriteBack, or a ninth type added next to the round
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Made-up type sets are judged: one type still old, one in both places, one extra, one in the flat Application, one newcomer under Services, and a clean move
+</code></pre>
+
+<pre><code>Exactly the offender is named for each wrong set and nothing is named for the clean one
+</code></pre>
+
+<pre><code>A placement check that stays silent on a wrong move cannot pass
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::ThePlacementCheckNamesEachWayTheMoveGoesWrong</p>
+
+<pre><code>A check that names every type in every case, or none
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The test project&#x27;s files are listed and the eight write-back unit-test files are looked up in the old and new test folders, and their namespace is read
+</code></pre>
+
+<pre><code>All eight sit in the Forecasting Application WriteBack test folder, none in the old Services test folder, each declaring its folder&#x27;s namespace
+</code></pre>
+
+<pre><code>The round&#x27;s unit tests sit beside the round
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::TheEightRoundUnitTestFilesSitBesideTheirSubjectAndDeclareTheNamespaceOfTheirFolder</p>
+
+<pre><code>A file moved but keeping the old test namespace is caught; a copy left in the old folder is caught
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Made-up project file lists are judged: a test file left in the old folder, in both, nowhere, and all in place
+</code></pre>
+
+<pre><code>Exactly the left-behind or missing file is named; nothing for the clean list
+</code></pre>
+
+<pre><code>A test file left behind cannot go unnoticed
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::TheTestFileCheckNamesEachTestFileLeftBehind</p>
+
+<pre><code>A check that only counts files
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Work Items&#x27; list of loose services it must not reach is matched against the round&#x27;s old and new full names
+</code></pre>
+
+<pre><code>The real list sees every new full name and no old one
+</code></pre>
+
+<pre><code>Work Items stays barred from reaching the round after it moves to Forecasting
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::WorkItemsStillRefusesTheRoundByItsNewFullNamesAndNoLongerNamesItsOldOnes</p>
+
+<pre><code>Renaming only the implementation entries and leaving the three ports on the old place is caught (names each missing new name)
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A made-up Work Items list that names only the old round place is judged
+</code></pre>
+
+<pre><code>Nine findings: the old name it still sees and the eight new names it does not
+</code></pre>
+
+<pre><code>A Work Items check that finds nothing cannot pass
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::TheWorkItemsCheckNamesARoundTypeItsListDoesNotSeeInItsNewPlace</p>
+
+<pre><code>A check that returns no findings for any list
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
