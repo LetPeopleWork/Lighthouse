@@ -385,9 +385,9 @@
 },
 "counters": {
 "C": 1,
-"D": 19,
+"D": 20,
 "E": 3,
-"F": 266,
+"F": 269,
 "K": 6,
 "L": 4,
 "P": 3,
@@ -575,11 +575,18 @@
 },
 {
 "id": "D18",
-"text": "F31"
+"text": "F269"
 },
 {
 "id": "D19",
 "text": "F32"
+},
+{
+"id": "D20",
+"slices": [
+"S3"
+],
+"text": "F267"
 }
 ],
 "equality": [
@@ -1885,7 +1892,7 @@
 {
 "command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WriteBackRoundBoundariesArchUnitTest",
 "id": "T3",
-"obligation": "F155",
+"obligation": "F268",
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs"
 }
 ],
@@ -1917,12 +1924,6 @@
 {
 "decision": "Changed",
 "kind": "test-rule",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:1",
-"reason": "F134"
-},
-{
-"decision": "Changed",
-"kind": "test-rule",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs:1",
 "reason": "F135"
 },
@@ -1931,12 +1932,6 @@
 "kind": "test-rule",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs:1",
 "reason": "F136"
-},
-{
-"decision": "Changed",
-"kind": "test-rule",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs:1",
-"reason": "F137"
 },
 {
 "decision": "Changed",
@@ -2056,11 +2051,6 @@
 },
 {
 "change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
-"reason": "F134"
-},
-{
-"change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs",
 "reason": "F135"
 },
@@ -2068,11 +2058,6 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs",
 "reason": "F136"
-},
-{
-"change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs",
-"reason": "F137"
 },
 {
 "change": "Extend",
@@ -2163,10 +2148,8 @@
 "F131": "No rule loses a write-back edge while the round moves; Promises, Access and Licensing refuse any round type by the one round pattern.",
 "F132": "TheWriteBackRound narrowed to ^Lighthouse.Backend.Modules.Forecasting.Application.WriteBack namespace only; no old alternative.",
 "F133": "8-name TheWriteBackRound list and its no-namespace comment deleted; predicate reads only ModuleRules.TheWriteBackRound.",
-"F134": "The 8 round alternatives leave StrayLooseImplementation and StrayLooseInterfaces (or are replaced by new full names if S1 found no other Work Items rule refusing the edge).",
 "F135": "WriteBack and IWriteBack prefixes and the write-back newcomer case leave; R-WB1 takes the newcomer.",
 "F136": "Placement covers the WriteBack sub-folder if S2 did not need it already.",
-"F137": "R-WB1 to R-WB4 with planted falsifiers, lists inline by full name, compared both ways, ModuleWording for the round.",
 "F138": "Section 4 Forecasting row gains Application.WriteBack; Forecasting rules bullet (inbound count, licence edges, Tracker integration edge, R-WB); Flow metrics count; section 3 namespace list. Prose, reviewed, no test.",
 "F139": "Left open write-back answered (Forecasting Application/WriteBack); edge rows Tracker integration to Forecasting (one listed type) and platform lane to Forecasting (listed, S09a note); layout line; glossary term write-back round if absent. Prose, reviewed.",
 "F14": "D-0 No schema or behaviour change: no entity, DbSet, migration, route, DTO, WriteBackValueSource ordinal, usage-data event, configuration key, DI lifetime or registration order changes; what is written to Jira and Azure DevOps, when and how often per round, and the quiet, suppression, licence and consent behaviour stay as they are. Observed by ef-model-unchanged, an empty diff under migrations, frontend and E2E, and the unchanged write-back acceptance and host tests.",
@@ -2186,7 +2169,6 @@
 "F152": "Extra exclusion path: refused",
 "F153": "Finite source text and field set of one test project.",
 "F154": "Rules name the write-back round by its Forecasting namespace only.",
-"F155": "R-WB1 each round type lives in Forecasting Application WriteBack, no WriteBack or IWriteBack type under Services; R-WB2 inside Forecasting only WriteBackService reaches Tracker integration, along 2 listed edges; R-WB3 Promises, Access and Licensing reach no round type; R-WB4 inside Forecasting only ForecastUpdater and the round reach the round.",
 "F156": "git mv from Services/Implementation; namespace and using lines only.",
 "F157": "Removed by the git mv.",
 "F158": "git mv from Services/Interfaces; namespace line only.",
@@ -2307,11 +2289,13 @@
 "F264": "The exact-name Work Items lists may stop matching old round names and every pattern keeps its declared role",
 "F265": "Work Items keeps refusing the round by its new names",
 "F266": "A Place pattern matches the whole new namespace",
+"F267": "S3 docs follow the IL measurements, not the earlier counts: the write-back service reaches Tracker integration along 3 listed edges (IWorkTrackingConnector, IWorkTrackingConnectorFactory, IWriteBackTarget), still one caller type. After S2 the Forecasting inbound list holds 5 entries (PortfolioUpdater plus UpdateQueueService, UpdateQueueService+HeldUpdate, TeamUpdater, UpdateServiceBase`1), the licence-edge list 2 (WriteBackTriggerService to ILicenseService added), and the Flow metrics inbound list 3 (was 4). ADR-270 and ARCHITECTURE.md section 4 state these numbers. The Work Items rule keeps the new full names set at S2 for the round; it is not an S3 target.",
+"F268": "R-WB1 each round type lives in Forecasting Application WriteBack, no WriteBack or IWriteBack type under Services; R-WB2 inside Forecasting only WriteBackService reaches Tracker integration, along 3 listed edges (IWorkTrackingConnector, IWorkTrackingConnectorFactory, IWriteBackTarget); R-WB3 Promises, Access and Licensing reach no round type; R-WB4 inside Forecasting only ForecastUpdater and the round reach the round.",
+"F269": "D-17 One oracle file per slice, approved bytes frozen: S1 WriteBackMembershipArchUnitTest (membership in old or new place, the law with the write-back map, the Promises falsifier); S2 WriteBackRoundLivesInForecastingArchUnitTest (each listed type only in its new namespace; deviation from the design text, which tightened S1's test, because an approved oracle is never edited); S3 WriteBackRulesNameOnlyForecastingArchUnitTest (sweep with an empty list, round pattern new-only). Each WriteBackStringsTheMoveRenames entry holds while its file carries exactly one of its old or new text, so S2 renames without editing the S1 support. R-WB1 to R-WB4 in WriteBackRoundBoundariesArchUnitTest are written with the S3 oracle as its alongside file, with planted falsifiers, green on writing.",
 "F27": "D-13 Formal verification: no Quint, TLA+ or Agda model selected (maintainer default taken). Claims C1 preservation, membership and the sweep are relations over a finite closed set (compiled types x membership map x rule fields x test-project literals) with no state, transition, time, fairness or unbounded input; a model over a hand-copied abstraction would be weaker than deciding the relation on the compiled assembly. Each is decided exhaustively by NUnit over the IL in the default suite. The round's concurrency (AsyncLocal context, last-out flush) is unchanged (D-0) and stays observed by the TaskManager, ResponsiveDuringUpdates and CancelAllWhileWorkIsAdmitted tests. PBT not applicable (closed finite domain). Formal result NOT_SELECTED; no install or waiver needed.",
 "F28": "D-14 Re-read against Story 6468 as shipped (main up to 6d531d0d1). E2 holds: PromisesModuleBoundariesArchUnitTest IsUpstreamCode still recognises the round only by its 8-name list, and TheNamespacedUpstreamCode (module adapters, update code, Access and Licensing) does not name Forecasting. E4 holds: Forecasting inbound list 1 (PortfolioUpdater), licence-edge list 1, platform lane 5 UpdateQueueService write-back edges, Flow metrics R4, Licensing R-L3 and Tracker integration R-T4 each still carry their one write-back entry; the 3 Access, Licensing and Promises lists still hold the same 8 names. IBlackoutPeriodService now lives in Modules/OrganisationSetup/Application (M15). Line numbers moved (PlatformLaneMembership 293-301, PlatformLaneUnitTestPlacementTest 88-98, PromisesUnitTestPlacementTest prefixes now only WriteBack and IWriteBack); S1 re-measures them.",
 "F3": "Every rule keeps its verdict for the write-back round while it moves.",
 "F30": "D-16 Narrowing planned from S1 so no frozen file is edited later: WriteBackPatternRoles holds one admission set, SeeTheRoundInItsNewPlace, for every Context pattern that must see the round in Forecasting (ModuleRules.TheWriteBackRound, ModuleRules.ForecastingModule and Forecasting Application patterns the role check reports). For those patterns the S1 check requires the new subject of every moved type to match and leaves the old subject free, so the same S1 oracle holds after the S1 widening, the S2 move and the S3 narrowing. A declared Place pattern may stop matching its old subject. S3's own oracle then asserts that every entry of that set and every Place entry sees no moved type under its old subject, which is 6468's NamedByTheModuleOnly check; the narrowing cannot hide a pattern that still reads the old home.",
-"F31": "D-17 One oracle file per slice, approved bytes frozen: S1 WriteBackMembershipArchUnitTest (membership in old or new place, the law with the write-back map, the Promises falsifier); S2 WriteBackRoundLivesInForecastingArchUnitTest (each listed type only in its new namespace; deviation from the design text, which tightened S1's test, because an approved oracle is never edited); S3 WriteBackRulesNameOnlyForecastingArchUnitTest (sweep with an empty list, round pattern new-only). Each WriteBackStringsTheMoveRenames entry holds while its file carries exactly one of its old or new text, so S2 renames without editing the S1 support. R-WB1 to R-WB4 in WriteBackRoundBoundariesArchUnitTest are an S3 crafter target with planted falsifiers, green on writing.",
 "F32": "D-18 Carriers: decisions are NUnit verdicts over IlDependencies reads (owner: each ArchUnitTest class); the moved production types keep their carriers unchanged (WriteBackRoundContext per-execution AsyncLocal state, WriteBackRound staging per round, results in Models/WriteBack); the map is WriteBackMembership (MovingType records), the roles WriteBackPatternRoles (PatternDeclaration records), the literal list WriteBackStringsTheMoveRenames (RenamedString records), the round pattern ModuleRules.TheWriteBackRound. Effects: none beyond git mv. Paradigm object_oriented: rule classes own their lists; no anemic split.",
 "F33": "Behaviour-free: production changes only by git mv plus namespace and using lines (S2); no registration line, order or lifetime in Program.cs changes; one using line added there.",
 "F34": "No rule or list is loosened. Lists are inline, by full type name, compared both ways and only shrink, except the measured growth of Forecasting's inbound and licence-edge lists (E4), which moves existing edges from other lists and is recorded in ADR-270 with owner.",

@@ -113,7 +113,7 @@ D-16 Narrowing planned from S1 so no frozen file is edited later: WriteBackPatte
 #### D18
 
 ```text
-D-17 One oracle file per slice, approved bytes frozen: S1 WriteBackMembershipArchUnitTest (membership in old or new place, the law with the write-back map, the Promises falsifier); S2 WriteBackRoundLivesInForecastingArchUnitTest (each listed type only in its new namespace; deviation from the design text, which tightened S1's test, because an approved oracle is never edited); S3 WriteBackRulesNameOnlyForecastingArchUnitTest (sweep with an empty list, round pattern new-only). Each WriteBackStringsTheMoveRenames entry holds while its file carries exactly one of its old or new text, so S2 renames without editing the S1 support. R-WB1 to R-WB4 in WriteBackRoundBoundariesArchUnitTest are an S3 crafter target with planted falsifiers, green on writing.
+D-17 One oracle file per slice, approved bytes frozen: S1 WriteBackMembershipArchUnitTest (membership in old or new place, the law with the write-back map, the Promises falsifier); S2 WriteBackRoundLivesInForecastingArchUnitTest (each listed type only in its new namespace; deviation from the design text, which tightened S1's test, because an approved oracle is never edited); S3 WriteBackRulesNameOnlyForecastingArchUnitTest (sweep with an empty list, round pattern new-only). Each WriteBackStringsTheMoveRenames entry holds while its file carries exactly one of its old or new text, so S2 renames without editing the S1 support. R-WB1 to R-WB4 in WriteBackRoundBoundariesArchUnitTest are written with the S3 oracle as its alongside file, with planted falsifiers, green on writing.
 ```
 
 #### D19
@@ -121,6 +121,13 @@ D-17 One oracle file per slice, approved bytes frozen: S1 WriteBackMembershipArc
 ```text
 D-18 Carriers: decisions are NUnit verdicts over IlDependencies reads (owner: each ArchUnitTest class); the moved production types keep their carriers unchanged (WriteBackRoundContext per-execution AsyncLocal state, WriteBackRound staging per round, results in Models/WriteBack); the map is WriteBackMembership (MovingType records), the roles WriteBackPatternRoles (PatternDeclaration records), the literal list WriteBackStringsTheMoveRenames (RenamedString records), the round pattern ModuleRules.TheWriteBackRound. Effects: none beyond git mv. Paradigm object_oriented: rule classes own their lists; no anemic split.
 ```
+
+#### D20
+
+```text
+S3 docs follow the IL measurements, not the earlier counts: the write-back service reaches Tracker integration along 3 listed edges (IWorkTrackingConnector, IWorkTrackingConnectorFactory, IWriteBackTarget), still one caller type. After S2 the Forecasting inbound list holds 5 entries (PortfolioUpdater plus UpdateQueueService, UpdateQueueService+HeldUpdate, TeamUpdater, UpdateServiceBase`1), the licence-edge list 2 (WriteBackTriggerService to ILicenseService added), and the Flow metrics inbound list 3 (was 4). ADR-270 and ARCHITECTURE.md section 4 state these numbers. The Work Items rule keeps the new full names set at S2 for the round; it is not an S3 target.
+```
+Governed slices: S3
 
 ### Constraints
 
@@ -2689,14 +2696,6 @@ Extend
 8-name TheWriteBackRound list and its no-namespace comment deleted; predicate reads only ModuleRules.TheWriteBackRound.
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsModuleBoundariesArchUnitTest\.cs
-
-Extend
-
-```text
-The 8 round alternatives leave StrayLooseImplementation and StrayLooseInterfaces (or are replaced by new full names if S1 found no other Work Items rule refusing the edge).
-```
-
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesUnitTestPlacementTest\.cs
 
 Extend
@@ -2711,14 +2710,6 @@ Extend
 
 ```text
 Placement covers the WriteBack sub-folder if S2 did not need it already.
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRoundBoundariesArchUnitTest\.cs
-
-Create
-
-```text
-R-WB1 to R-WB4 with planted falsifiers, lists inline by full name, compared both ways, ModuleWording for the round.
 ```
 
 ARCHITECTURE\.md
@@ -2921,16 +2912,6 @@ Changed
 
 test\-rule
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsModuleBoundariesArchUnitTest\.cs\:1
-
-Changed
-
-```text
-The 8 round alternatives leave StrayLooseImplementation and StrayLooseInterfaces (or are replaced by new full names if S1 found no other Work Items rule refusing the edge).
-```
-
-test\-rule
-
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesUnitTestPlacementTest\.cs\:1
 
 Changed
@@ -2947,16 +2928,6 @@ Changed
 
 ```text
 Placement covers the WriteBack sub-folder if S2 did not need it already.
-```
-
-test\-rule
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRoundBoundariesArchUnitTest\.cs\:1
-
-Changed
-
-```text
-R-WB1 to R-WB4 with planted falsifiers, lists inline by full name, compared both ways, ModuleWording for the round.
 ```
 
 docs
@@ -3102,7 +3073,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 ###### T3
 
 ```text
-R-WB1 each round type lives in Forecasting Application WriteBack, no WriteBack or IWriteBack type under Services; R-WB2 inside Forecasting only WriteBackService reaches Tracker integration, along 2 listed edges; R-WB3 Promises, Access and Licensing reach no round type; R-WB4 inside Forecasting only ForecastUpdater and the round reach the round.
+R-WB1 each round type lives in Forecasting Application WriteBack, no WriteBack or IWriteBack type under Services; R-WB2 inside Forecasting only WriteBackService reaches Tracker integration, along 3 listed edges (IWorkTrackingConnector, IWorkTrackingConnectorFactory, IWriteBackTarget); R-WB3 Promises, Access and Licensing reach no round type; R-WB4 inside Forecasting only ForecastUpdater and the round reach the round.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRoundBoundariesArchUnitTest\.cs
