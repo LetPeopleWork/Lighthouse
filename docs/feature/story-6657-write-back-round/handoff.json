@@ -387,7 +387,7 @@
 "C": 1,
 "D": 20,
 "E": 3,
-"F": 269,
+"F": 274,
 "K": 6,
 "L": 4,
 "P": 3,
@@ -2083,6 +2083,33 @@
 }
 }
 },
+"examination": {
+"E1": {
+"class": "observation_gap",
+"observations": [
+"F270",
+"F271"
+],
+"verdict": "unmet"
+},
+"E2": {
+"class": "observation_gap",
+"observations": [
+"F270",
+"F272",
+"F273"
+],
+"verdict": "unmet"
+},
+"E3": {
+"class": "observation_gap",
+"observations": [
+"F270",
+"F274"
+],
+"verdict": "unmet"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -2293,6 +2320,11 @@
 "F268": "R-WB1 each round type lives in Forecasting Application WriteBack, no WriteBack or IWriteBack type under Services; R-WB2 inside Forecasting only WriteBackService reaches Tracker integration, along 3 listed edges (IWorkTrackingConnector, IWorkTrackingConnectorFactory, IWriteBackTarget); R-WB3 Promises, Access and Licensing reach no round type; R-WB4 inside Forecasting only ForecastUpdater and the round reach the round.",
 "F269": "D-17 One oracle file per slice, approved bytes frozen: S1 WriteBackMembershipArchUnitTest (membership in old or new place, the law with the write-back map, the Promises falsifier); S2 WriteBackRoundLivesInForecastingArchUnitTest (each listed type only in its new namespace; deviation from the design text, which tightened S1's test, because an approved oracle is never edited); S3 WriteBackRulesNameOnlyForecastingArchUnitTest (sweep with an empty list, round pattern new-only). Each WriteBackStringsTheMoveRenames entry holds while its file carries exactly one of its old or new text, so S2 renames without editing the S1 support. R-WB1 to R-WB4 in WriteBackRoundBoundariesArchUnitTest are written with the S3 oracle as its alongside file, with planted falsifiers, green on writing.",
 "F27": "D-13 Formal verification: no Quint, TLA+ or Agda model selected (maintainer default taken). Claims C1 preservation, membership and the sweep are relations over a finite closed set (compiled types x membership map x rule fields x test-project literals) with no state, transition, time, fairness or unbounded input; a model over a hand-copied abstraction would be weaker than deciding the relation on the compiled assembly. Each is decided exhaustively by NUnit over the IL in the default suite. The round's concurrency (AsyncLocal context, last-out flush) is unchanged (D-0) and stays observed by the TaskManager, ResponsiveDuringUpdates and CancelAllWhileWorkIsAdmitted tests. PBT not applicable (closed finite domain). Formal result NOT_SELECTED; no install or waiver needed.",
+"F270": "Probe architecture-rules WriteBack on candidate HEAD 30b5e6c5a workspace /tmp/nwdes-examine-q2tl_ceg: Total tests 61, Passed 61, Test Run Successful, rc 0. Lines include: Passed EveryRoundTypeLivesInForecastingsWriteBackNamespaceAndNowhereElse; Passed AnAccessTypeReachingTheWriteBackRound_IsNamed; Passed APromisesTypeReachingTheWriteBackRound_IsNamed; Passed AccessMayNotJoinTheRound; Passed LicensingMayNotJoinTheRound; Passed PromisesMayNotJoinTheRound_ThoughItMayAskForecasting; Passed AMadeUpWorkItemsTypeReachingARoundTypeInItsNewPlace_IsRefusedByExactlyTheWorkItemsRulesTheMembershipRecords; Passed EveryRulePatternThatSeesARoundType_IsDeclared_AndKeepsItsRoleOnTheSubjectItsRuleReads; Passed TheRoundPattern_TakesInEveryRoundTypeByItsNewFullName_AndNoOtherTypeOfForecasting; Passed TheRoleCheck_NamesEachMadeUpPatternThatBreaksItsRole_AndPassesTheOnesThatKeepIt; Passed TheSweepSkipsExactlyTheFiveNamedFiles_AndNamesAnExtraPathAndAPathThatIsNowhere; Passed TheEightRoundUnitTestFilesSitBesideTheirSubjectAndDeclareTheNamespaceOfTheirFolder; Passed WorkItemsStillRefusesTheRoundByItsNewFullNamesAndNoLongerNamesItsOldOnes. No Failed line.",
+"F271": "Probe architecture-rules Forecasting on candidate HEAD 30b5e6c5a workspace /tmp/nwdes-examine-q2tl_ceg: Total tests 147, Passed 147, Test Run Successful, rc 0, no Failed line. Covers the Forecasting-filtered architecture rules, including the Blackout/WriteBack unit-test folder rule and the WriteBack tracker-edge and reach rules. Probe output contains no pre-move (before-move) run: no before-state pass/fail list was captured by the public probe, so before-versus-after equality and rule-count preservation are not observed.",
+"F272": "Probe ef-model-unchanged on candidate: output 'No changes have been made to the model since the last migration.' printed for Sqlite and Postgres, rc 0.",
+"F273": "Probe backend-tests WriteBack on candidate: Total tests 313, Passed 313, Test Run Successful, rc 0, no Failed outcome (the 4 matches are test names containing the word Failed, all Passed). Fragment-scoped only: it covers WriteBack-named tests, not the whole backend suite. Lines include Passed Only_the_write_back_service_sends_a_write_back_to_the_tracker, Passed EveryRoundType_IsFoundInItsOldOrItsNewNamespace_AndEveryNeighbourThatStays_IsFoundWithItsOwnerAndReason, Passed EveryRulePatternThatSeesARoundType_IsDeclared_AndKeepsItsRoleOnTheSubjectItsRuleReads. No full-backend run was captured.",
+"F274": "In the architecture-rules WriteBack output the Licensing boundary is a single line, Passed LicensingMayNotJoinTheRound [< 1 ms], and PromisesAccessAndLicensingReachNoWriteBackRoundType passes. No named made-up Licensing offender test line appears, unlike the Access, Promises, WorkItems and placement/role fixtures which each have one. The made-up Licensing catch is therefore not observed as its own passing line.",
 "F28": "D-14 Re-read against Story 6468 as shipped (main up to 6d531d0d1). E2 holds: PromisesModuleBoundariesArchUnitTest IsUpstreamCode still recognises the round only by its 8-name list, and TheNamespacedUpstreamCode (module adapters, update code, Access and Licensing) does not name Forecasting. E4 holds: Forecasting inbound list 1 (PortfolioUpdater), licence-edge list 1, platform lane 5 UpdateQueueService write-back edges, Flow metrics R4, Licensing R-L3 and Tracker integration R-T4 each still carry their one write-back entry; the 3 Access, Licensing and Promises lists still hold the same 8 names. IBlackoutPeriodService now lives in Modules/OrganisationSetup/Application (M15). Line numbers moved (PlatformLaneMembership 293-301, PlatformLaneUnitTestPlacementTest 88-98, PromisesUnitTestPlacementTest prefixes now only WriteBack and IWriteBack); S1 re-measures them.",
 "F3": "Every rule keeps its verdict for the write-back round while it moves.",
 "F30": "D-16 Narrowing planned from S1 so no frozen file is edited later: WriteBackPatternRoles holds one admission set, SeeTheRoundInItsNewPlace, for every Context pattern that must see the round in Forecasting (ModuleRules.TheWriteBackRound, ModuleRules.ForecastingModule and Forecasting Application patterns the role check reports). For those patterns the S1 check requires the new subject of every moved type to match and leaves the old subject free, so the same S1 oracle holds after the S1 widening, the S2 move and the S3 narrowing. A declared Place pattern may stop matching its old subject. S3's own oracle then asserts that every entry of that set and every Place entry sees no moved type under its old subject, which is 6468's NamedByTheModuleOnly check; the narrowing cannot hide a pattern that still reads the old home.",

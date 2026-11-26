@@ -746,4 +746,66 @@ None.
 
 ## Examination
 
+### E1
+
+unmet
+
+#### Observations
+
+```text
+Probe architecture-rules WriteBack on candidate HEAD 30b5e6c5a workspace /tmp/nwdes-examine-q2tl_ceg: Total tests 61, Passed 61, Test Run Successful, rc 0. Lines include: Passed EveryRoundTypeLivesInForecastingsWriteBackNamespaceAndNowhereElse; Passed AnAccessTypeReachingTheWriteBackRound_IsNamed; Passed APromisesTypeReachingTheWriteBackRound_IsNamed; Passed AccessMayNotJoinTheRound; Passed LicensingMayNotJoinTheRound; Passed PromisesMayNotJoinTheRound_ThoughItMayAskForecasting; Passed AMadeUpWorkItemsTypeReachingARoundTypeInItsNewPlace_IsRefusedByExactlyTheWorkItemsRulesTheMembershipRecords; Passed EveryRulePatternThatSeesARoundType_IsDeclared_AndKeepsItsRoleOnTheSubjectItsRuleReads; Passed TheRoundPattern_TakesInEveryRoundTypeByItsNewFullName_AndNoOtherTypeOfForecasting; Passed TheRoleCheck_NamesEachMadeUpPatternThatBreaksItsRole_AndPassesTheOnesThatKeepIt; Passed TheSweepSkipsExactlyTheFiveNamedFiles_AndNamesAnExtraPathAndAPathThatIsNowhere; Passed TheEightRoundUnitTestFilesSitBesideTheirSubjectAndDeclareTheNamespaceOfTheirFolder; Passed WorkItemsStillRefusesTheRoundByItsNewFullNamesAndNoLongerNamesItsOldOnes. No Failed line.
+```
+
+```text
+Probe architecture-rules Forecasting on candidate HEAD 30b5e6c5a workspace /tmp/nwdes-examine-q2tl_ceg: Total tests 147, Passed 147, Test Run Successful, rc 0, no Failed line. Covers the Forecasting-filtered architecture rules, including the Blackout/WriteBack unit-test folder rule and the WriteBack tracker-edge and reach rules. Probe output contains no pre-move (before-move) run: no before-state pass/fail list was captured by the public probe, so before-versus-after equality and rule-count preservation are not observed.
+```
+
+observation_gap
+
+#### Waiver
+
+None.
+
+### E2
+
+unmet
+
+#### Observations
+
+```text
+Probe architecture-rules WriteBack on candidate HEAD 30b5e6c5a workspace /tmp/nwdes-examine-q2tl_ceg: Total tests 61, Passed 61, Test Run Successful, rc 0. Lines include: Passed EveryRoundTypeLivesInForecastingsWriteBackNamespaceAndNowhereElse; Passed AnAccessTypeReachingTheWriteBackRound_IsNamed; Passed APromisesTypeReachingTheWriteBackRound_IsNamed; Passed AccessMayNotJoinTheRound; Passed LicensingMayNotJoinTheRound; Passed PromisesMayNotJoinTheRound_ThoughItMayAskForecasting; Passed AMadeUpWorkItemsTypeReachingARoundTypeInItsNewPlace_IsRefusedByExactlyTheWorkItemsRulesTheMembershipRecords; Passed EveryRulePatternThatSeesARoundType_IsDeclared_AndKeepsItsRoleOnTheSubjectItsRuleReads; Passed TheRoundPattern_TakesInEveryRoundTypeByItsNewFullName_AndNoOtherTypeOfForecasting; Passed TheRoleCheck_NamesEachMadeUpPatternThatBreaksItsRole_AndPassesTheOnesThatKeepIt; Passed TheSweepSkipsExactlyTheFiveNamedFiles_AndNamesAnExtraPathAndAPathThatIsNowhere; Passed TheEightRoundUnitTestFilesSitBesideTheirSubjectAndDeclareTheNamespaceOfTheirFolder; Passed WorkItemsStillRefusesTheRoundByItsNewFullNamesAndNoLongerNamesItsOldOnes. No Failed line.
+```
+
+```text
+Probe ef-model-unchanged on candidate: output 'No changes have been made to the model since the last migration.' printed for Sqlite and Postgres, rc 0.
+```
+
+```text
+Probe backend-tests WriteBack on candidate: Total tests 313, Passed 313, Test Run Successful, rc 0, no Failed outcome (the 4 matches are test names containing the word Failed, all Passed). Fragment-scoped only: it covers WriteBack-named tests, not the whole backend suite. Lines include Passed Only_the_write_back_service_sends_a_write_back_to_the_tracker, Passed EveryRoundType_IsFoundInItsOldOrItsNewNamespace_AndEveryNeighbourThatStays_IsFoundWithItsOwnerAndReason, Passed EveryRulePatternThatSeesARoundType_IsDeclared_AndKeepsItsRoleOnTheSubjectItsRuleReads. No full-backend run was captured.
+```
+
+observation_gap
+
+#### Waiver
+
+None.
+
+### E3
+
+unmet
+
+#### Observations
+
+```text
+Probe architecture-rules WriteBack on candidate HEAD 30b5e6c5a workspace /tmp/nwdes-examine-q2tl_ceg: Total tests 61, Passed 61, Test Run Successful, rc 0. Lines include: Passed EveryRoundTypeLivesInForecastingsWriteBackNamespaceAndNowhereElse; Passed AnAccessTypeReachingTheWriteBackRound_IsNamed; Passed APromisesTypeReachingTheWriteBackRound_IsNamed; Passed AccessMayNotJoinTheRound; Passed LicensingMayNotJoinTheRound; Passed PromisesMayNotJoinTheRound_ThoughItMayAskForecasting; Passed AMadeUpWorkItemsTypeReachingARoundTypeInItsNewPlace_IsRefusedByExactlyTheWorkItemsRulesTheMembershipRecords; Passed EveryRulePatternThatSeesARoundType_IsDeclared_AndKeepsItsRoleOnTheSubjectItsRuleReads; Passed TheRoundPattern_TakesInEveryRoundTypeByItsNewFullName_AndNoOtherTypeOfForecasting; Passed TheRoleCheck_NamesEachMadeUpPatternThatBreaksItsRole_AndPassesTheOnesThatKeepIt; Passed TheSweepSkipsExactlyTheFiveNamedFiles_AndNamesAnExtraPathAndAPathThatIsNowhere; Passed TheEightRoundUnitTestFilesSitBesideTheirSubjectAndDeclareTheNamespaceOfTheirFolder; Passed WorkItemsStillRefusesTheRoundByItsNewFullNamesAndNoLongerNamesItsOldOnes. No Failed line.
+```
+
+```text
+In the architecture-rules WriteBack output the Licensing boundary is a single line, Passed LicensingMayNotJoinTheRound [< 1 ms], and PromisesAccessAndLicensingReachNoWriteBackRoundType passes. No named made-up Licensing offender test line appears, unlike the Access, Promises, WorkItems and placement/role fixtures which each have one. The made-up Licensing catch is therefore not observed as its own passing line.
+```
+
+observation_gap
+
+#### Waiver
+
 None.
