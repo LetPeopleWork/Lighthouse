@@ -101,7 +101,7 @@ D-14 Re-read against Story 6468 as shipped (main up to 6d531d0d1). E2 holds: Pro
 #### D16
 
 ```text
-D-15 New since the design, from Story 6468: (a) WorkItemsModuleBoundariesArchUnitTest.StrayLooseImplementation and StrayLooseInterfaces (and the composite StrayLooseServices, also read by RecurringBlackoutEventsSeamArchUnitTest) name the 8 round types by old full name as regex alternatives. S1 declares them Place on the full name in WriteBackPatternRoles and puts them on the sweep; S3 removes the 8 alternatives. S1 also proves with a planted Work Items Application type reaching a made-up round type in the new place that a Work Items rule still refuses the edge; if none does, the 8 alternatives are replaced by the new full names instead of removed. (b) OrganisationSetupMembership.cs lists 3 round files by old path as staying neighbours; S2 renames those paths. (c) NamespaceMoveLaw has no exception for a move into an existing area: admissions live per move in its PatternRoles class (6468's WholeParentPatterns and NamedByTheModuleOnly), so S1 creates WriteBackPatternRoles and leaves the law unchanged (M3 answered).
+D-15 New since the design, from Story 6468: (a) WorkItemsModuleBoundariesArchUnitTest.StrayLooseImplementation and StrayLooseInterfaces (and the composite StrayLooseServices, also read by RecurringBlackoutEventsSeamArchUnitTest) name the 8 round types by old full name as regex alternatives. S1 declares them Place on the full name in WriteBackPatternRoles and puts them on the sweep, and proves with a planted Work Items Application type reaching a made-up round type in the new place that no Work Items rule refuses the edge; so S2 replaces the 8 alternatives by the new full names (Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.<Type>), keeping every other entry, and no Work Items rule reads the round pattern. (b) OrganisationSetupMembership.cs lists 3 round files by old path as staying neighbours; S2 renames those paths. (c) NamespaceMoveLaw has no exception for a move into an existing area: admissions live per move in its PatternRoles class (6468 WholeParentPatterns and NamedByTheModuleOnly), so S1 creates WriteBackPatternRoles and leaves the law unchanged (M3 answered).
 ```
 
 #### D17
@@ -1658,6 +1658,14 @@ Extend
 Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsModuleBoundariesArchUnitTest\.cs
+
+Extend
+
+```text
+StrayLooseImplementation and StrayLooseInterfaces replace the 8 round alternatives by their new full names; every other entry stays.
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRoundLivesInForecastingArchUnitTest\.cs
 
 #### Verification
@@ -2509,6 +2517,16 @@ Changed
 
 ```text
 Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+```
+
+test\-rule
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsModuleBoundariesArchUnitTest\.cs\:56
+
+Changed
+
+```text
+The 8 round alternatives in StrayLooseImplementation and StrayLooseInterfaces take the new full names; no other entry changes.
 ```
 
 ##### Agreement
