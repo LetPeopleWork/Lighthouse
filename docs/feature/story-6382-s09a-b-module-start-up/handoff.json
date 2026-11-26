@@ -188,6 +188,161 @@
 "stimulus": "F248",
 "user_result": "F250"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F70",
+"T2"
+],
+"still_passes_if": "F260",
+"test": "EachOfTheOtherFiveContexts_RegistersThroughTheAddMethodOfItsOwnModule; EachOfTheOtherFiveContextsModules_IsStartedByTheCompositionRootAlone; TheCompositionRoot_RegistersNoTypeOfTheOtherFiveContexts_ButItsHandlerBlockOrderKeptLinesHostSetUpAndCrossContextWiring",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest.cs"
+},
+"expected": "F258",
+"stimulus": "F257",
+"user_result": "F259"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F70"
+],
+"still_passes_if": "F264",
+"test": "AnAllowedEntryOfTheOtherFiveContexts_IsNamedOnceItIsTakenOffItsList; TheOtherFiveContextsAndTheFiveOfTheFirstRule_AreTheTenPackagedContexts",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest.cs"
+},
+"expected": "F262",
+"stimulus": "F261",
+"user_result": "F263"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F71"
+],
+"still_passes_if": "F268",
+"test": "AMadeUpCompositionRootRegisteringATypeOfOneOfTheOtherFiveContexts_IsReportedNamingIt; AMadeUpCompositionRootLookingUpAContextsService_IsReportedAsALookupOnly",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest.cs"
+},
+"expected": "F266",
+"stimulus": "F265",
+"user_result": "F267"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F71"
+],
+"still_passes_if": "F272",
+"test": "AMadeUpOrderKeptLine_PassesWhileListed_AndIsNamedOnceItIsTakenOffTheList",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest.cs"
+},
+"expected": "F270",
+"stimulus": "F269",
+"user_result": "F271"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F72"
+],
+"still_passes_if": "F275",
+"test": "AMadeUpModuleOrOtherTypeStartingAContextsModule_IsReportedBesideTheCompositionRoot",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest.cs"
+},
+"expected": "F274",
+"stimulus": "F273",
+"user_result": "F181"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F73"
+],
+"still_passes_if": "F279",
+"test": "AMadeUpCompositionRootStartingAContextOnlyThroughItsModule_IsNotReported; AnAllowedEntryAMadeUpCompositionRootDoesNotRegisterOrLookUp_IsReportedAsGone; AMadeUpContextWithoutAWellFormedStartUpModule_IsReported",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest.cs"
+},
+"expected": "F277",
+"stimulus": "F276",
+"user_result": "F278"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F61",
+"L1/F62",
+"L1/F63",
+"L1/F64"
+],
+"still_passes_if": "F282",
+"test": "StartUpRegistrationsPreservationTest (craft target: only its seam line changes in this slice)",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StartUpRegistrationsPreservationTest.cs"
+},
+"expected": "F281",
+"stimulus": "F280",
+"user_result": "F201"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F67"
+],
+"still_passes_if": "F285",
+"test": "DomainEventHandlerOrderPinTest",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs"
+},
+"expected": "F284",
+"stimulus": "F283",
+"user_result": "F193"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "acceptance designer of the third slice of this feature",
+"reason": "F286"
+},
+"expected": "F196",
+"stimulus": "F195",
+"user_result": "F197"
+}
 ]
 },
 "counters": {
@@ -195,7 +350,7 @@
 "C": 1,
 "D": 9,
 "E": 3,
-"F": 256,
+"F": 286,
 "K": 4,
 "L": 4,
 "P": 3,
@@ -1478,9 +1633,39 @@
 "F254": "PatternRoles declares \"ForecastingModuleBoundariesArchUnitTest.BelowTheForecastingStartUp\" = PatternDeclaration.Context(Namespace, SeesForecasting), the role of ForecastingModuleBoundariesArchUnitTest.ForecastingModule; if the round law also asks for its SeeTheRoundInItsNewPlace entry, it takes the reason the ForecastingModule field has there. Nothing else.",
 "F255": "The role map owns pattern declarations; one exact field declared with its sibling role.",
 "F256": "Declares the new set-aside pattern the role law names as not declared; loosens nothing.",
+"F257": "Run the composition-root rule over the compiled application for Work Items, Tracker integration, Refinement, Reports and Organisation set-up.",
+"F258": "Each of the five contexts has its own start-up module with one Add method that extends the service collection, and only the composition root calls it. The composition root may register or look up only four kinds of the context's types, each on its own list and compared both ways: the domain-event handlers of its one ordered block (seven Work Items handlers), lines kept for their order (none: each context keeps the order of every service registered more than once from one call), what it looks up to set the host up (none), and cross-context wiring (for Tracker integration, the description block merger that the Promises renderer serves). Before the move the rule fails for each of the five contexts, naming the missing module and every type still registered or looked up, including the two Tracker integration services that the start-up check of the sign-in providers looks up.",
+"F259": "A maintainer sees for each of the other five contexts that its start-up lives in its own module and that the composition root only calls it.",
 "F26": "Its seam (CreateBuilder Testing, RegisterServices by reflection) is the pin seam; the pin copies the seam into its own file instead of editing the approved order pin, whose file stays unchanged through B.",
+"F260": "A context type that the composition root reaches only by reflection on a type name, or registers by assembly scanning with no generic argument and no typeof, stays unseen; the review reads the diff for it.",
+"F261": "Take each allowed entry of the five contexts off its own list in turn, and compare the contexts of both composition-root rules with the contexts the application holds.",
+"F262": "Each entry taken off is named in addition to what the full lists leave named, on its own side only, and nothing else changes. The five contexts of this rule and the five of the first rule share none and together are exactly the ten contexts the application holds.",
+"F263": "Every allowed entry is needed, the lists can only shrink, and no context escapes both rules.",
+"F264": "An entry listed under the wrong one of the kinds on the same side still passes; the review checks each entry against its line.",
+"F265": "Run the check over a made-up composition root that registers one type of each of the five contexts and a type outside the contexts, and over one that looks up a made-up context's service.",
+"F266": "For each of the five contexts exactly its one registered type is reported by its full name, and no other context's type; the type outside the contexts is not reported. The looked-up service is reported as a lookup, not as a registration.",
+"F267": "A registration or lookup left in the composition root is named to the maintainer under its own context.",
+"F268": "Registration forms beyond a plain generic Add are read by the shared registration reader, whose forms the first rule's made-up root proves; a form that reader misses is missed here too.",
+"F269": "Run the check over a made-up composition root that keeps two registrations of one made-up service in their order, first listed as kept for their order, then taken off.",
 "F27": "Stays the permanent handler-order pin, unchanged; green after every slice.",
+"F270": "While listed, nothing is reported. Once taken off, exactly the service and its two implementations are reported, and nothing is reported as looked up or gone.",
+"F271": "A line kept in the composition root for its order stays there only by name.",
+"F272": "A listed order-kept line whose order a call position could in fact keep still passes; the review checks each listed line.",
+"F273": "Run the module-caller check over made-up types: a made-up Lambda module whose Add method starts the Kappa module, and a made-up type elsewhere that starts it, beside a made-up composition root that calls it.",
+"F274": "Exactly the Lambda module and the outsider are reported beside the composition root; Kappa's own module and the made-up roots that do not call it are not.",
+"F275": "A caller that reaches the module only by reflection is not an IL reference and is not reported.",
+"F276": "Run all three checks over a made-up composition root that starts the made-up Kappa context only through its module; compare it with a listed registration and a listed lookup it does not make; look for the module of made-up contexts that have none, whose module lacks its Add method, or whose module is not a static class.",
+"F277": "The compliant root is not reported and is found calling the module. The registration and lookup it does not make are named as gone. Each missing or malformed module is named with what is wrong with it.",
+"F278": "A context that starts only through its module passes, dead list entries are named, and a malformed start-up module is refused with the reason.",
+"F279": "A module whose Add method has the right shape but registers nothing passes these checks; the preservation test catches the missing registrations.",
 "F28": "Keeps name and signature (the seam both pins reflect on); its context lines move out and it calls Add<X> and RegisterDomainEventHandlers instead.",
+"F280": "Build the start-up service collection without a host after the move, with the separate Reports registration call gone from the start-up sequence, and compare per service type the ordered lifetime, key and implementation.",
+"F281": "The container equals the baseline written out on the pre-move revision, the baseline bytes unchanged; only the seam line that called the Reports registration goes. Reverted probe: dropping the Reports Add call turns the test red on the Reports service types.",
+"F282": "Registrations under branches the Testing environment does not take (the stub sign-in provider, Redis), and two factories asking the same services with different constants, are not told apart; the slice review reads those lines for byte equality.",
+"F283": "Read the domain-event handlers per event from the start-up registrations after every handler line is gathered into one handler method of the composition root.",
+"F284": "The seven pinned events keep their handlers in the written-out order, the pin file unchanged. Reverted probe: a refresh handler moved into a context's Add method turns this pin or the composition-root rule red.",
+"F285": "Handlers of events outside the seven pinned ones could be reordered unseen; the review reads that no line is reordered within an event.",
+"F286": "This is the third slice's rule over all ten contexts, written from the names the composition root still uses after this slice's moves.",
 "F29": "The only per-context registrar today; folded into ReportsModule.AddReports in S2 (D-9).",
 "F3": "The start-up registrations are pinned at the composition-root port without a host. Flow metrics, Forecasting, Promises, Licensing and Access register through their own Add<X> method, with the container unchanged.",
 "F30": "Precedent for an IServiceCollection extension; Platform is not a context, so it stays called from Program unchanged.",

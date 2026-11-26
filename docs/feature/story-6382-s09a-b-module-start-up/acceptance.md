@@ -344,6 +344,286 @@ A statement listed as cross-context wiring that in fact names only one context s
 ###### Obligations
 
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+Run the composition-root rule over the compiled application for Work Items, Tracker integration, Refinement, Reports and Organisation set-up.
+```
+
+```text
+Each of the five contexts has its own start-up module with one Add method that extends the service collection, and only the composition root calls it. The composition root may register or look up only four kinds of the context's types, each on its own list and compared both ways: the domain-event handlers of its one ordered block (seven Work Items handlers), lines kept for their order (none: each context keeps the order of every service registered more than once from one call), what it looks up to set the host up (none), and cross-context wiring (for Tracker integration, the description block merger that the Promises renderer serves). Before the move the rule fails for each of the five contexts, naming the missing module and every type still registered or looked up, including the two Tracker integration services that the start-up check of the sign-in providers looks up.
+```
+
+```text
+A maintainer sees for each of the other five contexts that its start-up lives in its own module and that the composition root only calls it.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest\.cs
+
+EachOfTheOtherFiveContexts\_RegistersThroughTheAddMethodOfItsOwnModule\; EachOfTheOtherFiveContextsModules\_IsStartedByTheCompositionRootAlone\; TheCompositionRoot\_RegistersNoTypeOfTheOtherFiveContexts\_ButItsHandlerBlockOrderKeptLinesHostSetUpAndCrossContextWiring
+
+```text
+A context type that the composition root reaches only by reflection on a type name, or registers by assembly scanning with no generic argument and no typeof, stays unseen; the review reads the diff for it.
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Take each allowed entry of the five contexts off its own list in turn, and compare the contexts of both composition-root rules with the contexts the application holds.
+```
+
+```text
+Each entry taken off is named in addition to what the full lists leave named, on its own side only, and nothing else changes. The five contexts of this rule and the five of the first rule share none and together are exactly the ten contexts the application holds.
+```
+
+```text
+Every allowed entry is needed, the lists can only shrink, and no context escapes both rules.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest\.cs
+
+AnAllowedEntryOfTheOtherFiveContexts\_IsNamedOnceItIsTakenOffItsList\; TheOtherFiveContextsAndTheFiveOfTheFirstRule\_AreTheTenPackagedContexts
+
+```text
+An entry listed under the wrong one of the kinds on the same side still passes; the review checks each entry against its line.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Run the check over a made-up composition root that registers one type of each of the five contexts and a type outside the contexts, and over one that looks up a made-up context's service.
+```
+
+```text
+For each of the five contexts exactly its one registered type is reported by its full name, and no other context's type; the type outside the contexts is not reported. The looked-up service is reported as a lookup, not as a registration.
+```
+
+```text
+A registration or lookup left in the composition root is named to the maintainer under its own context.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest\.cs
+
+AMadeUpCompositionRootRegisteringATypeOfOneOfTheOtherFiveContexts\_IsReportedNamingIt\; AMadeUpCompositionRootLookingUpAContextsService\_IsReportedAsALookupOnly
+
+```text
+Registration forms beyond a plain generic Add are read by the shared registration reader, whose forms the first rule's made-up root proves; a form that reader misses is missed here too.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Run the check over a made-up composition root that keeps two registrations of one made-up service in their order, first listed as kept for their order, then taken off.
+```
+
+```text
+While listed, nothing is reported. Once taken off, exactly the service and its two implementations are reported, and nothing is reported as looked up or gone.
+```
+
+```text
+A line kept in the composition root for its order stays there only by name.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest\.cs
+
+AMadeUpOrderKeptLine\_PassesWhileListed\_AndIsNamedOnceItIsTakenOffTheList
+
+```text
+A listed order-kept line whose order a call position could in fact keep still passes; the review checks each listed line.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Run the module-caller check over made-up types: a made-up Lambda module whose Add method starts the Kappa module, and a made-up type elsewhere that starts it, beside a made-up composition root that calls it.
+```
+
+```text
+Exactly the Lambda module and the outsider are reported beside the composition root; Kappa's own module and the made-up roots that do not call it are not.
+```
+
+```text
+A second caller of a context's start-up, including another context's module, is named.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest\.cs
+
+AMadeUpModuleOrOtherTypeStartingAContextsModule\_IsReportedBesideTheCompositionRoot
+
+```text
+A caller that reaches the module only by reflection is not an IL reference and is not reported.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Run all three checks over a made-up composition root that starts the made-up Kappa context only through its module; compare it with a listed registration and a listed lookup it does not make; look for the module of made-up contexts that have none, whose module lacks its Add method, or whose module is not a static class.
+```
+
+```text
+The compliant root is not reported and is found calling the module. The registration and lookup it does not make are named as gone. Each missing or malformed module is named with what is wrong with it.
+```
+
+```text
+A context that starts only through its module passes, dead list entries are named, and a malformed start-up module is refused with the reason.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest\.cs
+
+AMadeUpCompositionRootStartingAContextOnlyThroughItsModule\_IsNotReported\; AnAllowedEntryAMadeUpCompositionRootDoesNotRegisterOrLookUp\_IsReportedAsGone\; AMadeUpContextWithoutAWellFormedStartUpModule\_IsReported
+
+```text
+A module whose Add method has the right shape but registers nothing passes these checks; the preservation test catches the missing registrations.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Build the start-up service collection without a host after the move, with the separate Reports registration call gone from the start-up sequence, and compare per service type the ordered lifetime, key and implementation.
+```
+
+```text
+The container equals the baseline written out on the pre-move revision, the baseline bytes unchanged; only the seam line that called the Reports registration goes. Reverted probe: dropping the Reports Add call turns the test red on the Reports service types.
+```
+
+```text
+The application starts with exactly the services, lifetimes and order it had before the move.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/StartUpRegistrationsPreservationTest\.cs
+
+StartUpRegistrationsPreservationTest \(craft target\: only its seam line changes in this slice\)
+
+```text
+Registrations under branches the Testing environment does not take (the stub sign-in provider, Redis), and two factories asking the same services with different constants, are not told apart; the slice review reads those lines for byte equality.
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P2
+
+```text
+Read the domain-event handlers per event from the start-up registrations after every handler line is gathered into one handler method of the composition root.
+```
+
+```text
+The seven pinned events keep their handlers in the written-out order, the pin file unchanged. Reverted probe: a refresh handler moved into a context's Add method turns this pin or the composition-root rule red.
+```
+
+```text
+Every reaction to a refresh, a deletion or a forecast update runs in the same order as before.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/DomainEventHandlerOrderPinTest\.cs
+
+DomainEventHandlerOrderPinTest
+
+```text
+Handlers of events outside the seven pinned ones could be reordered unseen; the review reads that no line is reordered within an event.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Read every type of the ten contexts the composition root names at all, after the last move.
+```
+
+```text
+Only start-up modules, handler-block entries, order-kept registrations and the measured host set-up types are named; a made-up root naming another type is reported; the listed contexts equal the packaged contexts.
+```
+
+```text
+The composition root names the contexts only through their modules.
+```
+
+##### Disposition
+
+NotTested
+
+```text
+This is the third slice's rule over all ten contexts, written from the names the composition root still uses after this slice's moves.
+```
+
+acceptance designer of the third slice of this feature
+
 ## Expectations
 
 ### Rows
