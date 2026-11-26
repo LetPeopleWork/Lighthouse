@@ -1402,41 +1402,41 @@ namespace Lighthouse.Backend
             builder.Services.AddReports();
         }
 
-        private static void RegisterDomainEventHandlers(IServiceCollection services)
+        private static void RegisterDomainEventHandlers(IServiceCollection serviceCollection)
         {
             // Outlives any one pass, so it is a singleton, and it forgets an owner the moment that
             // owner's items change - which is why it also stands as a handler for the two refresh
             // events. Holding nothing a correct answer depends on, it can be lost at any time.
-            services.AddSingleton<ReconstructionMemo>();
-            services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, TeamDataRefreshedTeamMetricsUpdateHandler>();
-            services.AddScoped<IDomainEventHandler<TeamDataRefreshed>>(services => services.GetRequiredService<ReconstructionMemo>());
-            services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>>(services => services.GetRequiredService<ReconstructionMemo>());
+            serviceCollection.AddSingleton<ReconstructionMemo>();
+            serviceCollection.AddScoped<IDomainEventHandler<TeamDataRefreshed>, TeamDataRefreshedTeamMetricsUpdateHandler>();
+            serviceCollection.AddScoped<IDomainEventHandler<TeamDataRefreshed>>(services => services.GetRequiredService<ReconstructionMemo>());
+            serviceCollection.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>>(services => services.GetRequiredService<ReconstructionMemo>());
 
-            services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, PortfolioFeaturesRefreshedMetricsInvalidationHandler>();
-            services.AddScoped<IDomainEventHandler<BlackoutConfigurationChanged>, BlackoutConfigurationChangedMetricsInvalidationHandler>();
-            services.AddScoped<IDomainEventHandler<PortfolioForecastsUpdated>, DeliveryMetricSnapshotRecordingHandler>();
-            services.AddScoped<IDomainEventHandler<PortfolioForecastsUpdated>, DeliveryForecastPublishingHandler>();
-             services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, TeamDataRefreshedForecastTriggerHandler>();
-            services.AddScoped<IDomainEventHandler<FeatureOrderingPolicyChanged>, FeatureOrderingPolicyChangedForecastTriggerHandler>();
-            services.AddScoped<IDomainEventHandler<FeatureRankChanged>, FeatureRankChangedForecastTriggerHandler>();
-             services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, BlockedCountSnapshotRecordingHandler>();
-             services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, BlockedCountSnapshotRecordingHandler>();
-             services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, PercentilesOverTimeRecordingHandler>();
-             services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, PercentilesOverTimeRecordingHandler>();
-             services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, ProcessBehaviorRecordingHandler>();
-             services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, ProcessBehaviorRecordingHandler>();
-             services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, DemoBlockedHistoryBackfillHandler>();
-             services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, DemoBlockedHistoryBackfillHandler>();
-             services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, DemoPercentilesBackfillHandler>();
-             services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, DemoPercentilesBackfillHandler>();
-            services.AddScoped<IDomainEventHandler<TeamDeleted>, TeamDeletedRefreshLogCleanupHandler>();
-            services.AddScoped<IDomainEventHandler<TeamDeleted>, TeamDeletedForecastRetriggerHandler>();
-            services.AddScoped<IDomainEventHandler<PortfolioDeleted>, PortfolioDeletedOrphanedFeatureCleanupHandler>();
-            services.AddScoped<IDomainEventHandler<ConnectionFetchShapeChanged>, ConnectionFetchShapeChangedUpdateTriggerHandler>();
-            services.AddScoped<IDomainEventHandler<WorkItemBlocked>, WorkItemBlockedTransitionCaptureHandler>();
-            services.AddScoped<IDomainEventHandler<WorkItemUnblocked>, WorkItemBlockedTransitionCloseHandler>();
-            services.AddScoped<IDomainEventHandler<FeatureBlocked>, FeatureBlockedTransitionCaptureHandler>();
-            services.AddScoped<IDomainEventHandler<FeatureUnblocked>, FeatureBlockedTransitionCloseHandler>();
+            serviceCollection.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, PortfolioFeaturesRefreshedMetricsInvalidationHandler>();
+            serviceCollection.AddScoped<IDomainEventHandler<BlackoutConfigurationChanged>, BlackoutConfigurationChangedMetricsInvalidationHandler>();
+            serviceCollection.AddScoped<IDomainEventHandler<PortfolioForecastsUpdated>, DeliveryMetricSnapshotRecordingHandler>();
+            serviceCollection.AddScoped<IDomainEventHandler<PortfolioForecastsUpdated>, DeliveryForecastPublishingHandler>();
+             serviceCollection.AddScoped<IDomainEventHandler<TeamDataRefreshed>, TeamDataRefreshedForecastTriggerHandler>();
+            serviceCollection.AddScoped<IDomainEventHandler<FeatureOrderingPolicyChanged>, FeatureOrderingPolicyChangedForecastTriggerHandler>();
+            serviceCollection.AddScoped<IDomainEventHandler<FeatureRankChanged>, FeatureRankChangedForecastTriggerHandler>();
+             serviceCollection.AddScoped<IDomainEventHandler<TeamDataRefreshed>, BlockedCountSnapshotRecordingHandler>();
+             serviceCollection.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, BlockedCountSnapshotRecordingHandler>();
+             serviceCollection.AddScoped<IDomainEventHandler<TeamDataRefreshed>, PercentilesOverTimeRecordingHandler>();
+             serviceCollection.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, PercentilesOverTimeRecordingHandler>();
+             serviceCollection.AddScoped<IDomainEventHandler<TeamDataRefreshed>, ProcessBehaviorRecordingHandler>();
+             serviceCollection.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, ProcessBehaviorRecordingHandler>();
+             serviceCollection.AddScoped<IDomainEventHandler<TeamDataRefreshed>, DemoBlockedHistoryBackfillHandler>();
+             serviceCollection.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, DemoBlockedHistoryBackfillHandler>();
+             serviceCollection.AddScoped<IDomainEventHandler<TeamDataRefreshed>, DemoPercentilesBackfillHandler>();
+             serviceCollection.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, DemoPercentilesBackfillHandler>();
+            serviceCollection.AddScoped<IDomainEventHandler<TeamDeleted>, TeamDeletedRefreshLogCleanupHandler>();
+            serviceCollection.AddScoped<IDomainEventHandler<TeamDeleted>, TeamDeletedForecastRetriggerHandler>();
+            serviceCollection.AddScoped<IDomainEventHandler<PortfolioDeleted>, PortfolioDeletedOrphanedFeatureCleanupHandler>();
+            serviceCollection.AddScoped<IDomainEventHandler<ConnectionFetchShapeChanged>, ConnectionFetchShapeChangedUpdateTriggerHandler>();
+            serviceCollection.AddScoped<IDomainEventHandler<WorkItemBlocked>, WorkItemBlockedTransitionCaptureHandler>();
+            serviceCollection.AddScoped<IDomainEventHandler<WorkItemUnblocked>, WorkItemBlockedTransitionCloseHandler>();
+            serviceCollection.AddScoped<IDomainEventHandler<FeatureBlocked>, FeatureBlockedTransitionCaptureHandler>();
+            serviceCollection.AddScoped<IDomainEventHandler<FeatureUnblocked>, FeatureBlockedTransitionCloseHandler>();
         }
 
         private static void ConfigureDatabase(WebApplicationBuilder builder)
