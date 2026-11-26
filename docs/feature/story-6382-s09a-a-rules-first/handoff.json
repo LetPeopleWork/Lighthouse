@@ -3,7 +3,8 @@
 "B": 3,
 "C": 2,
 "D": 17,
-"F": 207,
+"E": 2,
+"F": 211,
 "K": 14,
 "L": 7,
 "P": 2,
@@ -1132,6 +1133,30 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"blocking": "yes",
+"id": "E1",
+"isolated": "no",
+"lacuna": "F209",
+"promises": [
+"P1"
+],
+"text": "F208"
+},
+{
+"blocking": "yes",
+"id": "E2",
+"isolated": "no",
+"lacuna": "F211",
+"promises": [
+"P2"
+],
+"text": "F210"
+}
+]
+},
 "facts": {
 "F1": "Story 6382 S09a feature A, rules first: measure the published set of every context from the compiled code (ContextContractsMembership), classify every rule pattern FrontDoor or Place and widen FrontDoor patterns to Application|Contracts, then add the contracts-only rule (R-C1..R-C3) with its complete measured baseline, before any type moves.",
 "F10": "Any new cross-context edge outside what a context publishes is refused from now on.",
@@ -1254,7 +1279,11 @@
 "F205": "PackagedContexts.cs is a new file holding one type; nothing moves.",
 "F206": "ModuleRules.cs holds ModuleRules and its two verdict records InboundVerdict and OutboundVerdict and is extended additively by the acceptance designer, not by craft; splitting the verdict records would touch every approved rule oracle that names them and is outside this slice.",
 "F207": "R-C1: a type in Modules.A reaches Modules.B (B not A) only through Modules.B.Contracts or a listed edge; R-C2: Contracts reach only kernel, BCL, Microsoft.Extensions abstractions and Contracts; R-C3: contexts read from the assembly equal the inline ten",
+"F208": "The architecture-rules probe for the module-boundary and unit-test-placement rule classes lists a passing test line for every context's published set, each measured from the compiled code, and for every rule pattern classified as a front door or a place, with front doors covering Application and Contracts. Every rule line in those classes passes, and the ef-model-unchanged probe reports the data model unchanged.",
+"F209": "A passing rule line does not show that the measured sets are complete or that a pattern was classified correctly; a rule that matches nothing also passes, and the probe cannot show a loosened rule from its output alone.",
 "F21": "Refusals state what, why and how: each rule failure names the source, the target and its layer (what), that the target context may change it without telling anyone (why), and to name the type through Modules.B.Contracts, move a contract type there or react to an event (how), worded through ModuleWording (D-3).",
+"F210": "The architecture-rules probe with the ContextContracts fragment prints passing lines for the contracts-only rules R-C1, R-C2 and R-C3, including lines showing that the listed cross-context edges match the measured edges in both directions and that a made-up offender is caught for each rule and for each list position.",
+"F211": "Passing lines name tests but not the edges; the probe cannot show whether the list is the true complete set of cross-context edges, or that a planted offender represents a real violation.",
 "F22": "Cross-layer algebra, test layer only: states are the IL type graph and the regex fields of the test assembly; operations are IsMatch on full names and edge enumeration; observations are the NUnit verdict per test and its failure text; no domain, application, adapter or infrastructure layer of production changes in feature A.",
 "F23": "No formal model, laws run exhaustively on IL: No model for R-C1 to R-C3, the move law or the D-2 closure: they name no shared mutable state, no multi-step protocol, no concurrency and no crash window; they are relations over finite closed sets (compiled types, contexts, regex fields) evaluated exhaustively by NUnit; no checker selected, so no probe, install or waiver (D-16).",
 "F24": "No property tests, finite domains only: every law ranges over the finite compiled assembly and the inline lists, so each is checked exhaustively as an example over the whole set; planted fixture types are the falsifiers (D-16, test-writing skill wins over nWave PBT density).",
