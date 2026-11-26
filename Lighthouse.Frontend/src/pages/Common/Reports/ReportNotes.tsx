@@ -58,10 +58,7 @@ const ReportNotes: React.FC<
 		setRefusal(undefined);
 		try {
 			const saved = await reportService.addNote(owner, reportId, text);
-			queryClient.setQueryData<IReportNote[]>(
-				reportNotesQueryKeyOf(owner, reportId),
-				(held) => [saved, ...(held ?? [])],
-			);
+			keepNotes((held) => [saved, ...held]);
 			reportUsage({ name: UsageDataEventName.ReportNoteAdded });
 			setText("");
 		} catch (error_) {
