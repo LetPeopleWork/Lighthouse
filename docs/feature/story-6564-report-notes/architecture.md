@@ -907,7 +907,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Reports\/ReportNote\.cs
 Create
 
 ```text
-The entity of one note: text, instants, optional signer and captured name; declares the constant LongestText (2000); Write normalises and bounds the text
+namespace Lighthouse.Backend.Models.Reports. public sealed class ReportNote with public const int LongestText = 2000; properties int Id, int ReportId, string Text (default empty), DateTime CreatedAt, DateTime? LastEditedAt, int? AuthorUserProfileId, string? AuthorDisplayName, all get and set for EF. Static factory public static ReportOutcome<ReportNote> Write(int reportId, string? rawText, int? signedByProfileId, string? signerDisplayName, DateTime createdAt): trims rawText, answers ReportOutcome<ReportNote>.Refused(ReportRefusalCodes.NoteTextMissing) when the trimmed text is empty or the input null, Refused(ReportRefusalCodes.NoteTextTooLong) when it is over LongestText, else Done with the note (LastEditedAt null). It references no Application type, so Models stays free of Reports Application
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Reports\/ReportRefusalCodes\.cs
@@ -915,7 +915,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Reports\/ReportRefusalCodes\.c
 Extend
 
 ```text
-note-text-missing, note-text-too-long and note-author-unknown
+Adds public const string NoteTextMissing = "note-text-missing", NoteTextTooLong = "note-text-too-long", NoteAuthorUnknown = "note-author-unknown" (S3 adds NoteNotYours = "note-not-yours")
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/IReportNoteCommands\.cs
@@ -923,7 +923,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/IReport
 Create
 
 ```text
-Driving port: Add (S1), Edit and Delete (S3)
+namespace Lighthouse.Backend.Modules.Reports.Application. public interface IReportNoteCommands { Task<ReportOutcome<ReportNoteRead>> Add(ReportOwner owner, int reportId, ReportNoteCaller caller, string? text, DateTime now); }. Outcomes: Done with the read; NotFound when the owner holds no such report; Refused with ReportRefusalCodes.NoteAuthorUnknown for an Unresolved caller, NoteTextMissing or NoteTextTooLong for the text. The check order is report found, then caller, then text. S3 adds Edit(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller, string? text, DateTime now) returning Task<ReportOutcome<ReportNoteRead>> and Delete(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller) returning Task<ReportOutcomeStatus>
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/IReportNoteQueries\.cs
@@ -931,7 +931,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/IReport
 Create
 
 ```text
-Driving port: List newest first
+public interface IReportNoteQueries { ReportOutcome<IReadOnlyList<ReportNoteRead>> List(ReportOwner owner, int reportId); }. Done with the notes of that report newest first (CreatedAt then Id, both descending), empty when it has none; NotFound when the owner holds no such report. S3 adds the overload List(ReportOwner owner, int reportId, ReportNoteCaller caller) whose reads carry CanModify; the S1 overload stays
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/IReportNoteStore\.cs
@@ -939,7 +939,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/IReport
 Create
 
 ```text
-Driven port over the Report aggregate's notes
+public interface IReportNoteStore { bool ReportExists(ReportOwner owner, int reportId); IReadOnlyList<ReportNote> NotesNewestFirst(ReportOwner owner, int reportId); void Add(ReportNote note); Task Save(); }. A note is reachable only through its owner and report id. S3 adds ReportNote? FindForEdit(ReportOwner owner, int reportId, int noteId), void Remove(ReportNote note) and Task<bool> TrySave(), which answers false when a concurrent delete made the save conflict
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/ReportNoteCaller\.cs
@@ -947,7 +947,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/ReportN
 Create
 
 ```text
-Choice type of the caller: Anonymous, Signed(profile id, display name), Unresolved
+public abstract record ReportNoteCaller with a private protected constructor and three public nested sealed records in the same file: Anonymous (no members; authentication off), Signed(int ProfileId, string? DisplayName), Unresolved (authentication on, nobody resolved). Built with new ReportNoteCaller.Anonymous(), new ReportNoteCaller.Signed(7, "Ann"), new ReportNoteCaller.Unresolved()
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/ReportNoteRead\.cs
@@ -955,7 +955,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/ReportN
 Create
 
 ```text
-What a reader gets of one note
+public sealed record ReportNoteRead(int Id, string Text, DateTime CreatedAt, DateTime? LastEditedAt, string? AuthorDisplayName). Instants are UTC DateTime; the instance-zone day is not on this record. S3 appends bool CanModify as the last positional member
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/ReportNoteCommands\.cs
@@ -963,7 +963,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/ReportN
 Create
 
 ```text
-Add with owner and report scoping, the text refusals and the Unresolved caller refusal
+public sealed class ReportNoteCommands(IReportNoteStore store) : IReportNoteCommands. Add as declared on IReportNoteCommands: stores ReportNote.Write(reportId, text, signed ? profileId : null, signed ? displayName : null, now) for Anonymous (unsigned) and Signed callers, saves once, answers the read
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/ReportNoteQueries\.cs
@@ -971,7 +971,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/ReportN
 Create
 
 ```text
-List ordered by CreatedAt then Id descending
+public sealed class ReportNoteQueries(IReportNoteStore store) : IReportNoteQueries. List as declared on IReportNoteQueries
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Repositories\/ReportRepository\.cs
@@ -979,7 +979,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Repositories
 Extend
 
 ```text
-Implements IReportNoteStore; translates a concurrency conflict to a false save
+Also implements IReportNoteStore over context.ReportNotes: ReportExists and NotesNewestFirst filter through the owner column of Reports, ordered by CreatedAt then Id descending, AsNoTracking; Add and Save as declared
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Data\/LighthouseAppContext\.cs
@@ -987,7 +987,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Data\/LighthouseAppContext\.cs
 Extend
 
 ```text
-DbSet ReportNotes and its mapping, with HasMaxLength(ReportNote.LongestText) on the text column
+public DbSet<ReportNote> ReportNotes. Table ReportNotes: Id int primary key; ReportId int required, foreign key to Reports.Id with cascade delete, indexed; Text required, HasMaxLength(ReportNote.LongestText); CreatedAt required; LastEditedAt nullable; AuthorUserProfileId int nullable, foreign key to UserProfiles with SetNull; AuthorDisplayName nullable
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Program\.cs
@@ -1003,7 +1003,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/API\/ReportNotesControllerBase\.cs
 Create
 
 ```text
-How a note request is answered for either owner kind: builds ReportNoteCaller from IAuthModeResolver.Resolve().Mode and ICurrentUserProfileService, passes the clock instant, maps outcomes to status codes
+public abstract class ReportNotesControllerBase(IReportNoteQueries queries, IReportNoteCommands commands, ICurrentUserProfileService profiles, IAuthModeResolver authModes, ILighthouseClock clock) : ControllerBase, with public static ReportNoteCaller CallerOf(AuthMode mode, UserProfile? profile): Disabled gives new ReportNoteCaller.Anonymous(); Enabled with a profile gives new ReportNoteCaller.Signed(profile.Id, profile.DisplayName); Enabled with null, Misconfigured and Blocked give new ReportNoteCaller.Unresolved(). Protected actions answer the ports' outcomes with ProblemDetails carrying the code (400, 403, 404)
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/API\/TeamReportNotesController\.cs
@@ -1027,7 +1027,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/API\/DTO\/Reports\/ReportNoteDto\.cs
 Create
 
 ```text
-Wire shape with instance-zone days
+public sealed class ReportNoteDto with int Id, string Text, DateTime CreatedAt, DateOnly CreatedOn, DateTime? LastEditedAt, DateOnly? LastEditedOn, string? AuthorDisplayName, and public static ReportNoteDto From(ReportNoteRead note, ILighthouseClock clock) that reduces the instants to instance-zone days with clock.ToInstanceDay. S3 adds bool CanModify
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/API\/DTO\/Reports\/ReportNoteRequest\.cs
@@ -1059,7 +1059,7 @@ Lighthouse\.Frontend\/src\/models\/Reports\/ReportNote\.ts
 Create
 
 ```text
-Zod schema and type of a note
+export interface IReportNote { id: number; text: string; createdAt: string; createdOn: string; lastEditedAt?: string | null; lastEditedOn?: string | null; authorDisplayName?: string | null }; export const ReportNoteSchema: z.ZodType<IReportNote> = z.object({...}); export const ReportNotesSchema = z.array(ReportNoteSchema). S3 adds canModify?: boolean
 ```
 
 Lighthouse\.Frontend\/src\/services\/Api\/ReportService\.ts
@@ -1067,7 +1067,7 @@ Lighthouse\.Frontend\/src\/services\/Api\/ReportService\.ts
 Extend
 
 ```text
-getNotes and addNote
+IReportService and ReportService gain getNotes(owner: IReportOwner, reportId: number): Promise<IReportNote[]> (GET /{teams|portfolios}/{owner.id}/reports/{reportId}/notes) and addNote(owner: IReportOwner, reportId: number, text: string): Promise<IReportNote> (POST with body { text }); S3 adds updateNote(owner, reportId, noteId, text) and deleteNote(owner, reportId, noteId)
 ```
 
 Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportNotes\.tsx
@@ -1075,7 +1075,7 @@ Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportNotes\.tsx
 Create
 
 ```text
-The notes area: list, add field, loading and failure look through WidgetBody
+export default ReportNotes: React.FC<Readonly<{ owner: IReportOwner; reportId: number; mayWrite: boolean }>>; test ids report-notes (area), report-note (each note), report-note-input, save-report-note-button; text from the field is sent as typed
 ```
 
 Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/useReportNotes\.ts
@@ -1083,7 +1083,7 @@ Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/useReportNotes\.ts
 Create
 
 ```text
-Keyed query by owner and report id, invalidated by writes
+export const reportNotesQueryKeyOf = (owner: IReportOwner, reportId: number) => [...reportQueryKeyOf(owner, reportId), "notes"] as const; export const useReportNotes = (owner: IReportOwner, reportId: number) => UseQueryResult<IReportNote[]> reading reportService.getNotes
 ```
 
 Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportView\.tsx
@@ -1091,7 +1091,7 @@ Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportView\.tsx
 Extend
 
 ```text
-Mounts the notes area for a writer beside the panels
+Renders <ReportNotes owner={owner} reportId={reportId} mayWrite={isEditor} /> when isEditor (S2: for every reader)
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsMembership\.cs
@@ -1099,7 +1099,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsMembership
 Extend
 
 ```text
-TypesThatStay gains ReportNote; MovingTypes gains the new Application types with layer Application
+TypesThatStay gains ReportNote (Models.Reports); MovingTypes gains IReportNoteCommands, IReportNoteQueries, IReportNoteStore, ReportNoteCaller, ReportNoteRead, ReportNoteCommands, ReportNoteQueries with layer Application, in the skeleton commit
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs
@@ -1115,7 +1115,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/ReportNotesControllerCalle
 Create
 
 ```text
-Covers the AuthMode to ReportNoteCaller mapping of ReportNotesControllerBase
+Calls ReportNotesControllerBase.CallerOf(AuthMode, UserProfile?) over the four AuthMode members and a present or absent profile, including Enabled with a profile when the RBAC switch is off
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Data\/ReportNotesTableConstraintsTest\.cs
@@ -1123,7 +1123,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Data\/ReportNotesTableConstrain
 Create
 
 ```text
-Covers HasMaxLength(ReportNote.LongestText) on the text column and the cascade from Reports, as ReportsTableConstraintsTest does for Reports
+Over the real context: table ReportNotes, columns Id, ReportId, Text, CreatedAt, LastEditedAt, AuthorUserProfileId, AuthorDisplayName; a 2001-character Text is refused and 2000 accepted; deleting a Report deletes its ReportNotes; removing a UserProfile sets AuthorUserProfileId to null
 ```
 
 Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportNotes\.add\.test\.tsx
@@ -1192,7 +1192,22 @@ P11
 
 #### Prefactoring
 
-None.
+```text
+Before any behaviour, in a separate commit, add the declared public surface of this slice as behaviour-free skeletons: the C# types ReportNote (entity with LongestText and properties; Write throws NotImplementedException), ReportNoteCaller with its three nested records, ReportNoteRead, IReportNoteCommands, IReportNoteQueries, IReportNoteStore, ReportNoteCommands and ReportNoteQueries (every member throws NotImplementedException), ReportNotesControllerBase with CallerOf throwing, the DTO ReportNoteDto with From throwing, the three refusal code constants, and the TypeScript IReportNote, ReportNoteSchema, the getNotes and addNote members on IReportService and ReportService (throwing), and the ReportNotes and useReportNotes exports (not rendered). Nothing is registered in Program.cs, mapped in LighthouseAppContext, migrated, routed or rendered, so no behaviour changes; ReportsMembership and TypesByLayer list the new types so the architecture tests stay GREEN. Where an analyser flags NotImplementedException the skeleton carries a narrow inline suppression with its reason. The S1 oracle is then written against this surface and fails on behaviour (NotImplementedException, missing rows), a semantic RED, not on a missing type
+```
+
+```text
+Every existing Reports behaviour and every architecture rule: the surface has no caller and no registration, the Reports module and membership rules stay satisfied
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsMembershipArchUnitTest\.cs
+
+##### Verification
+
+```text
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsMembershipArchUnitTest|FullyQualifiedName~ReportsModuleBoundariesArchUnitTest|FullyQualifiedName~Slice01TeamReportScenarios
+pnpm --dir Lighthouse.Frontend build
+```
 
 #### Records
 
@@ -1217,12 +1232,6 @@ None.
 None.
 
 ##### Not applicable
-
-prefactoring
-
-```text
-ReportRepository.cs holds one type, ReportRefusalCodes.cs holds one type, LighthouseAppContext.cs holds one class, Program.cs holds one class, ReportView.tsx holds one component and ReportService.ts holds the service interface with its only implementation by the convention of every sibling service file; nothing moves in this slice for any of them, and every new file holds one type
-```
 
 architectural_tests
 
@@ -1251,17 +1260,17 @@ Impact is recorded in the shared impact and agreement records: persistence, both
 ##### Boundaries
 
 ```text
-IReportNoteCommands.Add and IReportNoteQueries.List; POST and GET reports/{reportId}/notes; ReportNotes in ReportView
+IReportNoteCommands.Add(ReportOwner, int, ReportNoteCaller, string?, DateTime) and IReportNoteQueries.List(ReportOwner, int), both over ReportOutcome; ReportNoteDto.From for the day; ReportNotesControllerBase.CallerOf for the mode mapping; POST and GET reports/{reportId}/notes; ReportNotes in ReportView; IReportService.getNotes and addNote
 ```
 
 ###### Driven ports
 
 ```text
-IReportNoteStore
+IReportNoteStore (ReportExists, NotesNewestFirst, Add, Save), implemented by ReportRepository over the ReportNotes table
 ```
 
 ```text
-Controller -> ports -> ReportNote and store; the instant comes in from the controller clock
+Controller -> ports -> ReportNote and store; the instant comes in from the controller clock; ReportNote references no Application type
 ```
 
 ###### Failures
@@ -1290,6 +1299,16 @@ ReportOutcome of ReportNoteRead
 A refusal for blank text from one for over-length text, except by their code
 ```
 
+```text
+The instance-zone day a note was written, observed through ReportNoteDto.From(read, clock) with the harness clock and no web host; the port itself exposes only instants. The wire contract test belongs to S2 and is not needed for S1, so one wire test serves the Request
+```
+
+ReportNoteDto with CreatedOn as DateOnly
+
+```text
+A DTO built by From from one the controller serialises; the serialised shape is observed in S2
+```
+
 ##### Equality
 
 notes of a report
@@ -1302,7 +1321,19 @@ Two notes agree when their text, written day, edited day and author name agree; 
 
 ReportNote\.Write
 
-Write\(reportId\: int\, rawText\: string\, author\: ReportNoteAuthor\?\, createdAt\: DateTime\) \-\> ReportNote or a refusal code
+static ReportOutcome\<ReportNote\> Write\(int reportId\, string\? rawText\, int\? signedByProfileId\, string\? signerDisplayName\, DateTime createdAt\)
+
+ReportNoteCaller
+
+new ReportNoteCaller\.Anonymous\(\) \| new ReportNoteCaller\.Signed\(int profileId\, string\? displayName\) \| new ReportNoteCaller\.Unresolved\(\)
+
+ReportNotesControllerBase\.CallerOf
+
+public static ReportNoteCaller CallerOf\(AuthMode mode\, UserProfile\? profile\)
+
+ReportNoteDto\.From
+
+public static ReportNoteDto From\(ReportNoteRead note\, ILighthouseClock clock\)
 
 ##### Laws
 
