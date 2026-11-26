@@ -13,7 +13,14 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             ArgumentNullException.ThrowIfNull(module);
 
-            return [];
+            var underTheModulesRoot = $"{ContextContractsMembership.TheModulesRoot}.";
+
+            return [.. module.Types
+                .Select(type => type.Namespace)
+                .Where(name => name.StartsWith(underTheModulesRoot, StringComparison.Ordinal))
+                .Select(name => name[underTheModulesRoot.Length..].Split('.')[0])
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)];
         }
     }
 }
