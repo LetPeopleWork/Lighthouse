@@ -66,8 +66,23 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
             var item = await TheOnlyItemReadFrom(tracker);
 
             Assert.That(item.TransitionsAreItsWholeHistory, Is.True,
-                "Every entry Jira counts for the item was read, so its history may replace the stored one. A "
-                + "history still marked partial leaves the stored transitions as they were.");
+                "Every entry Jira counts for the item was read, so the item must be reported as holding its whole "
+                + "history. A history still marked partial is never trusted as complete.");
+        }
+
+        [TestCase(DataCenter, TestName = "DataCenter_ItemWhoseWholeHistoryReadIsRefused_FailsTheReadInsteadOfDatingFromThePartialAnswer")]
+        [TestCase(Cloud, TestName = "Cloud_ItemWhoseWholeHistoryReadIsRefused_FailsTheReadInsteadOfDatingFromThePartialAnswer")]
+        public void ItemWhoseWholeHistoryReadIsRefused_FailsTheReadInsteadOfDatingFromThePartialAnswer(string deployment)
+        {
+            var tracker = ATrackerRefusingTheWholeHistory(deployment, ASuspendedItem(), HttpStatusCode.InternalServerError);
+            var connector = JiraConnectorTestSetup.AConnectorOver(tracker);
+
+            Assert.That(
+                async () => await connector.GetWorkItemsForTeam(ATeam(), CancellationToken.None),
+                Throws.InstanceOf<HttpRequestException>(),
+                "Jira refused to hand over the item's whole history. The read of the team's items must fail "
+                + "rather than quietly date the item from the partial answer, which would store a wrong start. "
+                + "The refusal is assumed to be temporary, so the next refresh reads the item again.");
         }
 
         [TestCase(DataCenter, TestName = "DataCenter_ItemWhoseWholeHistoryReadIsStillPartial_StaysMarkedAsNotHoldingItsWholeHistory")]
@@ -117,6 +132,9 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
         private static JiraTracker ATrackerHolding(string deployment, AnItem item, int entriesInTheSearchAnswer, int entriesInTheRereadHistory)
             => new(deployment, item, entriesInTheSearchAnswer, entriesInTheRereadHistory);
 
+        private static JiraTracker ATrackerRefusingTheWholeHistory(string deployment, AnItem item, HttpStatusCode status)
+            => new(deployment, item, entriesInTheSearchAnswer: 1, entriesInTheRereadHistory: 4, status);
+
         private static Team ATeam()
         {
             var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
@@ -134,7 +152,12 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
         /// whole-history route carries the number of entries asked for. Both count every entry of the whole
         /// history as the total, as Jira does.
         /// </summary>
-        private sealed class JiraTracker(string deployment, AnItem item, int entriesInTheSearchAnswer, int entriesInTheRereadHistory)
+        private sealed class JiraTracker(
+            string deployment,
+            AnItem item,
+            int entriesInTheSearchAnswer,
+            int entriesInTheRereadHistory,
+            HttpStatusCode? statusOfTheWholeHistoryRead = null)
             : HttpMessageHandler
         {
             protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -149,6 +172,11 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
                 if (isTheItemsChangelog && deployment == DataCenter)
                 {
                     return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
+                }
+
+                if ((isTheItemsChangelog || isTheItemWithItsChangelog) && statusOfTheWholeHistoryRead is { } refusal)
+                {
+                    return Task.FromResult(new HttpResponseMessage(refusal));
                 }
 
                 return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)

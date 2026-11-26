@@ -41,7 +41,7 @@
 },
 "expected": "F21",
 "stimulus": "F20",
-"user_result": "F22"
+"user_result": "F31"
 },
 {
 "covers": [
@@ -56,12 +56,26 @@
 "expected": "F25",
 "stimulus": "F28",
 "user_result": "F29"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F35",
+"test": "ItemWhoseWholeHistoryReadIsRefused_FailsTheReadInsteadOfDatingFromThePartialAnswer",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraPartialHistoryDatingTest.cs"
+},
+"expected": "F33",
+"stimulus": "F32",
+"user_result": "F34"
 }
 ]
 },
 "counters": {
 "E": 2,
-"F": 30,
+"F": 35,
 "P": 1,
 "S": 1
 },
@@ -133,13 +147,17 @@
 "F2": "A Jira item whose search answer holds only part of its history is dated from its whole history, so its start date, closed date and cycle time are right on Data Center and Cloud.",
 "F20": "The whole-history read of an item holds every entry Jira counts for it (Data Center and Cloud)",
 "F21": "The item is marked as holding its whole history",
-"F22": "The item's stored transitions are replaced by the complete history",
 "F23": "A connector that dates the item correctly but leaves it marked as partial",
 "F25": "The item stays marked as not holding its whole history",
 "F28": "The whole-history read of an item still holds fewer entries than Jira counts; on Cloud the page says more follow, on Data Center the issue's changelog total exceeds the entries it holds",
 "F29": "The item is reported as holding only part of its history, so a stored history is not replaced by it",
 "F3": "A Jira item whose search answer holds only part of its history is dated from its whole history, on Data Center and on Cloud",
 "F30": "A connector that marks every re-read item as holding its whole history; already satisfied today and preserved. Which entries the item exposes is not pinned: replacing the stored history is decided downstream from the marker",
+"F31": "The item is reported as holding its whole history",
+"F32": "Jira answers the item's whole-history read with a server error while the search answer holds only part of its history (Data Center and Cloud)",
+"F33": "The read of the team's items fails loudly with an HTTP request error instead of dating the item from the partial answer",
+"F34": "A wrong start date is never stored; the failure shows and the next refresh reads the item again",
+"F35": "A connector that swallows the refusal and dates the item from the partial search answer",
 "F4": "A Jira item whose search answer holds fewer changelog entries than its changelog total gets its start and closed dates from its whole history, on Data Center and on Cloud",
 "F5": "The connector reads a team's items; Jira's search answer for an item in a Doing state holds only its latest history entries (a move within Doing), with changelog.total larger than the entries returned, and the item's full history (which holds the earlier move into Doing) is available from the deployment's own whole-history route: rest/api/2/issue/<KEY>?expand=changelog on Data Center, the paged issue changelog route on Cloud",
 "F6": "The item's start date is the date it first entered Doing in its whole history (16 May 2025 in the reported case), not empty; a finished item's start date likewise comes from its whole history rather than its closed date; when the whole-history read is itself still partial, the item stays marked as not holding its whole history",

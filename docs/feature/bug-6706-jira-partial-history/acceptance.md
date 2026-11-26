@@ -81,7 +81,7 @@ The item is marked as holding its whole history
 ```
 
 ```text
-The item's stored transitions are replaced by the complete history
+The item is reported as holding its whole history
 ```
 
 ##### Disposition
@@ -126,6 +126,38 @@ ItemWhoseWholeHistoryReadIsStillPartial\_StaysMarkedAsNotHoldingItsWholeHistory
 
 ```text
 A connector that marks every re-read item as holding its whole history; already satisfied today and preserved. Which entries the item exposes is not pinned: replacing the stored history is decided downstream from the marker
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Jira answers the item's whole-history read with a server error while the search answer holds only part of its history (Data Center and Cloud)
+```
+
+```text
+The read of the team's items fails loudly with an HTTP request error instead of dating the item from the partial answer
+```
+
+```text
+A wrong start date is never stored; the failure shows and the next refresh reads the item again
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/TrackerIntegration\/Adapters\/Connectors\/Jira\/JiraPartialHistoryDatingTest\.cs
+
+ItemWhoseWholeHistoryReadIsRefused\_FailsTheReadInsteadOfDatingFromThePartialAnswer
+
+```text
+A connector that swallows the refusal and dates the item from the partial search answer
 ```
 
 ###### Obligations

@@ -224,7 +224,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>The item is marked as holding its whole history
 </code></pre>
 
-<pre><code>The item&#x27;s stored transitions are replaced by the complete history
+<pre><code>The item is reported as holding its whole history
 </code></pre>
 
 <h5>Disposition</h5>
@@ -264,6 +264,34 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>ItemWhoseWholeHistoryReadIsStillPartial_StaysMarkedAsNotHoldingItsWholeHistory</p>
 
 <pre><code>A connector that marks every re-read item as holding its whole history; already satisfied today and preserved. Which entries the item exposes is not pinned: replacing the stored history is decided downstream from the marker
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Jira answers the item&#x27;s whole-history read with a server error while the search answer holds only part of its history (Data Center and Cloud)
+</code></pre>
+
+<pre><code>The read of the team&#x27;s items fails loudly with an HTTP request error instead of dating the item from the partial answer
+</code></pre>
+
+<pre><code>A wrong start date is never stored; the failure shows and the next refresh reads the item again
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraPartialHistoryDatingTest.cs</p>
+
+<p>ItemWhoseWholeHistoryReadIsRefused_FailsTheReadInsteadOfDatingFromThePartialAnswer</p>
+
+<pre><code>A connector that swallows the refusal and dates the item from the partial search answer
 </code></pre>
 
 <h6>Obligations</h6>
