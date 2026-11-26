@@ -2077,6 +2077,30 @@ Extend
 Adds the S3 rows: a reader's PUT and DELETE are refused 403 and the note is unchanged
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/IReportNoteCommands\.cs
+
+Extend
+
+```text
+Gains Edit(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller, string? text, DateTime now) and Delete(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller), both returning Task<ReportOutcome<ReportNoteRead>>
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/IReportNoteQueries\.cs
+
+Extend
+
+```text
+Gains the overload List(ReportOwner owner, int reportId, ReportNoteCaller caller) whose reads carry CanModify
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/IReportNoteStore\.cs
+
+Extend
+
+```text
+Gains ReportNote? FindForEdit(ReportOwner owner, int reportId, int noteId), void Remove(ReportNote note) and Task<bool> TrySave(), false when a concurrent delete made the save conflict
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteChangeScenarios\.cs
 
 #### Verification
@@ -2132,11 +2156,11 @@ P12
 #### Prefactoring
 
 ```text
-Move DeliveryNoteRequest out of DeliveryNotesController.cs into its own file DeliveryNoteRequest.cs (split-now, a separate commit before the behaviour change), then extract DeliveryNotesController.MayModify unchanged into the kernel value NoteSignature, which makes the report note rule a second asker of one decision
+Move DeliveryNoteRequest out of DeliveryNotesController.cs into its own file DeliveryNoteRequest.cs (split-now, a separate commit before the behaviour change), then extract DeliveryNotesController.MayModify unchanged into the kernel value NoteSignature, which makes the report note rule a second asker of one decision Third step, in a separate commit after the two Delivery moves and before any behaviour: add the S3 member contracts as behaviour-free skeletons wired to no route and no UI, so the S3 oracle compiles and fails on behaviour (NotImplementedException), not on a missing member. C#: NoteSignature (Models, namespace Lighthouse.Backend.Models) is created by the second move with the Delivery rule unchanged, and sits in no Reports membership list; ReportRefusalCodes.NoteNotYours = "note-not-yours"; ReportNote.MayBeChangedBy(int? callerProfileId) returning bool and ReportNote.Revise(string? rawText, DateTime editedAt) returning ReportOutcome<ReportNote>, both throwing; ReportNoteRead gains the last positional member bool CanModify (the S1 mapping passes false); IReportNoteCommands gains Edit(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller, string? text, DateTime now) returning Task<ReportOutcome<ReportNoteRead>> and Delete(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller) returning Task<ReportOutcome<ReportNoteRead>> (the removed note on Done, so a refusal keeps its code); IReportNoteQueries gains the overload List(ReportOwner owner, int reportId, ReportNoteCaller caller); IReportNoteStore gains ReportNote? FindForEdit(ReportOwner owner, int reportId, int noteId), void Remove(ReportNote note) and Task<bool> TrySave(); ReportNoteCommands, ReportNoteQueries and ReportRepository implement them by throwing; ReportNoteDto gains bool CanModify taken from the read; ReportNotesControllerBase gains protected EditNote and DeleteNote members that throw and are exposed by no controller action. TypeScript: IReportNote gains canModify?: boolean; IReportService and ReportService gain updateNote(owner: IReportOwner, reportId: number, noteId: number, text: string): Promise<IReportNote> and deleteNote(owner: IReportOwner, reportId: number, noteId: number): Promise<void>, which reject with an Error; ReportNotes.tsx is unchanged. No new type lands in a Reports membership list (the only new type, NoteSignature, is in Models outside Reports, and ReportNoteRead stays in the Domain layer reaching only Models and the base library), so ReportsMembership and TypesByLayer need no change.
 ```
 
 ```text
-Delivery note behaviour: a signed note only by its author, an unsigned note by any writer, whatever the authentication setting; same routes and same DTO
+Delivery note behaviour: a signed note only by its author, an unsigned note by any writer, whatever the authentication setting; same routes and same DTO; and for the skeleton step every Reports behaviour of S1 and S2, since nothing is registered, routed or rendered
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/DeliveryNoteAuthorshipTest\.cs
@@ -2145,6 +2169,10 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/DeliveryNoteAuthorshipTest
 
 ```text
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DeliveryNoteAuthorshipTest|FullyQualifiedName~DeliveryNotesControllerTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportNoteScenarios
+pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportNotes.reader.test.tsx
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsMembershipArchUnitTest|FullyQualifiedName~ReportsModuleBoundariesArchUnitTest
+pnpm --dir Lighthouse.Frontend build
 ```
 
 #### Records
