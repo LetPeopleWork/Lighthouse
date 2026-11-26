@@ -304,9 +304,10 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
             {
                 var isTheFirstPage = HttpUtility.ParseQueryString(query)["startAt"] == "0";
                 var entries = isTheFirstPage ? item.WholeHistory.TakeLast(entriesInTheRereadHistory).ToList() : [];
-                var holdsEveryEntry = entries.Count == item.WholeHistory.Count;
+                var total = TotalTheRereadReports ?? item.WholeHistory.Count;
+                var holdsEveryEntry = entries.Count >= total;
 
-                return "{\"startAt\":0,\"maxResults\":" + entries.Count + ",\"total\":" + (TotalTheRereadReports ?? item.WholeHistory.Count)
+                return "{\"startAt\":0,\"maxResults\":" + entries.Count + ",\"total\":" + total
                     + ",\"isLast\":" + (holdsEveryEntry || !isTheFirstPage ? "true" : "false")
                     + ",\"values\":[" + string.Join(",", entries) + "]}";
             }
