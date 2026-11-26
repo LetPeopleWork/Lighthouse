@@ -686,6 +686,22 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Examination</h2>
 
-<p>None.</p>
+<h3>E1</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probes (architecture-rules ModuleBoundaries / UnitTestPlacement / ContextContracts, ef-model-unchanged). ModuleBoundaries: 325/325 passed, UnitTestPlacement: 424/424 passed, ContextContracts: 257/257 passed; zero Failed. Lines include ThePublishedSetOfEveryContext_EqualsTheClosureMeasuredFromTheCompiledCode_BothWays, ThePublishedType_IsFoundAsATopLevelTypeInExactlyItsOldOrItsContractsNamespace(per type), TheClosureCheck_NamesASeedThatHoldsBehaviour_AndAClosureMemberMissingFromTheMap, and many TheRulePattern_KeepsItsDeclaredRole_WhenThePublishedTypesMoveIntoContracts(&lt;test&gt;.&lt;field&gt;: FrontDoor|Place|Context) lines. ef-model-unchanged: &#x27;No changes have been made to the model since the last migration&#x27; for Sqlite and Postgres. Not shown: widened Application|Contracts text itself, completeness of sets. Note: first attempts were refused/contaminated by my own mistakes (unsplit zsh arg, output file in workspace); removed.
+</code></pre>
+
+<h3>E2</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>ContextContracts probe: 257 passed. Lines: EveryEdgeFromOneContextIntoAnotherOutsideItsContracts_IsListed_AndEveryListedEdgeIsStillMade (R-C1 both directions); NoContractsTypeReachesBeyondTheKernel... (R-C2); TheContextsReadFromTheCompiledCode_AreExactlyTheTenPackagedContexts and TheContextCheck_NamesAMadeUpModuleRootOfTheCompiledCode_AndANamedContextThatIsGone (R-C3, planted root, per-context removal x10); TheInwardCheck_NamesAContractsTypeReachingItsOwnApplication (planted R-C2); TheSurfaceCheck_NamesAListedEdgeOfTheCompiledCode_OnceItIsTakenOffTheList per listed edge (per list position). Not shown: that the list is truly complete beyond the test&#x27;s own measure.
+</code></pre>
 
 </body></html>

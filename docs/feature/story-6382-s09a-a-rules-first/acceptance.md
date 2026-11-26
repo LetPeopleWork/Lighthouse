@@ -604,4 +604,22 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+Probes (architecture-rules ModuleBoundaries / UnitTestPlacement / ContextContracts, ef-model-unchanged). ModuleBoundaries: 325/325 passed, UnitTestPlacement: 424/424 passed, ContextContracts: 257/257 passed; zero Failed. Lines include ThePublishedSetOfEveryContext_EqualsTheClosureMeasuredFromTheCompiledCode_BothWays, ThePublishedType_IsFoundAsATopLevelTypeInExactlyItsOldOrItsContractsNamespace(per type), TheClosureCheck_NamesASeedThatHoldsBehaviour_AndAClosureMemberMissingFromTheMap, and many TheRulePattern_KeepsItsDeclaredRole_WhenThePublishedTypesMoveIntoContracts(<test>.<field>: FrontDoor|Place|Context) lines. ef-model-unchanged: 'No changes have been made to the model since the last migration' for Sqlite and Postgres. Not shown: widened Application|Contracts text itself, completeness of sets. Note: first attempts were refused/contaminated by my own mistakes (unsplit zsh arg, output file in workspace); removed.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+ContextContracts probe: 257 passed. Lines: EveryEdgeFromOneContextIntoAnotherOutsideItsContracts_IsListed_AndEveryListedEdgeIsStillMade (R-C1 both directions); NoContractsTypeReachesBeyondTheKernel... (R-C2); TheContextsReadFromTheCompiledCode_AreExactlyTheTenPackagedContexts and TheContextCheck_NamesAMadeUpModuleRootOfTheCompiledCode_AndANamedContextThatIsGone (R-C3, planted root, per-context removal x10); TheInwardCheck_NamesAContractsTypeReachingItsOwnApplication (planted R-C2); TheSurfaceCheck_NamesAListedEdgeOfTheCompiledCode_OnceItIsTakenOffTheList per listed edge (per list position). Not shown: that the list is truly complete beyond the test's own measure.
+```

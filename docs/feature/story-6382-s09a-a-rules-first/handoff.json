@@ -316,7 +316,7 @@
 "C": 2,
 "D": 18,
 "E": 2,
-"F": 282,
+"F": 284,
 "K": 15,
 "L": 7,
 "P": 2,
@@ -1459,6 +1459,20 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F283"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F284"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -1683,6 +1697,8 @@
 "F280": "Every existing rule keeps its verdict; only the context-reading checks fail until the contexts are read from the code",
 "F281": "A reviewer sees the new rule added without changing any other rule's verdict",
 "F282": "an existing rule over the test code that would also read the made-up contexts' root; none matches it today",
+"F283": "Probes (architecture-rules ModuleBoundaries / UnitTestPlacement / ContextContracts, ef-model-unchanged). ModuleBoundaries: 325/325 passed, UnitTestPlacement: 424/424 passed, ContextContracts: 257/257 passed; zero Failed. Lines include ThePublishedSetOfEveryContext_EqualsTheClosureMeasuredFromTheCompiledCode_BothWays, ThePublishedType_IsFoundAsATopLevelTypeInExactlyItsOldOrItsContractsNamespace(per type), TheClosureCheck_NamesASeedThatHoldsBehaviour_AndAClosureMemberMissingFromTheMap, and many TheRulePattern_KeepsItsDeclaredRole_WhenThePublishedTypesMoveIntoContracts(<test>.<field>: FrontDoor|Place|Context) lines. ef-model-unchanged: 'No changes have been made to the model since the last migration' for Sqlite and Postgres. Not shown: widened Application|Contracts text itself, completeness of sets. Note: first attempts were refused/contaminated by my own mistakes (unsplit zsh arg, output file in workspace); removed.",
+"F284": "ContextContracts probe: 257 passed. Lines: EveryEdgeFromOneContextIntoAnotherOutsideItsContracts_IsListed_AndEveryListedEdgeIsStillMade (R-C1 both directions); NoContractsTypeReachesBeyondTheKernel... (R-C2); TheContextsReadFromTheCompiledCode_AreExactlyTheTenPackagedContexts and TheContextCheck_NamesAMadeUpModuleRootOfTheCompiledCode_AndANamedContextThatIsGone (R-C3, planted root, per-context removal x10); TheInwardCheck_NamesAContractsTypeReachingItsOwnApplication (planted R-C2); TheSurfaceCheck_NamesAListedEdgeOfTheCompiledCode_OnceItIsTakenOffTheList per listed edge (per list position). Not shown: that the list is truly complete beyond the test's own measure.",
 "F29": "Every count in the design was measured as text at 952040471 and is to be re-measured at A1 from the IL: the 38 edges, about 25 targets, the published-set table, the event owners of D-5 and the command list of D-6; a difference is recorded, not argued with.",
 "F3": "Every context's published set is measured from the compiled code and every rule pattern is classified FrontDoor or Place, with front doors widened to Application|Contracts, and no rule verdict changes.",
 "F30": "Hypothesis threshold, fixed before S1: if after the published set is drawn the listed non-contract cross-context edges exceed 15, or one context pair carries more than 5, S1 stops and the finding goes to the ADR-270 owner as a wrong cut.",
