@@ -387,6 +387,297 @@ A check that returns no findings for any list
 ###### Obligations
 
 
+### S3
+
+##### Covers
+
+P3
+
+```text
+Read every rule text of the test project, outside the five files that name the old places on purpose
+```
+
+```text
+No rule text keeps its own list of the round, guards it by a name prefix or an old-folder newcomer, or names a round type by its old Services place
+```
+
+```text
+Rules name the write-back round only through its Forecasting namespace
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRulesNameOnlyForecastingArchUnitTest\.cs
+
+NoRuleTextOfTheTestProject\_GuardsTheWriteBackRoundByAnythingButItsForecastingNamespace
+
+```text
+Only the old full names are swept while the three lists of new names and the Promises prefixes stay
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P3
+
+```text
+Read each pattern that must see the round in Forecasting, and each old location that lists round types, against the old place of every round type
+```
+
+```text
+None sees a round type in its old place; the round pattern holds no old alternative
+```
+
+```text
+The round pattern guards only the new Forecasting namespace
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRulesNameOnlyForecastingArchUnitTest\.cs
+
+EveryRulePatternMatchedByFullName\_AndEveryPatternThatMustSeeTheRoundInForecasting\_SeesNoRoundTypeInItsOldPlace
+
+```text
+The old alternatives stay but the new namespace is also matched
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P3
+
+```text
+Run the round pattern over the eight new full names and three other Forecasting types
+```
+
+```text
+It takes in the eight round types and none of the others
+```
+
+```text
+The round pattern is exactly the Forecasting WriteBack namespace
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRulesNameOnlyForecastingArchUnitTest\.cs
+
+TheRoundPattern\_TakesInEveryRoundTypeByItsNewFullName\_AndNoOtherTypeOfForecasting
+
+```text
+The pattern is widened to all of Forecasting's Application
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Run the sweep on made-up rule files, one per way a rule keeps the old way and one clean
+```
+
+```text
+Each old way is named and the clean file passes
+```
+
+```text
+A rule that keeps the old way cannot slip through unnamed
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRulesNameOnlyForecastingArchUnitTest\.cs
+
+TheSweep\_NamesEachRuleFileThatKeepsTheOldWay\_AndPassesAFileThatNamesTheRoundByItsNewNamespace
+
+```text
+The sweep names nothing or names clean files
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Run the old-place check on made-up patterns
+```
+
+```text
+Only the patterns that still see the old place are named
+```
+
+```text
+A pattern with an old alternative is refused
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRulesNameOnlyForecastingArchUnitTest\.cs
+
+TheOldPlaceCheck\_NamesEachMadeUpPatternThatStillSeesTheRoundInItsOldPlace\_AndPassesTheOnesThatDoNot
+
+```text
+The check ignores old locations by full name
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+Compare the files the sweep skips with the five named files, plus an extra and a missing path
+```
+
+```text
+Exactly the five files are skipped; the extra and the missing path are named
+```
+
+```text
+The sweep hides no other rule file
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRulesNameOnlyForecastingArchUnitTest\.cs
+
+TheSweepSkipsExactlyTheFiveNamedFiles\_AndNamesAnExtraPathAndAPathThatIsNowhere
+
+```text
+A sixth file is skipped
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+Run the round's own boundary rules on the compiled code and on made-up types: placement, Tracker integration edges, other contexts reaching the round, Forecasting types reaching the round
+```
+
+```text
+The round sits in its Forecasting namespace with nothing left in Services; only the write-back service reaches Tracker integration along its listed edges; Promises, Access and Licensing reach no round type; only the forecast updater reaches the round from Forecasting; each made-up breach is named
+```
+
+```text
+The round is guarded by its own rules
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRoundBoundariesArchUnitTest\.cs
+
+InsideForecastingOnlyTheForecastUpdaterAndTheRoundItselfReachTheRound
+
+```text
+A second Forecasting type may reach the round or a context outside Forecasting may join it
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Run the role check of the earlier move check on made-up rule patterns
+```
+
+```text
+A pattern seeing only the old place, a place widened into the new place and an undeclared pattern are named; the Forecasting patterns and the round pattern are admitted
+```
+
+```text
+A rule that would stop seeing or wrongly see the round is refused
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackMembershipArchUnitTest\.cs
+
+TheRoleCheck\_NamesEachMadeUpPatternThatBreaksItsRole\_AndPassesTheOnesThatKeepIt
+
+```text
+The role check passes an undeclared pattern
+```
+
+###### Obligations
+
+
+
+
+
+
+##### Covers
+
+P3
+
+```text
+Run the role check on the real rule patterns after the round pattern is narrowed
+```
+
+```text
+The exact-name Work Items lists may stop matching old round names and every pattern keeps its declared role
+```
+
+```text
+Work Items keeps refusing the round by its new names
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackMembershipArchUnitTest\.cs
+
+EveryRulePatternThatSeesARoundType\_IsDeclared\_AndKeepsItsRoleOnTheSubjectItsRuleReads
+
+```text
+A Place pattern matches the whole new namespace
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

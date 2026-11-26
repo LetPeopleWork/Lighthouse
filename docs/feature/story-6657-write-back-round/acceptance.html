@@ -493,6 +493,261 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Read every rule text of the test project, outside the five files that name the old places on purpose
+</code></pre>
+
+<pre><code>No rule text keeps its own list of the round, guards it by a name prefix or an old-folder newcomer, or names a round type by its old Services place
+</code></pre>
+
+<pre><code>Rules name the write-back round only through its Forecasting namespace
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRulesNameOnlyForecastingArchUnitTest.cs</p>
+
+<p>NoRuleTextOfTheTestProject_GuardsTheWriteBackRoundByAnythingButItsForecastingNamespace</p>
+
+<pre><code>Only the old full names are swept while the three lists of new names and the Promises prefixes stay
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Read each pattern that must see the round in Forecasting, and each old location that lists round types, against the old place of every round type
+</code></pre>
+
+<pre><code>None sees a round type in its old place; the round pattern holds no old alternative
+</code></pre>
+
+<pre><code>The round pattern guards only the new Forecasting namespace
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRulesNameOnlyForecastingArchUnitTest.cs</p>
+
+<p>EveryRulePatternMatchedByFullName_AndEveryPatternThatMustSeeTheRoundInForecasting_SeesNoRoundTypeInItsOldPlace</p>
+
+<pre><code>The old alternatives stay but the new namespace is also matched
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the round pattern over the eight new full names and three other Forecasting types
+</code></pre>
+
+<pre><code>It takes in the eight round types and none of the others
+</code></pre>
+
+<pre><code>The round pattern is exactly the Forecasting WriteBack namespace
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRulesNameOnlyForecastingArchUnitTest.cs</p>
+
+<p>TheRoundPattern_TakesInEveryRoundTypeByItsNewFullName_AndNoOtherTypeOfForecasting</p>
+
+<pre><code>The pattern is widened to all of Forecasting&#x27;s Application
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the sweep on made-up rule files, one per way a rule keeps the old way and one clean
+</code></pre>
+
+<pre><code>Each old way is named and the clean file passes
+</code></pre>
+
+<pre><code>A rule that keeps the old way cannot slip through unnamed
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRulesNameOnlyForecastingArchUnitTest.cs</p>
+
+<p>TheSweep_NamesEachRuleFileThatKeepsTheOldWay_AndPassesAFileThatNamesTheRoundByItsNewNamespace</p>
+
+<pre><code>The sweep names nothing or names clean files
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the old-place check on made-up patterns
+</code></pre>
+
+<pre><code>Only the patterns that still see the old place are named
+</code></pre>
+
+<pre><code>A pattern with an old alternative is refused
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRulesNameOnlyForecastingArchUnitTest.cs</p>
+
+<p>TheOldPlaceCheck_NamesEachMadeUpPatternThatStillSeesTheRoundInItsOldPlace_AndPassesTheOnesThatDoNot</p>
+
+<pre><code>The check ignores old locations by full name
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Compare the files the sweep skips with the five named files, plus an extra and a missing path
+</code></pre>
+
+<pre><code>Exactly the five files are skipped; the extra and the missing path are named
+</code></pre>
+
+<pre><code>The sweep hides no other rule file
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRulesNameOnlyForecastingArchUnitTest.cs</p>
+
+<p>TheSweepSkipsExactlyTheFiveNamedFiles_AndNamesAnExtraPathAndAPathThatIsNowhere</p>
+
+<pre><code>A sixth file is skipped
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the round&#x27;s own boundary rules on the compiled code and on made-up types: placement, Tracker integration edges, other contexts reaching the round, Forecasting types reaching the round
+</code></pre>
+
+<pre><code>The round sits in its Forecasting namespace with nothing left in Services; only the write-back service reaches Tracker integration along its listed edges; Promises, Access and Licensing reach no round type; only the forecast updater reaches the round from Forecasting; each made-up breach is named
+</code></pre>
+
+<pre><code>The round is guarded by its own rules
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs</p>
+
+<p>InsideForecastingOnlyTheForecastUpdaterAndTheRoundItselfReachTheRound</p>
+
+<pre><code>A second Forecasting type may reach the round or a context outside Forecasting may join it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the role check of the earlier move check on made-up rule patterns
+</code></pre>
+
+<pre><code>A pattern seeing only the old place, a place widened into the new place and an undeclared pattern are named; the Forecasting patterns and the round pattern are admitted
+</code></pre>
+
+<pre><code>A rule that would stop seeing or wrongly see the round is refused
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs</p>
+
+<p>TheRoleCheck_NamesEachMadeUpPatternThatBreaksItsRole_AndPassesTheOnesThatKeepIt</p>
+
+<pre><code>The role check passes an undeclared pattern
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the role check on the real rule patterns after the round pattern is narrowed
+</code></pre>
+
+<pre><code>The exact-name Work Items lists may stop matching old round names and every pattern keeps its declared role
+</code></pre>
+
+<pre><code>Work Items keeps refusing the round by its new names
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs</p>
+
+<p>EveryRulePatternThatSeesARoundType_IsDeclared_AndKeepsItsRoleOnTheSubjectItsRuleReads</p>
+
+<pre><code>A Place pattern matches the whole new namespace
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

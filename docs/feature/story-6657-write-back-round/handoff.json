@@ -216,13 +216,178 @@
 "stimulus": "F221",
 "user_result": "F223"
 }
+],
+"S3": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"T2",
+"L3/F150"
+],
+"still_passes_if": "F234",
+"test": "NoRuleTextOfTheTestProject_GuardsTheWriteBackRoundByAnythingButItsForecastingNamespace",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRulesNameOnlyForecastingArchUnitTest.cs"
+},
+"expected": "F232",
+"stimulus": "F231",
+"user_result": "F233"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"T2",
+"L3/F149"
+],
+"still_passes_if": "F238",
+"test": "EveryRulePatternMatchedByFullName_AndEveryPatternThatMustSeeTheRoundInForecasting_SeesNoRoundTypeInItsOldPlace",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRulesNameOnlyForecastingArchUnitTest.cs"
+},
+"expected": "F236",
+"stimulus": "F235",
+"user_result": "F237"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F242",
+"test": "TheRoundPattern_TakesInEveryRoundTypeByItsNewFullName_AndNoOtherTypeOfForecasting",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRulesNameOnlyForecastingArchUnitTest.cs"
+},
+"expected": "F240",
+"stimulus": "F239",
+"user_result": "F241"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F246",
+"test": "TheSweep_NamesEachRuleFileThatKeepsTheOldWay_AndPassesAFileThatNamesTheRoundByItsNewNamespace",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRulesNameOnlyForecastingArchUnitTest.cs"
+},
+"expected": "F244",
+"stimulus": "F243",
+"user_result": "F245"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F151"
+],
+"still_passes_if": "F250",
+"test": "TheOldPlaceCheck_NamesEachMadeUpPatternThatStillSeesTheRoundInItsOldPlace_AndPassesTheOnesThatDoNot",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRulesNameOnlyForecastingArchUnitTest.cs"
+},
+"expected": "F248",
+"stimulus": "F247",
+"user_result": "F249"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F152"
+],
+"still_passes_if": "F254",
+"test": "TheSweepSkipsExactlyTheFiveNamedFiles_AndNamesAnExtraPathAndAPathThatIsNowhere",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRulesNameOnlyForecastingArchUnitTest.cs"
+},
+"expected": "F252",
+"stimulus": "F251",
+"user_result": "F253"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F258",
+"test": "InsideForecastingOnlyTheForecastUpdaterAndTheRoundItselfReachTheRound",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs"
+},
+"expected": "F256",
+"stimulus": "F255",
+"user_result": "F257"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F59",
+"L1/F60",
+"L1/F61",
+"L1/F62",
+"L1/F63"
+],
+"still_passes_if": "F262",
+"test": "TheRoleCheck_NamesEachMadeUpPatternThatBreaksItsRole_AndPassesTheOnesThatKeepIt",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs"
+},
+"expected": "F260",
+"stimulus": "F259",
+"user_result": "F261"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F64"
+],
+"still_passes_if": "F266",
+"test": "EveryRulePatternThatSeesARoundType_IsDeclared_AndKeepsItsRoleOnTheSubjectItsRuleReads",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs"
+},
+"expected": "F264",
+"stimulus": "F263",
+"user_result": "F265"
+}
 ]
 },
 "counters": {
 "C": 1,
 "D": 19,
 "E": 3,
-"F": 230,
+"F": 266,
 "K": 6,
 "L": 4,
 "P": 3,
@@ -2103,9 +2268,45 @@
 "F229": "No architecture rule silently stops seeing a write-back round type when the round moves, and Work Items keeps refusing the round by its exact new names without any old location taking in the whole new place.",
 "F23": "D-9 Order: after Story 6468, before Story 6382 (S09a); the move does not wait for S09a. S1 first runs the three merged checks for 6365, 6366 and 6468 and stops if any fails.",
 "F230": "A rule pattern held as a property or built inside a method body sees the round; the law reads only constant and static read-only string fields. A listed old location naming one round type by a full name that is not on the move map is not checked against the map.",
+"F231": "Read every rule text of the test project, outside the five files that name the old places on purpose",
+"F232": "No rule text keeps its own list of the round, guards it by a name prefix or an old-folder newcomer, or names a round type by its old Services place",
+"F233": "Rules name the write-back round only through its Forecasting namespace",
+"F234": "Only the old full names are swept while the three lists of new names and the Promises prefixes stay",
+"F235": "Read each pattern that must see the round in Forecasting, and each old location that lists round types, against the old place of every round type",
+"F236": "None sees a round type in its old place; the round pattern holds no old alternative",
+"F237": "The round pattern guards only the new Forecasting namespace",
+"F238": "The old alternatives stay but the new namespace is also matched",
+"F239": "Run the round pattern over the eight new full names and three other Forecasting types",
 "F24": "D-10 Commit per slice, moves in refactor(forecasting) commits apart from edits; push S1 to S3 together once all three are green, so the Program.cs change triggers one live connector run.",
+"F240": "It takes in the eight round types and none of the others",
+"F241": "The round pattern is exactly the Forecasting WriteBack namespace",
+"F242": "The pattern is widened to all of Forecasting's Application",
+"F243": "Run the sweep on made-up rule files, one per way a rule keeps the old way and one clean",
+"F244": "Each old way is named and the clean file passes",
+"F245": "A rule that keeps the old way cannot slip through unnamed",
+"F246": "The sweep names nothing or names clean files",
+"F247": "Run the old-place check on made-up patterns",
+"F248": "Only the patterns that still see the old place are named",
+"F249": "A pattern with an old alternative is refused",
 "F25": "D-11 Behaviour-free proof reuses the admitted probes: architecture-rules (all), ef-model-unchanged, backend-tests on the unchanged write-back acceptance and host test classes on both revisions, test-selection-show for Modules/Forecasting paths and Program.cs. No new compare command.",
+"F250": "The check ignores old locations by full name",
+"F251": "Compare the files the sweep skips with the five named files, plus an extra and a missing path",
+"F252": "Exactly the five files are skipped; the extra and the missing path are named",
+"F253": "The sweep hides no other rule file",
+"F254": "A sixth file is skipped",
+"F255": "Run the round's own boundary rules on the compiled code and on made-up types: placement, Tracker integration edges, other contexts reaching the round, Forecasting types reaching the round",
+"F256": "The round sits in its Forecasting namespace with nothing left in Services; only the write-back service reaches Tracker integration along its listed edges; Promises, Access and Licensing reach no round type; only the forecast updater reaches the round from Forecasting; each made-up breach is named",
+"F257": "The round is guarded by its own rules",
+"F258": "A second Forecasting type may reach the round or a context outside Forecasting may join it",
+"F259": "Run the role check of the earlier move check on made-up rule patterns",
 "F26": "D-12 Mutation bar last, on frozen code: Stryker.NET over Modules/Forecasting/Application/WriteBack compared with the same files on the pre-move revision; no survivor or no-coverage mutant added; the 80 percent project bar reported.",
+"F260": "A pattern seeing only the old place, a place widened into the new place and an undeclared pattern are named; the Forecasting patterns and the round pattern are admitted",
+"F261": "A rule that would stop seeing or wrongly see the round is refused",
+"F262": "The role check passes an undeclared pattern",
+"F263": "Run the role check on the real rule patterns after the round pattern is narrowed",
+"F264": "The exact-name Work Items lists may stop matching old round names and every pattern keeps its declared role",
+"F265": "Work Items keeps refusing the round by its new names",
+"F266": "A Place pattern matches the whole new namespace",
 "F27": "D-13 Formal verification: no Quint, TLA+ or Agda model selected (maintainer default taken). Claims C1 preservation, membership and the sweep are relations over a finite closed set (compiled types x membership map x rule fields x test-project literals) with no state, transition, time, fairness or unbounded input; a model over a hand-copied abstraction would be weaker than deciding the relation on the compiled assembly. Each is decided exhaustively by NUnit over the IL in the default suite. The round's concurrency (AsyncLocal context, last-out flush) is unchanged (D-0) and stays observed by the TaskManager, ResponsiveDuringUpdates and CancelAllWhileWorkIsAdmitted tests. PBT not applicable (closed finite domain). Formal result NOT_SELECTED; no install or waiver needed.",
 "F28": "D-14 Re-read against Story 6468 as shipped (main up to 6d531d0d1). E2 holds: PromisesModuleBoundariesArchUnitTest IsUpstreamCode still recognises the round only by its 8-name list, and TheNamespacedUpstreamCode (module adapters, update code, Access and Licensing) does not name Forecasting. E4 holds: Forecasting inbound list 1 (PortfolioUpdater), licence-edge list 1, platform lane 5 UpdateQueueService write-back edges, Flow metrics R4, Licensing R-L3 and Tracker integration R-T4 each still carry their one write-back entry; the 3 Access, Licensing and Promises lists still hold the same 8 names. IBlackoutPeriodService now lives in Modules/OrganisationSetup/Application (M15). Line numbers moved (PlatformLaneMembership 293-301, PlatformLaneUnitTestPlacementTest 88-98, PromisesUnitTestPlacementTest prefixes now only WriteBack and IWriteBack); S1 re-measures them.",
 "F3": "Every rule keeps its verdict for the write-back round while it moves.",
