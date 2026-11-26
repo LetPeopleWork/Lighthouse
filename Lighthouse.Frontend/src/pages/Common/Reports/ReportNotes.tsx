@@ -17,6 +17,7 @@ import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import { WidgetBody } from "../MetricsView/WidgetShell";
 import { queryStatusOf } from "../MetricsView/widgetStatus";
+import { bylineOf } from "./reportNoteByline";
 import { reportNotesQueryKeyOf, useReportNotes } from "./useReportNotes";
 
 const NEEDS_TEXT = "A note needs some text.";
@@ -29,16 +30,6 @@ const refusalCopyOf = (error: unknown): string => {
 		if (error.problemCode === "note-text-too-long") return AT_MOST_2000;
 	}
 	return COULD_NOT_SAVE;
-};
-
-/** The line under a note's text: the day it was written, then who wrote it when somebody signed it. */
-export const bylineOf = (note: IReportNote): string => {
-	const written = note.authorDisplayName
-		? `${note.createdOn} · ${note.authorDisplayName}`
-		: note.createdOn;
-	return note.lastEditedOn
-		? `${written} · edited ${note.lastEditedOn}`
-		: written;
 };
 
 const ReportNotes: React.FC<

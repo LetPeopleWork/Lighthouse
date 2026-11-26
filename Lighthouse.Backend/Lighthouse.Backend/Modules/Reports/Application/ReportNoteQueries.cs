@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Modules.Reports.Application
             IReadOnlyList<ReportNoteRead> notes =
             [
                 .. Store.NotesNewestFirst(owner, reportId)
-                    .Select(note => new ReportNoteRead(note.Id, note.Text, note.CreatedAt, note.LastEditedAt, note.AuthorDisplayName)),
+                    .Select(ReportNoteRead.Of),
             ];
 
             return ReportOutcome<IReadOnlyList<ReportNoteRead>>.Done(notes);

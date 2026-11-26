@@ -7,12 +7,7 @@ namespace Lighthouse.Backend.Modules.Reports.Application
     {
         internal IReportNoteStore Store { get; } = store;
 
-        public Task<ReportOutcome<ReportNoteRead>> Add(ReportOwner owner, int reportId, ReportNoteCaller caller, string? text, DateTime now)
-        {
-            return AddNote(owner, reportId, caller, text, now);
-        }
-
-        private async Task<ReportOutcome<ReportNoteRead>> AddNote(ReportOwner owner, int reportId, ReportNoteCaller caller, string? text, DateTime now)
+        public async Task<ReportOutcome<ReportNoteRead>> Add(ReportOwner owner, int reportId, ReportNoteCaller caller, string? text, DateTime now)
         {
             if (!Store.ReportExists(owner, reportId))
             {
@@ -34,7 +29,7 @@ namespace Lighthouse.Backend.Modules.Reports.Application
             Store.Add(note);
             await Store.Save();
 
-            return ReportOutcome<ReportNoteRead>.Done(new ReportNoteRead(note.Id, note.Text, note.CreatedAt, note.LastEditedAt, note.AuthorDisplayName));
+            return ReportOutcome<ReportNoteRead>.Done(ReportNoteRead.Of(note));
         }
     }
 }
