@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             var findings = WhenTheWorkItemsStrayListIsJudged(listNamingOnlyTheOldPlace);
 
-            ThenOnlyTheSeenOldNameAndTheSevenUnseenNewNamesAreNamed(findings);
+            ThenOnlyTheSeenOldNameAndTheEightUnseenNewNamesAreNamed(findings);
         }
 
         private static IEnumerable<TestCaseData> MadeUpWaysTheMoveGoesWrong()
@@ -100,7 +100,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .SetName("TypeInBothNamespaces_IsNamed");
             yield return Case("an extra type in the new namespace", [.. round, extra], [$"not part of the round: {extra}"])
                 .SetName("ExtraTypeInTheWriteBackNamespace_IsNamed");
-            yield return Case("a type moved to the flat Application namespace", [.. without("WriteBackCollector"), $"{TheForecastingApplication()}.WriteBackCollector"], [$"missing from the new namespace: {TheNewFullNameOf("WriteBackCollector")}"])
+            yield return Case("a type moved to the flat Application namespace", [.. without("WriteBackCollector"), $"{TheForecastingApplication()}.WriteBackCollector"], [$"missing from the new namespace: {TheNewFullNameOf("WriteBackCollector")}", $"in the flat Application namespace: {TheForecastingApplication()}.WriteBackCollector"])
                 .SetName("TypeInTheFlatApplication_IsNamed");
             yield return Case("a ninth type named after the round left under Services", [.. round, newcomer], [$"left under Services: {newcomer}"])
                 .SetName("NewcomerNamedAfterTheRoundUnderServices_IsNamed");
@@ -202,6 +202,8 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Select(type => $"still in its old namespace: {type.OldFullName}");
             var missingFromTheNewNamespace = round.Where(type => !present.Contains(type.NewFullName))
                 .Select(type => $"missing from the new namespace: {type.NewFullName}");
+            var inTheFlatApplication = round.Where(type => present.Contains($"{TheForecastingApplication()}.{type.Name}"))
+                .Select(type => $"in the flat Application namespace: {TheForecastingApplication()}.{type.Name}");
             var extraInTheNewNamespace = compiledTopLevelTypes
                 .Where(name => name.StartsWith(newNamespace, StringComparison.Ordinal) && !round.Any(type => type.NewFullName == name))
                 .Select(name => $"not part of the round: {name}");
@@ -215,6 +217,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .. inBoth.Order(StringComparer.Ordinal),
                 .. stillInTheOldNamespace.Order(StringComparer.Ordinal),
                 .. missingFromTheNewNamespace.Order(StringComparer.Ordinal),
+                .. inTheFlatApplication.Order(StringComparer.Ordinal),
                 .. extraInTheNewNamespace.Order(StringComparer.Ordinal),
                 .. roundNamedLeftUnderServices.Order(StringComparer.Ordinal),
             ];
@@ -310,7 +313,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "Why it matters: Work Items refuses the round only by the full names on this list, so a name left on the old place refuses nothing and the round in Forecasting is open to Work Items unseen. " +
                 "How to fix: rename the eight round entries of StrayLooseImplementation and StrayLooseInterfaces to the full names in Lighthouse.Backend.Modules.Forecasting.Application.WriteBack, and keep every other entry.");
 
-        private static void ThenOnlyTheSeenOldNameAndTheSevenUnseenNewNamesAreNamed(List<string> findings)
+        private static void ThenOnlyTheSeenOldNameAndTheEightUnseenNewNamesAreNamed(List<string> findings)
             => Assert.That(
                 findings,
                 Has.Count.EqualTo(9)
