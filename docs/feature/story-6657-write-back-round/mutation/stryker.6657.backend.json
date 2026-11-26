@@ -1,0 +1,17 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Modules/Forecasting/Application/WriteBack/**/*.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Lighthouse.Backend.Tests.Modules.Forecasting.Application.WriteBack|FullyQualifiedName~UpdateQueueServiceTest|FullyQualifiedName~ForecastUpdaterTest|FullyQualifiedName~TeamUpdaterTest|FullyQualifiedName~PortfolioUpdaterTest|FullyQualifiedName~RoundWriteBackDuringDatabaseMaintenanceTest)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~Dogfood&FullyQualifiedName!~JiraWriteBackTest&FullyQualifiedName!~AzureDevOpsWriteBackTest&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
