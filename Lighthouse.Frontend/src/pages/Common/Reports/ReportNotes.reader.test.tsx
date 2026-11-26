@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -119,6 +119,14 @@ const openTheReportBeforeTheRolesArrive = (owner: IReportOwner) => {
 
 const theNotesArea = async () => screen.findByTestId("report-notes");
 const theNotes = () => screen.queryAllByTestId("report-note");
+const theNoteTexts = () => theNotes().map((note) => note.textContent);
+const theControlsIn = (area: HTMLElement) =>
+	within(area)
+		.queryAllByRole("button")
+		.concat(within(area).queryAllByRole("textbox"))
+		.map(
+			(control) => control.getAttribute("aria-label") ?? control.textContent,
+		);
 const noWritingControlIsShown = () => {
 	expect(screen.queryByTestId("report-note-input")).toBeNull();
 	expect(screen.queryByRole("button", { name: /^Add note$/ })).toBeNull();
@@ -183,15 +191,20 @@ describe("The notes of a report for someone who may only read it", () => {
 		noWritingControlIsShown();
 	});
 
-	it("shows no writing control while the reader's roles are still on their way, nor after they arrive as a reader's", async () => {
+	it("shows the same notes in the same order with the same controls while the reader's roles are on their way and after they arrive as a reader's", async () => {
 		const { rolesArrive } = openTheReportBeforeTheRolesArrive(LIGHTSPEED);
-
 		await waitFor(() => expect(theNotes()).toHaveLength(2));
-		noWritingControlIsShown();
+		const area = await theNotesArea();
+		const before = { texts: theNoteTexts(), controls: theControlsIn(area) };
 
-		rolesArrive();
+		await act(async () => rolesArrive());
 
-		await waitFor(() => expect(theNotes()).toHaveLength(2));
+		expect(theNoteTexts()).toEqual(before.texts);
+		expect(theControlsIn(area)).toEqual(before.controls);
+		expect(before.texts).toEqual([
+			expect.stringContaining("Team grew to 9"),
+			expect.stringContaining("Training took place"),
+		]);
 		noWritingControlIsShown();
 	});
 });
