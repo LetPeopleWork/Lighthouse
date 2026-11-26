@@ -1,0 +1,189 @@
+# Acceptance brief: bug\-6706\-jira\-partial\-history
+
+## Slices
+
+### S1
+
+##### Covers
+
+P1
+
+```text
+Jira's search answer for an item in a Doing state holds only its latest move within Doing while Jira counts four history entries; the deployment's whole-history route holds the earlier move into Doing (Data Center and Cloud)
+```
+
+```text
+The item's start date is 16 May 2025, the day it first entered Doing in its whole history
+```
+
+```text
+An old item still in progress shows the date it really started, not an empty start or its created date
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/TrackerIntegration\/Adapters\/Connectors\/Jira\/JiraPartialHistoryDatingTest\.cs
+
+ItemInDoingWhoseSearchAnswerHoldsOnlyItsLatestMove\_StartsWhenItFirstEnteredDoing
+
+```text
+A connector that re-reads only when the entry total is over 30, or dates a Data Center item from the search answer, or sets the start to the created date
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Jira's search answer for a finished item holds only its last move into Done while its whole history also holds the earlier move into Doing (Data Center and Cloud)
+```
+
+```text
+Start date is 16 May 2025 and closed date is 20 June 2025, not a start equal to the closed date
+```
+
+```text
+A finished item shows its real cycle time instead of zero
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/TrackerIntegration\/Adapters\/Connectors\/Jira\/JiraPartialHistoryDatingTest\.cs
+
+FinishedItemWhoseSearchAnswerHoldsOnlyItsLastMove\_StartsWhenItFirstEnteredDoing
+
+```text
+A connector that dates a finished item from the truncated answer and falls back to the closed date as its start
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+The whole-history read of an item holds every entry Jira counts for it (Data Center and Cloud)
+```
+
+```text
+The item is marked as holding its whole history
+```
+
+```text
+The item's stored transitions are replaced by the complete history
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/TrackerIntegration\/Adapters\/Connectors\/Jira\/JiraPartialHistoryDatingTest\.cs
+
+ItemWhoseWholeHistoryWasRead\_IsMarkedAsHoldingItsWholeHistory
+
+```text
+A connector that dates the item correctly but leaves it marked as partial
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+The whole-history read of an item still holds fewer entries than Jira counts (Data Center and Cloud)
+```
+
+```text
+The item stays marked as not holding its whole history
+```
+
+```text
+A history that is still partial never replaces the stored transitions
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/TrackerIntegration\/Adapters\/Connectors\/Jira\/JiraPartialHistoryDatingTest\.cs
+
+ItemWhoseWholeHistoryReadIsStillPartial\_StaysMarkedAsNotHoldingItsWholeHistory
+
+```text
+A connector that marks every re-read item as holding its whole history; already satisfied today and preserved
+```
+
+###### Obligations
+
+None.
+
+## Expectations
+
+### Rows
+
+#### E1
+
+##### Promises
+
+P1
+
+```text
+On Jira Data Center, an item whose search answer carries only part of its history shows the same date it would show with its whole history.
+```
+
+```text
+Observes only the fixtures supplied; does not show partial histories split across several search pages, nor a partial history whose earliest change falls outside the returned part.
+```
+
+yes
+
+no
+
+None.
+
+#### E2
+
+##### Promises
+
+P1
+
+```text
+On Jira Cloud, an item whose search answer carries only part of its history shows the same date it would show with its whole history.
+```
+
+```text
+Observes only the fixtures supplied; does not show Cloud partial histories split across several search pages, nor a partial history whose earliest change falls outside the returned part.
+```
+
+yes
+
+no
+
+None.
+
+### Waivers
+
+None.
+
+## Charter
+
+None.
+
+## Examination
+
+None.

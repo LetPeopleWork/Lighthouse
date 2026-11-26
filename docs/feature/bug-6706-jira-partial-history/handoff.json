@@ -1,0 +1,179 @@
+{
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F15",
+"test": "ItemInDoingWhoseSearchAnswerHoldsOnlyItsLatestMove_StartsWhenItFirstEnteredDoing",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraPartialHistoryDatingTest.cs"
+},
+"expected": "F13",
+"stimulus": "F12",
+"user_result": "F14"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F19",
+"test": "FinishedItemWhoseSearchAnswerHoldsOnlyItsLastMove_StartsWhenItFirstEnteredDoing",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraPartialHistoryDatingTest.cs"
+},
+"expected": "F17",
+"stimulus": "F16",
+"user_result": "F18"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F23",
+"test": "ItemWhoseWholeHistoryWasRead_IsMarkedAsHoldingItsWholeHistory",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraPartialHistoryDatingTest.cs"
+},
+"expected": "F21",
+"stimulus": "F20",
+"user_result": "F22"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F27",
+"test": "ItemWhoseWholeHistoryReadIsStillPartial_StaysMarkedAsNotHoldingItsWholeHistory",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraPartialHistoryDatingTest.cs"
+},
+"expected": "F25",
+"stimulus": "F24",
+"user_result": "F26"
+}
+]
+},
+"counters": {
+"E": 2,
+"F": 27,
+"P": 1,
+"S": 1
+},
+"design": {
+"paradigm": "object_oriented",
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraPartialHistoryDatingTest.cs",
+"public_oracle": {
+"expected": "F6",
+"falsifier": "F7",
+"promises": [
+"P1"
+],
+"stimulus": "F5"
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraRestRoutes.cs"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~JiraPartialHistoryDatingTest"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"blocking": "yes",
+"id": "E1",
+"isolated": "no",
+"lacuna": "F9",
+"promises": [
+"P1"
+],
+"text": "F8"
+},
+{
+"blocking": "yes",
+"id": "E2",
+"isolated": "no",
+"lacuna": "F11",
+"promises": [
+"P1"
+],
+"text": "F10"
+}
+]
+},
+"facts": {
+"F1": "Bug 6706 — Jira: an in-progress item gets no start date when the search returns only part of its history. Found while fixing Bug #6705 (Jira Data Center). An item moved Open → waiting for approval → In analysis → In Progress on 16 May 2025, then In Progress → Suspended (a Doing state) on 13 Nov 2025, with many other edits in between. Lighthouse stored it as Doing with no start date. Effect: an old item still in progress gets no start date (since #6705 the server falls back to its created date, which overstates its age). A finished item gets its start from the closed-date fallback, so its cycle time can be wrong too. Fix direction: when the search answer holds only part of an item's history, fetch the item's full changelog before working out its start and closed dates.",
+"F10": "On Jira Cloud, an item whose search answer carries only part of its history shows the same date it would show with its whole history.",
+"F11": "Observes only the fixtures supplied; does not show Cloud partial histories split across several search pages, nor a partial history whose earliest change falls outside the returned part.",
+"F12": "Jira's search answer for an item in a Doing state holds only its latest move within Doing while Jira counts four history entries; the deployment's whole-history route holds the earlier move into Doing (Data Center and Cloud)",
+"F13": "The item's start date is 16 May 2025, the day it first entered Doing in its whole history",
+"F14": "An old item still in progress shows the date it really started, not an empty start or its created date",
+"F15": "A connector that re-reads only when the entry total is over 30, or dates a Data Center item from the search answer, or sets the start to the created date",
+"F16": "Jira's search answer for a finished item holds only its last move into Done while its whole history also holds the earlier move into Doing (Data Center and Cloud)",
+"F17": "Start date is 16 May 2025 and closed date is 20 June 2025, not a start equal to the closed date",
+"F18": "A finished item shows its real cycle time instead of zero",
+"F19": "A connector that dates a finished item from the truncated answer and falls back to the closed date as its start",
+"F2": "A Jira item whose search answer holds only part of its history is dated from its whole history, so its start date, closed date and cycle time are right on Data Center and Cloud.",
+"F20": "The whole-history read of an item holds every entry Jira counts for it (Data Center and Cloud)",
+"F21": "The item is marked as holding its whole history",
+"F22": "The item's stored transitions are replaced by the complete history",
+"F23": "A connector that dates the item correctly but leaves it marked as partial",
+"F24": "The whole-history read of an item still holds fewer entries than Jira counts (Data Center and Cloud)",
+"F25": "The item stays marked as not holding its whole history",
+"F26": "A history that is still partial never replaces the stored transitions",
+"F27": "A connector that marks every re-read item as holding its whole history; already satisfied today and preserved",
+"F3": "A Jira item whose search answer holds only part of its history is dated from its whole history, on Data Center and on Cloud",
+"F4": "A Jira item whose search answer holds fewer changelog entries than its changelog total gets its start and closed dates from its whole history, on Data Center and on Cloud",
+"F5": "The connector reads a team's items; Jira's search answer for an item in a Doing state holds only its latest history entries (a move within Doing), with changelog.total larger than the entries returned, and the item's full history (which holds the earlier move into Doing) is available from the deployment's own whole-history route: rest/api/2/issue/<KEY>?expand=changelog on Data Center, the paged issue changelog route on Cloud",
+"F6": "The item's start date is the date it first entered Doing in its whole history (16 May 2025 in the reported case), not empty; a finished item's start date likewise comes from its whole history rather than its closed date; when the whole-history read is itself still partial, the item stays marked as not holding its whole history",
+"F7": "The item has no start date (or a Done item's start equals its closed date) although its whole history holds the move into Doing; or a Data Center item is dated only from the truncated search answer; or a Cloud item with a truncated answer of 30 or fewer total entries is never re-read",
+"F8": "On Jira Data Center, an item whose search answer carries only part of its history shows the same date it would show with its whole history.",
+"F9": "Observes only the fixtures supplied; does not show partial histories split across several search pages, nor a partial history whose earliest change falls outside the returned part."
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+}
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F4",
+"promises": [
+"P1"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "bug-6706-jira-partial-history",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "S",
+"value": "F2"
+}
+}
