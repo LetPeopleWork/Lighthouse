@@ -110,6 +110,13 @@ Paradigm object oriented, preserved: the Architecture test namespace is OO C# (s
 Behaviour-free proof uses admitted probes only: architecture-rules (one line per test) observes every new and existing rule; no new probe; test names carry the observed facts (type, context, admission; field and role) so the probe output shows them (D-14).
 ```
 
+#### D18
+
+```text
+Write-back and forecast publishing are a customer using its supplier's port, not commands: WriteBackService -> IWriteBackTarget.WriteFieldsToWorkItems and DeliveryForecastPublishingService -> IDeliveryForecastPublisher.PublishAsync return results, so under D-6's criterion they are not converted to events (E6, RX5); R-C1 lists them and C4 moves the port types into Tracker integration Contracts.
+```
+Governed slices: S2
+
 ### Constraints
 
 #### K1
@@ -195,6 +202,13 @@ No stored or validated user input is involved: the inputs are the compiled assem
 ```text
 Earlier Stories module-boundary rule files are rule files, not frozen oracles of this feature: S1 edits only the FrontDoor field values in them (as Story 6657 S1 did), adding no rows and removing no list entries.
 ```
+
+#### K15
+
+```text
+A1 re-measured from the IL at HEAD: about 70 cross-context type edges (design 38), about 34 target types (design about 25), and 8 edges onto the 7 behaviour classes, so the hypothesis threshold holds; the exact edge list is R-C1's in S2.
+```
+Governed slices: S2
 
 ### Reuse
 
@@ -1946,10 +1960,10 @@ None.
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PackagedContexts\.cs
 
-Create
+Extend
 
 ```text
-R-C3 enumerator: every Lighthouse.Backend.Modules.<X> namespace root of the production IL, top-level, sorted.
+R-C3 enumerator: the acceptance designer writes PackagedContexts.InTheAssembly returning no contexts as the RED set-up so the oracle compiles; the craft fills its body to read every Lighthouse.Backend.Modules.<X> namespace root of the production IL, top-level, sorted.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ContextContractsArchUnitTest\.cs
@@ -1997,7 +2011,7 @@ None.
 ##### Decisions
 
 ```text
-R-C3 RED against an empty enumerator: the acceptance designer creates PackagedContexts.InTheAssembly as a declaration returning no contexts so the oracle compiles and R-C3 fails by assertion naming the ten missing contexts; the crafter makes it read the IL (design A2). R-C1 and R-C2 are green on writing through the ModuleRules helper the acceptance designer adds.
+R-C3 RED against an empty enumerator: the acceptance designer writes PackagedContexts.InTheAssembly as a declaration returning no contexts so the oracle compiles and R-C3 fails by assertion naming the ten missing contexts; the craft target PackagedContexts.cs is Extend: the crafter makes it read the IL (design A2). R-C1 and R-C2 are green on writing through the ModuleRules helper the acceptance designer adds.
 ```
 
 ```text
@@ -2017,7 +2031,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PackagedContexts\
 CreateNew
 
 ```text
-No enumerator of module roots exists; R-C3 needs its own enumerator beside the predicate.
+No enumerator of module roots exists on main, so R-C3 needs its own enumerator beside the predicate; the acceptance designer creates it as an empty declaration with the oracle, and the craft target is Extend on that same type, never a second owner.
 ```
 
 ##### Impact
@@ -2029,7 +2043,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PackagedContexts\
 Changed
 
 ```text
-New enumerator read only by R-C3.
+Extended by craft: the empty declaration written with the oracle gets its IL read; read only by R-C3.
 ```
 
 architecture test support
@@ -2051,7 +2065,7 @@ None.
 prefactoring
 
 ```text
-PackagedContexts.cs is a new file holding one type; nothing moves.
+PackagedContexts.cs holds one type, written by the acceptance designer as an empty declaration; the craft fills its body; nothing moves.
 ```
 
 prefactoring

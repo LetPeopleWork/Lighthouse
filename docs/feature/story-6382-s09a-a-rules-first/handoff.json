@@ -125,10 +125,10 @@
 "counters": {
 "B": 3,
 "C": 2,
-"D": 17,
+"D": 18,
 "E": 2,
-"F": 235,
-"K": 14,
+"F": 242,
+"K": 15,
 "L": 7,
 "P": 2,
 "S": 2,
@@ -275,6 +275,13 @@
 {
 "id": "K14",
 "text": "F41"
+},
+{
+"id": "K15",
+"slices": [
+"S2"
+],
+"text": "F237"
 }
 ],
 "constructors": [
@@ -363,6 +370,13 @@
 {
 "id": "D17",
 "text": "F27"
+},
+{
+"id": "D18",
+"slices": [
+"S2"
+],
+"text": "F236"
 }
 ],
 "equality": [
@@ -1202,7 +1216,7 @@
 }
 ],
 "decisions": [
-"F200",
+"F239",
 "F201"
 ],
 "impact": [
@@ -1210,7 +1224,7 @@
 "decision": "Changed",
 "kind": "architecture test",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PackagedContexts.cs:1",
-"reason": "F203"
+"reason": "F241"
 },
 {
 "decision": "UnchangedCompatible",
@@ -1222,7 +1236,7 @@
 "not_applicable": [
 {
 "analysis": "prefactoring",
-"reason": "F205"
+"reason": "F242"
 },
 {
 "analysis": "prefactoring",
@@ -1233,7 +1247,7 @@
 {
 "decision": "CreateNew",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PackagedContexts.cs:1",
-"reason": "F202",
+"reason": "F240",
 "symbol": "PackagedContexts"
 }
 ]
@@ -1243,9 +1257,9 @@
 ],
 "targets": [
 {
-"change": "Create",
+"change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PackagedContexts.cs",
-"reason": "F196"
+"reason": "F238"
 }
 ],
 "verification": [
@@ -1388,18 +1402,13 @@
 "F193": "ReportsUnitTestsBesideTheModuleArchUnitTest.cs holds its placement test class and at most its own planted twins; S1 only admits a layer name, so no type moves in this slice.",
 "F194": "Every rule pattern that sees a published type keeps its role when the type moves into its context Contracts; the published set equals the IL closure; no literal names a moving type by its old name",
 "F195": "Every existing architecture rule keeps its verdict",
-"F196": "R-C3 enumerator: every Lighthouse.Backend.Modules.<X> namespace root of the production IL, top-level, sorted.",
 "F197": "Run ContextContractsArchUnitTest over the production IL and planted Modules.<X>Fixtures types: R-C1 with CrossContextEdgesOutsideContracts, R-C2, R-C3 with the inline ten and PackagedContexts, plus one planted offender per rule and per list position; then the whole Architecture namespace",
 "F198": "RED today on R-C3: the enumerator returns nothing, so the ten contexts are named missing. GREEN once PackagedContexts reads the module roots from the IL; R-C1 (every measured edge listed) and R-C2 (empty) green on writing; each planted offender fails its rule naming source, target and layer or the context; every existing Architecture test stays green",
 "F199": "A planted type in one fixture context naming another fixture context Domain type, a planted Contracts type naming its own Application, a planted extra module root, a removed list entry, or a stale list entry each fails naming the offender; an enumerator that returns nothing or a fixed list fails R-C3",
 "F2": "Before any context publishes a Contracts namespace, the rules already know what each context publishes and refuse any new cross-context edge outside it, so features B to D move types under a rule that bites.",
 "F20": "R-C3 enumerator is its own craft target: PackagedContexts reads every Lighthouse.Backend.Modules.<X> namespace root of the production IL; the oracle compares it with the inline ten names, so a new or vanished module root fails until named (gate predicate-needs-its-own-enumerator).",
-"F200": "R-C3 RED against an empty enumerator: the acceptance designer creates PackagedContexts.InTheAssembly as a declaration returning no contexts so the oracle compiles and R-C3 fails by assertion naming the ten missing contexts; the crafter makes it read the IL (design A2). R-C1 and R-C2 are green on writing through the ModuleRules helper the acceptance designer adds.",
 "F201": "R-C1 baseline is every measured edge: at S2 no Contracts exists, so CrossContextEdgesOutsideContracts lists every module-to-module edge in the IL by full names Source -> Target with an owner comment; R-C2 baseline is empty.",
-"F202": "No enumerator of module roots exists; R-C3 needs its own enumerator beside the predicate.",
-"F203": "New enumerator read only by R-C3.",
 "F204": "Additive helper ReachesOtherContextsOnlyThroughContracts written with the oracle; existing members and their callers unchanged.",
-"F205": "PackagedContexts.cs is a new file holding one type; nothing moves.",
 "F206": "ModuleRules.cs holds ModuleRules and its two verdict records InboundVerdict and OutboundVerdict and is extended additively by the acceptance designer, not by craft; splitting the verdict records would touch every approved rule oracle that names them and is outside this slice.",
 "F207": "R-C1: a type in Modules.A reaches Modules.B (B not A) only through Modules.B.Contracts or a listed edge; R-C2: Contracts reach only kernel, BCL, Microsoft.Extensions abstractions and Contracts; R-C3: contexts read from the assembly equal the inline ten",
 "F208": "The architecture-rules probe for the module-boundary and unit-test-placement rule classes lists a passing test line for every context's published set, each measured from the compiled code, and for every rule pattern classified as a front door or a place, with front doors covering Application and Contracts. Every rule line in those classes passes, and the ef-model-unchanged probe reports the data model unchanged.",
@@ -1433,7 +1442,14 @@
 "F233": "Every published type, every rule field that sees one and every old-name string is accounted for, so a rule keeps its role when the type moves into its context's Contracts",
 "F234": "Later moves into Contracts happen under rules that keep seeing the moved types",
 "F235": "a type reached only by reflection or a string is not measured",
+"F236": "Write-back and forecast publishing are a customer using its supplier's port, not commands: WriteBackService -> IWriteBackTarget.WriteFieldsToWorkItems and DeliveryForecastPublishingService -> IDeliveryForecastPublisher.PublishAsync return results, so under D-6's criterion they are not converted to events (E6, RX5); R-C1 lists them and C4 moves the port types into Tracker integration Contracts.",
+"F237": "A1 re-measured from the IL at HEAD: about 70 cross-context type edges (design 38), about 34 target types (design about 25), and 8 edges onto the 7 behaviour classes, so the hypothesis threshold holds; the exact edge list is R-C1's in S2.",
+"F238": "R-C3 enumerator: the acceptance designer writes PackagedContexts.InTheAssembly returning no contexts as the RED set-up so the oracle compiles; the craft fills its body to read every Lighthouse.Backend.Modules.<X> namespace root of the production IL, top-level, sorted.",
+"F239": "R-C3 RED against an empty enumerator: the acceptance designer writes PackagedContexts.InTheAssembly as a declaration returning no contexts so the oracle compiles and R-C3 fails by assertion naming the ten missing contexts; the craft target PackagedContexts.cs is Extend: the crafter makes it read the IL (design A2). R-C1 and R-C2 are green on writing through the ModuleRules helper the acceptance designer adds.",
 "F24": "No property tests, finite domains only: every law ranges over the finite compiled assembly and the inline lists, so each is checked exhaustively as an example over the whole set; planted fixture types are the falsifiers (D-16, test-writing skill wins over nWave PBT density).",
+"F240": "No enumerator of module roots exists on main, so R-C3 needs its own enumerator beside the predicate; the acceptance designer creates it as an empty declaration with the oracle, and the craft target is Extend on that same type, never a second owner.",
+"F241": "Extended by craft: the empty declaration written with the oracle gets its IL read; read only by R-C3.",
+"F242": "PackagedContexts.cs holds one type, written by the acceptance designer as an empty declaration; the craft fills its body; nothing moves.",
 "F25": "No liveness claim: feature A has no process that must eventually progress; every check is a synchronous evaluation over a compiled assembly.",
 "F26": "Paradigm object oriented, preserved: the Architecture test namespace is OO C# (static rule owners, sealed records, verdict types); new types follow it: records for entries, a static owner for the membership and the enumerator, verdict records from ModuleRules.",
 "F27": "Behaviour-free proof uses admitted probes only: architecture-rules (one line per test) observes every new and existing rule; no new probe; test names carry the observed facts (type, context, admission; field and role) so the probe output shows them (D-14).",

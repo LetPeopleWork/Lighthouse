@@ -247,6 +247,12 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Behaviour-free proof uses admitted probes only: architecture-rules (one line per test) observes every new and existing rule; no new probe; test names carry the observed facts (type, context, admission; field and role) so the probe output shows them (D-14).
 </code></pre>
 
+<h4>D18</h4>
+
+<pre><code>Write-back and forecast publishing are a customer using its supplier&#x27;s port, not commands: WriteBackService -&gt; IWriteBackTarget.WriteFieldsToWorkItems and DeliveryForecastPublishingService -&gt; IDeliveryForecastPublisher.PublishAsync return results, so under D-6&#x27;s criterion they are not converted to events (E6, RX5); R-C1 lists them and C4 moves the port types into Tracker integration Contracts.
+</code></pre>
+<p>Governed slices: S2</p>
+
 <h3>Constraints</h3>
 
 <h4>K1</h4>
@@ -318,6 +324,12 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <pre><code>Earlier Stories module-boundary rule files are rule files, not frozen oracles of this feature: S1 edits only the FrontDoor field values in them (as Story 6657 S1 did), adding no rows and removing no list entries.
 </code></pre>
+
+<h4>K15</h4>
+
+<pre><code>A1 re-measured from the IL at HEAD: about 70 cross-context type edges (design 38), about 34 target types (design about 25), and 8 edges onto the 7 behaviour classes, so the hypothesis threshold holds; the exact edge list is R-C1&#x27;s in S2.
+</code></pre>
+<p>Governed slices: S2</p>
 
 <h3>Reuse</h3>
 
@@ -1856,9 +1868,9 @@ dotnet build Lighthouse.Backend
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PackagedContexts.cs</p>
 
-<p>Create</p>
+<p>Extend</p>
 
-<pre><code>R-C3 enumerator: every Lighthouse.Backend.Modules.&lt;X&gt; namespace root of the production IL, top-level, sorted.
+<pre><code>R-C3 enumerator: the acceptance designer writes PackagedContexts.InTheAssembly returning no contexts as the RED set-up so the oracle compiles; the craft fills its body to read every Lighthouse.Backend.Modules.&lt;X&gt; namespace root of the production IL, top-level, sorted.
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
@@ -1901,7 +1913,7 @@ dotnet build Lighthouse.Backend
 
 <h5>Decisions</h5>
 
-<pre><code>R-C3 RED against an empty enumerator: the acceptance designer creates PackagedContexts.InTheAssembly as a declaration returning no contexts so the oracle compiles and R-C3 fails by assertion naming the ten missing contexts; the crafter makes it read the IL (design A2). R-C1 and R-C2 are green on writing through the ModuleRules helper the acceptance designer adds.
+<pre><code>R-C3 RED against an empty enumerator: the acceptance designer writes PackagedContexts.InTheAssembly as a declaration returning no contexts so the oracle compiles and R-C3 fails by assertion naming the ten missing contexts; the craft target PackagedContexts.cs is Extend: the crafter makes it read the IL (design A2). R-C1 and R-C2 are green on writing through the ModuleRules helper the acceptance designer adds.
 </code></pre>
 
 <pre><code>R-C1 baseline is every measured edge: at S2 no Contracts exists, so CrossContextEdgesOutsideContracts lists every module-to-module edge in the IL by full names Source -&gt; Target with an owner comment; R-C2 baseline is empty.
@@ -1919,7 +1931,7 @@ dotnet build Lighthouse.Backend
 
 <p>CreateNew</p>
 
-<pre><code>No enumerator of module roots exists; R-C3 needs its own enumerator beside the predicate.
+<pre><code>No enumerator of module roots exists on main, so R-C3 needs its own enumerator beside the predicate; the acceptance designer creates it as an empty declaration with the oracle, and the craft target is Extend on that same type, never a second owner.
 </code></pre>
 
 <h5>Impact</h5>
@@ -1930,7 +1942,7 @@ dotnet build Lighthouse.Backend
 
 <p>Changed</p>
 
-<pre><code>New enumerator read only by R-C3.
+<pre><code>Extended by craft: the empty declaration written with the oracle gets its IL read; read only by R-C3.
 </code></pre>
 
 <p>architecture test support</p>
@@ -1950,7 +1962,7 @@ dotnet build Lighthouse.Backend
 
 <p>prefactoring</p>
 
-<pre><code>PackagedContexts.cs is a new file holding one type; nothing moves.
+<pre><code>PackagedContexts.cs holds one type, written by the acceptance designer as an empty declaration; the craft fills its body; nothing moves.
 </code></pre>
 
 <p>prefactoring</p>
