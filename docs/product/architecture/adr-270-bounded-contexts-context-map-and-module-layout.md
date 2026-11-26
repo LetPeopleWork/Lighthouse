@@ -190,6 +190,8 @@ them from the code or the walk, and the maintainer accepted them with the ADR.
 | Forecasting → Flow metrics (Flow metrics calls Forecasting) | none | **Removed by Story 6361 (2026-11-15).** Flow metrics asks three ports of its own, in its Application: `IThroughputFilter`, `IForecastDataSufficiency` and `IHowManyForecaster`. Forecasting implements them (`ForecastFilterRuleService`, `ForecastingAnswersToFlowMetrics`), so Flow metrics names no Forecasting type | **Not legal** (Metrics may not depend on Forecasting). The R5 list is empty and stays, compared both ways, so a new edge fails | **Derived** (from code, Story 6358) |
 | Flow metrics → Forecasting (Forecasting calls Flow metrics) | customer/supplier | Forecasting reads throughput and `ForecastThroughputStatus` through Flow metrics' Application (`ITeamMetricsService`), and implements Flow metrics' three ports (row above) | **Yes**, decided by Story 6361 (2026-11-15): a forecast is made from throughput, and throughput is a flow metric. Forecasting is a legal caller of Flow metrics' Application by namespace, so it left the R4 list | **Derived** (from code, Story 6358; made legal by Story 6361) |
 | Flow metrics → Platform lane | none designed | `DatabaseMaintenanceGate` reaches the module's Application | Platform is the composition root's infrastructure, not a context. **Decided by Story 6364 (2026-11-24):** the edge stays listed in Flow metrics' R4 list, now naming `Platform.DatabaseManagement.DatabaseMaintenanceGate`, so Flow metrics' inbound rule governs it and the platform lane's rules do not list it a second time. Turning it round (Flow metrics owns a port that the gate implements) is a catalogue note only, not scheduled | **Derived** (from code, Story 6358) |
+| Tracker integration → Forecasting (Forecasting calls Tracker integration) | customer/supplier: the write-back round is a customer of the connector port | `WriteBackService`, the one round type that talks to a tracker, reaches `IWorkTrackingConnector`, `IWorkTrackingConnectorFactory` and `IWriteBackTarget` | **Yes**, since Story 6657 (2026-11-26): a Forecasting type depends on Tracker integration, never the reverse. One caller type, 3 listed edges (R-WB2) | |
+| Platform lane → Forecasting (the update queue holds round types) | none designed; a direct call | The update queue, its held update, `TeamUpdater` and `UpdateServiceBase<T>` name write-back types, and `PortfolioUpdater` calls Forecasting | Listed in Forecasting's R4 inbound list (5 entries) since Story 6657, so Forecasting's rules govern it and the platform lane's rules do not list it a second time. **Note for S09a:** inverting the queue flush removes these entries | |
 | Work Items → Forecasting | customer/supplier, by events | Reacts to the refresh events; reads Features through Work Items' contract | Yes (Forecasting depends on WorkItems/Sync) | |
 | Work Items → Refinement | customer/supplier | Reads Work Items in refinement | Yes (Refinement depends on WorkItems/Sync) | **Derived** |
 | Forecasting → Refinement (today) | customer/supplier | Refinement reads the Team's manual How Many forecast | Yes (Refinement depends on Forecasting) | |
@@ -401,7 +403,7 @@ Placement decisions the measurement settled:
   port, and the projector reads the blackout periods.
 - Named exceptions stay in `Services`, each with an owner, and `PromisesUnitTestPlacementTest` names all 22: the five
   Delivery repository files (platform persistence, S05d), the eight files of the write-back round (#6657) and the nine
-  ordering and ranking files (Organisation set-up). Story 6468 (2026-11-25) moved those nine files into `Modules/OrganisationSetup`, so only the first two groups stay.
+  ordering and ranking files (Organisation set-up). Story 6468 (2026-11-25) moved those nine files into `Modules/OrganisationSetup`, and Story 6657 (2026-11-26) moved the eight write-back files into `Modules/Forecasting`, so only the Delivery repository files stay.
 
 ### Edges measured by packaging Access and Licensing (2026-11-22)
 
@@ -603,6 +605,23 @@ What the Story changed in the neighbours' rules and checks:
   each class in the namespace of its folder (`OrganisationSetupUnitTestPlacementTest`).
 - The `ConnectionSaveService` logger category now carries the new namespace, so a log filter on the old category name no
   longer matches.
+
+### Edges measured by placing the write-back round (Story 6657, 2026-11-26)
+
+The write-back round (the service, the collector, the round and its context, the trigger service and their interfaces)
+moved from the loose `Services` namespaces into `Modules/Forecasting/Application/WriteBack`. The move changed no
+behaviour. The edges below are read from the compiled IL after the move; they replace the earlier counts.
+
+| Rule | Reads | After the move |
+|---|---|---|
+| Forecasting R4, Application inbound | `API`, the composition root, Refinement and Reports by namespace (legal), plus the list | 5: `PortfolioUpdater`, `UpdateQueueService`, `UpdateQueueService+HeldUpdate`, `TeamUpdater`, `UpdateServiceBase`1`. The last four hold round types until the update code is replaced (S09a) |
+| Forecasting, licence | The licence only along the list | 2: `ForecastFilterRuleService` and `WriteBackTriggerService` → `ILicenseService` |
+| R-WB2, Tracker integration | Only `WriteBackService` reaches Tracker integration from inside Forecasting | 3 listed edges: `IWorkTrackingConnector`, `IWorkTrackingConnectorFactory`, `IWriteBackTarget`; one caller type |
+| Flow metrics R4, Application inbound | Forecasting is a legal caller by namespace | 4 → **3**: `WriteBackTriggerService` left. Left: `WorkItemService`, `FeatureListActiveWork`, `DatabaseMaintenanceGate` |
+| R-WB1, R-WB3, R-WB4 | Every round type lives in `Application/WriteBack` and none is left under `Services`; Promises, Access and Licensing reach no round type; inside Forecasting only `ForecastUpdater` and the round reach the round | empty |
+
+Every other rule now names the round by `Modules.Forecasting.Application.WriteBack` only. The Work Items rule keeps
+the round's new full names as listed edges; that list is not changed here.
 
 ### Ratchet candidates
 
@@ -826,6 +845,7 @@ the maintainer). The refresh process itself is still called sync.
 | Term | Meaning | Code name today | Drift |
 |---|---|---|---|
 | Forecast | An answer to "when" or "how many" with a likelihood, recomputed and replaced | four meanings: the stored completion histogram per Feature (`WhenForecast`), the stored start histogram (`StartForecast`), the unstored manual Team answer, the replay of past forecasts (reality check, backtest) | **Overloaded.** Qualify every use: completion forecast, start forecast, manual forecast, reality check |
+| Write-back round | One pass that decides which dates and fields are written back to the tracker, and when, from Forecasting's dates and Work Items' fields; the tracker-specific translation stays in Tracker integration (`IWriteBackTarget`) | `WriteBackService`, `WriteBackCollector`, `WriteBackRound`, `WriteBackTriggerService` in `Modules.Forecasting.Application.WriteBack` | None; named after the code since Story 6657 |
 | Feature WIP | How many Features the leaf unit works on at once; the simulation's parallelism | `FeatureWIP` on `Team` | Leaf only. Moves to Forecasting's own extension keyed by the unit's id, with the throughput window, in Epic 6474 (its slice 07). Packaging Forecasting changed no schema |
 
 ### Promises
@@ -905,8 +925,8 @@ Other precise names that already say their role (`SyncModeResolver`, `StageRuleM
 - Flow metrics today: `Domain` (4 files), `Application` (27), `Application/Policies` (7), `Adapters/Background` (1),
   `Adapters/Persistence` (3). The entities and `Models/Metrics` DTOs stay in `Models` until S12c and S04b, because the
   EF model snapshots of both providers carry the entity names.
-- Forecasting today (Story 6361, 2026-11-15): `Domain` (16 files), `Application` (10, with the class that answers
-  Flow metrics' ports), `Application/Policies` (4, the forecast triggers), `Adapters/Background` (2, the forecast
+- Forecasting today (Story 6361, 2026-11-15; Story 6657, 2026-11-26): `Domain` (16 files), `Application` (10, with the class that answers
+  Flow metrics' ports), `Application/WriteBack` (8, the write-back round), `Application/Policies` (4, the forecast triggers), `Adapters/Background` (2, the forecast
   updater and the start-up seeder). No `Adapters/Persistence`: Forecasting has no repository of its own yet. Its
   entities, the types the kernel entities reach and its wire DTOs stay in `Models` and `API/DTO`, for the same reason.
   Its unit tests: `Domain` (3), `Application` (15), `Application/Policies` (4), `Adapters/Background` (2).
@@ -1083,10 +1103,14 @@ These were not decided on the board; the packaging Story of the named context de
   when, from Forecasting's dates and Work Items' fields, and reaches Flow metrics and Licensing. Moving it into Tracker
   integration would make the anti-corruption layer reach those contexts, so it stays where it is and is placed by the
   Story that packages its publisher (S03d). S03d files an ADO item for it.
+  *Answered (Story 6657, 2026-11-26):* the round sits in Forecasting's `Application/WriteBack`, the 8 files moved by
+  namespace and path only. Forecasting triggers the round and writes its dates, so every edge it holds is a legal
+  Forecasting edge or a listed one: Forecasting reaches Tracker integration along 3 listed edges, all from
+  `WriteBackService`, and the licence along 1 more listed edge (see "Edges measured by placing the write-back round").
   *Story 6362 (2026-11-17):* not Promises. Forecasting triggers the round and writes its dates, so in Promises
   Forecasting would reach Promises, the reverse of the legal edge. Delivery forecast publishing (a Delivery's answer
-  written to a Jira release) is Promises' and moved. The round's eight files stay in `Services` as a named exception;
-  #6657 "Place the write-back round (candidate: Forecasting `Application/WriteBack`)" places them.
+  written to a Jira release) is Promises' and moved. The round's eight files stayed in `Services` as a named exception
+  until Story 6657 placed them in Forecasting's `Application/WriteBack`.
 - Where the **update queue** lives: its mechanics look like platform-lane infrastructure, while scheduling a refresh is
   Work Items' and a forecast round is Forecasting's.
   *Story 6362 (2026-11-17):* not Promises. The queue and the Team and Portfolio updaters stay in the update code; the
