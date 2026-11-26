@@ -84,7 +84,7 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 				onEdit={mayChange ? () => setEditing(report) : undefined}
 				onDelete={mayChange ? () => deletion.ask(report) : undefined}
 			/>
-			{report !== undefined && isEditor && (
+			{report !== undefined && (
 				<ReportNotes owner={owner} reportId={reportId} mayWrite={isEditor} />
 			)}
 			<Box
