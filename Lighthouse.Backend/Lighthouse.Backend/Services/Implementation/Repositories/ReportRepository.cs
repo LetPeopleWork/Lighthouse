@@ -28,10 +28,17 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         async Task<bool> IReportNoteStore.TrySave()
         {
+            var changed = context.ChangeTracker.Entries<ReportNote>()
+                .Where(entry => entry.State == EntityState.Modified)
+                .ToList();
+
             try
             {
                 await context.SaveChangesAsync();
-                return true;
+
+                // The context retries a save that found no row to update by reloading the entity, and reloading
+                // a row that is gone detaches it, so a change to a deleted note ends as a save of nothing.
+                return changed.All(entry => entry.State != EntityState.Detached);
             }
             catch (DbUpdateConcurrencyException conflict)
             {
