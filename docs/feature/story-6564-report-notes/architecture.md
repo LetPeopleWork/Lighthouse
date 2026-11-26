@@ -1171,7 +1171,7 @@ A writer calls IReportNoteCommands.Add on a report with text, with a caller prof
 ```
 
 ```text
-The list holds the note first, with its text, the instance-zone day and the author name (no name when no profile); the blank add answers Refused note-text-missing and stores nothing; after the report is deleted the notes cannot be read
+The list holds the note first, with its text, the instance-zone day and the author name (no name when no profile); the blank add answers Refused note-text-missing and stores nothing; after the report is deleted the notes cannot be read The refusal of a caller without write access (P5) is a route guard and is observed in S2's wire contract, not here.
 ```
 
 ```text
@@ -1372,7 +1372,7 @@ Empty, only blanks, exactly 2000 and 2001 characters after trim, leading and tra
 None.
 
 ```text
-FsCheck-style shrink to the shortest failing string
+No shrinking: the test project has no property library. Seeded generation with the seed printed on failure, fixed boundary cases in must-include, replay by seed
 ```
 
 ```text
@@ -1422,7 +1422,7 @@ Equal instants, adds to the other report, blank adds interleaved
 None.
 
 ```text
-Shorten the add sequence
+No shrinking: the test project has no property library. Seeded generation with the seed printed on failure, fixed boundary cases in must-include, replay by seed
 ```
 
 ```text
@@ -1550,7 +1550,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Data\/ReportNotesTableConstrain
 ###### L11
 
 ```text
-The controller maps the authentication mode to the caller: Disabled to Anonymous; Enabled with a resolved profile to Signed; Enabled with no profile, Misconfigured and Blocked to Unresolved; and a Disabled mode never reads the profile service result as a signer, while an Enabled mode with the RBAC switch off still gives Signed
+The controller maps the sign-in mode and the resolved profile to the caller and takes no other input: Disabled to Anonymous; Enabled with a resolved profile to Signed; Enabled with no profile, Misconfigured and Blocked to Unresolved. CallerOf has no RBAC parameter, so the RBAC switch cannot change the result
 ```
 
 Invariant
@@ -1570,7 +1570,7 @@ Disabled
 ```
 
 ```text
-Enabled with profile and RBAC off
+Enabled with profile
 ```
 
 ```text
@@ -2273,7 +2273,7 @@ Unsigned note with a profile caller, signed note with no caller, signed note wit
 None.
 
 ```text
-Shorten the action sequence to the first violating change
+No shrinking: the test project has no property library. Seeded generation with the seed printed on failure, fixed boundary cases in must-include, replay by seed
 ```
 
 ```text

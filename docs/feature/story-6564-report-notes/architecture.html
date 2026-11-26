@@ -1182,7 +1182,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <pre><code>A writer calls IReportNoteCommands.Add on a report with text, with a caller profile on and with none, then reads IReportNoteQueries.List; a second call adds blank text; then the report is deleted
 </code></pre>
 
-<pre><code>The list holds the note first, with its text, the instance-zone day and the author name (no name when no profile); the blank add answers Refused note-text-missing and stores nothing; after the report is deleted the notes cannot be read
+<pre><code>The list holds the note first, with its text, the instance-zone day and the author name (no name when no profile); the blank add answers Refused note-text-missing and stores nothing; after the report is deleted the notes cannot be read The refusal of a caller without write access (P5) is a route guard and is observed in S2&#x27;s wire contract, not here.
 </code></pre>
 
 <pre><code>A list that is ascending, shows a name with no profile, saves blank text, or still returns notes of a deleted report
@@ -1361,7 +1361,7 @@ pnpm --dir Lighthouse.Frontend build
 
 <p>None.</p>
 
-<pre><code>FsCheck-style shrink to the shortest failing string
+<pre><code>No shrinking: the test project has no property library. Seeded generation with the seed printed on failure, fixed boundary cases in must-include, replay by seed
 </code></pre>
 
 <pre><code>The expected outcome from string length arithmetic on the generated text, not from Write
@@ -1405,7 +1405,7 @@ pnpm --dir Lighthouse.Frontend build
 
 <p>None.</p>
 
-<pre><code>Shorten the add sequence
+<pre><code>No shrinking: the test project has no property library. Seeded generation with the seed printed on failure, fixed boundary cases in must-include, replay by seed
 </code></pre>
 
 <pre><code>A list model sorted by the generated instants and insertion order
@@ -1516,7 +1516,7 @@ pnpm --dir Lighthouse.Frontend build
 
 <h6>L11</h6>
 
-<pre><code>The controller maps the authentication mode to the caller: Disabled to Anonymous; Enabled with a resolved profile to Signed; Enabled with no profile, Misconfigured and Blocked to Unresolved; and a Disabled mode never reads the profile service result as a signer, while an Enabled mode with the RBAC switch off still gives Signed
+<pre><code>The controller maps the sign-in mode and the resolved profile to the caller and takes no other input: Disabled to Anonymous; Enabled with a resolved profile to Signed; Enabled with no profile, Misconfigured and Blocked to Unresolved. CallerOf has no RBAC parameter, so the RBAC switch cannot change the result
 </code></pre>
 
 <p>Invariant</p>
@@ -1534,7 +1534,7 @@ pnpm --dir Lighthouse.Frontend build
 <pre><code>Disabled
 </code></pre>
 
-<pre><code>Enabled with profile and RBAC off
+<pre><code>Enabled with profile
 </code></pre>
 
 <pre><code>Enabled with no profile
@@ -2163,7 +2163,7 @@ quint verify docs/feature/story-6564-report-notes/design/reportNoteModifyRule.qn
 
 <p>None.</p>
 
-<pre><code>Shorten the action sequence to the first violating change
+<pre><code>No shrinking: the test project has no property library. Seeded generation with the seed printed on failure, fixed boundary cases in must-include, replay by seed
 </code></pre>
 
 <pre><code>Quint model reportNoteModifyRule.qnt reference: authors and changers tracked in separate maps
