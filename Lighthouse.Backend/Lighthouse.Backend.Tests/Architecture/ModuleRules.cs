@@ -38,6 +38,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public const string TheWriteBackRound = @"^Lighthouse\.Backend\.Modules\.Forecasting\.Application\.WriteBack(\.|$)";
 
+        private const string MicrosoftExtensions = @"^Microsoft\.Extensions(\.|$)";
+
         private static readonly TimeSpan PatternTimeout = TimeSpan.FromSeconds(1);
 
         /// <summary>Whether the type, or the top-level type it is nested in, is a type of the round the pattern names by full name.</summary>
@@ -145,6 +147,67 @@ namespace Lighthouse.Backend.Tests.Architecture
                 listed,
                 rule,
                 application);
+
+        /// <summary>
+        /// Every edge from a type of one context under the modules root into another context outside that context's Contracts,
+        /// and every edge from a type in a Contracts into anything but the kernel, the base library, Microsoft.Extensions and the
+        /// Contracts of any context, as "Dependent -> Target", for the verdict to compare with the listed edges both ways. A
+        /// context is the namespace part right under the modules root, so two contexts whose names begin alike stay apart.
+        /// </summary>
+        public static OutboundVerdict ReachesOtherContextsOnlyThroughContracts(ModuleDefinition module, IReadOnlyCollection<string> listed, string modules, string contracts, string kernel, ModuleWording? wording = null)
+        {
+            var contexts = module.Types
+                .Select(type => ContextOf(type.Namespace, modules))
+                .OfType<string>()
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            var intoAnotherContextOutsideItsContracts = contexts.SelectMany(context => IlDependencies.DependentsIn(
+                module,
+                $"^{Regex.Escape($"{modules}.{context}")}(\\.|$)",
+                type => !IsCompilerMade(type)
+                    && ContextOf(IlDependencies.NamespaceOf(type), modules) is { } reached
+                    && reached != context
+                    && !IsInTheContractsOf(type, reached, modules, contracts)));
+
+            var fromAContractsOutward = contexts.SelectMany(context => IlDependencies.DependentsIn(
+                module,
+                $"^{Regex.Escape($"{modules}.{context}.{contracts}")}(\\.|$)",
+                type => !IsCompilerMade(type) && !MayBeReachedFromAContracts(type, modules, contracts, kernel)));
+
+            var whose = wording?.Of(contracts) ?? $"the {contracts} of the context it reaches";
+
+            return new(
+                IlDependencies.TypesIn(module, $"^{Regex.Escape(modules)}\\."),
+                [.. intoAnotherContextOutsideItsContracts.Concat(fromAContractsOutward)
+                    .SelectMany(dependent => dependent.Targets.Select(reached => $"{dependent.TypeName} -> {reached}"))
+                    .Distinct(StringComparer.Ordinal)],
+                listed,
+                $"A type of one context in namespaces under \"{modules}\" should reach a type of another context only through that context's {contracts}, " +
+                $"and a type in a {contracts} should reach only the kernel matching \"{kernel}\", the base library, Microsoft.Extensions and the {contracts} of any context, " +
+                "except along the listed edges. Each edge reads source -> target, and the target's namespace names its context and its layer. " +
+                $"Why it matters: a context may change its Domain, Application and Adapters without telling anyone; only what it publishes in its {contracts} is promised to the others, " +
+                "so a type reached anywhere else ties the caller to how that context works today. " +
+                $"How to fix: name the type through {whose}, move the type there if it is a shape the context publishes, or react to an event the context publishes; the list only shrinks.",
+                modules);
+        }
+
+        private static string? ContextOf(string namespaceName, string modules)
+            => namespaceName.StartsWith($"{modules}.", StringComparison.Ordinal) ? namespaceName[(modules.Length + 1)..].Split('.')[0] : null;
+
+        private static bool IsInTheContractsOf(TypeReference type, string context, string modules, string contracts)
+        {
+            var namespaceName = IlDependencies.NamespaceOf(type);
+            var home = $"{modules}.{context}.{contracts}";
+
+            return namespaceName == home || namespaceName.StartsWith($"{home}.", StringComparison.Ordinal);
+        }
+
+        private static bool MayBeReachedFromAContracts(TypeReference type, string modules, string contracts, string kernel)
+            => IlDependencies.ResidesInNamespaceMatching(type, kernel)
+                || IlDependencies.ResidesInNamespaceMatching(type, TheBaseLibrary)
+                || IlDependencies.ResidesInNamespaceMatching(type, MicrosoftExtensions)
+                || (ContextOf(IlDependencies.NamespaceOf(type), modules) is { } reached && IsInTheContractsOf(type, reached, modules, contracts));
 
         private static ModuleWording WordsFor(ModuleWording? wording) => wording ?? ModuleWording.FlowMetrics;
 

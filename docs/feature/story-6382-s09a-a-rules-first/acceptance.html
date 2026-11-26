@@ -347,6 +347,295 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The contexts the compiled backend holds are read from its namespaces and compared with the ten packaged contexts the rule names
+</code></pre>
+
+<pre><code>Exactly the ten, none missing and no unnamed module root; with the reading still returning nothing, all ten are named as not found
+</code></pre>
+
+<pre><code>A reviewer sees a new module root refused until it is named, and a named context that vanished refused until it is taken off
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.ContextContractsArchUnitTest.TheContextsReadFromTheCompiledCode_AreExactlyTheTenPackagedContexts</p>
+
+<pre><code>the reading returns the ten names written out instead of reading the code; the made-up root check catches that
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The contexts are read from the compiled test code, which holds a made-up module root, and compared with what it holds minus that root plus a context that does not exist
+</code></pre>
+
+<pre><code>Exactly the made-up root is named as not named, as one name and not the contexts below it, exactly the made-up gone context is named as missing, and the reading lists each name once in order
+</code></pre>
+
+<pre><code>A reviewer sees that the contexts come from the code, so a written-down or empty reading cannot pass
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.ContextContractsArchUnitTest.TheContextCheck_NamesAMadeUpModuleRootOfTheCompiledCode_AndANamedContextThatIsGone_ReadInOrderAndOnceEach</p>
+
+<pre><code>a reading that also returns names one level deeper beside the root; the order and once-each check and the exact not-named list catch that
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Each of the ten packaged contexts in turn is taken off the list and the contexts of the compiled backend are compared with the rest
+</code></pre>
+
+<pre><code>Exactly the context taken off is named as not named, and nothing is named as gone
+</code></pre>
+
+<pre><code>A reviewer sees that every position of the list of contexts is compared with the code
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.ContextContractsArchUnitTest.TheContextCheck_NamesAPackagedContextOfTheCompiledCode_OnceItIsTakenOffTheList</p>
+
+<pre><code>a comparison that ignores one particular context; the case for that context catches it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Every edge from a type of one packaged context to a type of another, outside that context&#x27;s Contracts, is read from the compiled backend and compared with the listed edges
+</code></pre>
+
+<pre><code>The edges found equal the listed edges both ways: all 73 measured edges are listed, among them the write-back service reaching the write-back target and the delivery forecast publishing service reaching the forecast publisher
+</code></pre>
+
+<pre><code>A reviewer sees any new cross-context edge outside what a context publishes refused, and a listed edge that is no longer made refused until it is deleted
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.ContextContractsArchUnitTest.EveryEdgeFromOneContextIntoAnotherOutsideItsContracts_IsListed_AndEveryListedEdgeIsStillMade</p>
+
+<pre><code>a check that counts edges into Contracts as offending; it names nothing today because no Contracts exists yet, and the made-up contexts check catches it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Made-up contexts are checked: one type reaches another context&#x27;s Domain, one reaches the Domain of a context whose name begins alike, one listed type reaches another context&#x27;s Application, and others reach another context&#x27;s Contracts, the kernel and their own Domain; the list also holds an edge no type makes
+</code></pre>
+
+<pre><code>Exactly the two edges into another Domain are named as not listed and exactly the edge no type makes is named as gone; the listed edge and the edges into Contracts, the kernel and the own context are not named
+</code></pre>
+
+<pre><code>A reviewer sees the rule bite on a planted offender and pass its legal twins
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.ContextContractsArchUnitTest.TheSurfaceCheck_NamesEdgesIntoAnotherContextsDomain_AndAListedEdgeNoTypeMakes_ButNotEdgesIntoContractsTheKernelOrTheOwnContext</p>
+
+<pre><code>a check that tells contexts apart by name prefix; the context whose name begins alike catches it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Each of the 73 listed edges in turn is taken off the list and the edges of the compiled backend are compared with the rest
+</code></pre>
+
+<pre><code>Exactly the edge taken off is named as not listed, and nothing is named as gone
+</code></pre>
+
+<pre><code>A reviewer sees that every listed edge is one the code makes, and that deleting one brings it back as a failure
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.ContextContractsArchUnitTest.TheSurfaceCheck_NamesAListedEdgeOfTheCompiledCode_OnceItIsTakenOffTheList</p>
+
+<pre><code>a listed edge with a misspelt name that the code never makes; the both-ways comparison of the whole list catches it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Every edge from a type in a Contracts of the compiled backend is read and compared with an empty list
+</code></pre>
+
+<pre><code>No edge from a Contracts reaches anything but the kernel, the base library, Microsoft.Extensions and the Contracts of any context; today no Contracts exists, so nothing is found
+</code></pre>
+
+<pre><code>A reviewer sees a published type refused once it drags in its own context&#x27;s Domain, Application or Adapters or other code
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.ContextContractsArchUnitTest.NoContractsTypeReachesBeyondTheKernelTheBaseLibraryMicrosoftExtensionsAndTheContracts</p>
+
+<pre><code>a check that never looks at Contracts types; it passes today because none exists, and the made-up Contracts check catches it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Made-up Contracts types are checked: one reaches its own context&#x27;s Application, its twin reaches the kernel, the base library, Microsoft.Extensions and another context&#x27;s Contracts
+</code></pre>
+
+<pre><code>Exactly the type reaching its own Application is named; its twin is not
+</code></pre>
+
+<pre><code>A reviewer sees the inward rule bite on a planted offender and pass its legal twin
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.ContextContractsArchUnitTest.TheInwardCheck_NamesAContractsTypeReachingItsOwnApplication_ButNotOneReachingTheKernelTheBaseLibraryMicrosoftExtensionsOrAnotherContracts</p>
+
+<pre><code>a check that also allows the platform lane or Services from a Contracts; no planted type reaches those, so that wrong allowance survives
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The measured published set, the declared role of every rule pattern and the sweep of old names in test strings are checked as before
+</code></pre>
+
+<pre><code>Every published type is found in its old or its Contracts namespace and the set equals the closure, every pattern keeps its role, and no test string names a published type by its old name off the rename list, the new rule&#x27;s list included
+</code></pre>
+
+<pre><code>A reviewer sees the earlier measurements still hold with the new rule in place
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.ContextContractsMembershipArchUnitTest</p>
+
+<pre><code>a string of the new rule naming a published type without the modules root; the sweep does not read that form, and the rule builds full names from it at run time
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Every architecture rule of the backend is run with the new rule and its made-up contexts in place
+</code></pre>
+
+<pre><code>Every existing rule keeps its verdict; only the context-reading checks fail until the contexts are read from the code
+</code></pre>
+
+<pre><code>A reviewer sees the new rule added without changing any other rule&#x27;s verdict
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture</p>
+
+<p>Lighthouse.Backend.Tests.Architecture</p>
+
+<pre><code>an existing rule over the test code that would also read the made-up contexts&#x27; root; none matches it today
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

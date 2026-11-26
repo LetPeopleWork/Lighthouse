@@ -120,6 +120,195 @@
 "stimulus": "F228",
 "user_result": "F230"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3",
+"L3/F83",
+"L3/F84"
+],
+"still_passes_if": "F246",
+"test": "Lighthouse.Backend.Tests.Architecture.ContextContractsArchUnitTest.TheContextsReadFromTheCompiledCode_AreExactlyTheTenPackagedContexts",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs"
+},
+"expected": "F244",
+"stimulus": "F243",
+"user_result": "F245"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3",
+"L3/F85"
+],
+"still_passes_if": "F250",
+"test": "Lighthouse.Backend.Tests.Architecture.ContextContractsArchUnitTest.TheContextCheck_NamesAMadeUpModuleRootOfTheCompiledCode_AndANamedContextThatIsGone_ReadInOrderAndOnceEach",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs"
+},
+"expected": "F248",
+"stimulus": "F247",
+"user_result": "F249"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3",
+"L3/F84"
+],
+"still_passes_if": "F254",
+"test": "Lighthouse.Backend.Tests.Architecture.ContextContractsArchUnitTest.TheContextCheck_NamesAPackagedContextOfTheCompiledCode_OnceItIsTakenOffTheList",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs"
+},
+"expected": "F252",
+"stimulus": "F251",
+"user_result": "F253"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3",
+"L1/F74"
+],
+"still_passes_if": "F258",
+"test": "Lighthouse.Backend.Tests.Architecture.ContextContractsArchUnitTest.EveryEdgeFromOneContextIntoAnotherOutsideItsContracts_IsListed_AndEveryListedEdgeIsStillMade",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs"
+},
+"expected": "F256",
+"stimulus": "F255",
+"user_result": "F257"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3",
+"L1/F75"
+],
+"still_passes_if": "F262",
+"test": "Lighthouse.Backend.Tests.Architecture.ContextContractsArchUnitTest.TheSurfaceCheck_NamesEdgesIntoAnotherContextsDomain_AndAListedEdgeNoTypeMakes_ButNotEdgesIntoContractsTheKernelOrTheOwnContext",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs"
+},
+"expected": "F260",
+"stimulus": "F259",
+"user_result": "F261"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3",
+"L1/F76"
+],
+"still_passes_if": "F266",
+"test": "Lighthouse.Backend.Tests.Architecture.ContextContractsArchUnitTest.TheSurfaceCheck_NamesAListedEdgeOfTheCompiledCode_OnceItIsTakenOffTheList",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs"
+},
+"expected": "F264",
+"stimulus": "F263",
+"user_result": "F265"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3",
+"L2/F79"
+],
+"still_passes_if": "F270",
+"test": "Lighthouse.Backend.Tests.Architecture.ContextContractsArchUnitTest.NoContractsTypeReachesBeyondTheKernelTheBaseLibraryMicrosoftExtensionsAndTheContracts",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs"
+},
+"expected": "F268",
+"stimulus": "F267",
+"user_result": "F269"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3",
+"L2/F80"
+],
+"still_passes_if": "F274",
+"test": "Lighthouse.Backend.Tests.Architecture.ContextContractsArchUnitTest.TheInwardCheck_NamesAContractsTypeReachingItsOwnApplication_ButNotOneReachingTheKernelTheBaseLibraryMicrosoftExtensionsOrAnotherContracts",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs"
+},
+"expected": "F272",
+"stimulus": "F271",
+"user_result": "F273"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F88",
+"L4/F89",
+"L4/F90",
+"L5/F92",
+"L5/F93",
+"L5/F94",
+"L6/F97",
+"L6/F98"
+],
+"still_passes_if": "F278",
+"test": "Lighthouse.Backend.Tests.Architecture.ContextContractsMembershipArchUnitTest",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs"
+},
+"expected": "F276",
+"stimulus": "F275",
+"user_result": "F277"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T4",
+"L7/F101"
+],
+"still_passes_if": "F282",
+"test": "Lighthouse.Backend.Tests.Architecture",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture"
+},
+"expected": "F280",
+"stimulus": "F279",
+"user_result": "F281"
+}
 ]
 },
 "counters": {
@@ -127,7 +316,7 @@
 "C": 2,
 "D": 18,
 "E": 2,
-"F": 242,
+"F": 282,
 "K": 15,
 "L": 7,
 "P": 2,
@@ -1450,10 +1639,50 @@
 "F240": "No enumerator of module roots exists on main, so R-C3 needs its own enumerator beside the predicate; the acceptance designer creates it as an empty declaration with the oracle, and the craft target is Extend on that same type, never a second owner.",
 "F241": "Extended by craft: the empty declaration written with the oracle gets its IL read; read only by R-C3.",
 "F242": "PackagedContexts.cs holds one type, written by the acceptance designer as an empty declaration; the craft fills its body; nothing moves.",
+"F243": "The contexts the compiled backend holds are read from its namespaces and compared with the ten packaged contexts the rule names",
+"F244": "Exactly the ten, none missing and no unnamed module root; with the reading still returning nothing, all ten are named as not found",
+"F245": "A reviewer sees a new module root refused until it is named, and a named context that vanished refused until it is taken off",
+"F246": "the reading returns the ten names written out instead of reading the code; the made-up root check catches that",
+"F247": "The contexts are read from the compiled test code, which holds a made-up module root, and compared with what it holds minus that root plus a context that does not exist",
+"F248": "Exactly the made-up root is named as not named, as one name and not the contexts below it, exactly the made-up gone context is named as missing, and the reading lists each name once in order",
+"F249": "A reviewer sees that the contexts come from the code, so a written-down or empty reading cannot pass",
 "F25": "No liveness claim: feature A has no process that must eventually progress; every check is a synchronous evaluation over a compiled assembly.",
+"F250": "a reading that also returns names one level deeper beside the root; the order and once-each check and the exact not-named list catch that",
+"F251": "Each of the ten packaged contexts in turn is taken off the list and the contexts of the compiled backend are compared with the rest",
+"F252": "Exactly the context taken off is named as not named, and nothing is named as gone",
+"F253": "A reviewer sees that every position of the list of contexts is compared with the code",
+"F254": "a comparison that ignores one particular context; the case for that context catches it",
+"F255": "Every edge from a type of one packaged context to a type of another, outside that context's Contracts, is read from the compiled backend and compared with the listed edges",
+"F256": "The edges found equal the listed edges both ways: all 73 measured edges are listed, among them the write-back service reaching the write-back target and the delivery forecast publishing service reaching the forecast publisher",
+"F257": "A reviewer sees any new cross-context edge outside what a context publishes refused, and a listed edge that is no longer made refused until it is deleted",
+"F258": "a check that counts edges into Contracts as offending; it names nothing today because no Contracts exists yet, and the made-up contexts check catches it",
+"F259": "Made-up contexts are checked: one type reaches another context's Domain, one reaches the Domain of a context whose name begins alike, one listed type reaches another context's Application, and others reach another context's Contracts, the kernel and their own Domain; the list also holds an edge no type makes",
 "F26": "Paradigm object oriented, preserved: the Architecture test namespace is OO C# (static rule owners, sealed records, verdict types); new types follow it: records for entries, a static owner for the membership and the enumerator, verdict records from ModuleRules.",
+"F260": "Exactly the two edges into another Domain are named as not listed and exactly the edge no type makes is named as gone; the listed edge and the edges into Contracts, the kernel and the own context are not named",
+"F261": "A reviewer sees the rule bite on a planted offender and pass its legal twins",
+"F262": "a check that tells contexts apart by name prefix; the context whose name begins alike catches it",
+"F263": "Each of the 73 listed edges in turn is taken off the list and the edges of the compiled backend are compared with the rest",
+"F264": "Exactly the edge taken off is named as not listed, and nothing is named as gone",
+"F265": "A reviewer sees that every listed edge is one the code makes, and that deleting one brings it back as a failure",
+"F266": "a listed edge with a misspelt name that the code never makes; the both-ways comparison of the whole list catches it",
+"F267": "Every edge from a type in a Contracts of the compiled backend is read and compared with an empty list",
+"F268": "No edge from a Contracts reaches anything but the kernel, the base library, Microsoft.Extensions and the Contracts of any context; today no Contracts exists, so nothing is found",
+"F269": "A reviewer sees a published type refused once it drags in its own context's Domain, Application or Adapters or other code",
 "F27": "Behaviour-free proof uses admitted probes only: architecture-rules (one line per test) observes every new and existing rule; no new probe; test names carry the observed facts (type, context, admission; field and role) so the probe output shows them (D-14).",
+"F270": "a check that never looks at Contracts types; it passes today because none exists, and the made-up Contracts check catches it",
+"F271": "Made-up Contracts types are checked: one reaches its own context's Application, its twin reaches the kernel, the base library, Microsoft.Extensions and another context's Contracts",
+"F272": "Exactly the type reaching its own Application is named; its twin is not",
+"F273": "A reviewer sees the inward rule bite on a planted offender and pass its legal twin",
+"F274": "a check that also allows the platform lane or Services from a Contracts; no planted type reaches those, so that wrong allowance survives",
+"F275": "The measured published set, the declared role of every rule pattern and the sweep of old names in test strings are checked as before",
+"F276": "Every published type is found in its old or its Contracts namespace and the set equals the closure, every pattern keeps its role, and no test string names a published type by its old name off the rename list, the new rule's list included",
+"F277": "A reviewer sees the earlier measurements still hold with the new rule in place",
+"F278": "a string of the new rule naming a published type without the modules root; the sweep does not read that form, and the rule builds full names from it at run time",
+"F279": "Every architecture rule of the backend is run with the new rule and its made-up contexts in place",
 "F28": "Start condition is S1s first action: per Story 6365, 6366, 6468, 6657 the ADO state is Closed, the final rules commit is an ancestor of HEAD, and git ls-files shows Modules/Refinement, Modules/Reports, Modules/OrganisationSetup and no Services/Implementation/WriteBack*.cs; a failed check stops S1 and is reported with Story, check and output; results are recorded as craft commands.",
+"F280": "Every existing rule keeps its verdict; only the context-reading checks fail until the contexts are read from the code",
+"F281": "A reviewer sees the new rule added without changing any other rule's verdict",
+"F282": "an existing rule over the test code that would also read the made-up contexts' root; none matches it today",
 "F29": "Every count in the design was measured as text at 952040471 and is to be re-measured at A1 from the IL: the 38 edges, about 25 targets, the published-set table, the event owners of D-5 and the command list of D-6; a difference is recorded, not argued with.",
 "F3": "Every context's published set is measured from the compiled code and every rule pattern is classified FrontDoor or Place, with front doors widened to Application|Contracts, and no rule verdict changes.",
 "F30": "Hypothesis threshold, fixed before S1: if after the published set is drawn the listed non-contract cross-context edges exceed 15, or one context pair carries more than 5, S1 stops and the finding goes to the ADR-270 owner as a wrong cut.",
