@@ -3,7 +3,8 @@
 "B": 2,
 "C": 1,
 "D": 8,
-"F": 164,
+"E": 3,
+"F": 170,
 "K": 4,
 "L": 4,
 "P": 3,
@@ -818,6 +819,40 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"blocking": "yes",
+"id": "E1",
+"isolated": "no",
+"lacuna": "F166",
+"promises": [
+"P1"
+],
+"text": "F165"
+},
+{
+"blocking": "yes",
+"id": "E2",
+"isolated": "no",
+"lacuna": "F168",
+"promises": [
+"P2"
+],
+"text": "F167"
+},
+{
+"blocking": "yes",
+"id": "E3",
+"isolated": "no",
+"lacuna": "F170",
+"promises": [
+"P3"
+],
+"text": "F169"
+}
+]
+},
 "facts": {
 "F1": "Story 6382 S09a feature B, module start-up: pin every start-up registration at the composition-root port without a host, then move each context's registrations out of Program into its own Add<X> method at the module root (five contexts, then the other five), leaving Program with only the Add<X> calls, host set-up and the one ordered domain-event handler block, and remove the temporary pin.",
 "F10": "The composition-root rule with all ten contexts listed fails until their registrations leave Program; the preservation pin and the handler order pin stay green and unchanged.",
@@ -892,7 +927,13 @@
 "F162": "Gains the stray start check, same call point and timing.",
 "F163": "Per file: Program.cs holds one type (Program); TrackerIntegrationModule.cs holds one type; StartUpRegistrationsPreservationTest.cs is deleted. Nothing to split.",
 "F164": "Program names modules only, apart from the handler block and the measured host set-up types.",
+"F165": "The architecture-rules probe for the composition-root rule (fragment CompositionRoot) prints passing test lines for the five contexts Flow metrics, Forecasting, Promises, Licensing and Access, each showing that its start-up registrations are made by its own Add<X> method; and ef-model-unchanged reports the data model unchanged. No web host is started to see this.",
+"F166": "The rule reads compiled code only; it does not show that every service resolves at run time or that registration order inside the container is unchanged, and a passing line says nothing about contexts it does not list.",
+"F167": "The architecture-rules probe (fragments CompositionRoot and DomainEventHandlerOrderPin) prints passing test lines for the five contexts Work Items, Tracker integration, Refinement, Reports and Organisation set-up, each registered through its own Add<X> method, and a passing line for the single ordered domain-event handler block; ef-model-unchanged reports the data model unchanged.",
+"F168": "The handler-order pin proves the handler list and order, not that every handler behaves the same; the container's contents are seen only through the rule, not by resolving services from a running host.",
+"F169": "The architecture-rules probe (fragment ProgramNamesModulesOnly) prints a passing line saying Program names only the Add<X> calls, host set-up and the handler block, and the temporary preservation test no longer appears in the backend-tests probe output for its fragment (no such test is found), while the composition-root and handler-order lines still pass.",
 "F17": "Preservation pin carrier (D-9, E9): StartUpRegistrationsPreservationTest in Tests/Architecture, a craft target, not an oracle or support: nwdes freezes oracle and support bytes at approval, and S2 must change its seam line (RegisterReports gone) and S3 deletes it. The S1 crafter writes it as the first commit on the pre-B1 revision, baseline captured there and observed green before any line moves; the slice and candidate reviews judge it. Seam: WebApplication.CreateBuilder with EnvironmentName Testing, then RegisterServices(builder) and RegisterReports(builder.Services) by reflection as Main calls them; only the descriptors those calls add (the suffix after the builder own) are projected. Projection per service type: the ordered list of (lifetime, service key, implementation), where implementation is ImplementationType, else the instance type, else for a factory the delegate declared return type plus the ordered service types it asks of a recording IServiceProvider that answers nothing (the closure class and method name are left out: they change when a line moves). The baseline is written out inline by full type name, never computed at test time.",
+"F170": "A passing rule line does not show the last green run of the pin was recorded before it was deleted; that belongs to review records, and the probe cannot show Program text or order.",
 "F18": "Composition-root rule, one oracle file per slice (nwdes approval freezes each slice bytes, so no slice edits an earlier one): S1 CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest lists FlowMetrics, Forecasting, Promises, Licensing, Access; S2 CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest lists WorkItems, TrackerIntegration, Refinement, Reports, OrganisationSetup; together they are the ten-context rule. Each asserts, per listed context: its <X>Module exists in Lighthouse.Backend.Modules.<X> with Add<X>; only Program names it; Program registers no type of that context, where registers means the type is a generic argument of a call to an IServiceCollection registration extension (Add*, TryAdd*, Configure*, AddHostedService) or of GetService/GetRequiredService, read from the IL of Program and its compiler-made nested types; allowed: the handler block entries and the order-kept registrations of that context, by full name, compared both ways. The call reading is a new support CompositionRootRegistrations written with the S1 oracle and only read afterwards. S3 ProgramNamesModulesOnlyArchUnitTest: every type of the ten contexts that Program names at all (IlDependencies.DependentsIn over Program) is a <X>Module, a handler of the block, an order-kept registration, or a measured host set-up type; RED until the strays move.",
 "F19": "Host set-up type versus stray (B3 list): a host set-up type is a module type Program needs outside the container registrations to set the host up: authentication scheme handlers and selectors in ConfigureAuthentication, MVC filters in AddControllers, the HTTP client names of ConfigureServices, and reads in PrintSystemInfo. A stray is any other module-internal name Program keeps, such as the Tracker integration OAuth provider check EnsureOAuthProvidersRegistered names (text measure at 49552e47a, noisy); a stray moves behind a <X>Module method called at the same point. The B1 acceptance designer measures the names from the IL; the S3 acceptance designer writes the list from that measure. If the measure leaves no stray after S2, S3 has no RED and goes back to the host.",
 "F2": "Each context starts itself up, and the composition root only names modules, so moving a context's types later (features C and D) no longer means editing Program, while the container and handler order are proven unchanged.",
