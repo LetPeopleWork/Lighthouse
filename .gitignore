@@ -512,3 +512,6 @@ social-posts/.slack-cache.json
 # turns up inside a project folder from time to time. The repository's real .github is at
 # the root, and this pattern is anchored so that it stays tracked.
 /*/.github/
+# nWave config (keep .nwave/config.json trackable)
+.nwave/*
+!.nwave/config.json
