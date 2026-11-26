@@ -159,21 +159,9 @@ namespace Lighthouse.Backend.API
             }
         }
 
-        /// <summary>
-        /// Deliberately two branches rather than comparing the two ids directly. Comparing them
-        /// treats a note nobody signed as belonging to nobody, so on an instance that ran without
-        /// authentication and later switched it on, every note written in between becomes permanently
-        /// uneditable - visible to everyone and fixable by no one.
-        /// </summary>
         private static bool MayModify(DeliveryNote note, UserProfile? currentAuthor)
         {
-            if (note.AuthorUserProfileId is null)
-            {
-                // Nobody signed it, so nobody owns it. Write access to the Portfolio is the whole rule.
-                return true;
-            }
-
-            return currentAuthor is not null && note.AuthorUserProfileId == currentAuthor.Id;
+            return note.MayBeChangedBy(currentAuthor?.Id);
         }
 
         private Task<UserProfile?> CurrentAuthorAsync()

@@ -28,5 +28,10 @@ namespace Lighthouse.Backend.Models
         /// so a durable record does not silently re-label itself when somebody is renamed or removed.
         /// </summary>
         public string? AuthorDisplayName { get; set; }
+
+        public bool MayBeChangedBy(int? callerProfileId)
+        {
+            return new NoteSignature(AuthorUserProfileId).MayBeChangedBy(callerProfileId);
+        }
     }
 }
