@@ -8,6 +8,6 @@ namespace Lighthouse.Backend.Modules.Reports.Domain
             => new(note.Id, note.Text, note.CreatedAt, note.LastEditedAt, note.AuthorDisplayName);
 
         public static ReportNoteRead Of(ReportNote note, ReportNoteCaller caller)
-            => Of(note) with { CanModify = caller is not ReportNoteCaller.Unresolved && note.MayBeChangedBy(caller.ProfileIdOrNone) };
+            => Of(note) with { CanModify = caller.MayChange(note) };
     }
 }

@@ -76,7 +76,7 @@ namespace Lighthouse.Backend.Modules.Reports.Application
                 return ReportOutcome<ReportNote>.Refused(ReportRefusalCodes.NoteAuthorUnknown);
             }
 
-            return note.MayBeChangedBy(caller.ProfileIdOrNone)
+            return caller.MayChange(note)
                 ? ReportOutcome<ReportNote>.Done(note)
                 : ReportOutcome<ReportNote>.Refused(ReportRefusalCodes.NoteNotYours);
         }
