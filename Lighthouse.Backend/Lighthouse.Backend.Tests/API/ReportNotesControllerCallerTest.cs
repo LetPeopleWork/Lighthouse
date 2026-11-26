@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void The_profile_signs_the_note_when_sign_in_is_on_whether_or_not_access_control_is_switched_on()
+        public void The_profile_signs_the_note_when_sign_in_is_on_and_the_writer_is_known()
         {
             Assert.That(ReportNotesControllerBase.CallerOf(AuthMode.Enabled, Ann), Is.EqualTo(new ReportNoteCaller.Signed(7, "Ann")));
         }

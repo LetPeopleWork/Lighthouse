@@ -13,7 +13,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    public class Slice11AddReportNoteScenarios : ReportsAtThePortTest
+    // The test project has no property library: the two generated checks below draw from a seeded Random, print the
+    // seed in every failure message and are replayed by running again with that seed. They do not shrink a failing case.
+    public class ReportNoteScenarios : ReportsAtThePortTest
     {
         private const string Ann = "Ann";
 
@@ -224,9 +226,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        /// <summary>Law: for any raw text a note keeps it trimmed when its trimmed length is 1 to 2000 and is refused otherwise.</summary>
+        /// <summary>Law L1: for any raw text a note keeps it trimmed when its trimmed length is 1 to 2000 and is refused otherwise.</summary>
         [Test]
-        public void L1_for_any_text_a_note_keeps_it_trimmed_when_it_has_1_to_2000_characters_and_is_refused_otherwise()
+        public void A_note_keeps_its_text_without_outer_blanks_when_it_has_1_to_2000_characters_and_is_refused_otherwise()
         {
             var cases = new NoteTexts(Seed);
 
@@ -245,9 +247,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        /// <summary>Law: after any sequence of adds, a report lists exactly its accepted notes, newest first by the instant written then by order of adding, and no note of another report or owner.</summary>
+        /// <summary>Law L2: after any sequence of adds, a report lists exactly its accepted notes, newest first by the instant written then by order of adding, and no note of another report or owner.</summary>
         [Test]
-        public async Task L2_for_any_sequence_of_adds_a_report_lists_exactly_its_own_accepted_notes_newest_first()
+        public async Task A_report_lists_exactly_its_own_accepted_notes_newest_first_whatever_was_added_before()
         {
             var lightspeed = ATeam("Lightspeed");
             var zenith = ATeam("Zenith");
@@ -279,7 +281,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        private const int Seed = 6564;
+        private const int Seed = 4711;
 
         private const int Cases = 200;
 

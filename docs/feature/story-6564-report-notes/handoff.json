@@ -13,7 +13,7 @@
 ],
 "still_passes_if": "F448",
 "test": "A_signed_in_writer_adds_notes_and_the_report_lists_them_newest_first_with_the_day_written_and_their_name",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
 },
 "expected": "F446",
 "stimulus": "F445",
@@ -31,7 +31,7 @@
 ],
 "still_passes_if": "F452",
 "test": "A_note_written_with_sign_in_off_is_listed_with_its_text_and_day_and_no_author",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
 },
 "expected": "F450",
 "stimulus": "F449",
@@ -48,7 +48,7 @@
 ],
 "still_passes_if": "F456",
 "test": "A_note_without_text_is_not_saved_and_the_notes_stay_as_they_were",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
 },
 "expected": "F454",
 "stimulus": "F453",
@@ -65,7 +65,7 @@
 ],
 "still_passes_if": "F460",
 "test": "A_note_of_more_than_2000_characters_is_not_saved_for_that_reason_while_one_of_exactly_2000_between_blanks_is",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
 },
 "expected": "F458",
 "stimulus": "F457",
@@ -83,7 +83,7 @@
 ],
 "still_passes_if": "F464",
 "test": "A_note_is_refused_when_sign_in_is_on_and_nobody_can_be_named_and_the_notes_stay_as_they_were",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
 },
 "expected": "F462",
 "stimulus": "F461",
@@ -100,7 +100,7 @@
 ],
 "still_passes_if": "F468",
 "test": "A_report_the_owner_does_not_hold_has_no_notes_to_add_to_or_list_and_it_is_found_missing_before_anything_else_is_judged",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
 },
 "expected": "F466",
 "stimulus": "F465",
@@ -118,7 +118,7 @@
 ],
 "still_passes_if": "F472",
 "test": "Deleting_a_report_deletes_its_notes_and_leaves_the_notes_of_other_reports",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
 },
 "expected": "F470",
 "stimulus": "F469",
@@ -136,7 +136,7 @@
 ],
 "still_passes_if": "F476",
 "test": "Deleting_reports_in_bulk_deletes_the_notes_of_each_and_leaves_the_notes_of_a_report_not_deleted",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
 },
 "expected": "F474",
 "stimulus": "F473",
@@ -154,7 +154,7 @@
 ],
 "still_passes_if": "F480",
 "test": "Deleting_the_Team_that_owns_a_report_deletes_the_report_and_its_notes_and_leaves_another_Teams_notes",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
 },
 "expected": "F478",
 "stimulus": "F477",
@@ -171,8 +171,8 @@
 "L1/F238"
 ],
 "still_passes_if": "F484",
-"test": "L1_for_any_text_a_note_keeps_it_trimmed_when_it_has_1_to_2000_characters_and_is_refused_otherwise",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+"test": "A_note_keeps_its_text_without_outer_blanks_when_it_has_1_to_2000_characters_and_is_refused_otherwise",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
 },
 "expected": "F482",
 "stimulus": "F481",
@@ -189,8 +189,8 @@
 "L2/F244"
 ],
 "still_passes_if": "F488",
-"test": "L2_for_any_sequence_of_adds_a_report_lists_exactly_its_own_accepted_notes_newest_first",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+"test": "A_report_lists_exactly_its_own_accepted_notes_newest_first_whatever_was_added_before",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
 },
 "expected": "F486",
 "stimulus": "F485",
@@ -205,10 +205,10 @@
 "obligations": [
 "L11",
 "L11/F370",
-"L11/F371",
 "L11/F372",
 "L11/F373",
-"L11/F374"
+"L11/F374",
+"L11/F504"
 ],
 "still_passes_if": "F492",
 "test": "Nobody_can_be_named_when_sign_in_is_misconfigured_or_blocked",
@@ -253,6 +253,23 @@
 "expected": "F498",
 "stimulus": "F497",
 "user_result": "F499"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F508",
+"test": "shows a reader of the live report a written note above the first panel of the numbers",
+"test_path": "Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.add.test.tsx"
+},
+"expected": "F506",
+"stimulus": "F505",
+"user_result": "F507"
 }
 ]
 },
@@ -260,7 +277,7 @@
 "B": 5,
 "D": 13,
 "E": 12,
-"F": 504,
+"F": 508,
 "K": 2,
 "L": 11,
 "N": 2,
@@ -1971,6 +1988,10 @@
 "F502": "No shrinking: the test project has no property library. Seeded generation with the seed printed on failure, fixed boundary cases in must-include, replay by seed",
 "F503": "The controller maps the sign-in mode and the resolved profile to the caller and takes no other input: Disabled to Anonymous; Enabled with a resolved profile to Signed; Enabled with no profile, Misconfigured and Blocked to Unresolved. CallerOf has no RBAC parameter, so the RBAC switch cannot change the result",
 "F504": "Enabled with profile",
+"F505": "A reader of the live report opens a report that has one written note",
+"F506": "The note text is listed in the notes area, which sits above the first panel of the numbers",
+"F507": "The reader sees the written note next to the numbers, above them",
+"F508": "A notes area placed below the numbers or showing no loaded note",
 "F51": "Notes written by the system.",
 "F52": "The day a note was written is enough; there is one kind of note, with no separate event date (maintainer, 2026-11-26).",
 "F53": "Write access on the Team or Portfolio that owns the report is enough to add a note (maintainer, 2026-11-26).",

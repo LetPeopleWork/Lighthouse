@@ -175,7 +175,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
 
 <p>A_signed_in_writer_adds_notes_and_the_report_lists_them_newest_first_with_the_day_written_and_their_name</p>
 
@@ -203,7 +203,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
 
 <p>A_note_written_with_sign_in_off_is_listed_with_its_text_and_day_and_no_author</p>
 
@@ -231,7 +231,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
 
 <p>A_note_without_text_is_not_saved_and_the_notes_stay_as_they_were</p>
 
@@ -258,7 +258,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
 
 <p>A_note_of_more_than_2000_characters_is_not_saved_for_that_reason_while_one_of_exactly_2000_between_blanks_is</p>
 
@@ -285,7 +285,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
 
 <p>A_note_is_refused_when_sign_in_is_on_and_nobody_can_be_named_and_the_notes_stay_as_they_were</p>
 
@@ -313,7 +313,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
 
 <p>A_report_the_owner_does_not_hold_has_no_notes_to_add_to_or_list_and_it_is_found_missing_before_anything_else_is_judged</p>
 
@@ -340,7 +340,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
 
 <p>Deleting_a_report_deletes_its_notes_and_leaves_the_notes_of_other_reports</p>
 
@@ -368,7 +368,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
 
 <p>Deleting_reports_in_bulk_deletes_the_notes_of_each_and_leaves_the_notes_of_a_report_not_deleted</p>
 
@@ -396,7 +396,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
 
 <p>Deleting_the_Team_that_owns_a_report_deletes_the_report_and_its_notes_and_leaves_another_Teams_notes</p>
 
@@ -424,9 +424,9 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
 
-<p>L1_for_any_text_a_note_keeps_it_trimmed_when_it_has_1_to_2000_characters_and_is_refused_otherwise</p>
+<p>A_note_keeps_its_text_without_outer_blanks_when_it_has_1_to_2000_characters_and_is_refused_otherwise</p>
 
 <pre><code>A bound applied before trimming or blanks kept
 </code></pre>
@@ -452,9 +452,9 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
 
-<p>L2_for_any_sequence_of_adds_a_report_lists_exactly_its_own_accepted_notes_newest_first</p>
+<p>A_report_lists_exactly_its_own_accepted_notes_newest_first_whatever_was_added_before</p>
 
 <pre><code>Ascending order, a tie ordered oldest first, or another report note listed
 </code></pre>
@@ -546,6 +546,33 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>saves what the writer typed as typed, shows the new note first and empties the field</p>
 
 <pre><code>A trimmed text sent, a note below the numbers, or an empty area on failure
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A reader of the live report opens a report that has one written note
+</code></pre>
+
+<pre><code>The note text is listed in the notes area, which sits above the first panel of the numbers
+</code></pre>
+
+<pre><code>The reader sees the written note next to the numbers, above them
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.add.test.tsx</p>
+
+<p>shows a reader of the live report a written note above the first panel of the numbers</p>
+
+<pre><code>A notes area placed below the numbers or showing no loaded note
 </code></pre>
 
 <h6>Obligations</h6>

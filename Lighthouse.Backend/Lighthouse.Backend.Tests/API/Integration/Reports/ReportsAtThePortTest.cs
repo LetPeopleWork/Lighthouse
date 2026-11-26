@@ -320,8 +320,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             services.AddScoped<IReportCommands, ReportCommands>();
             services.AddScoped<IReportBulkCommands, ReportBulkCommands>();
             services.AddScoped<IReportBulkRemover, ReportBulkRemover>();
-            services.AddScoped<IReportNoteStore>(provider => provider.GetRequiredService<ReportRepository>() as IReportNoteStore
-                ?? throw new InvalidOperationException("ReportRepository holds no report notes yet: it must implement IReportNoteStore."));
+            services.AddScoped<IReportNoteStore>(provider => provider.GetRequiredService<ReportRepository>());
             services.AddScoped<IReportNoteQueries, ReportNoteQueries>();
             services.AddScoped<IReportNoteCommands, ReportNoteCommands>();
         }

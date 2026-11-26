@@ -24,7 +24,7 @@ The writer sees both notes, newest on top, with the day and their name
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice11AddReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
 
 A\_signed\_in\_writer\_adds\_notes\_and\_the\_report\_lists\_them\_newest\_first\_with\_the\_day\_written\_and\_their\_name
 
@@ -56,7 +56,7 @@ The note shows with its day and without a name
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice11AddReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
 
 A\_note\_written\_with\_sign\_in\_off\_is\_listed\_with\_its\_text\_and\_day\_and\_no\_author
 
@@ -88,7 +88,7 @@ The writer is told the note needs text and nothing is saved
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice11AddReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
 
 A\_note\_without\_text\_is\_not\_saved\_and\_the\_notes\_stay\_as\_they\_were
 
@@ -119,7 +119,7 @@ The writer is told the note is too long and it is not saved
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice11AddReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
 
 A\_note\_of\_more\_than\_2000\_characters\_is\_not\_saved\_for\_that\_reason\_while\_one\_of\_exactly\_2000\_between\_blanks\_is
 
@@ -150,7 +150,7 @@ The writer cannot add a note that nobody can be named for
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice11AddReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
 
 A\_note\_is\_refused\_when\_sign\_in\_is\_on\_and\_nobody\_can\_be\_named\_and\_the\_notes\_stay\_as\_they\_were
 
@@ -182,7 +182,7 @@ A report that is not the owner's has no notes to add to or read
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice11AddReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
 
 A\_report\_the\_owner\_does\_not\_hold\_has\_no\_notes\_to\_add\_to\_or\_list\_and\_it\_is\_found\_missing\_before\_anything\_else\_is\_judged
 
@@ -213,7 +213,7 @@ The notes of a deleted report are gone with it
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice11AddReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
 
 Deleting\_a\_report\_deletes\_its\_notes\_and\_leaves\_the\_notes\_of\_other\_reports
 
@@ -245,7 +245,7 @@ Bulk removal removes the notes of every selected report
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice11AddReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
 
 Deleting\_reports\_in\_bulk\_deletes\_the\_notes\_of\_each\_and\_leaves\_the\_notes\_of\_a\_report\_not\_deleted
 
@@ -277,7 +277,7 @@ Deleting a Team removes its reports notes
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice11AddReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
 
 Deleting\_the\_Team\_that\_owns\_a\_report\_deletes\_the\_report\_and\_its\_notes\_and\_leaves\_another\_Teams\_notes
 
@@ -309,9 +309,9 @@ A note is kept trimmed or refused for its reason
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice11AddReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
 
-L1\_for\_any\_text\_a\_note\_keeps\_it\_trimmed\_when\_it\_has\_1\_to\_2000\_characters\_and\_is\_refused\_otherwise
+A\_note\_keeps\_its\_text\_without\_outer\_blanks\_when\_it\_has\_1\_to\_2000\_characters\_and\_is\_refused\_otherwise
 
 ```text
 A bound applied before trimming or blanks kept
@@ -341,9 +341,9 @@ Each report shows only its own notes, newest first
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice11AddReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
 
-L2\_for\_any\_sequence\_of\_adds\_a\_report\_lists\_exactly\_its\_own\_accepted\_notes\_newest\_first
+A\_report\_lists\_exactly\_its\_own\_accepted\_notes\_newest\_first\_whatever\_was\_added\_before
 
 ```text
 Ascending order, a tie ordered oldest first, or another report note listed
@@ -448,6 +448,37 @@ saves what the writer typed as typed\, shows the new note first and empties the 
 
 ```text
 A trimmed text sent, a note below the numbers, or an empty area on failure
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+A reader of the live report opens a report that has one written note
+```
+
+```text
+The note text is listed in the notes area, which sits above the first panel of the numbers
+```
+
+```text
+The reader sees the written note next to the numbers, above them
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportNotes\.add\.test\.tsx
+
+shows a reader of the live report a written note above the first panel of the numbers
+
+```text
+A notes area placed below the numbers or showing no loaded note
 ```
 
 ###### Obligations

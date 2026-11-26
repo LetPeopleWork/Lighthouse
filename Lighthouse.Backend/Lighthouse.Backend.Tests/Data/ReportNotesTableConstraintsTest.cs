@@ -21,19 +21,33 @@ namespace Lighthouse.Backend.Tests
         private static readonly string[] TheColumns =
             ["Id", "ReportId", "Text", "CreatedAt", "LastEditedAt", "AuthorUserProfileId", "AuthorDisplayName"];
 
+        private string templatePath = string.Empty;
         private string databasePath = string.Empty;
         private DbContextOptions<LighthouseAppContext> options = null!;
 
+        // The migrations run once per fixture into a template file; each test works on its own copy of it.
+        [OneTimeSetUp]
+        public void MigrateTheTemplateOnce()
+        {
+            templatePath = Path.Combine(Path.GetTempPath(), $"report-notes-template-{Guid.NewGuid():N}.db");
+            using var context = CreateContext(OptionsFor(templatePath));
+            context.Database.Migrate();
+            SqliteConnection.ClearAllPools();
+        }
+
+        [OneTimeTearDown]
+        public void RemoveTheTemplate()
+        {
+            SqliteConnection.ClearAllPools();
+            File.Delete(templatePath);
+        }
+
         [SetUp]
-        public void SetUp()
+        public void GiveTheTestACopyOfTheTemplate()
         {
             databasePath = Path.Combine(Path.GetTempPath(), $"report-notes-constraints-{Guid.NewGuid():N}.db");
-            options = new DbContextOptionsBuilder<LighthouseAppContext>()
-                .UseSqlite($"Data Source={databasePath};Foreign Keys=True", sqlite => sqlite.MigrationsAssembly("Lighthouse.Migrations.Sqlite"))
-                .Options;
-
-            using var context = CreateContext(options);
-            context.Database.Migrate();
+            File.Copy(templatePath, databasePath);
+            options = OptionsFor(databasePath);
         }
 
         [TearDown]
@@ -42,6 +56,11 @@ namespace Lighthouse.Backend.Tests
             SqliteConnection.ClearAllPools();
             File.Delete(databasePath);
         }
+
+        private static DbContextOptions<LighthouseAppContext> OptionsFor(string path)
+            => new DbContextOptionsBuilder<LighthouseAppContext>()
+                .UseSqlite($"Data Source={path};Foreign Keys=True;Pooling=False", sqlite => sqlite.MigrationsAssembly("Lighthouse.Migrations.Sqlite"))
+                .Options;
 
         [Test]
         public async Task The_notes_table_holds_the_columns_a_note_is_made_of()

@@ -89,7 +89,7 @@ const aServerHolding = (held: IReportNote[]) => {
 	});
 };
 
-const openTheNotes = async (
+const openTheNotes = (
 	reportService = aServerHolding([NEWER, OLDER]),
 	mayWrite = true,
 ) => {
@@ -123,7 +123,7 @@ describe("The notes of a report", () => {
 	});
 
 	it("lists the notes newest first, each with the day it was written and its author, and shows a note nobody signed with the day alone", async () => {
-		await openTheNotes();
+		openTheNotes();
 
 		const area = await theNotesArea();
 		await waitFor(() => expect(theNotes()).toHaveLength(2));
@@ -139,7 +139,7 @@ describe("The notes of a report", () => {
 	});
 
 	it("says there are no notes yet when the report has none, and still offers the writer a field", async () => {
-		await openTheNotes(aServerHolding([]));
+		openTheNotes(aServerHolding([]));
 
 		await screen.findByText("No notes yet.");
 
@@ -148,7 +148,7 @@ describe("The notes of a report", () => {
 	});
 
 	it("saves what the writer typed as typed, shows the new note first and empties the field", async () => {
-		const reportService = await openTheNotes();
+		const reportService = openTheNotes();
 		await waitFor(() => expect(theNotes()).toHaveLength(2));
 
 		await typeIntoTheField("  Team grew to 12  ");
@@ -172,23 +172,26 @@ describe("The notes of a report", () => {
 	it.each([
 		["nothing", ""],
 		["only blanks", "   "],
-	])("does not save a note with %s in it and tells the writer it needs some text", async (_what, typed) => {
-		const reportService = await openTheNotes();
-		vi.mocked(reportService.addNote).mockRejectedValue(
-			aRefusal(400, "note-text-missing"),
-		);
-		await waitFor(() => expect(theNotes()).toHaveLength(2));
+	])(
+		"does not save a note with %s in it and tells the writer it needs some text",
+		async (_what, typed) => {
+			const reportService = openTheNotes();
+			vi.mocked(reportService.addNote).mockRejectedValue(
+				aRefusal(400, "note-text-missing"),
+			);
+			await waitFor(() => expect(theNotes()).toHaveLength(2));
 
-		await typeIntoTheField(typed);
-		await saveWhatWasTyped();
+			await typeIntoTheField(typed);
+			await saveWhatWasTyped();
 
-		expect(await screen.findByText(NEEDS_TEXT)).toBeInTheDocument();
-		expect(theNotes()).toHaveLength(2);
-		expect(theUsageEventsNamed("ReportNoteAdded")).toHaveLength(0);
-	});
+			expect(await screen.findByText(NEEDS_TEXT)).toBeInTheDocument();
+			expect(theNotes()).toHaveLength(2);
+			expect(theUsageEventsNamed("ReportNoteAdded")).toHaveLength(0);
+		},
+	);
 
 	it("does not save a note over 2000 characters and tells the writer the limit", async () => {
-		const reportService = await openTheNotes();
+		const reportService = openTheNotes();
 		vi.mocked(reportService.addNote).mockRejectedValue(
 			aRefusal(400, "note-text-too-long"),
 		);
@@ -216,7 +219,7 @@ describe("The notes area while its notes are on the way or cannot be read", () =
 			getNotes: vi.fn().mockReturnValue(answer.promise),
 		});
 
-		await openTheNotes(reportService);
+		openTheNotes(reportService);
 
 		const area = await theNotesArea();
 		expect(within(area).getByText(LOADING_NOTES)).toBeInTheDocument();
@@ -235,7 +238,7 @@ describe("The notes area while its notes are on the way or cannot be read", () =
 			.mockRejectedValueOnce(aRefusal(500, "failed"))
 			.mockResolvedValue([NEWER]);
 
-		await openTheNotes(aReportService({ getNotes }));
+		openTheNotes(aReportService({ getNotes }));
 
 		const area = await theNotesArea();
 		expect(await within(area).findByText(COULD_NOT_LOAD_NOTES)).toBeVisible();
@@ -250,6 +253,8 @@ describe("The notes area while its notes are on the way or cannot be read", () =
 	});
 });
 
+// The byline ("<day> · <author>", the day alone when unsigned) is built inside the component and the design declares no
+// function for it, so it is asserted on the one rendered list above rather than on a function this test would have to invent.
 describe("The notes in the live report", () => {
 	beforeEach(() => {
 		reportUsage.mockClear();
@@ -260,10 +265,10 @@ describe("The notes in the live report", () => {
 		const reportService = aReportService({
 			getNotes: vi.fn().mockRejectedValue(aRefusal(500, "failed")),
 		});
-		renderWithReports(
-			<ReportView owner={LIGHTSPEED} reportId={A_REPORT} />,
-			{ reportService, viewer: "admin" },
-		);
+		renderWithReports(<ReportView owner={LIGHTSPEED} reportId={A_REPORT} />, {
+			reportService,
+			viewer: "admin",
+		});
 
 		const area = await theNotesArea();
 		const firstPanel = await thePanel("Cycle Time");
@@ -274,5 +279,24 @@ describe("The notes in the live report", () => {
 		).toBeTruthy();
 		expect(await within(area).findByText(COULD_NOT_LOAD_NOTES)).toBeVisible();
 		expect(firstPanel).toBeVisible();
+	});
+
+	it("shows a reader of the live report a written note above the first panel of the numbers", async () => {
+		const reportService = aReportService({
+			getNotes: vi.fn().mockResolvedValue([NEWER]),
+		});
+		renderWithReports(<ReportView owner={LIGHTSPEED} reportId={A_REPORT} />, {
+			reportService,
+			viewer: "admin",
+		});
+
+		const area = await theNotesArea();
+		const firstPanel = await thePanel("Cycle Time");
+
+		expect(await within(area).findByText("Team grew to 9")).toBeVisible();
+		expect(
+			area.compareDocumentPosition(firstPanel) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
 	});
 });
