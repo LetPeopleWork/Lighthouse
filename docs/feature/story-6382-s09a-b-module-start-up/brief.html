@@ -170,11 +170,41 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Promises</h2>
 
+<h3>P1</h3>
+
+<p>Outcome</p>
+
+<p>The start-up registrations are pinned at the composition-root port without a host. Flow metrics, Forecasting, Promises, Licensing and Access register through their own Add&lt;X&gt; method, with the container unchanged.</p>
+
+<h4>Amendment</h4>
+
+<p>None.</p>
+
+<h3>P2</h3>
+
+<p>Outcome</p>
+
+<p>Work Items, Tracker integration, Refinement, Reports and Organisation set-up register through Add&lt;X&gt;. The domain-event handler block stays in one ordered block in Program, with the container and handler order unchanged.</p>
+
+<h4>Amendment</h4>
+
+<p>None.</p>
+
+<h3>P3</h3>
+
+<p>Outcome</p>
+
+<p>Program keeps only the Add&lt;X&gt; calls, host set-up and the handler block. The temporary preservation pin is removed once its last green run is recorded.</p>
+
+<h4>Amendment</h4>
+
 <p>None.</p>
 
 <h2>Scope</h2>
 
-<p>None.</p>
+<p>The module start-up of the ten contexts; the preservation pin and the composition-root rule.</p>
+
+<p>Any Contracts move (feature C); domain events and RX1 (feature D); any behaviour, registration lifetime, order, schema, route or DTO change.</p>
 
 <h2>Decisions</h2>
 
@@ -185,6 +215,70 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>None.</p>
 
 <h2>Slices</h2>
+
+<h3>S1</h3>
+
+<p>The start-up registrations preservation test (baseline captured before the move) stays green and the composition-root rule, listing Flow metrics, Forecasting, Promises, Licensing and Access as registered by their module, fails until their registrations leave Program.</p>
+
+<h4>Promises</h4>
+
+<p>P1</p>
+
+<h4>Depends on</h4>
+
+<p>None.</p>
+
+<h4>Slice work</h4>
+
+<p>M</p>
+
+<p>Five contexts start themselves up and the container is proven unchanged without a host.</p>
+
+<h5>Rework</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<p>The composition-root rule with all ten contexts listed fails until their registrations leave Program; the preservation pin and the handler order pin stay green and unchanged.</p>
+
+<h4>Promises</h4>
+
+<p>P2</p>
+
+<h4>Depends on</h4>
+
+<p>S1</p>
+
+<h4>Slice work</h4>
+
+<p>M</p>
+
+<p>The other five contexts start themselves up; the handler block stays in one ordered block in Program.</p>
+
+<h5>Rework</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<p>The composition-root rule&#x27;s list of Program&#x27;s remaining module-internal names, emptied to the handlers and measured host types, fails until the strays move; the preservation test is deleted in the same commit as its last recorded green run.</p>
+
+<h4>Promises</h4>
+
+<p>P3</p>
+
+<h4>Depends on</h4>
+
+<p>S2</p>
+
+<h4>Slice work</h4>
+
+<p>S</p>
+
+<p>Program names modules only; the temporary pin is gone.</p>
+
+<h5>Rework</h5>
 
 <p>None.</p>
 

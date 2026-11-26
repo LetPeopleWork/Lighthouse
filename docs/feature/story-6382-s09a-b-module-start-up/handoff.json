@@ -1,10 +1,89 @@
 {
 "counters": {
-"F": 2
+"F": 13,
+"P": 3,
+"S": 3
 },
 "facts": {
 "F1": "Story 6382 S09a feature B, module start-up: pin every start-up registration at the composition-root port without a host, then move each context's registrations out of Program into its own Add<X> method at the module root (five contexts, then the other five), leaving Program with only the Add<X> calls, host set-up and the one ordered domain-event handler block, and remove the temporary pin.",
-"F2": "Each context starts itself up, and the composition root only names modules, so moving a context's types later (features C and D) no longer means editing Program, while the container and handler order are proven unchanged."
+"F10": "The composition-root rule with all ten contexts listed fails until their registrations leave Program; the preservation pin and the handler order pin stay green and unchanged.",
+"F11": "The other five contexts start themselves up; the handler block stays in one ordered block in Program.",
+"F12": "The composition-root rule's list of Program's remaining module-internal names, emptied to the handlers and measured host types, fails until the strays move; the preservation test is deleted in the same commit as its last recorded green run.",
+"F13": "Program names modules only; the temporary pin is gone.",
+"F2": "Each context starts itself up, and the composition root only names modules, so moving a context's types later (features C and D) no longer means editing Program, while the container and handler order are proven unchanged.",
+"F3": "The start-up registrations are pinned at the composition-root port without a host. Flow metrics, Forecasting, Promises, Licensing and Access register through their own Add<X> method, with the container unchanged.",
+"F4": "Work Items, Tracker integration, Refinement, Reports and Organisation set-up register through Add<X>. The domain-event handler block stays in one ordered block in Program, with the container and handler order unchanged.",
+"F5": "Program keeps only the Add<X> calls, host set-up and the handler block. The temporary preservation pin is removed once its last green run is recorded.",
+"F6": "The module start-up of the ten contexts; the preservation pin and the composition-root rule.",
+"F7": "Any Contracts move (feature C); domain events and RX1 (feature D); any behaviour, registration lifetime, order, schema, route or DTO change.",
+"F8": "The start-up registrations preservation test (baseline captured before the move) stays green and the composition-root rule, listing Flow metrics, Forecasting, Promises, Licensing and Access as registered by their module, fails until their registrations leave Program.",
+"F9": "Five contexts start themselves up and the container is proven unchanged without a host."
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+}
+],
+"scope_in": [
+"F6"
+],
+"scope_out": [
+"F7"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F8",
+"promises": [
+"P1"
+],
+"work": {
+"size": "M",
+"value": "F9"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F10",
+"promises": [
+"P2"
+],
+"work": {
+"size": "M",
+"value": "F11"
+}
+},
+{
+"depends_on": [
+"S2"
+],
+"id": "S3",
+"observation": "F12",
+"promises": [
+"P3"
+],
+"work": {
+"size": "S",
+"value": "F13"
+}
+}
+]
 },
 "request": "F1",
 "schema": "nwdes.handoff",
