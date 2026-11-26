@@ -36,6 +36,24 @@ vi.mock("./BaseRunChart", () => ({
 	}),
 }));
 
+// Capture what the chart hands to the line chart, so the plotted totals and tooltips can be read
+const lineChartProps = vi.hoisted(() => ({
+	series: [] as Array<{
+		data: number[];
+		valueFormatter: (
+			value: number | null,
+			params: { dataIndex: number },
+		) => string;
+	}>,
+}));
+
+vi.mock("@mui/x-charts", () => ({
+	LineChart: vi.fn(({ series }) => {
+		lineChartProps.series = series;
+		return <div data-testid="line-chart" />;
+	}),
+}));
+
 // Mock BlackoutOverlay to avoid chart context dependency
 vi.mock("./BlackoutOverlay", () => ({
 	default: vi.fn(() => null),
@@ -380,5 +398,53 @@ describe("TotalWorkItemAgeRunChart", () => {
 
 		expect(screen.getByTestId("base-run-chart")).toBeInTheDocument();
 		// Age should be 1, never 0
+	});
+
+	it("skips a work item with no start date and still totals the others", () => {
+		const chartStart = new Date("2025-01-10T00:00:00.000Z");
+		const startedTwoDaysBefore = {
+			...createMockWorkItem(1, 0),
+			startedDate: new Date("2025-01-08T00:00:00.000Z"),
+		};
+		const startedOnChartStart = {
+			...createMockWorkItem(2, 0),
+			startedDate: new Date("2025-01-10T00:00:00.000Z"),
+		};
+		const withoutStart = {
+			...createMockWorkItem(3, 0),
+			startedDate: null,
+		} as unknown as IWorkItem;
+		const withoutStartAtAll = {
+			...createMockWorkItem(4, 0),
+			startedDate: undefined,
+		} as unknown as IWorkItem;
+
+		const mockData = new RunChartData(
+			{
+				0: [startedTwoDaysBefore, startedOnChartStart, withoutStart],
+				1: [startedTwoDaysBefore, withoutStartAtAll, startedOnChartStart],
+			},
+			2,
+			0,
+		);
+
+		render(
+			<TotalWorkItemAgeRunChart
+				ownerKind="team"
+				wipOverTimeData={mockData}
+				startDate={chartStart}
+			/>,
+		);
+
+		const [series] = lineChartProps.series;
+		const tooltipOn = (dayIndex: number) =>
+			series.valueFormatter(series.data[dayIndex], { dataIndex: dayIndex });
+
+		// Day 0: ages 3 and 1; day 1: ages 4 and 2
+		expect(series.data, "each day totals only items with a start date").toEqual([
+			4, 6,
+		]);
+		expect(tooltipOn(0)).toBe("4 days total (2 items) - Click for details");
+		expect(tooltipOn(1)).toBe("6 days total (2 items) - Click for details");
 	});
 });

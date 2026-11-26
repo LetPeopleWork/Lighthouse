@@ -103,5 +103,55 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Assert.That(dto.StaleReasons, Is.EqualTo(expectedReasons));
             }
         }
+
+        [Test]
+        public void StartedDate_FallsBackToCreatedDate_WhenAnItemInProgressHasNoStartDate()
+        {
+            var created = new DateTime(2026, 5, 4, 9, 0, 0, DateTimeKind.Utc);
+            var workItem = AnItem(StateCategories.Doing, created, startedDate: null);
+
+            var dto = new WorkItemDto(workItem, TestToday.Clock, isBlocked: false);
+
+            Assert.That(dto.StartedDate, Is.EqualTo(created),
+                "An in-progress item without a start date must reach the client with its created date as start date, the date its age is counted from; otherwise the client sums NaN.");
+        }
+
+        [Test]
+        public void StartedDate_KeepsTheItemsOwnStartDate_WhenItHasOne()
+        {
+            var created = new DateTime(2026, 5, 4, 9, 0, 0, DateTimeKind.Utc);
+            var started = new DateTime(2026, 5, 8, 9, 0, 0, DateTimeKind.Utc);
+            var workItem = AnItem(StateCategories.Doing, created, started);
+
+            var dto = new WorkItemDto(workItem, TestToday.Clock, isBlocked: false);
+
+            Assert.That(dto.StartedDate, Is.EqualTo(started),
+                "An item that has a start date keeps it; the created date is only a fallback.");
+        }
+
+        [Test]
+        public void StartedDate_StaysEmpty_WhenAToDoItemHasNoStartDate()
+        {
+            var created = new DateTime(2026, 5, 4, 9, 0, 0, DateTimeKind.Utc);
+            var workItem = AnItem(StateCategories.ToDo, created, startedDate: null);
+
+            var dto = new WorkItemDto(workItem, TestToday.Clock, isBlocked: false);
+
+            Assert.That(dto.StartedDate, Is.Null,
+                "An item that has not started must not be shown as started.");
+        }
+
+        private static WorkItem AnItem(StateCategories category, DateTime created, DateTime? startedDate)
+        {
+            return new WorkItem
+            {
+                Name = "Item",
+                ReferenceId = "PHX-5",
+                State = category == StateCategories.Doing ? "In Progress" : "New",
+                StateCategory = category,
+                CreatedDate = created,
+                StartedDate = startedDate,
+            };
+        }
     }
 }

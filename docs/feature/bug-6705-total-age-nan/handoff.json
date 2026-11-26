@@ -1,0 +1,214 @@
+{
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F29",
+"test": "StartedDate_FallsBackToCreatedDate_WhenAnItemInProgressHasNoStartDate",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkItemDtoTests.cs"
+},
+"expected": "F27",
+"stimulus": "F26",
+"user_result": "F28"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F33",
+"test": "StartedDate_KeepsTheItemsOwnStartDate_WhenItHasOne",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkItemDtoTests.cs"
+},
+"expected": "F31",
+"stimulus": "F30",
+"user_result": "F32"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F37",
+"test": "StartedDate_StaysEmpty_WhenAToDoItemHasNoStartDate",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkItemDtoTests.cs"
+},
+"expected": "F35",
+"stimulus": "F34",
+"user_result": "F36"
+}
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F25",
+"test": "skips a work item with no start date and still totals the others",
+"test_path": "Lighthouse.Frontend/src/components/Common/Charts/TotalWorkItemAgeRunChart.test.tsx"
+},
+"expected": "F23",
+"stimulus": "F22",
+"user_result": "F24"
+}
+]
+},
+"counters": {
+"E": 2,
+"F": 37,
+"P": 2,
+"S": 2
+},
+"design": {
+"paradigm": "object_oriented",
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkItemDtoTests.cs",
+"public_oracle": {
+"expected": "F6",
+"falsifier": "F7",
+"promises": [
+"P1"
+],
+"stimulus": "F5"
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemDto.cs"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WorkItemDtoTests"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Frontend/src/components/Common/Charts/TotalWorkItemAgeRunChart.test.tsx",
+"public_oracle": {
+"expected": "F16",
+"falsifier": "F17",
+"promises": [
+"P2"
+],
+"stimulus": "F15"
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/TotalWorkItemAgeRunChart.tsx"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend vitest run src/components/Common/Charts/TotalWorkItemAgeRunChart.test.tsx"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"blocking": "yes",
+"id": "E1",
+"isolated": "no",
+"lacuna": "F19",
+"promises": [
+"P1"
+],
+"text": "F18"
+},
+{
+"blocking": "yes",
+"id": "E2",
+"isolated": "no",
+"lacuna": "F21",
+"promises": [
+"P2"
+],
+"text": "F20"
+}
+]
+},
+"facts": {
+"F1": "Bug #6705 (reported by Gunnar R. Fischer on Slack): for one team, 'Work Items Total Work Item Age Over Time' shows nothing. The tooltip reads 'NaN days total (40 items) - Click for details'; the details list the right items. Cause found: an in-progress item with no start date is counted in progress from its created date by the server, but the client gets startedDate = null and sums NaN. Maintainer decision: the server sends the fallback start date for such an item (the frontend should not care), and if a start date can still be null, the frontend handles it gracefully.",
+"F13": "When a start date is still missing, the Total Work Item Age Over Time chart skips that item and still shows a proper chart of the others",
+"F14": "A work item with no start date is skipped by the Total Work Item Age Over Time chart, which still totals the other items and draws its line",
+"F15": "Render the Total Work Item Age Over Time chart for days whose in-progress items include one with startedDate null or undefined and others with start dates",
+"F16": "Each day's total is the sum of the ages of the items that have a start date, and its item count leaves the skipped item out; no value or tooltip shows NaN",
+"F17": "A day's total or tooltip shows NaN, the line is missing, or the item without a start date adds to the total or the count",
+"F18": "An in-progress item with no recorded start date shows, as its start date, the same created date the age is counted from.",
+"F19": "Does not see items that have a recorded start date, nor items in other states, and cannot show the date displayed for a start date that is later edited.",
+"F2": "The Total Work Item Age Over Time chart draws its line for every team, even when an in-progress item has no recorded start date.",
+"F20": "When an item has no start date, the Total Work Item Age Over Time chart still renders, plots the other items, and shows no missing-value gap or NaN for the skipped item.",
+"F21": "Does not see a dataset where every item lacks a start date, nor whether the skipped item is counted in the chart's totals or legend.",
+"F22": "Show the Total Work Item Age Over Time chart for two days whose in-progress items include one with no start date (empty on one day, missing on the other) and two with start dates",
+"F23": "Each day's total is the sum of the ages of the items with a start date (4 days and 6 days), the tooltip reads the same total with an item count of 2, and no value shows NaN",
+"F24": "The reader sees a drawn line with proper totals and item counts; the item without a start date is left out",
+"F25": "The chart totals every item but treats a missing start date as age zero in the total while still counting it in the item count",
+"F26": "Build the work item DTO for an item in progress that has no start date and a created date",
+"F27": "The DTO's start date equals the item's created date",
+"F28": "The chart receives a start date for every in-progress item, so no total turns into NaN",
+"F29": "Start date set to the current day or to a fixed date, only checked for being non-null",
+"F3": "An in-progress item with no recorded start date is sent to the client with its created date as its start date, the same date the server already counts its age from",
+"F30": "Build the DTO for an in-progress item with both a start date and an earlier created date",
+"F31": "The DTO keeps the item's own start date",
+"F32": "Items that did start are aged from their real start",
+"F33": "Always sending the created date",
+"F34": "Build the DTO for a To Do item with no start date and a created date",
+"F35": "The DTO has no start date",
+"F36": "An item that has not started is not shown as started",
+"F37": "A fallback to created date for a state category other than To Do and Doing, such as Done, is not observed",
+"F4": "An in-progress item with no start date reaches the client with its created date as its start date",
+"F5": "Build the work item DTO for an item in a Doing state whose StartedDate is null and whose CreatedDate is set",
+"F6": "The DTO's StartedDate equals the item's CreatedDate; a To Do item with no start date still has none, and an item with a start date keeps its own",
+"F7": "The DTO's StartedDate is null for the in-progress item, or a To Do item gains a start date"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F13"
+}
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F4",
+"promises": [
+"P1"
+]
+},
+{
+"id": "S2",
+"observation": "F14",
+"promises": [
+"P2"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "bug-6705-total-age-nan",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "S",
+"value": "F2"
+}
+}
