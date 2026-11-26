@@ -205,19 +205,29 @@ export class ReportService extends BaseApiService implements IReportService {
 	}
 
 	public updateNote(
-		_owner: IReportOwner,
-		_reportId: number,
-		_noteId: number,
-		_text: string,
+		owner: IReportOwner,
+		reportId: number,
+		noteId: number,
+		text: string,
 	): Promise<IReportNote> {
-		return Promise.reject(new Error("Changing a note is not available yet."));
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.put<unknown>(
+				`${reportsOf(owner)}/${reportId}/notes/${noteId}`,
+				{ text },
+			);
+			return BaseApiService.parse(ReportNoteSchema, response.data);
+		});
 	}
 
 	public deleteNote(
-		_owner: IReportOwner,
-		_reportId: number,
-		_noteId: number,
+		owner: IReportOwner,
+		reportId: number,
+		noteId: number,
 	): Promise<void> {
-		return Promise.reject(new Error("Deleting a note is not available yet."));
+		return this.withErrorHandling(async () => {
+			await this.apiService.delete(
+				`${reportsOf(owner)}/${reportId}/notes/${noteId}`,
+			);
+		});
 	}
 }

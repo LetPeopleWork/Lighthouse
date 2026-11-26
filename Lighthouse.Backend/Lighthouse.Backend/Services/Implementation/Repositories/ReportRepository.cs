@@ -20,11 +20,30 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         Task IReportNoteStore.Save() => context.SaveChangesAsync();
 
-        ReportNote? IReportNoteStore.FindForEdit(ReportOwner owner, int reportId, int noteId) => throw new NotImplementedException();
+        ReportNote? IReportNoteStore.FindForEdit(ReportOwner owner, int reportId, int noteId)
+            => context.ReportNotes
+                .SingleOrDefault(note => note.Id == noteId && note.ReportId == reportId && OwnedBy(owner).Any(report => report.Id == reportId));
 
-        void IReportNoteStore.Remove(ReportNote note) => throw new NotImplementedException();
+        void IReportNoteStore.Remove(ReportNote note) => context.ReportNotes.Remove(note);
 
-        Task<bool> IReportNoteStore.TrySave() => throw new NotImplementedException();
+        async Task<bool> IReportNoteStore.TrySave()
+        {
+            try
+            {
+                await context.SaveChangesAsync();
+                return true;
+            }
+            catch (DbUpdateConcurrencyException conflict)
+            {
+                // Somebody else deleted the note between reading it and saving.
+                foreach (var entry in conflict.Entries)
+                {
+                    entry.State = EntityState.Detached;
+                }
+
+                return false;
+            }
+        }
 
         public Report? GetForOwner(ReportOwner owner, int reportId)
             => OwnedBy(owner).AsNoTracking().SingleOrDefault(report => report.Id == reportId);

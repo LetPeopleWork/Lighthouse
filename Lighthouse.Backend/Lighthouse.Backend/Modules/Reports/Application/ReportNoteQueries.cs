@@ -8,6 +8,12 @@ namespace Lighthouse.Backend.Modules.Reports.Application
         internal IReportNoteStore Store { get; } = store;
 
         public ReportOutcome<IReadOnlyList<ReportNoteRead>> List(ReportOwner owner, int reportId)
+            => ListAs(owner, reportId, ReportNoteRead.Of);
+
+        public ReportOutcome<IReadOnlyList<ReportNoteRead>> List(ReportOwner owner, int reportId, ReportNoteCaller caller)
+            => ListAs(owner, reportId, note => ReportNoteRead.Of(note, caller));
+
+        private ReportOutcome<IReadOnlyList<ReportNoteRead>> ListAs(ReportOwner owner, int reportId, Func<ReportNote, ReportNoteRead> read)
         {
             if (!Store.ReportExists(owner, reportId))
             {
@@ -17,13 +23,10 @@ namespace Lighthouse.Backend.Modules.Reports.Application
             IReadOnlyList<ReportNoteRead> notes =
             [
                 .. Store.NotesNewestFirst(owner, reportId)
-                    .Select(ReportNoteRead.Of),
+                    .Select(read),
             ];
 
             return ReportOutcome<IReadOnlyList<ReportNoteRead>>.Done(notes);
         }
-
-        public ReportOutcome<IReadOnlyList<ReportNoteRead>> List(ReportOwner owner, int reportId, ReportNoteCaller caller)
-            => throw new NotImplementedException();
     }
 }

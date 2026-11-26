@@ -1,36 +1,17 @@
-import {
-	Box,
-	Button,
-	Paper,
-	Stack,
-	TextField,
-	Typography,
-} from "@mui/material";
+import { Button, Paper, Stack, TextField, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useContext, useState } from "react";
 import type { IReportOwner } from "../../../models/Reports/Report";
 import type { IReportNote } from "../../../models/Reports/ReportNote";
-import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import { WidgetBody } from "../MetricsView/WidgetShell";
 import { queryStatusOf } from "../MetricsView/widgetStatus";
-import { bylineOf } from "./reportNoteByline";
+import ReportNoteItem from "./ReportNoteItem";
+import { refusalCopyOf } from "./reportNoteRefusalCopy";
 import { reportNotesQueryKeyOf, useReportNotes } from "./useReportNotes";
-
-const NEEDS_TEXT = "A note needs some text.";
-const AT_MOST_2000 = "A note can have at most 2000 characters.";
-const COULD_NOT_SAVE = "This note couldn't be saved. Try again.";
-
-const refusalCopyOf = (error: unknown): string => {
-	if (error instanceof ApiError) {
-		if (error.problemCode === "note-text-missing") return NEEDS_TEXT;
-		if (error.problemCode === "note-text-too-long") return AT_MOST_2000;
-	}
-	return COULD_NOT_SAVE;
-};
 
 const ReportNotes: React.FC<
 	Readonly<{ owner: IReportOwner; reportId: number; mayWrite: boolean }>
@@ -45,6 +26,29 @@ const ReportNotes: React.FC<
 
 	const status = queryStatusOf(notes.isFetching, notes.isError);
 	const listed = notes.isError ? undefined : notes.data;
+
+	const keepNotes = (change: (held: IReportNote[]) => IReportNote[]) =>
+		queryClient.setQueryData<IReportNote[]>(
+			reportNotesQueryKeyOf(owner, reportId),
+			(held) => change(held ?? []),
+		);
+
+	const change = async (noteId: number, changedText: string) => {
+		const changed = await reportService.updateNote(
+			owner,
+			reportId,
+			noteId,
+			changedText,
+		);
+		keepNotes((held) =>
+			held.map((kept) => (kept.id === noteId ? changed : kept)),
+		);
+	};
+
+	const remove = async (noteId: number) => {
+		await reportService.deleteNote(owner, reportId, noteId);
+		keepNotes((held) => held.filter((kept) => kept.id !== noteId));
+	};
 
 	const save = async () => {
 		if (isSaving) {
@@ -89,14 +93,13 @@ const ReportNotes: React.FC<
 								</Typography>
 							)}
 							{listed.map((note) => (
-								<Box key={note.id} data-testid="report-note">
-									<Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-										{note.text}
-									</Typography>
-									<Typography variant="caption" color="text.secondary">
-										{bylineOf(note)}
-									</Typography>
-								</Box>
+								<ReportNoteItem
+									key={note.id}
+									note={note}
+									canChange={mayWrite && note.canModify === true}
+									onChange={(changedText) => change(note.id, changedText)}
+									onDelete={() => remove(note.id)}
+								/>
 							))}
 							{mayWrite && (
 								<Stack spacing={1} sx={{ alignItems: "flex-start" }}>

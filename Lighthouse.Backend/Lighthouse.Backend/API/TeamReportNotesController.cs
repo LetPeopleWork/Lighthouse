@@ -21,10 +21,18 @@ namespace Lighthouse.Backend.API
         ILighthouseClock clock) : ReportNotesControllerBase(queries, commands, profiles, authModes, clock)
     {
         [HttpGet]
-        public ActionResult<IReadOnlyList<ReportNoteDto>> GetNotes(int teamId, int reportId) => NotesOf(ReportOwner.Team(teamId), reportId);
+        public Task<ActionResult<IReadOnlyList<ReportNoteDto>>> GetNotes(int teamId, int reportId) => NotesOf(ReportOwner.Team(teamId), reportId);
 
         [HttpPost]
         [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
         public Task<ActionResult<ReportNoteDto>> AddReportNote(int teamId, int reportId, [FromBody] ReportNoteRequest request) => AddNote(ReportOwner.Team(teamId), reportId, request);
+
+        [HttpPut("{noteId:int}")]
+        [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
+        public Task<ActionResult<ReportNoteDto>> ChangeReportNote(int teamId, int reportId, int noteId, [FromBody] ReportNoteRequest request) => EditNote(ReportOwner.Team(teamId), reportId, noteId, request);
+
+        [HttpDelete("{noteId:int}")]
+        [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
+        public Task<IActionResult> DeleteReportNote(int teamId, int reportId, int noteId) => DeleteNote(ReportOwner.Team(teamId), reportId, noteId);
     }
 }

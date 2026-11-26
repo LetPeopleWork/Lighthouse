@@ -11,6 +11,8 @@ using Lighthouse.Backend.Platform.Seeding;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Lighthouse.Backend.Modules.Licensing.Application;
 
 namespace Lighthouse.Backend.Tests.Contracts.Reports
 {
@@ -24,7 +26,12 @@ namespace Lighthouse.Backend.Tests.Contracts.Reports
         private const string TheNote = "Training took place";
 
         protected override WebApplicationFactory<Program> AdjustTheHost(TestWebApplicationFactory<Program> unchanged)
-            => TestWebApplicationFactory<Program>.WithTestAuthentication(unchanged);
+            => TestWebApplicationFactory<Program>.WithTestAuthentication(unchanged)
+            .WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<ILicenseService>();
+                services.AddScoped(_ => PortDoubles.PremiumLicence());
+            }));
 
         [TestCase("team")]
         [TestCase("portfolio")]

@@ -33,9 +33,9 @@ namespace Lighthouse.Backend.API
             _ => new ReportNoteCaller.Unresolved(),
         };
 
-        protected ActionResult<IReadOnlyList<ReportNoteDto>> NotesOf(ReportOwner owner, int reportId)
+        protected async Task<ActionResult<IReadOnlyList<ReportNoteDto>>> NotesOf(ReportOwner owner, int reportId)
         {
-            var listed = Queries.List(owner, reportId);
+            var listed = Queries.List(owner, reportId, await CallerOfRequest());
             if (listed is { Status: ReportOutcomeStatus.Done, Value: IReadOnlyList<ReportNoteRead> notes })
             {
                 return Ok(notes.Select(note => ReportNoteDto.From(note, Clock)).ToList());
@@ -56,13 +56,29 @@ namespace Lighthouse.Backend.API
             return Refusal(added);
         }
 
-#pragma warning disable S2325 // Skeleton: the bodies use the commands and the clock once they are written, in the change that wires them.
-        protected Task<ActionResult<ReportNoteDto>> EditNote(ReportOwner owner, int reportId, int noteId, ReportNoteRequest request)
-            => throw new NotImplementedException();
+        protected async Task<ActionResult<ReportNoteDto>> EditNote(ReportOwner owner, int reportId, int noteId, ReportNoteRequest request)
+        {
+            var caller = await CallerOfRequest();
+            var changed = await Commands.Edit(owner, reportId, noteId, caller, request.Text, Clock.Now.UtcDateTime);
+            if (changed is { Status: ReportOutcomeStatus.Done, Value: ReportNoteRead note })
+            {
+                return Ok(ReportNoteDto.From(note, Clock));
+            }
 
-        protected Task<IActionResult> DeleteNote(ReportOwner owner, int reportId, int noteId)
-            => throw new NotImplementedException();
-#pragma warning restore S2325
+            return Refusal(changed);
+        }
+
+        protected async Task<IActionResult> DeleteNote(ReportOwner owner, int reportId, int noteId)
+        {
+            var caller = await CallerOfRequest();
+            var deleted = await Commands.Delete(owner, reportId, noteId, caller);
+            if (deleted.Status == ReportOutcomeStatus.Done)
+            {
+                return NoContent();
+            }
+
+            return Refusal(deleted);
+        }
 
         private async Task<ReportNoteCaller> CallerOfRequest()
         {
@@ -81,7 +97,7 @@ namespace Lighthouse.Backend.API
                 return NotFound();
             }
 
-            var status = outcome.Code == ReportRefusalCodes.NoteAuthorUnknown ? StatusCodes.Status403Forbidden : StatusCodes.Status400BadRequest;
+            var status = outcome.Code is ReportRefusalCodes.NoteAuthorUnknown or ReportRefusalCodes.NoteNotYours ? StatusCodes.Status403Forbidden : StatusCodes.Status400BadRequest;
             var problem = new ProblemDetails { Status = status, Title = "The report note request was refused." };
             problem.Extensions["code"] = outcome.Code;
             return new ObjectResult(problem) { StatusCode = status };

@@ -370,12 +370,12 @@ namespace Lighthouse.Backend.Tests.Acceptance.ReportNotes
         [Test]
         public async Task Whatever_was_written_and_changed_before_a_change_is_accepted_only_for_an_unsigned_note_or_the_signer()
         {
-            var owner = ATeam("Lightspeed");
             string?[] people = [null, Ann, Bob, Cy];
             var random = new Random(Seed);
 
             for (var run = 0; run < Runs; run++)
             {
+                var owner = ATeam($"Lightspeed {run}");
                 var report = await AReportOf(owner);
                 var held = new List<(int Id, string? Signer)>();
 
