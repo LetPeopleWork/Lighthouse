@@ -624,6 +624,132 @@ This is the third slice's rule over all ten contexts, written from the names the
 
 acceptance designer of the third slice of this feature
 
+### S3
+
+##### Covers
+
+P3
+
+```text
+Read every type of the ten contexts that the composition root, its nested types and its closures name, from the compiled assembly
+```
+
+```text
+Besides each context's start-up module, the root names only listed handlers of the ordered block, cross-context wiring, host set-up lookups and host set-up types; every listed name is still named; the ten listed contexts equal the packaged contexts
+```
+
+```text
+The start-up file names modules only; a registration left behind, an eleventh context or a stale list entry is reported by full name
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ProgramNamesModulesOnlyArchUnitTest\.cs
+
+ProgramNamesModulesOnlyArchUnitTest
+
+```text
+A registration that could move into its module is classed as a host set-up type: the lists are judged by hand against the measure
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Read what the real start-up file names of each context
+```
+
+```text
+Only the module, the listed handlers, wiring, host lookups and host set-up types are named, and each listed name is still named
+```
+
+```text
+The start-up file names modules only
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ProgramNamesModulesOnlyArchUnitTest\.cs
+
+TheCompositionRoot\_NamesOfEachContextOnlyItsModuleItsHandlersItsWiringItsHostLookupsAndItsHostSetUpTypes
+
+```text
+A list entry added for a name that should move
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+A made-up root names one type of a context off the lists, plainly or inside a lambda
+```
+
+```text
+That type is reported by full name and nothing else
+```
+
+```text
+A registration left in the start-up file is named
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ProgramNamesModulesOnlyArchUnitTest\.cs
+
+AMadeUpCompositionRootNamingATypeOfOneContextOffTheLists\_IsReportedNamingIt
+
+```text
+A check that reads only plain registrations and misses a name inside a lambda
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Compare the ten listed contexts with the contexts the application holds
+```
+
+```text
+The two sets are equal
+```
+
+```text
+A new context cannot keep its start-up in the start-up file unseen
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ProgramNamesModulesOnlyArchUnitTest\.cs
+
+TheTenListedContexts\_AreTheTenPackagedContexts
+
+```text
+A hand-kept list that drifts from the assembly
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

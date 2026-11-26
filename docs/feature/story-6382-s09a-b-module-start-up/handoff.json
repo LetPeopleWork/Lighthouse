@@ -343,6 +343,76 @@
 "stimulus": "F195",
 "user_result": "F197"
 }
+],
+"S3": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F306",
+"test": "ProgramNamesModulesOnlyArchUnitTest",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProgramNamesModulesOnlyArchUnitTest.cs"
+},
+"expected": "F304",
+"stimulus": "F303",
+"user_result": "F305"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F76"
+],
+"still_passes_if": "F310",
+"test": "TheCompositionRoot_NamesOfEachContextOnlyItsModuleItsHandlersItsWiringItsHostLookupsAndItsHostSetUpTypes",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProgramNamesModulesOnlyArchUnitTest.cs"
+},
+"expected": "F308",
+"stimulus": "F307",
+"user_result": "F309"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F77"
+],
+"still_passes_if": "F314",
+"test": "AMadeUpCompositionRootNamingATypeOfOneContextOffTheLists_IsReportedNamingIt",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProgramNamesModulesOnlyArchUnitTest.cs"
+},
+"expected": "F312",
+"stimulus": "F311",
+"user_result": "F313"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F78"
+],
+"still_passes_if": "F318",
+"test": "TheTenListedContexts_AreTheTenPackagedContexts",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProgramNamesModulesOnlyArchUnitTest.cs"
+},
+"expected": "F316",
+"stimulus": "F315",
+"user_result": "F317"
+}
 ]
 },
 "counters": {
@@ -350,7 +420,7 @@
 "C": 1,
 "D": 9,
 "E": 3,
-"F": 302,
+"F": 318,
 "K": 4,
 "L": 4,
 "P": 3,
@@ -1763,7 +1833,23 @@
 "F300": "(1) WhenReportsTypesAreCollectedFrom sets aside exactly the full names ReportsType.NewRootNamespace + \".\" + each ReportsMembership.ModuleRoot entry, so the real-map test and every self-test reading ReportsTypesInTheCode see only mapped types; (2) one new test, TheReportsModuleRootTypes_AreExactlyTheModuleRootList, compares the top-level types whose namespace is exactly Lighthouse.Backend.Modules.Reports with ModuleRoot both ways through InlineBaseline.AssertMatches and asserts the found set is not empty; its reverted probes (entry removed, extra entry added) are recorded as craft commands. The ReportsLivesInItsModule tests read MovingTypes and TypesThatStay only and stay unchanged.",
 "F301": "The membership test owns the map comparison; it sets aside one exact module-root name and checks it on its own list.",
 "F302": "Own-context root: the module-root type is listed exactly, both ways; nothing else exempted.",
+"F303": "Read every type of the ten contexts that the composition root, its nested types and its closures name, from the compiled assembly",
+"F304": "Besides each context's start-up module, the root names only listed handlers of the ordered block, cross-context wiring, host set-up lookups and host set-up types; every listed name is still named; the ten listed contexts equal the packaged contexts",
+"F305": "The start-up file names modules only; a registration left behind, an eleventh context or a stale list entry is reported by full name",
+"F306": "A registration that could move into its module is classed as a host set-up type: the lists are judged by hand against the measure",
+"F307": "Read what the real start-up file names of each context",
+"F308": "Only the module, the listed handlers, wiring, host lookups and host set-up types are named, and each listed name is still named",
+"F309": "The start-up file names modules only",
 "F31": "No type owns a context registrations today (only Program.RegisterServices and RegisterReports); one holder per context at the module root (D-9).",
+"F310": "A list entry added for a name that should move",
+"F311": "A made-up root names one type of a context off the lists, plainly or inside a lambda",
+"F312": "That type is reported by full name and nothing else",
+"F313": "A registration left in the start-up file is named",
+"F314": "A check that reads only plain registrations and misses a name inside a lambda",
+"F315": "Compare the ten listed contexts with the contexts the application holds",
+"F316": "The two sets are equal",
+"F317": "A new context cannot keep its start-up in the start-up file unseen",
+"F318": "A hand-kept list that drifts from the assembly",
 "F32": "Reads every type Program names, nested closures included; the S3 rule reads with it unchanged.",
 "F33": "The one name of the composition root, read by the three rules; not edited.",
 "F34": "The enumerator of the ten contexts (R-C3); the S3 rule checks its ten listed contexts equal it, so a new context cannot escape.",
