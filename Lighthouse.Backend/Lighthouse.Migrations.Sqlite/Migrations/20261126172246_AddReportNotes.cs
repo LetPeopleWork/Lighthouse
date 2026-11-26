@@ -1,0 +1,61 @@
+using System;
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace Lighthouse.Backend.Migrations;
+
+/// <inheritdoc />
+public partial class _20261126172246_AddReportNotes : Migration
+{
+    /// <inheritdoc />
+    protected override void Up(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.CreateTable(
+            name: "ReportNotes",
+            columns: table => new
+            {
+                Id = table.Column<int>(type: "INTEGER", nullable: false)
+                    .Annotation("Sqlite:Autoincrement", true),
+                ReportId = table.Column<int>(type: "INTEGER", nullable: false),
+                Text = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: false),
+                CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                LastEditedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                AuthorUserProfileId = table.Column<int>(type: "INTEGER", nullable: true),
+                AuthorDisplayName = table.Column<string>(type: "TEXT", nullable: true)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_ReportNotes", x => x.Id);
+                table.ForeignKey(
+                    name: "FK_ReportNotes_Reports_ReportId",
+                    column: x => x.ReportId,
+                    principalTable: "Reports",
+                    principalColumn: "Id",
+                    onDelete: ReferentialAction.Cascade);
+                table.ForeignKey(
+                    name: "FK_ReportNotes_UserProfiles_AuthorUserProfileId",
+                    column: x => x.AuthorUserProfileId,
+                    principalTable: "UserProfiles",
+                    principalColumn: "Id",
+                    onDelete: ReferentialAction.SetNull);
+            });
+
+        migrationBuilder.CreateIndex(
+            name: "IX_ReportNotes_AuthorUserProfileId",
+            table: "ReportNotes",
+            column: "AuthorUserProfileId");
+
+        migrationBuilder.CreateIndex(
+            name: "IX_ReportNotes_ReportId",
+            table: "ReportNotes",
+            column: "ReportId");
+    }
+
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.DropTable(
+            name: "ReportNotes");
+    }
+}

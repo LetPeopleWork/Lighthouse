@@ -113,5 +113,11 @@ namespace Lighthouse.Backend.Models.UsageData
         /// Portfolio, not how many Features, not whose.
         /// </summary>
         DefaultFeatureSizingSwitchedOff = 29,
+
+        /// <summary>
+        /// Somebody added a note to a report and the server accepted it. It carries nothing: not which report, not
+        /// which Team or Portfolio, not the text or its length, not who wrote it.
+        /// </summary>
+        ReportNoteAdded = 30,
     }
 }

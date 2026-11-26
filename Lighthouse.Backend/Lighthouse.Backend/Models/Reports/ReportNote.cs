@@ -20,7 +20,25 @@ namespace Lighthouse.Backend.Models.Reports
 
         public static ReportOutcome<ReportNote> Write(int reportId, string? rawText, int? signedByProfileId, string? signerDisplayName, DateTime createdAt)
         {
-            throw new NotImplementedException();
+            var text = rawText?.Trim() ?? string.Empty;
+            if (text.Length == 0)
+            {
+                return ReportOutcome<ReportNote>.Refused(ReportRefusalCodes.NoteTextMissing);
+            }
+
+            if (text.Length > LongestText)
+            {
+                return ReportOutcome<ReportNote>.Refused(ReportRefusalCodes.NoteTextTooLong);
+            }
+
+            return ReportOutcome<ReportNote>.Done(new ReportNote
+            {
+                ReportId = reportId,
+                Text = text,
+                CreatedAt = createdAt,
+                AuthorUserProfileId = signedByProfileId,
+                AuthorDisplayName = signerDisplayName,
+            });
         }
     }
 }

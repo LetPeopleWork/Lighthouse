@@ -8,16 +8,17 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
     public class ReportRepository(LighthouseAppContext context) : IReportReader, IReportWriter, IReportNoteStore
     {
         bool IReportNoteStore.ReportExists(ReportOwner owner, int reportId)
-            => throw new NotImplementedException();
+            => OwnedBy(owner).Any(report => report.Id == reportId);
 
         IReadOnlyList<ReportNote> IReportNoteStore.NotesNewestFirst(ReportOwner owner, int reportId)
-            => throw new NotImplementedException();
+            => [.. context.ReportNotes.AsNoTracking()
+                .Where(note => note.ReportId == reportId && OwnedBy(owner).Any(report => report.Id == reportId))
+                .OrderByDescending(note => note.CreatedAt)
+                .ThenByDescending(note => note.Id)];
 
-        void IReportNoteStore.Add(ReportNote note)
-            => throw new NotImplementedException();
+        void IReportNoteStore.Add(ReportNote note) => context.ReportNotes.Add(note);
 
-        Task IReportNoteStore.Save()
-            => throw new NotImplementedException();
+        Task IReportNoteStore.Save() => context.SaveChangesAsync();
 
         public Report? GetForOwner(ReportOwner owner, int reportId)
             => OwnedBy(owner).AsNoTracking().SingleOrDefault(report => report.Id == reportId);

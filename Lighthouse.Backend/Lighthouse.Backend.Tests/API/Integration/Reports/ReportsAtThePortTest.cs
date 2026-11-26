@@ -1,5 +1,7 @@
 using Lighthouse.Backend.API.DTO.Reports;
 using Lighthouse.Backend.Cache;
+using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.OptionalFeatures;
@@ -187,6 +189,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         {
             using var scope = harness.NewScope();
             return await scope.ServiceProvider.GetRequiredService<IReportCommands>().Create(owner, request);
+        }
+
+        /// <summary>A person who has signed in is stored, as the sign-in stores one, and their profile id is returned.</summary>
+        protected int ASignedInProfile(string displayName)
+        {
+            using var scope = harness.NewScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            var profile = new UserProfile
+            {
+                Subject = displayName.ToLowerInvariant(),
+                SubjectClaimType = "sub",
+                DisplayName = displayName,
+                CreatedAt = DateTime.UtcNow,
+                LastSeenAt = DateTime.UtcNow,
+            };
+            context.UserProfiles.Add(profile);
+            context.SaveChanges();
+            return profile.Id;
         }
 
         /// <summary>A report is made for the owner, as the route that creates one asks, and its id is returned.</summary>

@@ -23,7 +23,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         private const string Training = "Training took place";
 
-        private static readonly ReportNoteCaller SignedInAsAnn = new ReportNoteCaller.Signed(7, Ann);
+        private ReportNoteCaller? ann;
+
+        // Ann is a stored profile of this scenario's own database, because a note's author is a link to a profile.
+        private ReportNoteCaller SignedInAsAnn => ann ??= new ReportNoteCaller.Signed(ASignedInProfile(Ann), Ann);
+
+        [SetUp]
+        public void ForgetTheSignerOfTheLastScenario() => ann = null;
 
         private static readonly ReportNoteCaller SignInIsOff = new ReportNoteCaller.Anonymous();
 
@@ -256,7 +262,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             var lightspeedReport = await AReportOf(lightspeed);
             var zenithReport = await AReportOf(zenith);
             var reports = new[] { (lightspeed, lightspeedReport), (zenith, zenithReport) };
-            var model = new NotesOfEveryReport(reports);
+            var model = new NotesOfEveryReport(reports, SignedInAsAnn);
             var random = new Random(Seed);
 
             for (var run = 0; run < Runs; run++)
@@ -369,7 +375,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     }
 
     /// <summary>What every report should list after the adds so far: an independent model sorted by the instant written, then by order of adding.</summary>
-    internal sealed class NotesOfEveryReport(IReadOnlyList<(ReportOwner Owner, int ReportId)> reports)
+    internal sealed class NotesOfEveryReport(IReadOnlyList<(ReportOwner Owner, int ReportId)> reports, ReportNoteCaller signedIn)
     {
         private static readonly DateTime[] Instants =
         [
@@ -389,7 +395,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 var report = reports[random.Next(reports.Count)];
                 var heldBy = random.Next(0, 5) == 0 ? reports[(reports.ToList().IndexOf(report) + 1) % reports.Count].Owner : report.Owner;
                 var blank = random.Next(0, 4) == 0;
-                var caller = random.Next(0, 2) == 0 ? (ReportNoteCaller)new ReportNoteCaller.Anonymous() : new ReportNoteCaller.Signed(7, "Ann");
+                var caller = random.Next(0, 2) == 0 ? (ReportNoteCaller)new ReportNoteCaller.Anonymous() : signedIn;
                 yield return new PlannedAdd(heldBy, report.ReportId, caller, blank ? "  \t " : $"note {++added}", Instants[random.Next(Instants.Length)], heldBy == report.Owner, blank);
             }
         }

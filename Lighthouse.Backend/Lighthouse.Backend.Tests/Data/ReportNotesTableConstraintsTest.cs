@@ -6,6 +6,7 @@ using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.Integration.Containers;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -30,7 +31,7 @@ namespace Lighthouse.Backend.Tests
         public void MigrateTheTemplateOnce()
         {
             templatePath = Path.Combine(Path.GetTempPath(), $"report-notes-template-{Guid.NewGuid():N}.db");
-            using var context = CreateContext(OptionsFor(templatePath));
+            using var context = ReportNoteRows.CreateContext(OptionsFor(templatePath));
             context.Database.Migrate();
             SqliteConnection.ClearAllPools();
         }
@@ -65,7 +66,7 @@ namespace Lighthouse.Backend.Tests
         [Test]
         public async Task The_notes_table_holds_the_columns_a_note_is_made_of()
         {
-            using var context = CreateContext(options);
+            using var context = ReportNoteRows.CreateContext(options);
 
             var columns = await context.Database
                 .SqlQuery<string>($"SELECT name AS Value FROM pragma_table_info('ReportNotes')")
@@ -77,18 +78,18 @@ namespace Lighthouse.Backend.Tests
         [Test]
         public async Task Deleting_a_report_deletes_its_notes_and_leaves_the_notes_of_other_reports()
         {
-            using var context = CreateContext(options);
-            var team = await SeedTeam(context);
-            var deleted = await SeedReport(context, team.Id);
-            var kept = await SeedReport(context, team.Id);
-            await InsertNote(context, deleted, "Training took place", null);
-            await InsertNote(context, deleted, "Team grew to 9", null);
-            await InsertNote(context, kept, "Training took place", null);
+            using var context = ReportNoteRows.CreateContext(options);
+            var team = await ReportNoteRows.SeedTeam(context);
+            var deleted = await ReportNoteRows.SeedReport(context, team.Id);
+            var kept = await ReportNoteRows.SeedReport(context, team.Id);
+            await ReportNoteRows.InsertNote(context, deleted, "Training took place", null);
+            await ReportNoteRows.InsertNote(context, deleted, "Team grew to 9", null);
+            await ReportNoteRows.InsertNote(context, kept, "Training took place", null);
 
             await context.Reports.Where(report => report.Id == deleted).ExecuteDeleteAsync();
 
-            var deletedLeft = await NotesOf(context, deleted);
-            var keptLeft = await NotesOf(context, kept);
+            var deletedLeft = await ReportNoteRows.NotesOf(context, deleted);
+            var keptLeft = await ReportNoteRows.NotesOf(context, kept);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(deletedLeft, Is.Zero, "the notes of a deleted report go with it");
@@ -99,13 +100,13 @@ namespace Lighthouse.Backend.Tests
         [Test]
         public async Task Removing_the_author_keeps_the_note_and_its_name_but_clears_the_link_to_the_author()
         {
-            using var context = CreateContext(options);
-            var team = await SeedTeam(context);
-            var report = await SeedReport(context, team.Id);
+            using var context = ReportNoteRows.CreateContext(options);
+            var team = await ReportNoteRows.SeedTeam(context);
+            var report = await ReportNoteRows.SeedReport(context, team.Id);
             var profile = new UserProfile { Subject = "ann", SubjectClaimType = "sub", DisplayName = "Ann", CreatedAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow };
             context.UserProfiles.Add(profile);
             await context.SaveChangesAsync();
-            await InsertNote(context, report, "Training took place", profile.Id, "Ann");
+            await ReportNoteRows.InsertNote(context, report, "Training took place", profile.Id, "Ann");
 
             await context.UserProfiles.Where(p => p.Id == profile.Id).ExecuteDeleteAsync();
 
@@ -117,43 +118,23 @@ namespace Lighthouse.Backend.Tests
                 Assert.That(name, Is.EqualTo("Ann"));
             }
         }
+    }
 
-        // SQLite keeps whatever length it is given, so the bound on the text column is observed on PostgreSQL.
-        [Test]
-        [Category("Integration")]
-        public async Task The_text_column_keeps_2000_characters_and_refuses_2001_on_PostgreSQL()
-        {
-            await using var postgres = await SharedPostgresContainer.StartAsync();
-            var postgresOptions = new DbContextOptionsBuilder<LighthouseAppContext>()
-                .UseNpgsql(await postgres.ConnectionStringToANewCreatedDatabaseAsync(), npgsql => npgsql.MigrationsAssembly("Lighthouse.Migrations.Postgres"))
-                .Options;
-            await using var context = CreateContext(postgresOptions);
-            await context.Database.MigrateAsync();
-            var report = await SeedReport(context, (await SeedTeam(context)).Id);
-
-            await InsertNote(context, report, new string('x', ReportNote.LongestText), null);
-            var refused = await Assert.CatchAsync<DbException>(() => InsertNote(context, report, new string('x', ReportNote.LongestText + 1), null));
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(refused?.Message, Does.Contain("too long"));
-                Assert.That(await NotesOf(context, report), Is.EqualTo(1));
-            }
-        }
-
-        private static LighthouseAppContext CreateContext(DbContextOptions<LighthouseAppContext> contextOptions)
+    internal static class ReportNoteRows
+    {
+        internal static LighthouseAppContext CreateContext(DbContextOptions<LighthouseAppContext> contextOptions)
             => new(contextOptions, Mock.Of<ICryptoService>(), Mock.Of<ILogger<LighthouseAppContext>>());
 
-        private static Task<int> InsertNote(LighthouseAppContext context, int reportId, string text, int? authorId, string? authorName = null)
+        internal static Task<int> InsertNote(LighthouseAppContext context, int reportId, string text, int? authorId, string? authorName = null)
             => context.Database.ExecuteSqlAsync($$"""
                 INSERT INTO "ReportNotes" ("ReportId", "Text", "CreatedAt", "AuthorUserProfileId", "AuthorDisplayName")
                 VALUES ({{reportId}}, {{text}}, '2026-10-13 09:00:00', {{authorId}}, {{authorName}})
                 """);
 
-        private static Task<int> NotesOf(LighthouseAppContext context, int reportId)
+        internal static Task<int> NotesOf(LighthouseAppContext context, int reportId)
             => context.Database.SqlQuery<int>($"SELECT COUNT(*) AS \"Value\" FROM \"ReportNotes\" WHERE \"ReportId\" = {reportId}").SingleAsync();
 
-        private static async Task<int> SeedReport(LighthouseAppContext context, int teamId)
+        internal static async Task<int> SeedReport(LighthouseAppContext context, int teamId)
         {
             var report = new Report
             {
@@ -170,7 +151,7 @@ namespace Lighthouse.Backend.Tests
             return report.Id;
         }
 
-        private static async Task<Team> SeedTeam(LighthouseAppContext context)
+        internal static async Task<Team> SeedTeam(LighthouseAppContext context)
         {
             var connection = new WorkTrackingSystemConnection { Name = "Team Connection", WorkTrackingSystem = WorkTrackingSystems.Jira, AuthenticationMethodKey = "pat" };
             context.WorkTrackingSystemConnections.Add(connection);

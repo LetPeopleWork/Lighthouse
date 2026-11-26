@@ -420,8 +420,6 @@ A note table without a cascade, or without a bound on the text
 ###### Obligations
 
 
-
-
 ##### Covers
 
 P1
@@ -451,6 +449,38 @@ A trimmed text sent, a note below the numbers, or an empty area on failure
 ```
 
 ###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+2000 and then 2001 characters are inserted straight into the text column on PostgreSQL
+```
+
+```text
+2000 characters are kept and 2001 are refused by the database as too long
+```
+
+```text
+A note over the limit cannot be stored even by another writer
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Integration\/Containers\/ReportNotesTextBoundOnPostgresTest\.cs
+
+The\_text\_column\_keeps\_2000\_characters\_and\_refuses\_2001\_on\_PostgreSQL
+
+```text
+A text column without the 2000 bound
+```
+
+###### Obligations
+
 
 
 ##### Covers

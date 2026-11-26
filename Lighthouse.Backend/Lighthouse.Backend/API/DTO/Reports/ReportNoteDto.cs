@@ -22,7 +22,16 @@ namespace Lighthouse.Backend.API.DTO.Reports
 
         public static ReportNoteDto From(ReportNoteRead note, ILighthouseClock clock)
         {
-            throw new NotImplementedException();
+            return new ReportNoteDto
+            {
+                Id = note.Id,
+                Text = note.Text,
+                CreatedAt = note.CreatedAt,
+                CreatedOn = clock.ToInstanceDay(note.CreatedAt),
+                LastEditedAt = note.LastEditedAt,
+                LastEditedOn = note.LastEditedAt.HasValue ? clock.ToInstanceDay(note.LastEditedAt.Value) : null,
+                AuthorDisplayName = note.AuthorDisplayName,
+            };
         }
     }
 }

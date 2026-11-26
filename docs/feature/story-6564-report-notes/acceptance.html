@@ -522,8 +522,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
-
-
 <h5>Covers</h5>
 
 <p>P1</p>
@@ -549,6 +547,34 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 </code></pre>
 
 <h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>2000 and then 2001 characters are inserted straight into the text column on PostgreSQL
+</code></pre>
+
+<pre><code>2000 characters are kept and 2001 are refused by the database as too long
+</code></pre>
+
+<pre><code>A note over the limit cannot be stored even by another writer
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ReportNotesTextBoundOnPostgresTest.cs</p>
+
+<p>The_text_column_keeps_2000_characters_and_refuses_2001_on_PostgreSQL</p>
+
+<pre><code>A text column without the 2000 bound
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 
 <h5>Covers</h5>

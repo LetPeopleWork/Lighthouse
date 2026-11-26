@@ -225,9 +225,7 @@
 "disposition": {
 "kind": "Tested",
 "obligations": [
-"L9",
-"L9/F354",
-"L9/F355"
+"L9"
 ],
 "still_passes_if": "F496",
 "test": "Deleting_a_report_deletes_its_notes_and_leaves_the_notes_of_other_reports",
@@ -256,6 +254,24 @@
 },
 {
 "covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L9/F354",
+"L9/F355"
+],
+"still_passes_if": "F512",
+"test": "The_text_column_keeps_2000_characters_and_refuses_2001_on_PostgreSQL",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ReportNotesTextBoundOnPostgresTest.cs"
+},
+"expected": "F510",
+"stimulus": "F509",
+"user_result": "F511"
+},
+{
+"covers": [
 "P1"
 ],
 "disposition": {
@@ -277,7 +293,7 @@
 "B": 5,
 "D": 13,
 "E": 12,
-"F": 508,
+"F": 512,
 "K": 2,
 "L": 11,
 "N": 2,
@@ -1992,7 +2008,11 @@
 "F506": "The note text is listed in the notes area, which sits above the first panel of the numbers",
 "F507": "The reader sees the written note next to the numbers, above them",
 "F508": "A notes area placed below the numbers or showing no loaded note",
+"F509": "2000 and then 2001 characters are inserted straight into the text column on PostgreSQL",
 "F51": "Notes written by the system.",
+"F510": "2000 characters are kept and 2001 are refused by the database as too long",
+"F511": "A note over the limit cannot be stored even by another writer",
+"F512": "A text column without the 2000 bound",
 "F52": "The day a note was written is enough; there is one kind of note, with no separate event date (maintainer, 2026-11-26).",
 "F53": "Write access on the Team or Portfolio that owns the report is enough to add a note (maintainer, 2026-11-26).",
 "F55": "Notes are deleted when their report is deleted (maintainer, 2026-11-26).",

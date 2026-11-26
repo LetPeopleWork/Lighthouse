@@ -9,7 +9,32 @@ namespace Lighthouse.Backend.Modules.Reports.Application
 
         public Task<ReportOutcome<ReportNoteRead>> Add(ReportOwner owner, int reportId, ReportNoteCaller caller, string? text, DateTime now)
         {
-            throw new NotImplementedException();
+            return AddNote(owner, reportId, caller, text, now);
+        }
+
+        private async Task<ReportOutcome<ReportNoteRead>> AddNote(ReportOwner owner, int reportId, ReportNoteCaller caller, string? text, DateTime now)
+        {
+            if (!Store.ReportExists(owner, reportId))
+            {
+                return ReportOutcome<ReportNoteRead>.NotFound();
+            }
+
+            var signed = caller as ReportNoteCaller.Signed;
+            if (signed is null && caller is ReportNoteCaller.Unresolved)
+            {
+                return ReportOutcome<ReportNoteRead>.Refused(ReportRefusalCodes.NoteAuthorUnknown);
+            }
+
+            var written = ReportNote.Write(reportId, text, signed?.ProfileId, signed?.DisplayName, now);
+            if (written.Value is not ReportNote note)
+            {
+                return ReportOutcome<ReportNoteRead>.Refused(written.Code ?? ReportRefusalCodes.NoteTextMissing);
+            }
+
+            Store.Add(note);
+            await Store.Save();
+
+            return ReportOutcome<ReportNoteRead>.Done(new ReportNoteRead(note.Id, note.Text, note.CreatedAt, note.LastEditedAt, note.AuthorDisplayName));
         }
     }
 }

@@ -44,6 +44,7 @@ namespace Lighthouse.Backend.Tests.Contracts.PortFixtures
             [typeof(IRepository<Portfolio>)] = typeof(IPortfolioRepository),
             [typeof(IReportReader)] = typeof(ReportRepository),
             [typeof(IReportWriter)] = typeof(ReportRepository),
+            [typeof(IReportNoteStore)] = typeof(ReportRepository),
             [typeof(IForecastFilterRuleService)] = typeof(ForecastFilterRuleService),
             [typeof(IThroughputFilter)] = typeof(ForecastFilterRuleService),
             [typeof(IForecastDataSufficiency)] = typeof(ForecastingAnswersToFlowMetrics),

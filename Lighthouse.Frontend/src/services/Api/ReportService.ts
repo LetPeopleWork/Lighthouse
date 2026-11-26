@@ -9,7 +9,11 @@ import {
 	ReportSchema,
 	ReportTemplatesSchema,
 } from "../../models/Reports/Report";
-import type { IReportNote } from "../../models/Reports/ReportNote";
+import {
+	type IReportNote,
+	ReportNoteSchema,
+	ReportNotesSchema,
+} from "../../models/Reports/ReportNote";
 import {
 	type INewReportsForOwners,
 	type IReportCreationOptions,
@@ -163,17 +167,28 @@ export class ReportService extends BaseApiService implements IReportService {
 	}
 
 	public getNotes(
-		_owner: IReportOwner,
-		_reportId: number,
+		owner: IReportOwner,
+		reportId: number,
 	): Promise<IReportNote[]> {
-		throw new Error("Report notes are not read yet.");
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<unknown>(
+				`${reportsOf(owner)}/${reportId}/notes`,
+			);
+			return BaseApiService.parse(ReportNotesSchema, response.data);
+		});
 	}
 
 	public addNote(
-		_owner: IReportOwner,
-		_reportId: number,
-		_text: string,
+		owner: IReportOwner,
+		reportId: number,
+		text: string,
 	): Promise<IReportNote> {
-		throw new Error("Report notes are not saved yet.");
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.post<unknown>(
+				`${reportsOf(owner)}/${reportId}/notes`,
+				{ text },
+			);
+			return BaseApiService.parse(ReportNoteSchema, response.data);
+		});
 	}
 }

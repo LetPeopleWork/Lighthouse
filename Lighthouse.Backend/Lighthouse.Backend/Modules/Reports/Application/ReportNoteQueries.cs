@@ -9,7 +9,18 @@ namespace Lighthouse.Backend.Modules.Reports.Application
 
         public ReportOutcome<IReadOnlyList<ReportNoteRead>> List(ReportOwner owner, int reportId)
         {
-            throw new NotImplementedException();
+            if (!Store.ReportExists(owner, reportId))
+            {
+                return ReportOutcome<IReadOnlyList<ReportNoteRead>>.NotFound();
+            }
+
+            IReadOnlyList<ReportNoteRead> notes =
+            [
+                .. Store.NotesNewestFirst(owner, reportId)
+                    .Select(note => new ReportNoteRead(note.Id, note.Text, note.CreatedAt, note.LastEditedAt, note.AuthorDisplayName)),
+            ];
+
+            return ReportOutcome<IReadOnlyList<ReportNoteRead>>.Done(notes);
         }
     }
 }

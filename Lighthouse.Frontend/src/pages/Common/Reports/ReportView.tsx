@@ -8,6 +8,7 @@ import { reportFailedNavigation } from "../../../utils/navigation";
 import { WidgetBody } from "../MetricsView/WidgetShell";
 import { queryStatusOf } from "../MetricsView/widgetStatus";
 import ReportPanels from "./panels/ReportPanels";
+import ReportNotes from "./ReportNotes";
 import { reportsPathOf } from "./reportOwner";
 import ThenAndNowHeader from "./ThenAndNowHeader";
 import ThenAndNowSummary from "./ThenAndNowSummary";
@@ -83,6 +84,9 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 				onEdit={mayChange ? () => setEditing(report) : undefined}
 				onDelete={mayChange ? () => deletion.ask(report) : undefined}
 			/>
+			{report !== undefined && isEditor && (
+				<ReportNotes owner={owner} reportId={reportId} mayWrite={isEditor} />
+			)}
 			<Box
 				aria-busy={status === "loading" ? "true" : undefined}
 				sx={{

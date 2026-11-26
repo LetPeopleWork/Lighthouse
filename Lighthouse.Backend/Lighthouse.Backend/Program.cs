@@ -1329,6 +1329,9 @@ namespace Lighthouse.Backend
             services.AddScoped<ReportRepository>();
             services.AddScoped<IReportReader>(provider => provider.GetRequiredService<ReportRepository>());
             services.AddScoped<IReportWriter>(provider => provider.GetRequiredService<ReportRepository>());
+            services.AddScoped<IReportNoteStore>(provider => provider.GetRequiredService<ReportRepository>());
+            services.AddScoped<IReportNoteQueries, ReportNoteQueries>();
+            services.AddScoped<IReportNoteCommands, ReportNoteCommands>();
             services.AddScoped<IReportOwnerLookup, ReportOwnerLookup>();
             services.AddScoped<TeamReportMetricSeries>();
             services.AddScoped<PortfolioReportMetricSeries>();

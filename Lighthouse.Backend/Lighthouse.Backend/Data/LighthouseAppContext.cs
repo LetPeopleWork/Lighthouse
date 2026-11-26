@@ -100,6 +100,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<Report> Reports { get; set; } = null!;
 
+        public DbSet<ReportNote> ReportNotes { get; set; } = null!;
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             // Restore SQLite's legacy double-quoted-string tolerance on every EF-opened connection.
@@ -689,6 +691,7 @@ namespace Lighthouse.Backend.Data
             ConfigureRefinementSettings(modelBuilder);
             ConfigureSizingLog(modelBuilder);
             ConfigureReports(modelBuilder);
+            ConfigureReportNotes(modelBuilder);
             ConfigureRefreshFindings(modelBuilder);
         }
 
@@ -797,6 +800,28 @@ namespace Lighthouse.Backend.Data
                 entity.Property(report => report.ShownMetricKeysJson).IsRequired();
                 entity.Property(report => report.TemplatePayloadJson).IsRequired();
                 entity.Property(report => report.ConcurrencyToken).IsConcurrencyToken();
+            });
+        }
+
+        private static void ConfigureReportNotes(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<ReportNote>(entity =>
+            {
+                entity.HasKey(note => note.Id);
+
+                entity.HasOne<Report>()
+                      .WithMany()
+                      .HasForeignKey(note => note.ReportId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // Removing somebody clears the link rather than their notes; the captured name keeps the note readable.
+                entity.HasOne<UserProfile>()
+                      .WithMany()
+                      .HasForeignKey(note => note.AuthorUserProfileId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.Property(note => note.Text).IsRequired().HasMaxLength(ReportNote.LongestText);
+                entity.HasIndex(note => note.ReportId);
             });
         }
 
