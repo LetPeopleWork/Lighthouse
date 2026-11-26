@@ -131,7 +131,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira
             }
 
             var histories = changelog.GetProperty(JiraFieldNames.HistoriesFieldName);
-            if (HoldsOnlyPartOfItsHistory(changelog, histories))
+            if (HoldsOnlyPartOfItsHistory(changelog))
             {
                 return [];
             }
@@ -147,11 +147,16 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira
 
         // A search answer can carry fewer entries than the history holds, and says so in its total. Any of
         // the missing entries may have removed or re-added a link, so a partial history dates no link at all.
-        private static bool HoldsOnlyPartOfItsHistory(JsonElement changelog, JsonElement histories)
+        internal static bool HoldsOnlyPartOfItsHistory(JsonElement changelog)
             => changelog.TryGetProperty(JiraFieldNames.TotalFieldName, out var total)
                 && total.ValueKind == JsonValueKind.Number
                 && total.TryGetInt32(out var entriesInAll)
-                && entriesInAll > histories.GetArrayLength();
+                && entriesInAll > EntriesHeldIn(changelog);
+
+        private static int EntriesHeldIn(JsonElement changelog)
+            => changelog.TryGetProperty(JiraFieldNames.HistoriesFieldName, out var histories)
+                ? histories.GetArrayLength()
+                : 0;
 
         private static Dictionary<LinkEnd, DateTime> Replay(Dictionary<LinkEnd, DateTime> standing, LinkChange change)
         {

@@ -42,6 +42,11 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira
         public static string Changelog(string issueId, int startAt, int maxResults)
             => $"rest/api/latest/issue/{issueId}/changelog?startAt={startAt}&maxResults={maxResults}";
 
+        // Data Center serves no paged changelog route, but it hands the whole history back with the issue.
+        // Only the status field is asked for, because the caller keeps every other field from the search.
+        public static string IssueWithItsWholeChangelog(string issueKey)
+            => $"rest/api/2/issue/{Uri.EscapeDataString(issueKey)}?fields=status&expand=changelog";
+
         /// <summary>
         /// A Jira that would not say which kind it is gets the routes every deployment serves.
         /// </summary>

@@ -2657,25 +2657,61 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira
             }
         }
 
+        // The search answer carries fewer entries than the history holds, so the dates worked out from it
+        // could miss the move into Doing or out of Done.
         private bool ShouldFetchFullChangelog(JsonElement jsonIssue, string issueKey, out int totalChangelogs)
         {
             totalChangelogs = 0;
 
-            if (jsonIssue.TryGetProperty(JiraFieldNames.ChangelogFieldName, out var changelogProp) &&
-                changelogProp.TryGetProperty(JiraFieldNames.TotalFieldName, out var totalProp))
+            if (!jsonIssue.TryGetProperty(JiraFieldNames.ChangelogFieldName, out var changelog)
+                || !changelog.TryGetProperty(JiraFieldNames.TotalFieldName, out var totalProp))
             {
-                totalChangelogs = totalProp.GetInt32();
-                var needsFullChangelog = totalChangelogs > 30;
-
-                if (needsFullChangelog)
-                {
-                    logger.LogDebug("Issue {Key} has {Total} changelog entries, fetching complete changelog", issueKey, totalChangelogs);
-                }
-
-                return needsFullChangelog;
+                return false;
             }
 
-            return false;
+            totalChangelogs = totalProp.GetInt32();
+            var needsFullChangelog = IssueFactory.HoldsOnlyPartOfItsHistory(changelog);
+
+            if (needsFullChangelog)
+            {
+                logger.LogDebug("Issue {Key} has {Total} changelog entries and the search answer holds fewer, fetching complete changelog", issueKey, totalChangelogs);
+            }
+
+            return needsFullChangelog;
+        }
+
+        private static async Task<ChangelogReading> GetWholeChangelogFromDataCenter(
+            HttpClient client, string issueKey, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var response = await client.GetAsync(JiraRestRoutes.IssueWithItsWholeChangelog(issueKey), cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            using var document = JsonDocument.Parse(body);
+
+            if (!document.RootElement.TryGetProperty(JiraFieldNames.ChangelogFieldName, out var changelog)
+                || !changelog.TryGetProperty(JiraFieldNames.HistoriesFieldName, out var histories))
+            {
+                return new ChangelogReading([], null);
+            }
+
+            var entries = histories.EnumerateArray().Select(history => history.Clone()).ToList();
+            int? reported = changelog.TryGetProperty(JiraFieldNames.TotalFieldName, out var total) && total.TryGetInt32(out var count)
+                ? count
+                : null;
+
+            return new ChangelogReading(entries, reported);
+        }
+
+        private void LogWhenTheReadingIsStillPartial(string issueKey, ChangelogReading reading, int totalInSearchAnswer)
+        {
+            var reported = Math.Max(reading.EntriesJiraReported ?? 0, totalInSearchAnswer);
+            if (reading.Entries.Count < reported)
+            {
+                logger.LogDebug("Issue {Key} still holds {Held} of {Total} changelog entries after the full read, so it is not dated from its whole history", issueKey, reading.Entries.Count, reported);
+            }
         }
 
         private async Task<IEnumerable<Issue>> GetIssuesByQueryFromDataCenter(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride, Func<IReadOnlyList<JsonElement>, Task<JiraOriginalNames>> namesCovering, CancellationToken cancellationToken)
@@ -2725,8 +2761,16 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira
 
                 foreach (var jsonIssue in page)
                 {
-                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, originalNames, rankFieldName);
-                    issues.Add(issue);
+                    var issueKey = jsonIssue.GetProperty(JiraFieldNames.KeyPropertyName).GetString() ?? string.Empty;
+                    var issueToProcess = jsonIssue;
+                    if (ShouldFetchFullChangelog(jsonIssue, issueKey, out var totalChangelogs))
+                    {
+                        var reading = await GetWholeChangelogFromDataCenter(client, issueKey, cancellationToken);
+                        issueToProcess = MergeChangelogIntoIssueJson(jsonIssue, reading.Entries, reading.EntriesJiraReported ?? totalChangelogs);
+                        LogWhenTheReadingIsStillPartial(issueKey, reading, totalChangelogs);
+                    }
+
+                    issues.Add(issueFactory.CreateIssueFromJson(issueToProcess, owner, originalNames, rankFieldName));
                 }
             }
 
@@ -2907,6 +2951,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira
                 var reading = await GetAllChangelogEntriesForIssue(client, issueKey, cancellationToken);
                 issueToProcess = MergeChangelogIntoIssueJson(jsonIssue, reading.Entries, reading.EntriesJiraReported ?? totalChangelogs);
                 logger.LogDebug("Found Issue {Key} with {ChangelogCount} complete changelog entries", issueKey, reading.Entries.Count);
+                LogWhenTheReadingIsStillPartial(issueKey, reading, totalChangelogs);
             }
             else
             {
