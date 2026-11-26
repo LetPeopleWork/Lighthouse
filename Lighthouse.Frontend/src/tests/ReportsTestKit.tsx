@@ -261,6 +261,8 @@ export const aReportService = (
 	}),
 	createReportsInBulk: vi.fn().mockResolvedValue([]),
 	removeReportsInBulk: vi.fn().mockResolvedValue([]),
+	getNotes: vi.fn().mockResolvedValue([]),
+	addNote: vi.fn(),
 	...overrides,
 });
 

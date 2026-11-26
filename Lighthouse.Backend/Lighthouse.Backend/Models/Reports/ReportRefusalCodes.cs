@@ -41,6 +41,12 @@ namespace Lighthouse.Backend.Models.Reports
 
         public const string NotSaved = "not-saved";
 
+        public const string NoteTextMissing = "note-text-missing";
+
+        public const string NoteTextTooLong = "note-text-too-long";
+
+        public const string NoteAuthorUnknown = "note-author-unknown";
+
         /// <summary>Not a refusal: a report removed before the run reached it, answered as removed but never counted as this run's deletion.</summary>
         public const string AlreadyGone = "already-gone";
 

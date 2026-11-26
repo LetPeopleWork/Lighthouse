@@ -9,6 +9,7 @@ import {
 	ReportSchema,
 	ReportTemplatesSchema,
 } from "../../models/Reports/Report";
+import type { IReportNote } from "../../models/Reports/ReportNote";
 import {
 	type INewReportsForOwners,
 	type IReportCreationOptions,
@@ -44,6 +45,14 @@ export interface IReportService {
 	): Promise<IReportCreationOutcome[]>;
 	/** Answers one outcome per report, in the order they were sent. */
 	removeReportsInBulk(reportIds: number[]): Promise<IReportRemovalOutcome[]>;
+	/** The notes of one report, newest first. */
+	getNotes(owner: IReportOwner, reportId: number): Promise<IReportNote[]>;
+	/** Answers the saved note. */
+	addNote(
+		owner: IReportOwner,
+		reportId: number,
+		text: string,
+	): Promise<IReportNote>;
 }
 
 const reportsOf = (owner: IReportOwner): string =>
@@ -151,5 +160,20 @@ export class ReportService extends BaseApiService implements IReportService {
 			return BaseApiService.parse(ReportRemovalOutcomesSchema, response.data)
 				.outcomes;
 		});
+	}
+
+	public getNotes(
+		_owner: IReportOwner,
+		_reportId: number,
+	): Promise<IReportNote[]> {
+		throw new Error("Report notes are not read yet.");
+	}
+
+	public addNote(
+		_owner: IReportOwner,
+		_reportId: number,
+		_text: string,
+	): Promise<IReportNote> {
+		throw new Error("Report notes are not saved yet.");
 	}
 }

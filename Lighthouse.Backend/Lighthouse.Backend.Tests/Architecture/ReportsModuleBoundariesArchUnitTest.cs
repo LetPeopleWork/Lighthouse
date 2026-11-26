@@ -95,7 +95,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         // placed here on purpose. The report repository is the one Reports type that stays outside the module.
         private static readonly Dictionary<string, string[]> TypesByLayer = new(StringComparer.Ordinal)
         {
-            [ReportsDomainNamespace] = ["ReportCapPolicy", "ReportSeriesReading", "ReportWindowPolicy"],
+            [ReportsDomainNamespace] = ["ReportCapPolicy", "ReportNoteCaller", "ReportNoteRead", "ReportSeriesReading", "ReportWindowPolicy"],
             [ReportsApplicationNamespace] =
             [
                 "CycleTimePercentiles",
@@ -104,6 +104,9 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "IReportCommands",
                 "IReportMetric",
                 "IReportMetricSeries",
+                "IReportNoteCommands",
+                "IReportNoteQueries",
+                "IReportNoteStore",
                 "IReportOwnerLookup",
                 "IReportOwnerWriteAccess",
                 "IReportQueries",
@@ -117,6 +120,8 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "ReportCommands",
                 "ReportEdit",
                 "ReportMetricSeriesByOwner",
+                "ReportNoteCommands",
+                "ReportNoteQueries",
                 "ReportOwnerFacts",
                 "ReportOwnerLookup",
                 "ReportOwnerRow",
