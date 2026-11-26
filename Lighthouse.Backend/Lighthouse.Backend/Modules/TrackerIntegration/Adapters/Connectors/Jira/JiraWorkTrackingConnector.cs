@@ -2705,13 +2705,31 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira
             return new ChangelogReading(entries, reported);
         }
 
-        private void LogWhenTheReadingIsStillPartial(string issueKey, ChangelogReading reading, int totalInSearchAnswer)
+        // Each deployment reads the whole history its own way; what to do with the answer is decided here once.
+        private async Task<JsonElement> WithItsWholeHistory(
+            JsonElement jsonIssue, Func<string, Task<ChangelogReading>> readWholeHistory)
         {
-            var reported = Math.Max(reading.EntriesJiraReported ?? 0, totalInSearchAnswer);
-            if (reading.Entries.Count < reported)
+            var issueKey = jsonIssue.GetProperty(JiraFieldNames.KeyPropertyName).GetString() ?? string.Empty;
+
+            if (!ShouldFetchFullChangelog(jsonIssue, issueKey, out var totalChangelogs))
             {
-                logger.LogDebug("Issue {Key} still holds {Held} of {Total} changelog entries after the full read, so it is not dated from its whole history", issueKey, reading.Entries.Count, reported);
+                logger.LogDebug("Found Issue {Key} with {ChangelogCount} changelog entries from initial query", issueKey, totalChangelogs);
+                return jsonIssue;
             }
+
+            var reading = await readWholeHistory(issueKey);
+            var reported = reading.EntriesJiraReported ?? totalChangelogs;
+            logger.LogDebug("Found Issue {Key} with {ChangelogCount} complete changelog entries", issueKey, reading.Entries.Count);
+
+            // The merged changelog keeps the total Jira reported, so a read that is still partial leaves the
+            // issue marked as not holding its whole history.
+            var stillMissing = Math.Max(reported, totalChangelogs) > reading.Entries.Count;
+            if (stillMissing)
+            {
+                logger.LogDebug("Issue {Key} still holds {Held} of {Total} changelog entries after the full read, so it is dated from the partial history it holds", issueKey, reading.Entries.Count, Math.Max(reported, totalChangelogs));
+            }
+
+            return MergeChangelogIntoIssueJson(jsonIssue, reading.Entries, reported);
         }
 
         private async Task<IEnumerable<Issue>> GetIssuesByQueryFromDataCenter(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride, Func<IReadOnlyList<JsonElement>, Task<JiraOriginalNames>> namesCovering, CancellationToken cancellationToken)
@@ -2761,14 +2779,8 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira
 
                 foreach (var jsonIssue in page)
                 {
-                    var issueKey = jsonIssue.GetProperty(JiraFieldNames.KeyPropertyName).GetString() ?? string.Empty;
-                    var issueToProcess = jsonIssue;
-                    if (ShouldFetchFullChangelog(jsonIssue, issueKey, out var totalChangelogs))
-                    {
-                        var reading = await GetWholeChangelogFromDataCenter(client, issueKey, cancellationToken);
-                        issueToProcess = MergeChangelogIntoIssueJson(jsonIssue, reading.Entries, reading.EntriesJiraReported ?? totalChangelogs);
-                        LogWhenTheReadingIsStillPartial(issueKey, reading, totalChangelogs);
-                    }
+                    var issueToProcess = await WithItsWholeHistory(
+                        jsonIssue, issueKey => GetWholeChangelogFromDataCenter(client, issueKey, cancellationToken));
 
                     issues.Add(issueFactory.CreateIssueFromJson(issueToProcess, owner, originalNames, rankFieldName));
                 }
@@ -2943,20 +2955,8 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira
         private async Task<Issue> CreateIssueWithCompleteChangelog(
             HttpClient client, JsonElement jsonIssue, IWorkItemQueryOwner owner, string rankFieldName, JiraOriginalNames originalNames, CancellationToken cancellationToken)
         {
-            var issueKey = jsonIssue.GetProperty(JiraFieldNames.KeyPropertyName).GetString() ?? string.Empty;
-            var issueToProcess = jsonIssue;
-
-            if (ShouldFetchFullChangelog(jsonIssue, issueKey, out var totalChangelogs))
-            {
-                var reading = await GetAllChangelogEntriesForIssue(client, issueKey, cancellationToken);
-                issueToProcess = MergeChangelogIntoIssueJson(jsonIssue, reading.Entries, reading.EntriesJiraReported ?? totalChangelogs);
-                logger.LogDebug("Found Issue {Key} with {ChangelogCount} complete changelog entries", issueKey, reading.Entries.Count);
-                LogWhenTheReadingIsStillPartial(issueKey, reading, totalChangelogs);
-            }
-            else
-            {
-                logger.LogDebug("Found Issue {Key} with {ChangelogCount} changelog entries from initial query", issueKey, totalChangelogs);
-            }
+            var issueToProcess = await WithItsWholeHistory(
+                jsonIssue, issueKey => GetAllChangelogEntriesForIssue(client, issueKey, cancellationToken));
 
             return issueFactory.CreateIssueFromJson(issueToProcess, owner, originalNames, rankFieldName);
         }
