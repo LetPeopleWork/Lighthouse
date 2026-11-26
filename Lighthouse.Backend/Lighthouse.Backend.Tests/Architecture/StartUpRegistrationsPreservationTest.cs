@@ -352,7 +352,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             var registeredByTheBuilder = builder.Services.Count;
 
             StartUpMethod("RegisterServices", typeof(WebApplicationBuilder)).Invoke(null, [builder]);
-            StartUpMethod("RegisterReports", typeof(IServiceCollection)).Invoke(null, [builder.Services]);
 
             return [.. builder.Services
                 .Skip(registeredByTheBuilder)

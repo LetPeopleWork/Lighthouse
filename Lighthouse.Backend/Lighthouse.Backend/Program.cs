@@ -5,14 +5,15 @@ using Lighthouse.Backend.Modules.FlowMetrics;
 using Lighthouse.Backend.Modules.Forecasting;
 using Lighthouse.Backend.Modules.Licensing;
 using Lighthouse.Backend.Modules.Promises;
-using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Background;
+using Lighthouse.Backend.Modules.OrganisationSetup;
+using Lighthouse.Backend.Modules.Refinement;
+using Lighthouse.Backend.Modules.Reports;
+using Lighthouse.Backend.Modules.TrackerIntegration;
+using Lighthouse.Backend.Modules.WorkItems;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
 using Lighthouse.Backend.Modules.WorkItems.Application.Policies;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Factories;
-using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 using Lighthouse.Backend.Health;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.ConnectionHealth;
@@ -31,15 +32,6 @@ using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Modules.Forecasting.Application.Policies;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Implementation.Repositories;
-using Lighthouse.Backend.Modules.Reports.Domain;
-using Lighthouse.Backend.Modules.Reports.Application;
-using Lighthouse.Backend.Modules.Reports.Application.Metrics;
-using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Auth;
-using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.AzureDevOps;
-using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Linear;
-using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.OAuth;
-using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
-using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.ServiceNow;
 using Lighthouse.Backend.Platform.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Startup;
@@ -76,15 +68,10 @@ using Lighthouse.Backend.API.Swagger;
 using Lighthouse.Backend.API.Filters;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Modules.FlowMetrics.Application.Policies;
-using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
-using Lighthouse.Backend.Modules.WorkItems.Application;
-using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Modules.Promises.Application;
 using Lighthouse.Backend.Modules.Promises.Application.Policies;
 using Lighthouse.Backend.Platform.Host;
-using Lighthouse.Backend.Modules.OrganisationSetup.Application;
-using Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections;
 
 namespace Lighthouse.Backend
 {
@@ -114,7 +101,6 @@ namespace Lighthouse.Backend
                 Log.Information("Mode: {Mode}", isStandalone ? "Standalone (Tauri)" : "Server (ASP.NET Core)");
 
                 RegisterServices(builder);
-                RegisterReports(builder.Services);
 
                 if (!isStandalone)
                 {
@@ -126,7 +112,7 @@ namespace Lighthouse.Backend
 
                 var app = builder.Build();
 
-                EnsureOAuthProvidersRegistered(app);
+                TrackerIntegrationModule.EnsureOAuthProvidersRegistered(app);
 
                 ConfigureApp(app);
 
@@ -673,66 +659,6 @@ namespace Lighthouse.Backend
                 .BuildServiceProvider();
         }
 
-        private const string UseStubOAuthProviderConfigKey = "Lighthouse:OAuth:UseStubProvider";
-
-        private static void RegisterStubOAuthProviderIfEnabled(WebApplicationBuilder builder)
-        {
-            var useStub = builder.Configuration[UseStubOAuthProviderConfigKey];
-            if (!string.Equals(useStub, "true", StringComparison.OrdinalIgnoreCase))
-            {
-                return;
-            }
-
-            // Register the stub under its dedicated key so abstraction-honesty integration tests can
-            // exercise a brand-new IOAuthProvider via DI only.
-            builder.Services.AddSingleton<IOAuthProvider>(sp =>
-            {
-                var serviceConfig = sp.GetRequiredService<IServiceConfig>();
-                var timeProvider = sp.GetRequiredService<TimeProvider>();
-                return new StubOAuthProvider(serviceConfig, timeProvider, AuthenticationMethodKeys.StubOAuth);
-            });
-            builder.Services.AddSingleton<IOAuthSchemaExtensions>(
-                new OAuthSchemaExtensions(new[] { AuthenticationMethodKeys.StubOAuth }));
-
-            // Substitute the stub for every real *.oauth method declared in the schema so Playwright
-            // walking-skeleton scenarios can drive jira.oauth (and future ado.oauth) connections
-            // without contacting external identity providers.
-            var realOAuthKeys = AuthenticationMethodSchema.GetOAuthProviderKeys().ToList();
-            foreach (var key in realOAuthKeys)
-            {
-                builder.Services.AddSingleton<IOAuthProvider>(sp =>
-                    new StubOAuthProvider(
-                        sp.GetRequiredService<IServiceConfig>(),
-                        sp.GetRequiredService<TimeProvider>(),
-                        key));
-            }
-        }
-
-        private static void EnsureOAuthProvidersRegistered(WebApplication app)
-        {
-            var registry = app.Services.GetRequiredService<IOAuthProviderRegistry>();
-            var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("OAuthProvidersStartupCheck");
-
-            var extras = app.Services.GetService<IOAuthSchemaExtensions>()?.ExtraOAuthKeys
-                ?? Array.Empty<string>();
-            var missingKeys = AuthenticationMethodSchema.GetOAuthProviderKeys()
-                .Concat(extras)
-                .Where(key => !TryResolveProvider(registry, key))
-                .ToList();
-
-            if (missingKeys.Count == 0)
-            {
-                return;
-            }
-
-            var message =
-                "OAuth authentication methods declared in AuthenticationMethodSchema have no matching " +
-                $"IOAuthProvider registered: [{string.Join(", ", missingKeys)}]. " +
-                "Every '*.oauth' key in the schema must have a corresponding IOAuthProvider registration in DI.";
-            logger.LogCritical("{Message}", message);
-            throw new InvalidOperationException(message);
-        }
-
         private static async Task RunStartupOrphanedFeatureCleanupAsync(WebApplication app)
         {
             using var startupScope = app.Services.CreateScope();
@@ -747,19 +673,6 @@ namespace Lighthouse.Backend
 #pragma warning restore CA1031
             {
                 app.Logger.LogWarning(ex, "Startup orphaned-feature cleanup failed (non-fatal)");
-            }
-        }
-
-        private static bool TryResolveProvider(IOAuthProviderRegistry registry, string key)
-        {
-            try
-            {
-                _ = registry.GetByKey(key);
-                return true;
-            }
-            catch (OAuthProviderNotFoundException)
-            {
-                return false;
             }
         }
 
@@ -1321,31 +1234,6 @@ namespace Lighthouse.Backend
             return 60;
         }
 
-        private static void RegisterReports(IServiceCollection services)
-        {
-            services.AddScoped<ReportRepository>();
-            services.AddScoped<IReportReader>(provider => provider.GetRequiredService<ReportRepository>());
-            services.AddScoped<IReportWriter>(provider => provider.GetRequiredService<ReportRepository>());
-            services.AddScoped<IReportNoteStore>(provider => provider.GetRequiredService<ReportRepository>());
-            services.AddScoped<IReportNoteQueries, ReportNoteQueries>();
-            services.AddScoped<IReportNoteCommands, ReportNoteCommands>();
-            services.AddScoped<IReportOwnerLookup, ReportOwnerLookup>();
-            services.AddScoped<TeamReportMetricSeries>();
-            services.AddScoped<PortfolioReportMetricSeries>();
-            services.AddScoped<IReportMetricSeries, ReportMetricSeriesByOwner>();
-            services.AddScoped<IReportMetric, CycleTimeReportMetric>();
-            services.AddScoped<IReportMetric, ThroughputReportMetric>();
-            services.AddScoped<IReportMetric, WipReportMetric>();
-            services.AddScoped<IReportMetric, WorkItemAgeReportMetric>();
-            services.AddScoped<IReportMetric, ArrivalsReportMetric>();
-            services.AddScoped<ReportMetricCatalog>();
-            services.AddScoped<IReportTemplate, ThenAndNowTemplate>();
-            services.AddScoped<IReportQueries, ReportQueries>();
-            services.AddScoped<IReportCommands, ReportCommands>();
-            services.AddScoped<IReportBulkCommands, ReportBulkCommands>();
-            services.AddScoped<IReportBulkRemover, ReportBulkRemover>();
-        }
-
         private static void RegisterServices(WebApplicationBuilder builder)
         {
             // Repos
@@ -1380,80 +1268,33 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IEmbedSessionTokenRepository, EmbedSessionTokenRepository>();
 
             // Factories
-            builder.Services.AddScoped<IWorkTrackingConnectorFactory, WorkTrackingConnectorFactory>();
-            builder.Services.AddScoped<IIssueFactory, IssueFactory>();
-            builder.Services.AddScoped<IWorkTrackingSystemFactory, WorkTrackingSystemFactory>();
             builder.Services.AddScoped<IDemoDataFactory, DemoDataFactory>();
 
             // Services
             builder.Services.AddScoped<IConfigFileUpdater, ConfigFileUpdater>();
             builder.Services.AddAccess();
             builder.Services.AddScoped<IFileSystemService, FileSystemService>();
-            builder.Services.AddScoped<IWorkTrackingSystemConnectionUsage, WorkTrackingSystemConnectionUsage>();
-            builder.Services.AddScoped<IAppSettingService, AppSettingService>();
+            builder.Services.AddOrganisationSetup();
             builder.Services.AddScoped<ILighthouseReleaseService, LighthouseReleaseService>();
             builder.Services.AddScoped<IAssemblyService, AssemblyService>();
             builder.Services.AddSingleton<Lighthouse.Backend.Cache.Cache<string, object>>();
 
-            // Outlives any one pass, so it is a singleton, and it forgets an owner the moment that
-            // owner's items change - which is why it also stands as a handler for the two refresh
-            // events. Holding nothing a correct answer depends on, it can be lost at any time.
-            builder.Services.AddSingleton<ReconstructionMemo>();
-            builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, TeamDataRefreshedTeamMetricsUpdateHandler>();
-            builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>>(services => services.GetRequiredService<ReconstructionMemo>());
-            builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>>(services => services.GetRequiredService<ReconstructionMemo>());
-
-            builder.Services.AddScoped<Lighthouse.Backend.Modules.Refinement.Application.RefinementList>();
-            builder.Services.AddScoped<Lighthouse.Backend.Modules.Refinement.Application.SleYardstickResolver>();
-            builder.Services.AddScoped<Lighthouse.Backend.Modules.Refinement.Application.VoterIdentityResolver>();
-            builder.Services.AddScoped<Lighthouse.Backend.Modules.Refinement.Application.StageRuleMatcher>();
-            builder.Services.AddScoped<Lighthouse.Backend.Modules.Refinement.Application.IRefinementCalendar, Lighthouse.Backend.Modules.Refinement.Application.RefinementCalendar>();
-            builder.Services.AddScoped<Lighthouse.Backend.Modules.Refinement.Application.RefinementNeedCalculator>();
-            builder.Services.AddScoped<Lighthouse.Backend.Modules.Refinement.Application.IRefinementViewQuery, Lighthouse.Backend.Modules.Refinement.Application.RefinementViewQuery>();
-            builder.Services.AddScoped<Lighthouse.Backend.Modules.Refinement.Application.ISizingLogCommands, Lighthouse.Backend.Modules.Refinement.Application.SizingLogCommands>();
+            builder.Services.AddRefinement();
             builder.Services.AddScoped<ISizingLogRepository, SizingLogRepository>();
             builder.Services.AddScoped<IFeaturePositionMap, FeaturePositionMap>();
-            builder.Services.AddScoped<IFeatureOrderingPolicyProvider, FeatureOrderingPolicyProvider>();
-            builder.Services.AddScoped<IFeatureOrdering, FeatureOrdering>();
-            builder.Services.AddScoped<IDependencyReconciler, DependencyReconciler>();
-            builder.Services.AddScoped<IDependencyHonourPolicy, DependencyHonourPolicy>();
-            builder.Services.AddScoped<IDependencyDecision, DependencyDecision>();
-            builder.Services.AddScoped<IWhatTheForecastWaitsFor, WhatTheForecastWaitsFor>();
-            builder.Services.AddScoped<IDependencyRefreshReporter, DependencyRefreshReporter>();
-            builder.Services.AddScoped<IFeatureRankSeeder, FeatureRankSeeder>();
-            builder.Services.AddScoped<Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures.DefaultOptionalFeatureApplier>();
-            builder.Services.AddScoped<Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures.IOptionalFeatureApplier, Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures.FeatureOrderingApplier>();
-            builder.Services.AddScoped<Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures.OptionalFeatureApplierRegistry>();
-            builder.Services.AddScoped<IFeatureRankingService, FeatureRankingService>();
-            builder.Services.AddScoped<FeatureDependencyRendering>();
+            builder.Services.AddWorkItems();
             builder.Services.AddScoped<Lighthouse.Backend.API.FeatureListRows>();
             builder.Services.AddScoped<FeatureListActiveWork>();
             builder.Services.AddScoped<FeatureListOwners>();
             builder.Services.AddScoped<IFeatureListService, FeatureListService>();
-            builder.Services.AddScoped<ITeamDataService, TeamDataService>();
-            builder.Services.AddScoped<IWorkItemService, WorkItemService>();
-            builder.Services.AddScoped<ITerminologyService, TerminologyService>();
-            builder.Services.AddScoped<IBlackoutPeriodService, BlackoutPeriodService>();
-            builder.Services.AddScoped<IRecurringBlackoutRuleService, RecurringBlackoutRuleService>();
             builder.Services.AddLicensing();
-            builder.Services.AddScoped<IRefreshLogService, RefreshLogService>();
-            builder.Services.AddScoped<IConnectionSaveService, Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections.ConnectionSaveService>();
             builder.Services.AddScoped<Lighthouse.Backend.API.Helpers.OwnerSettingRefusals>();
             builder.Services.AddScoped<IDemoDataService, DemoDataService>();
             builder.Services.AddPromises();
             builder.Services.AddScoped<IDescriptionBlockMerger, DeliveryForecastBlockRenderer>();
-            builder.Services.AddScoped<IRuleEvaluator<WorkItem>, RuleEvaluator<WorkItem>>();
-            builder.Services.AddScoped<IRuleFieldProvider<WorkItem>, WorkItemFieldProvider>();
             builder.Services.AddScoped<IThroughputFilter>(sp => sp.GetRequiredService<ForecastFilterRuleService>());
             builder.Services.AddScoped<IForecastDataSufficiency>(sp => sp.GetRequiredService<ForecastingAnswersToFlowMetrics>());
             builder.Services.AddScoped<IHowManyForecaster>(sp => sp.GetRequiredService<ForecastingAnswersToFlowMetrics>());
-            builder.Services.AddScoped<IBlockedItemService, BlockedItemService>();
-
-            builder.Services.AddScoped<IAzureDevOpsWorkTrackingConnector, AzureDevOpsWorkTrackingConnector>();
-            builder.Services.AddScoped<IJiraWorkTrackingConnector, JiraWorkTrackingConnector>();
-            builder.Services.AddScoped<ILinearWorkTrackingConnector, LinearWorkTrackingConnector>();
-            builder.Services.AddScoped<CsvWorkTrackingConnector>();
-            builder.Services.AddScoped<IServiceNowWorkTrackingConnector, ServiceNowWorkTrackingConnector>();
 
             // Seeding Services - Register in order they should run
             builder.Services.AddScoped<ISeeder, AppSettingSeeder>();
@@ -1487,45 +1328,10 @@ namespace Lighthouse.Backend
             Log.Information("Instance calendar day is anchored on time zone {InstanceTimeZone}", instanceTimeZone.Id);
             builder.Services.AddSingleton<ILighthouseClock>(
                 sp => new LighthouseClock(instanceTimeZone, sp.GetRequiredService<TimeProvider>()));
-            builder.Services.AddSingleton<IOAuthStateTokenIssuer, OAuthStateTokenIssuer>();
-            builder.Services.AddSingleton<IOAuthProviderRegistry, OAuthProviderRegistry>();
-
-            var stubModeEnabled = string.Equals(
-                builder.Configuration[UseStubOAuthProviderConfigKey],
-                "true",
-                StringComparison.OrdinalIgnoreCase);
-
-            if (!stubModeEnabled)
-            {
-                builder.Services.AddSingleton<IOAuthProvider, JiraOAuthProvider>();
-                builder.Services.AddSingleton<IOAuthProvider, AdoOAuthProvider>();
-            }
-
-            RegisterStubOAuthProviderIfEnabled(builder);
-
+            builder.Services.AddTrackerIntegration(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddScoped<IRepository<OAuthCredential>, OAuthCredentialRepository>();
-            builder.Services.AddScoped<IOAuthService, OAuthService>();
-            builder.Services.AddScoped<ConnectionHealthCadence>();
-            // Registered as itself as well, because a pass over the stale connections resolves one of these
-            // per connection so that each gets a database context of its own. The interface then resolves
-            // to that same object, so a scope holds one health service rather than two.
-            builder.Services.AddScoped<ConnectionHealthService>();
-            builder.Services.AddScoped<IConnectionHealthService>(services => services.GetRequiredService<ConnectionHealthService>());
-
-            // Registered as itself as well as as the background job, for the same reason the usage-data
-            // services are: asking the stale connections at a moment of the caller's choosing is the only
-            // way a test can observe this at all, since a test host runs no background work.
-            builder.Services.AddSingleton<ConnectionHealthProber>();
-            builder.Services.AddHostedService(services => services.GetRequiredService<ConnectionHealthProber>());
-            builder.Services.AddScoped<PatAuthStrategy>();
-            builder.Services.AddScoped<JiraCloudBasicAuthStrategy>();
-            builder.Services.AddScoped<LinearApiKeyAuthStrategy>();
-            builder.Services.AddScoped<ServiceNowBasicAuthStrategy>();
-            builder.Services.AddScoped<NoOpAuthStrategy>();
-            builder.Services.AddScoped<OAuthBearerAuthStrategy>();
-            builder.Services.AddScoped<IWorkTrackingAuthStrategyFactory, WorkTrackingAuthStrategyFactory>();
             builder.Services.AddSingleton<IGitHubService, GitHubService>();
             builder.Services.AddSingleton<IRandomNumberService, RandomNumberService>();
 
@@ -1579,31 +1385,7 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<IUpdateQueueService, UpdateQueueService>();
 
             builder.Services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();
-            builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, PortfolioFeaturesRefreshedMetricsInvalidationHandler>();
-            builder.Services.AddScoped<IDomainEventHandler<BlackoutConfigurationChanged>, BlackoutConfigurationChangedMetricsInvalidationHandler>();
-            builder.Services.AddScoped<IDomainEventHandler<PortfolioForecastsUpdated>, DeliveryMetricSnapshotRecordingHandler>();
-            builder.Services.AddScoped<IDomainEventHandler<PortfolioForecastsUpdated>, DeliveryForecastPublishingHandler>();
-             builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, TeamDataRefreshedForecastTriggerHandler>();
-            builder.Services.AddScoped<IDomainEventHandler<FeatureOrderingPolicyChanged>, FeatureOrderingPolicyChangedForecastTriggerHandler>();
-            builder.Services.AddScoped<IDomainEventHandler<FeatureRankChanged>, FeatureRankChangedForecastTriggerHandler>();
-             builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, BlockedCountSnapshotRecordingHandler>();
-             builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, BlockedCountSnapshotRecordingHandler>();
-             builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, PercentilesOverTimeRecordingHandler>();
-             builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, PercentilesOverTimeRecordingHandler>();
-             builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, ProcessBehaviorRecordingHandler>();
-             builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, ProcessBehaviorRecordingHandler>();
-             builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, DemoBlockedHistoryBackfillHandler>();
-             builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, DemoBlockedHistoryBackfillHandler>();
-             builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, DemoPercentilesBackfillHandler>();
-             builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, DemoPercentilesBackfillHandler>();
-            builder.Services.AddScoped<IDomainEventHandler<TeamDeleted>, TeamDeletedRefreshLogCleanupHandler>();
-            builder.Services.AddScoped<IDomainEventHandler<TeamDeleted>, TeamDeletedForecastRetriggerHandler>();
-            builder.Services.AddScoped<IDomainEventHandler<PortfolioDeleted>, PortfolioDeletedOrphanedFeatureCleanupHandler>();
-            builder.Services.AddScoped<IDomainEventHandler<ConnectionFetchShapeChanged>, ConnectionFetchShapeChangedUpdateTriggerHandler>();
-            builder.Services.AddScoped<IDomainEventHandler<WorkItemBlocked>, WorkItemBlockedTransitionCaptureHandler>();
-            builder.Services.AddScoped<IDomainEventHandler<WorkItemUnblocked>, WorkItemBlockedTransitionCloseHandler>();
-            builder.Services.AddScoped<IDomainEventHandler<FeatureBlocked>, FeatureBlockedTransitionCaptureHandler>();
-            builder.Services.AddScoped<IDomainEventHandler<FeatureUnblocked>, FeatureBlockedTransitionCloseHandler>();
+            RegisterDomainEventHandlers(builder.Services);
 
             // Authentication
             builder.Services.Configure<AuthenticationConfiguration>(builder.Configuration.GetSection("Authentication"));
@@ -1617,6 +1399,44 @@ namespace Lighthouse.Backend
 
             DatabaseConfigurator.RegisterDatabaseManagementProvider(builder);
             builder.Services.AddSingleton<IDatabaseManagementService, DatabaseManagementService>();
+            builder.Services.AddReports();
+        }
+
+        private static void RegisterDomainEventHandlers(IServiceCollection services)
+        {
+            // Outlives any one pass, so it is a singleton, and it forgets an owner the moment that
+            // owner's items change - which is why it also stands as a handler for the two refresh
+            // events. Holding nothing a correct answer depends on, it can be lost at any time.
+            services.AddSingleton<ReconstructionMemo>();
+            services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, TeamDataRefreshedTeamMetricsUpdateHandler>();
+            services.AddScoped<IDomainEventHandler<TeamDataRefreshed>>(services => services.GetRequiredService<ReconstructionMemo>());
+            services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>>(services => services.GetRequiredService<ReconstructionMemo>());
+
+            services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, PortfolioFeaturesRefreshedMetricsInvalidationHandler>();
+            services.AddScoped<IDomainEventHandler<BlackoutConfigurationChanged>, BlackoutConfigurationChangedMetricsInvalidationHandler>();
+            services.AddScoped<IDomainEventHandler<PortfolioForecastsUpdated>, DeliveryMetricSnapshotRecordingHandler>();
+            services.AddScoped<IDomainEventHandler<PortfolioForecastsUpdated>, DeliveryForecastPublishingHandler>();
+             services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, TeamDataRefreshedForecastTriggerHandler>();
+            services.AddScoped<IDomainEventHandler<FeatureOrderingPolicyChanged>, FeatureOrderingPolicyChangedForecastTriggerHandler>();
+            services.AddScoped<IDomainEventHandler<FeatureRankChanged>, FeatureRankChangedForecastTriggerHandler>();
+             services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, BlockedCountSnapshotRecordingHandler>();
+             services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, BlockedCountSnapshotRecordingHandler>();
+             services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, PercentilesOverTimeRecordingHandler>();
+             services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, PercentilesOverTimeRecordingHandler>();
+             services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, ProcessBehaviorRecordingHandler>();
+             services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, ProcessBehaviorRecordingHandler>();
+             services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, DemoBlockedHistoryBackfillHandler>();
+             services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, DemoBlockedHistoryBackfillHandler>();
+             services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, DemoPercentilesBackfillHandler>();
+             services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, DemoPercentilesBackfillHandler>();
+            services.AddScoped<IDomainEventHandler<TeamDeleted>, TeamDeletedRefreshLogCleanupHandler>();
+            services.AddScoped<IDomainEventHandler<TeamDeleted>, TeamDeletedForecastRetriggerHandler>();
+            services.AddScoped<IDomainEventHandler<PortfolioDeleted>, PortfolioDeletedOrphanedFeatureCleanupHandler>();
+            services.AddScoped<IDomainEventHandler<ConnectionFetchShapeChanged>, ConnectionFetchShapeChangedUpdateTriggerHandler>();
+            services.AddScoped<IDomainEventHandler<WorkItemBlocked>, WorkItemBlockedTransitionCaptureHandler>();
+            services.AddScoped<IDomainEventHandler<WorkItemUnblocked>, WorkItemBlockedTransitionCloseHandler>();
+            services.AddScoped<IDomainEventHandler<FeatureBlocked>, FeatureBlockedTransitionCaptureHandler>();
+            services.AddScoped<IDomainEventHandler<FeatureUnblocked>, FeatureBlockedTransitionCloseHandler>();
         }
 
         private static void ConfigureDatabase(WebApplicationBuilder builder)
