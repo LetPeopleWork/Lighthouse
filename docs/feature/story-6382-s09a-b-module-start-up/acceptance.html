@@ -156,7 +156,222 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the composition-root rule over the compiled application for Flow metrics, Forecasting, Promises, Licensing and Access.
+</code></pre>
+
+<pre><code>Each of the five contexts has its own start-up module with one Add method extending the service collection. Only the composition root calls that method. The composition root registers or looks up no type of the context except two kinds, compared both ways: its domain-event handlers in the one ordered block, and the two services it looks up to set the host up (the forecast lane that the start-up banner reads, and the group writer of the identity-provider sign-in). Before the move, the rule fails for each context and names the missing module and every type that the composition root still registers.
+</code></pre>
+
+<pre><code>A maintainer sees for each context that its start-up lives in its own module and that the composition root only calls it.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest.cs</p>
+
+<p>EachOfTheFiveContexts_RegistersThroughTheAddMethodOfItsOwnModule; EachOfTheFiveContextsModules_IsStartedByTheCompositionRootAlone; TheCompositionRoot_RegistersNoTypeOfTheFiveContexts_ButTheirDomainEventHandlersAndWhatItLooksUpToSetTheHostUp</p>
+
+<pre><code>A context type registered through a non-generic overload with a typeof argument, or by reflection, stays in the composition root unseen; the review reads the diff for it.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the same check over a made-up composition root that registers a made-up context&#x27;s types itself: with Add, TryAdd and Configure, a registered generic type, a factory that looks a type up inside its lambda, a type of a context whose name begins alike, and a type outside the contexts.
+</code></pre>
+
+<pre><code>Every one of the made-up context&#x27;s types is reported by its full name, including the types a generic registration is built from and the type looked up inside the lambda; the lookalike context&#x27;s type and the type outside the contexts are not.
+</code></pre>
+
+<pre><code>A registration left in the composition root, whichever way it is written, is named to the maintainer by its full type name.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest.cs</p>
+
+<p>AMadeUpCompositionRootRegisteringAContextsTypes_IsReportedNamingEachType_ButNotATypeOfAContextWhoseNameBeginsAlike</p>
+
+<pre><code>A registration that passes the type with typeof to a non-generic overload is not read, so such a made-up registration would go unreported.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the module-caller check over made-up types: a made-up Beta module whose Add method starts the Alpha module, and a made-up type elsewhere that starts the Alpha module, beside the made-up composition root that calls it.
+</code></pre>
+
+<pre><code>Exactly the Beta module and the outsider are reported beside the composition root; Alpha&#x27;s own module and a composition root that does not call the module are not.
+</code></pre>
+
+<pre><code>A second caller of a context&#x27;s start-up, including another context&#x27;s module, is named.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest.cs</p>
+
+<p>AMadeUpModuleOrOtherTypeStartingAContextsModule_IsReportedBesideTheCompositionRoot</p>
+
+<pre><code>A caller that reaches the module only by reflection is not an IL reference and would not be reported.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run all three checks over a made-up composition root that starts the made-up Alpha context only through its module and registers one type outside the contexts.
+</code></pre>
+
+<pre><code>The Alpha module is accepted as well formed, the composition root is found calling it, and no Alpha type is reported as registered by the composition root.
+</code></pre>
+
+<pre><code>A context that starts only through its module passes, so the lists hold no entry nobody needs.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest.cs</p>
+
+<p>AMadeUpCompositionRootStartingAContextOnlyThroughItsModule_IsNotReported</p>
+
+<pre><code>A check that reports less than it should still passes here; the made-up offenders catch that.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Take each allowed entry of the five contexts off its list in turn; compare a made-up composition root with a listed entry it does not register; look for the module of made-up contexts that have none, whose module lacks its Add method, or whose module is not a static class.
+</code></pre>
+
+<pre><code>Each entry taken off is named in addition to what the full list leaves named, and nothing else changes; the unregistered listed entry is named as gone; each missing or malformed module is named with what is wrong with it.
+</code></pre>
+
+<pre><code>Every allowed entry is needed and the lists can only shrink; a malformed start-up module is refused with the reason.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest.cs</p>
+
+<p>AnAllowedEntryOfTheCompositionRoot_IsNamedOnceItIsTakenOffTheList; AnAllowedEntryAMadeUpCompositionRootDoesNotRegister_IsReportedAsGone; AMadeUpContextWithoutAWellFormedStartUpModule_IsReported</p>
+
+<pre><code>A module whose Add method has the right shape but registers nothing passes these checks; the preservation test catches the missing registrations.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the domain-event handlers per event from the start-up registrations after the move.
+</code></pre>
+
+<pre><code>The seven pinned events keep their handlers in the written-out order, with the pin file unchanged.
+</code></pre>
+
+<pre><code>Every reaction to a refresh, a deletion or a forecast update runs in the same order as before.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs</p>
+
+<p>DomainEventHandlerOrderPinTest</p>
+
+<pre><code>Handlers of events outside the seven pinned ones could be reordered unseen; this slice moves no handler line.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read every type of the ten contexts the composition root names at all, after the last move.
+</code></pre>
+
+<pre><code>Only start-up modules, handler-block entries, order-kept registrations and the measured host set-up types are named; a made-up root naming another type is reported; the listed contexts equal the packaged contexts.
+</code></pre>
+
+<pre><code>The composition root names the contexts only through their modules.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>This is the third slice&#x27;s rule over all ten contexts, written from this slice&#x27;s measure of the names the composition root still uses; its RED depends on the second slice&#x27;s moves.
+</code></pre>
+
+<p>acceptance designer of the third slice of this feature</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Build the start-up service collection without a host before and after the move, and compare per service type the ordered lifetime, key and implementation; plant probes: two background-service lines swapped, one lifetime changed, one line dropped.
+</code></pre>
+
+<pre><code>Before and after the move the container equals the baseline written out on the pre-move revision; each probe fails naming the service type it changed.
+</code></pre>
+
+<pre><code>The application starts with exactly the services, lifetimes and order it had before the move.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StartUpRegistrationsPreservationTest.cs</p>
+
+<p>StartUpRegistrationsPreservationTest (craft target: the crafter&#x27;s first commit on the pre-move revision, green there before any line moves)</p>
+
+<pre><code>Registrations under branches the Testing environment does not take (stub sign-in off, Redis set), and two factories asking the same services with different constants, are not told apart; the slice review reads those lines for byte equality.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
 
 <h2>Expectations</h2>
 
