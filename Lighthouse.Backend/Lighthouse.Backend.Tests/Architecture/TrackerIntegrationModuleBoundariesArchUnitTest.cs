@@ -43,6 +43,11 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string TheCompositionRootAndItsNestedTypes = @"^Lighthouse\.Backend\.Program(\+|$)";
 
+        // Tracker integration starts itself up, so its own start-up module is the one type outside its layers that may reach its adapters.
+        private const string TheTrackerIntegrationStartUp = "Lighthouse.Backend.Modules.TrackerIntegration.TrackerIntegrationModule";
+
+        private const string BelowTheTrackerIntegrationStartUp = @"^Lighthouse\.Backend\.Modules\.TrackerIntegration\.";
+
         private const string EntityFrameworkCore = @"^Microsoft\.EntityFrameworkCore(\.|$)";
 
         private const string AnyModuleAdapters = @"^Lighthouse\.Backend\.Modules\.[^.]+\.Adapters(\.|$)";
@@ -471,7 +476,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                     listed => ApplicationInboundRule(module, listed, TrackerIntegrationModule, TrackerIntegrationApplication, TrackerIntegrationLegalCallers, TheCompositionRootAndItsNestedTypes, ModuleRules.AnyNamespace),
                     OtherOutsideTypesReachingTheApplication),
                 ListedRule.OutsideTypesReachingTheAdapters => Inbound(
-                    listed => AdaptersInboundRule(module, ModuleRules.TheCompositionRoot, listed, TrackerIntegrationModule, TrackerIntegrationAdapters, ModuleRules.AnyNamespace),
+                    listed => AdaptersInboundRule(module, TheTrackerIntegrationStartUp, listed, BelowTheTrackerIntegrationStartUp, TrackerIntegrationAdapters, ModuleRules.AnyNamespace),
                     OtherOutsideTypesReachingTheAdapters),
                 ListedRule.ApplicationEdgesBelowItIntoAdaptersOrThePlatform => Outbound(
                     listed => ApplicationOutboundRule(module, TrackerIntegrationApplication, TrackerIntegrationAdapters, listed), EdgesOfTheApplicationBelowItIntoAdaptersOrThePlatform),

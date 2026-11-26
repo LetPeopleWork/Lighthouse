@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(BaseMetricsService).Assembly));
 
-        private static readonly Lazy<List<string>> ReportsTypesInTheCode = new(() => ReportsTypesAmong(ProductionModule.Value.Types.Select(type => type.FullName)));
+        private static readonly Lazy<List<string>> ReportsTypesInTheCode = new(() => WhenTheReportsTypesAreCollectedFrom(ProductionModule.Value));
 
         private static readonly Lazy<HashSet<string>> InterfacesInTheCode = new(() => ProductionModule.Value.Types.Where(type => type.IsInterface).Select(type => type.FullName).ToHashSet(StringComparer.Ordinal));
 
@@ -77,6 +77,24 @@ namespace Lighthouse.Backend.Tests.Architecture
             var found = ReportsTypesInTheCode.Value;
 
             ThenTheyMatchTheMap(found, ReportsMembership.MovingTypes);
+        }
+
+        [Test]
+        public void TheReportsModuleRootTypes_AreExactlyTheModuleRootList()
+        {
+            var atTheModuleRoot = ProductionModule.Value.Types
+                .Where(type => type.Namespace == ReportsType.NewRootNamespace && !type.Name.StartsWith('<'))
+                .Select(type => type.Name)
+                .ToList();
+
+            Assert.That(atTheModuleRoot, Is.Not.Empty,
+                $"No type lives at the module root {ReportsType.NewRootNamespace}, so the module-root list is checked against nothing. "
+                + "Why it matters: the map sets these types aside, and a check that finds none guards nothing. "
+                + "How to fix: the Reports module's start-up lives at the module root; find where it went.");
+            InlineBaseline.AssertMatches(atTheModuleRoot, ReportsMembership.ModuleRoot,
+                $"The types at the module root {ReportsType.NewRootNamespace}, in no layer, are exactly ReportsMembership.ModuleRoot. "
+                + "Only the module's own start-up lives there; any other type belongs in a layer, on MovingTypes. "
+                + "Put a new start-up type on ModuleRoot, move any other type into its layer, and take a name the code no longer holds off the list.");
         }
 
         [Test]
@@ -392,6 +410,11 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(failure, Does.Contain("Lighthouse.EndToEndTests/perf/helpers/a-made-up-log-override.ts").And.Not.Contain("collect.ts"),
                 $"A file the target scan must read, missing from the repository, was not named, or a file that exists was. Without the file the scan would find no target and pass without having looked. The failure was: {failure}");
         }
+
+        // The module's own start-up lives at the module root, in no layer, so the map of moving types leaves it out.
+        private static List<string> WhenTheReportsTypesAreCollectedFrom(ModuleDefinition module)
+            => [.. ReportsTypesAmong(module.Types.Select(type => type.FullName))
+                .Except(ReportsMembership.ModuleRoot.Select(entry => ReportsType.NewRootNamespace + "." + entry), StringComparer.Ordinal)];
 
         private static List<string> ReportsTypesAmong(IEnumerable<string> fullNames)
             => [.. fullNames.Select(OuterTypeOf)

@@ -66,6 +66,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string OnTheApiWire = "The API sends it, so moving it would change the wire format";
 
+        public static IReadOnlyList<string> ModuleRoot { get; } = ["RefinementModule"];
+
         public static IReadOnlyList<RefinementType> MovingTypes { get; } =
         [
             .. File(ImplementationNamespace, RefinementLayer.Domain, "NeedBand.cs", "NeedBand"),

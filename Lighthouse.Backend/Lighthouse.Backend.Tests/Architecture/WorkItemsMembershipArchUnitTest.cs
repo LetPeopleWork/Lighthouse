@@ -21,6 +21,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly string[] Moves =
         [
+            "WorkItemsModule",
             "WorkItemService", "IWorkItemService", "BlockedItemService", "IBlockedItemService", "SyncModeResolver", "FetchFingerprint",
             "TeamDataService", "ITeamDataService",
             "RuleEvaluator", "IRuleEvaluator", "IRuleFieldProvider", "WorkItemFieldProvider", "FeatureFieldProvider",

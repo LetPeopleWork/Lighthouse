@@ -110,6 +110,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "ServiceNowWorkTrackingOptionNames",
             "StandingLink",
             "StubOAuthProvider",
+            "TrackerIntegrationModule",
             "WorkItemCategoryCrossing",
             "WorkItemExtensions",
             "WorkItemStateTransitionMapper",

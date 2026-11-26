@@ -95,6 +95,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["TrackerIntegrationApplicationLayoutArchUnitTest.AnImplementationNamespace"] = PatternDeclaration.Context(Namespace, WholeContextOrMore),
             ["TrackerIntegrationApplicationLayoutArchUnitTest.TheWholeAssembly"] = PatternDeclaration.Context(Namespace, WholeContextOrMore),
             ["TrackerIntegrationMembershipArchUnitTest.TrackerIntegrationNamespaces"] = PatternDeclaration.Context(Namespace, WholeContextOrMore),
+            ["TrackerIntegrationModuleBoundariesArchUnitTest.BelowTheTrackerIntegrationStartUp"] = PatternDeclaration.Context(Namespace, WholeContextOrMore),
             ["TrackerIntegrationModuleBoundariesArchUnitTest.OtherContexts"] = PatternDeclaration.Context(Namespace, WholeContextOrMore),
             ["TrackerIntegrationModuleBoundariesArchUnitTest.OtherModules"] = PatternDeclaration.Context(Namespace, WholeContextOrMore),
             ["TrackerIntegrationModuleBoundariesArchUnitTest.RefinementReportsAccessAndLicensing"] = PatternDeclaration.Context(Namespace, WholeContextOrMore),

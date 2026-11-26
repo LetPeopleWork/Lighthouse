@@ -74,6 +74,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string ReturnedThroughTheApi = "The Reports ports return it and the API sends it, so moving it would change the wire format";
 
+        public static IReadOnlyList<string> ModuleRoot { get; } = ["ReportsModule"];
+
         public static IReadOnlyList<ReportsType> MovingTypes { get; } =
         [
             .. File(ImplementationNamespace, ReportsLayer.Domain, "ReportCapPolicy.cs", "ReportCapPolicy"),

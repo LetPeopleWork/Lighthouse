@@ -128,7 +128,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string[] OutsideTypesReachingTheDomain =
         [
             "Lighthouse.Backend.API.Helpers.WorkTrackingSystemOptionsOwnerExtensions",
-            "Lighthouse.Backend.Program",
             "Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections.ConnectionSaveService",
         ];
 

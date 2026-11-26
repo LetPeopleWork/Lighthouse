@@ -77,6 +77,24 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
+        public void TheRefinementModuleRootTypes_AreExactlyTheModuleRootList()
+        {
+            var atTheModuleRoot = ProductionModule.Value.Types
+                .Where(type => type.Namespace == RefinementType.NewRootNamespace && !type.Name.StartsWith('<'))
+                .Select(type => type.Name)
+                .ToList();
+
+            Assert.That(atTheModuleRoot, Is.Not.Empty,
+                $"No type lives at the module root {RefinementType.NewRootNamespace}, so the module-root list is checked against nothing. "
+                + "Why it matters: the map sets these types aside, and a check that finds none guards nothing. "
+                + "How to fix: the Refinement module's start-up lives at the module root; find where it went.");
+            InlineBaseline.AssertMatches(atTheModuleRoot, RefinementMembership.ModuleRoot,
+                $"The types at the module root {RefinementType.NewRootNamespace}, in no layer, are exactly RefinementMembership.ModuleRoot. "
+                + "Only the module's own start-up lives there; any other type belongs in a layer, on MovingTypes. "
+                + "Put a new start-up type on ModuleRoot, move any other type into its layer, and take a name the code no longer holds off the list.");
+        }
+
+        [Test]
         public void AMapWithOneTypeLeftOff_NamesThatTypeAsNotOnTheMap()
         {
             var leftOff = MovingTypeNamed("RefinementNeedCalculator");
@@ -376,8 +394,10 @@ namespace Lighthouse.Backend.Tests.Architecture
                 $"A file the target scan must read, missing from the repository, was not named, or a file that exists was. Without the file the scan would find no target and pass without having looked. The failure was: {failure}");
         }
 
+        // The module's own start-up lives at the module root, in no layer, so the map of moving types leaves it out.
         private static List<string> WhenTheRefinementTypesAreCollectedFrom(ModuleDefinition module)
-            => RefinementTypesAmong(module.Types.Select(type => type.FullName));
+            => [.. RefinementTypesAmong(module.Types.Select(type => type.FullName))
+                .Except(RefinementMembership.ModuleRoot.Select(entry => RefinementType.NewRootNamespace + "." + entry), StringComparer.Ordinal)];
 
         private static List<string> RefinementTypesAmong(IEnumerable<string> fullNames)
             => [.. fullNames.Select(OuterTypeOf)
