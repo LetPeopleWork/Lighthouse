@@ -204,7 +204,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h4>D9</h4>
 
-<pre><code>Own-context root (maintainer decision 2026-11-26): a context&#x27;s own &lt;X&gt;Module (Lighthouse.Backend.Modules.&lt;X&gt;.&lt;X&gt;Module) counts as the composition root, but only for the rules about its own context: adapters reached only by the composition root, only the composition root creates the forecast threads, and the membership lists, which gain the &lt;X&gt;Module entry. It is never a composition root for another context: a registration statement that names types of two contexts (one context&#x27;s type built from, or registered as, another context&#x27;s service) stays in Program as cross-context wiring, so no new cross-context edge appears and feature A&#x27;s 73-edge R-C1 list and its surface rows stay unchanged. Rule edits are the narrowest that express this: an exact &lt;X&gt;Module full name or file path, never a namespace-wide exemption, and no rule or list is loosened across contexts; each edit is proven by a reverted probe recorded as a craft command. The preservation pin StartUpRegistrationsPreservationTest.cs names types by today&#x27;s full names on purpose and is exempt, by its exact file name, from the old-name sweep of ContextContractsMembershipArchUnitTest; the exemption lands in the pin&#x27;s own first commit and leaves with the pin at S3. Feature A&#x27;s oracle files and the boundary and membership tests these edits touch are declared targets of the slice whose move makes them fail; ModuleRules.cs and ContextContractsArchUnitTest.cs need no edit, because every production call site passes the root and the set-aside namespaces as arguments and the cross-context lines stay in Program. Pattern used for both-ways adapter rules: composition root = the exact &lt;X&gt;Module full name, set-aside namespaces = the context&#x27;s namespaces below its root (^Lighthouse\.Backend\.Modules\.&lt;X&gt;\.), so &lt;X&gt;Module is the one outside reacher and Program reaching the adapters fails. A new set-aside pattern constant (BelowThe&lt;X&gt;StartUp = ^Lighthouse\.Backend\.Modules\.&lt;X&gt;\.) is a rule pattern that sees published and round types, so the pattern-role laws require it declared with the role its whole-context sibling already has: in ContextContractsPatternRoles PatternDeclaration.Context(Namespace, WholeContextOrMore), in WriteBackPatternRoles PatternDeclaration.Context(Namespace, SeesForecasting). Declaring it is what the laws demand and loosens nothing.
+<pre><code>Own-context root (maintainer decision 2026-11-26): a context&#x27;s own &lt;X&gt;Module (Lighthouse.Backend.Modules.&lt;X&gt;.&lt;X&gt;Module) counts as the composition root, but only for the rules about its own context: adapters reached only by the composition root, only the composition root creates the forecast threads, and the membership lists, which gain the &lt;X&gt;Module entry. It is never a composition root for another context: a registration statement that names types of two contexts (one context&#x27;s type built from, or registered as, another context&#x27;s service) stays in Program as cross-context wiring, so no new cross-context edge appears and feature A&#x27;s 73-edge R-C1 list and its surface rows stay unchanged. Rule edits are the narrowest that express this: an exact &lt;X&gt;Module full name or file path, never a namespace-wide exemption, and no rule or list is loosened across contexts; each edit is proven by a reverted probe recorded as a craft command. The preservation pin StartUpRegistrationsPreservationTest.cs names types by today&#x27;s full names on purpose and is exempt, by its exact file name, from the old-name sweep of ContextContractsMembershipArchUnitTest; the exemption lands in the pin&#x27;s own first commit and leaves with the pin at S3. Feature A&#x27;s oracle files and the boundary and membership tests these edits touch are declared targets of the slice whose move makes them fail; ModuleRules.cs and ContextContractsArchUnitTest.cs need no edit, because every production call site passes the root and the set-aside namespaces as arguments and the cross-context lines stay in Program. Pattern used for both-ways adapter rules: composition root = the exact &lt;X&gt;Module full name, set-aside namespaces = the context&#x27;s namespaces below its root (^Lighthouse\.Backend\.Modules\.&lt;X&gt;\.), so &lt;X&gt;Module is the one outside reacher and Program reaching the adapters fails. A new set-aside pattern constant (BelowThe&lt;X&gt;StartUp = ^Lighthouse\.Backend\.Modules\.&lt;X&gt;\.) is a rule pattern that sees published and round types, so the pattern-role laws require it declared with the role its whole-context sibling already has: in ContextContractsPatternRoles PatternDeclaration.Context(Namespace, WholeContextOrMore), in WriteBackPatternRoles PatternDeclaration.Context(Namespace, SeesForecasting). Declaring it is what the laws demand and loosens nothing. A membership map whose entries are moving types with a layer (RefinementMembership, ReportsMembership) takes the &lt;X&gt;Module on its TypesThatStay list, since the module root is no layer and the type never moved: the exact name, namespace Lighthouse.Backend.Modules.&lt;X&gt;, owner the module&#x27;s start-up. A private helper follows its only caller into &lt;X&gt;Module (host decision: TryResolveProvider moved with EnsureOAuthProvidersRegistered into TrackerIntegrationModule, so S3 has no TryResolveProvider stray).
 </code></pre>
 
 <h3>Constraints</h3>
@@ -258,13 +258,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Keeps name and signature (the seam both pins reflect on); its context lines move out and it calls Add&lt;X&gt; and RegisterDomainEventHandlers instead.
 </code></pre>
 
-<p>RegisterReports</p>
+<p>AddReports</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:1327</p>
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/ReportsModule.cs:9</p>
 
 <p>Replace</p>
 
-<pre><code>The only per-context registrar today; folded into ReportsModule.AddReports in S2 (D-9).
+<pre><code>Program.RegisterReports, the only per-context registrar before S2, is folded into ReportsModule.AddReports (D-9).
 </code></pre>
 
 <p>AddUsageDataPublishing</p>
@@ -1459,14 +1459,14 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;TestCateg
 
 <p>Extend</p>
 
-<pre><code>Gains RefinementModule at the module root in the file&#x27;s existing shape, if the S2 run names it; a shape with no place for a root type returns to the architect.
+<pre><code>TypesThatStay gains new RefinementTypeThatStays(&quot;RefinementModule&quot;, &quot;Lighthouse.Backend.Modules.Refinement&quot;, &quot;The Refinement module&#x27;s start-up&quot;, &quot;It is the module&#x27;s own composition root and lives at the module root, in no layer, so it does not move&quot;). MovingTypes is unchanged: its entries need a layer and an old namespace. The real-map test and its self-tests then name only the types they plant.
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs</p>
 
 <p>Extend</p>
 
-<pre><code>Gains ReportsModule at the module root in the file&#x27;s existing shape, if the S2 run names it; a shape with no place for a root type returns to the architect.
+<pre><code>TypesThatStay gains new ReportsTypeThatStays(&quot;ReportsModule&quot;, &quot;Lighthouse.Backend.Modules.Reports&quot;, &quot;The Reports module&#x27;s start-up&quot;, &quot;It is the module&#x27;s own composition root and lives at the module root, in no layer, so it does not move&quot;). MovingTypes is unchanged: its entries need a layer and an old namespace. The real-map test and its self-tests then name only the types they plant.
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs</p>
@@ -1481,6 +1481,27 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;TestCateg
 <p>Extend</p>
 
 <pre><code>The production adapters rule takes root &quot;Lighthouse.Backend.Modules.TrackerIntegration.TrackerIntegrationModule&quot; and set-aside namespaces ^Lighthouse\.Backend\.Modules\.TrackerIntegration\. instead of ModuleRules.TheCompositionRoot; its OtherOutsideTypesReachingTheAdapters list is unchanged.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Only_the_composition_root_names_the_report_repository also exempts the exact type Lighthouse.Backend.Modules.Reports.ReportsModule (a second exact full-name pattern, ^Lighthouse\.Backend\.Modules\.Reports\.ReportsModule$, beside CompositionRootPattern), which now registers ReportRepository and its two forwards; no other type is exempted.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsPatternRoles.cs</p>
+
+<p>Extend</p>
+
+<pre><code>If the role law names it: &quot;TrackerIntegrationModuleBoundariesArchUnitTest.BelowTheTrackerIntegrationStartUp&quot; (or the name the crafter gives the ^Lighthouse\.Backend\.Modules\.TrackerIntegration\. set-aside) = PatternDeclaration.Context(Namespace, WholeContextOrMore), and likewise for any other new BelowThe&lt;X&gt;StartUp pattern.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackPatternRoles.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Only if the round law names it: the new TrackerIntegration set-aside declared with the role its TrackerIntegration whole-context sibling has in this file; nothing else.
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest.cs</p>
@@ -1650,6 +1671,33 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;TestCateg
 <pre><code>Existing rule or list owns this own-context fact; extended by one exact entry or argument, no new rule.
 </code></pre>
 
+<p>CompositionRootPattern</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs:36</p>
+
+<p>Extend</p>
+
+<pre><code>Existing rule or role map owns this; one exact entry, own-context root.
+</code></pre>
+
+<p>PatternRoles</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsPatternRoles.cs:23</p>
+
+<p>Extend</p>
+
+<pre><code>Existing rule or role map owns this; one exact entry, own-context root.
+</code></pre>
+
+<p>PatternRoles</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackPatternRoles.cs:20</p>
+
+<p>Extend</p>
+
+<pre><code>Existing rule or role map owns this; one exact entry, own-context root.
+</code></pre>
+
 <h5>Impact</h5>
 
 <p>production</p>
@@ -1758,6 +1806,33 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;TestCateg
 <p>Changed</p>
 
 <pre><code>Own-context root for the S2 contexts, by the S1 treatment; edited only if the S2 Architecture run names the &lt;X&gt;Module or a stale Program entry.
+</code></pre>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Own-context root for Reports or Tracker integration; loosens nothing across contexts.
+</code></pre>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsPatternRoles.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Own-context root for Reports or Tracker integration; loosens nothing across contexts.
+</code></pre>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackPatternRoles.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Own-context root for Reports or Tracker integration; loosens nothing across contexts.
 </code></pre>
 
 <h5>Agreement</h5>
