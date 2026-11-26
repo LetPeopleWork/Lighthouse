@@ -15,7 +15,7 @@
 "test": "EachOfTheFiveContexts_RegistersThroughTheAddMethodOfItsOwnModule; EachOfTheFiveContextsModules_IsStartedByTheCompositionRootAlone; TheCompositionRoot_RegistersNoTypeOfTheFiveContexts_ButTheirDomainEventHandlersAndWhatItLooksUpToSetTheHostUp",
 "test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest.cs"
 },
-"expected": "F203",
+"expected": "F247",
 "stimulus": "F171",
 "user_result": "F173"
 },
@@ -170,6 +170,23 @@
 "expected": "F218",
 "stimulus": "F217",
 "user_result": "F219"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F70"
+],
+"still_passes_if": "F251",
+"test": "AMadeUpCrossContextWiringLine_PassesWhileListed_AndIsNamedOnceItIsTakenOffTheList",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest.cs"
+},
+"expected": "F249",
+"stimulus": "F248",
+"user_result": "F250"
 }
 ]
 },
@@ -178,7 +195,7 @@
 "C": 1,
 "D": 9,
 "E": 3,
-"F": 246,
+"F": 251,
 "K": 4,
 "L": 4,
 "P": 3,
@@ -1371,7 +1388,6 @@
 "F200": "Before and after the move the container equals the baseline written out on the pre-move revision; each probe fails naming the service type it changed.",
 "F201": "The application starts with exactly the services, lifetimes and order it had before the move.",
 "F202": "Registrations under branches the Testing environment does not take (stub sign-in off, Redis set), and two factories asking the same services with different constants, are not told apart; the slice review reads those lines for byte equality.",
-"F203": "Each of the five contexts has its own start-up module with one Add method that extends the service collection, and only the composition root calls that method. Registrations and lookups are compared, each with its own list and both ways. The composition root may register only the context's domain-event handlers of the one ordered block. It may look up only what that block forwards to and the two services it needs to set the host up: the forecast lane that the start-up banner reads, and the group writer that the identity-provider sign-in calls. Before the move, the rule fails for each context. The failure names the missing module and every type that the composition root still registers or looks up.",
 "F204": "A context type that the composition root reaches only by reflection on a type name string stays unseen. The review reads the diff for it.",
 "F205": "Run the same check over a made-up composition root that registers a made-up context's types itself in every form: Add, TryAdd and Configure; a hosted service; a typed HTTP client with its message handler; a typed client of a named HTTP client; a keyed service; typeof through a non-generic overload; a generic service descriptor and a descriptor built with typeof; a registered generic type; and a factory that looks a type up inside its lambda. The root also registers a type of a context whose name begins alike, and a type outside the contexts.",
 "F206": "Every registered type of the made-up context is reported by its full name. The type looked up inside the lambda is reported as a lookup, not as a registration. The lookalike context's type and the type outside the contexts are not reported.",
@@ -1418,7 +1434,12 @@
 "F244": "The production adapters rule takes root \"Lighthouse.Backend.Modules.TrackerIntegration.TrackerIntegrationModule\" and set-aside namespaces ^Lighthouse\\.Backend\\.Modules\\.TrackerIntegration\\. instead of ModuleRules.TheCompositionRoot; its OtherOutsideTypesReachingTheAdapters list is unchanged.",
 "F245": "Own-context root for the S2 contexts, by the S1 treatment; edited only if the S2 Architecture run names the <X>Module or a stale Program entry.",
 "F246": "Per file: Program.cs holds one type (Program); the five <X>Module.cs are new, one type each; StartUpRegistrationsPreservationTest.cs holds one test class, one line changes; TrackerIntegrationMembership.cs holds one type; RefinementMembership.cs, ReportsMembership.cs and OrganisationSetupMembership.cs hold the membership class with the record and enum types its lists are made of, which change together; WorkItemsMembershipArchUnitTest.cs, TrackerIntegrationModuleBoundariesArchUnitTest.cs and WorkItemsModuleBoundariesArchUnitTest.cs hold their fixture class and the made-up offenders the rule reads from the IL; no move is possible in this slice because only the narrowest edit to these approved oracles of closed Stories is allowed.",
+"F247": "Each of the five contexts has its own start-up module with one Add method that extends the service collection, and only the composition root calls it. Registrations and lookups are compared, each with its own list and both ways. The composition root may register only two kinds of the context's types: its domain-event handlers of the one ordered block, and the cross-context wiring it keeps. That wiring is a statement that names types of two contexts: for Flow metrics, the throughput filter, the data-sufficiency and how-many forecaster services; for Promises, the block renderer. The composition root may look up only three kinds of the context's types: what the handler block forwards to, the two services it needs to set the host up (the forecast lane and the identity-provider group writer), and the cross-context wiring's Forecasting types (the forecast filter rule service and the Forecasting answers to Flow metrics). Before the move, the rule fails for each context. The failure names the missing module and every type that is still registered or looked up.",
+"F248": "Run the check over a made-up composition root that keeps one statement registering a made-up context's service built from a type of another made-up context, first with that registration listed, then with it taken off the list.",
+"F249": "While the registration is listed, nothing is reported. Once it is taken off, exactly that registration is reported, and the other context's looked-up type is not counted for the first context.",
 "F25": "No input bound applies: no stored or validated input is added or changed; the ten contexts are the inline ten of ADR-270 Decision 1 (R-C3).",
+"F250": "Cross-context wiring stays in the composition root only by name, and an unlisted statement is named.",
+"F251": "A statement listed as cross-context wiring that in fact names only one context still passes. The slice review checks each listed statement against its line.",
 "F26": "Its seam (CreateBuilder Testing, RegisterServices by reflection) is the pin seam; the pin copies the seam into its own file instead of editing the approved order pin, whose file stays unchanged through B.",
 "F27": "Stays the permanent handler-order pin, unchanged; green after every slice.",
 "F28": "Keeps name and signature (the seam both pins reflect on); its context lines move out and it calls Add<X> and RegisterDomainEventHandlers instead.",

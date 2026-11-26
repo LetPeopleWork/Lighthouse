@@ -46,6 +46,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string ARootStartingAlphaThroughItsModule = TheMadeUpRoot + ".Roots.ARootStartingAlphaThroughItsModule";
 
+        private const string ARootKeepingCrossContextWiring = TheMadeUpRoot + ".Roots.ARootKeepingCrossContextWiring";
+
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(LighthouseAppContext).Assembly));
 
         private static readonly Lazy<ModuleDefinition> TestModule = new(() => IlDependencies.ReadModule(typeof(CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest).Assembly));
@@ -97,10 +99,39 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Promises"] = [],
         };
 
+        // A statement that builds one context's service from another context's type, or registers it as the other context's
+        // service, names two contexts; no context's own module may name another context, so the statement stays here.
+        private static Dictionary<string, IReadOnlyList<string>> RegisteredByCrossContextWiring => new(StringComparer.Ordinal)
+        {
+            ["Access"] = [],
+            ["FlowMetrics"] =
+            [
+                $"{TheModulesRoot}.FlowMetrics.Application.IForecastDataSufficiency",
+                $"{TheModulesRoot}.FlowMetrics.Application.IHowManyForecaster",
+                $"{TheModulesRoot}.FlowMetrics.Application.IThroughputFilter",
+            ],
+            ["Forecasting"] = [],
+            ["Licensing"] = [],
+            ["Promises"] = [$"{TheModulesRoot}.Promises.Application.DeliveryForecastBlockRenderer"],
+        };
+
+        private static Dictionary<string, IReadOnlyList<string>> LookedUpByCrossContextWiring => new(StringComparer.Ordinal)
+        {
+            ["Access"] = [],
+            ["FlowMetrics"] = [],
+            ["Forecasting"] =
+            [
+                $"{TheModulesRoot}.Forecasting.Application.ForecastFilterRuleService",
+                $"{TheModulesRoot}.Forecasting.Application.ForecastingAnswersToFlowMetrics",
+            ],
+            ["Licensing"] = [],
+            ["Promises"] = [],
+        };
+
         private static IEnumerable<TestCaseData> EveryAllowedEntry
             => TheFiveContexts.SelectMany(context =>
-                RegisteredByTheHandlerBlock[context].Select(entry => new TestCaseData(context, Registered, entry))
-                    .Concat(LookedUpByTheHandlerBlockAndToSetTheHostUp[context].Select(entry => new TestCaseData(context, LookedUp, entry))));
+                MayRegister(context).Select(entry => new TestCaseData(context, Registered, entry))
+                    .Concat(MayLookUp(context).Select(entry => new TestCaseData(context, LookedUp, entry))));
 
         [OneTimeTearDown]
         public void DisposeModules()
@@ -130,7 +161,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [TestCaseSource(nameof(TheFiveContexts))]
         public void TheCompositionRoot_RegistersNoTypeOfTheFiveContexts_ButTheirDomainEventHandlersAndWhatItLooksUpToSetTheHostUp(string context)
         {
-            var verdict = WhenTheCompositionRootIsComparedWithTheLists(ProductionModule.Value, TheCompositionRoot, TheModulesRoot, context, RegisteredByTheHandlerBlock[context], LookedUpByTheHandlerBlockAndToSetTheHostUp[context]);
+            var verdict = WhenTheCompositionRootIsComparedWithTheLists(ProductionModule.Value, TheCompositionRoot, TheModulesRoot, context, MayRegister(context), MayLookUp(context));
 
             ThenTheCompositionRootRegistersAndLooksUpOnlyTheListed(verdict, TheCompositionRoot, context);
         }
@@ -138,8 +169,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         [TestCaseSource(nameof(EveryAllowedEntry))]
         public void AnAllowedEntryOfTheCompositionRoot_IsNamedOnceItIsTakenOffItsList(string context, string list, string entry)
         {
-            var registeredList = RegisteredByTheHandlerBlock[context];
-            var lookedUpList = LookedUpByTheHandlerBlockAndToSetTheHostUp[context];
+            var registeredList = MayRegister(context);
+            var lookedUpList = MayLookUp(context);
             var full = WhenTheCompositionRootIsComparedWithTheLists(ProductionModule.Value, TheCompositionRoot, TheModulesRoot, context, registeredList, lookedUpList);
 
             var withoutTheEntry = WhenTheCompositionRootIsComparedWithTheLists(
@@ -183,6 +214,17 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
+        public void AMadeUpCrossContextWiringLine_PassesWhileListed_AndIsNamedOnceItIsTakenOffTheList()
+        {
+            var crossContextRegistration = $"{TheMadeUpAlpha}.IAlphaService";
+
+            var listed = WhenTheCompositionRootIsComparedWithTheLists(TestModule.Value, ARootKeepingCrossContextWiring, TheMadeUpModulesRoot, "Alpha", [crossContextRegistration], []);
+            var takenOff = WhenTheCompositionRootIsComparedWithTheLists(TestModule.Value, ARootKeepingCrossContextWiring, TheMadeUpModulesRoot, "Alpha", [], []);
+
+            ThenTheCrossContextLineIsNamedOnlyOnceTakenOff(listed, takenOff, crossContextRegistration);
+        }
+
+        [Test]
         public void AnAllowedEntryAMadeUpCompositionRootDoesNotRegisterOrLookUp_IsReportedAsGone()
         {
             var goneRegistration = $"{TheMadeUpAlpha}.AGoneHandler";
@@ -220,6 +262,10 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             ThenTheModuleProblemIsNamed(problem, context, expectedProblem);
         }
+
+        private static IReadOnlyList<string> MayRegister(string context) => [.. RegisteredByTheHandlerBlock[context], .. RegisteredByCrossContextWiring[context]];
+
+        private static IReadOnlyList<string> MayLookUp(string context) => [.. LookedUpByTheHandlerBlockAndToSetTheHostUp[context], .. LookedUpByCrossContextWiring[context]];
 
         private static string ContextPattern(string modulesRoot, string context) => $"^{Regex.Escape(modulesRoot)}\\.{context}(\\.|$)";
 
@@ -413,6 +459,21 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
         }
 
+        private static void ThenTheCrossContextLineIsNamedOnlyOnceTakenOff(CompositionRootVerdict listed, CompositionRootVerdict takenOff, string crossContextRegistration)
+        {
+            ThenNothingIsNamed(listed, "a made-up composition root keeping one statement that registers an Alpha service built from an AlphaPlus type, with that registration listed");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(takenOff.UnlistedRegistrations, Is.EqualTo(new[] { crossContextRegistration }),
+                    $"With the cross-context line's registration taken off the list, the check named {Listed(takenOff.UnlistedRegistrations)} as registered and not listed. Expected exactly {crossContextRegistration}. " +
+                    "Why it matters: cross-context wiring kept in the composition root is an exception by name, so a line nobody listed must be named. " +
+                    "How to fix: compare the cross-context entries with the registrations like every other entry.");
+                Assert.That(takenOff.UnlistedLookups.Concat(takenOff.GoneRegistrations).Concat(takenOff.GoneLookups), Is.Empty,
+                    "Taking the registration off the list named a lookup or a gone entry of Alpha. Why it matters: the line looks up a type of another context, which is not Alpha's. How to fix: match the context by its whole name.");
+            }
+        }
+
         private static void ThenNothingIsNamed(CompositionRootVerdict verdict, string subject)
         {
             Assert.That(verdict.UnlistedRegistrations.Concat(verdict.UnlistedLookups).Concat(verdict.GoneRegistrations).Concat(verdict.GoneLookups), Is.Empty,
@@ -571,6 +632,11 @@ namespace Lighthouse.Backend.Tests.Architecture.CompositionRootFixtures.Modules.
     {
         public int Serve(int days) => days + 5;
     }
+
+    public sealed class AlphaPlusAnswersToAlpha : Alpha.Application.IAlphaService
+    {
+        public int Serve(int days) => days + 14;
+    }
 }
 
 namespace Lighthouse.Backend.Tests.Architecture.CompositionRootFixtures.Modules.Beta
@@ -689,6 +755,12 @@ namespace Lighthouse.Backend.Tests.Architecture.CompositionRootFixtures.Roots
     public static class ARootOnlyLookingUpAHostSetUpType
     {
         public static int Print(IServiceProvider provider) => provider.GetRequiredService<AlphaBanner>().Threads;
+    }
+
+    public static class ARootKeepingCrossContextWiring
+    {
+        public static void Compose(IServiceCollection services)
+            => services.AddScoped<IAlphaService>(provider => provider.GetRequiredService<AlphaPlusAnswersToAlpha>());
     }
 
     public static class ARootStartingAlphaThroughItsModule

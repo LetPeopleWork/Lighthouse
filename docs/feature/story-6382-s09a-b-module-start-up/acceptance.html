@@ -165,7 +165,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Run the composition-root rule over the compiled application for Flow metrics, Forecasting, Promises, Licensing and Access.
 </code></pre>
 
-<pre><code>Each of the five contexts has its own start-up module with one Add method that extends the service collection, and only the composition root calls that method. Registrations and lookups are compared, each with its own list and both ways. The composition root may register only the context&#x27;s domain-event handlers of the one ordered block. It may look up only what that block forwards to and the two services it needs to set the host up: the forecast lane that the start-up banner reads, and the group writer that the identity-provider sign-in calls. Before the move, the rule fails for each context. The failure names the missing module and every type that the composition root still registers or looks up.
+<pre><code>Each of the five contexts has its own start-up module with one Add method that extends the service collection, and only the composition root calls it. Registrations and lookups are compared, each with its own list and both ways. The composition root may register only two kinds of the context&#x27;s types: its domain-event handlers of the one ordered block, and the cross-context wiring it keeps. That wiring is a statement that names types of two contexts: for Flow metrics, the throughput filter, the data-sufficiency and how-many forecaster services; for Promises, the block renderer. The composition root may look up only three kinds of the context&#x27;s types: what the handler block forwards to, the two services it needs to set the host up (the forecast lane and the identity-provider group writer), and the cross-context wiring&#x27;s Forecasting types (the forecast filter rule service and the Forecasting answers to Flow metrics). Before the move, the rule fails for each context. The failure names the missing module and every type that is still registered or looked up.
 </code></pre>
 
 <pre><code>A maintainer sees for each context that its start-up lives in its own module and that the composition root only calls it.
@@ -422,6 +422,33 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>AMadeUpCompositionRootLookingUpAContextsTypes_IsReportedNamingEachTypeForEveryWayOfLookingUp</p>
 
 <pre><code>A non-generic lookup that passes the type with typeof is read as a registration, not a lookup. It is still reported, but on the registration side.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the check over a made-up composition root that keeps one statement registering a made-up context&#x27;s service built from a type of another made-up context, first with that registration listed, then with it taken off the list.
+</code></pre>
+
+<pre><code>While the registration is listed, nothing is reported. Once it is taken off, exactly that registration is reported, and the other context&#x27;s looked-up type is not counted for the first context.
+</code></pre>
+
+<pre><code>Cross-context wiring stays in the composition root only by name, and an unlisted statement is named.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest.cs</p>
+
+<p>AMadeUpCrossContextWiringLine_PassesWhileListed_AndIsNamedOnceItIsTakenOffTheList</p>
+
+<pre><code>A statement listed as cross-context wiring that in fact names only one context still passes. The slice review checks each listed statement against its line.
 </code></pre>
 
 <h6>Obligations</h6>
