@@ -127,7 +127,7 @@ Lighthouse\.Frontend\/src\/components\/Common\/Charts\/TotalWorkItemAgeRunChart\
 skips a work item with no start date and still totals the others
 
 ```text
-The chart totals every item but treats a missing start date as age zero in the total while still counting it in the item count would fail: the count would read 3, not 2. Only a chart that left the item out of the total but kept it in the count is not caught beyond that count check
+An item with no start date is left out of both the total and the item count; a chart that counts it fails on a count of 3, not 2.
 ```
 
 ###### Obligations
