@@ -57,6 +57,18 @@ export interface IReportService {
 		reportId: number,
 		text: string,
 	): Promise<IReportNote>;
+	/** Answers the changed note. */
+	updateNote(
+		owner: IReportOwner,
+		reportId: number,
+		noteId: number,
+		text: string,
+	): Promise<IReportNote>;
+	deleteNote(
+		owner: IReportOwner,
+		reportId: number,
+		noteId: number,
+	): Promise<void>;
 }
 
 const reportsOf = (owner: IReportOwner): string =>
@@ -190,5 +202,22 @@ export class ReportService extends BaseApiService implements IReportService {
 			);
 			return BaseApiService.parse(ReportNoteSchema, response.data);
 		});
+	}
+
+	public updateNote(
+		_owner: IReportOwner,
+		_reportId: number,
+		_noteId: number,
+		_text: string,
+	): Promise<IReportNote> {
+		return Promise.reject(new Error("Changing a note is not available yet."));
+	}
+
+	public deleteNote(
+		_owner: IReportOwner,
+		_reportId: number,
+		_noteId: number,
+	): Promise<void> {
+		return Promise.reject(new Error("Deleting a note is not available yet."));
 	}
 }

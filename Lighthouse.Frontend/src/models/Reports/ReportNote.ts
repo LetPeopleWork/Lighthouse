@@ -9,6 +9,7 @@ export interface IReportNote {
 	lastEditedAt?: string | null;
 	lastEditedOn?: string | null;
 	authorDisplayName?: string | null;
+	canModify?: boolean;
 }
 
 export const ReportNoteSchema: z.ZodType<IReportNote> = z.object({
@@ -19,6 +20,7 @@ export const ReportNoteSchema: z.ZodType<IReportNote> = z.object({
 	lastEditedAt: z.string().nullish(),
 	lastEditedOn: z.string().nullish(),
 	authorDisplayName: z.string().nullish(),
+	canModify: z.boolean().optional(),
 });
 
 export const ReportNotesSchema = z.array(ReportNoteSchema);

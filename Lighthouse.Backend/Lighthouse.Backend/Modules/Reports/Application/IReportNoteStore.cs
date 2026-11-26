@@ -11,5 +11,11 @@ namespace Lighthouse.Backend.Modules.Reports.Application
         void Add(ReportNote note);
 
         Task Save();
+
+        ReportNote? FindForEdit(ReportOwner owner, int reportId, int noteId);
+
+        void Remove(ReportNote note);
+
+        Task<bool> TrySave();
     }
 }

@@ -6,5 +6,7 @@ namespace Lighthouse.Backend.Modules.Reports.Application
     public interface IReportNoteQueries
     {
         ReportOutcome<IReadOnlyList<ReportNoteRead>> List(ReportOwner owner, int reportId);
+
+        ReportOutcome<IReadOnlyList<ReportNoteRead>> List(ReportOwner owner, int reportId, ReportNoteCaller caller);
     }
 }

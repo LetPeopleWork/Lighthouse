@@ -20,6 +20,12 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         Task IReportNoteStore.Save() => context.SaveChangesAsync();
 
+        ReportNote? IReportNoteStore.FindForEdit(ReportOwner owner, int reportId, int noteId) => throw new NotImplementedException();
+
+        void IReportNoteStore.Remove(ReportNote note) => throw new NotImplementedException();
+
+        Task<bool> IReportNoteStore.TrySave() => throw new NotImplementedException();
+
         public Report? GetForOwner(ReportOwner owner, int reportId)
             => OwnedBy(owner).AsNoTracking().SingleOrDefault(report => report.Id == reportId);
 

@@ -56,6 +56,14 @@ namespace Lighthouse.Backend.API
             return Refusal(added);
         }
 
+#pragma warning disable S2325 // Skeleton: the bodies use the commands and the clock once they are written, in the change that wires them.
+        protected Task<ActionResult<ReportNoteDto>> EditNote(ReportOwner owner, int reportId, int noteId, ReportNoteRequest request)
+            => throw new NotImplementedException();
+
+        protected Task<IActionResult> DeleteNote(ReportOwner owner, int reportId, int noteId)
+            => throw new NotImplementedException();
+#pragma warning restore S2325
+
         private async Task<ReportNoteCaller> CallerOfRequest()
         {
             var mode = AuthModes.Resolve().Mode;

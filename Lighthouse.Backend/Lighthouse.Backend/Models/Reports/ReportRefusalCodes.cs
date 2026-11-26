@@ -47,6 +47,8 @@ namespace Lighthouse.Backend.Models.Reports
 
         public const string NoteAuthorUnknown = "note-author-unknown";
 
+        public const string NoteNotYours = "note-not-yours";
+
         /// <summary>Not a refusal: a report removed before the run reached it, answered as removed but never counted as this run's deletion.</summary>
         public const string AlreadyGone = "already-gone";
 

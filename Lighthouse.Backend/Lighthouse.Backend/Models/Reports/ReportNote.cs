@@ -18,6 +18,12 @@ namespace Lighthouse.Backend.Models.Reports
 
         public string? AuthorDisplayName { get; set; }
 
+#pragma warning disable S2325 // Skeleton: the bodies read this note's own state once they are written, in the change that wires them.
+        public bool MayBeChangedBy(int? callerProfileId) => throw new NotImplementedException();
+
+        public ReportOutcome<ReportNote> Revise(string? rawText, DateTime editedAt) => throw new NotImplementedException();
+#pragma warning restore S2325
+
         public static ReportOutcome<ReportNote> Write(int reportId, string? rawText, int? signedByProfileId, string? signerDisplayName, DateTime createdAt)
         {
             var text = rawText?.Trim() ?? string.Empty;

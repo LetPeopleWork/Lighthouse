@@ -20,6 +20,8 @@ namespace Lighthouse.Backend.API.DTO.Reports
 
         public string? AuthorDisplayName { get; set; }
 
+        public bool CanModify { get; set; }
+
         public static ReportNoteDto From(ReportNoteRead note, ILighthouseClock clock)
         {
             return new ReportNoteDto
@@ -31,6 +33,7 @@ namespace Lighthouse.Backend.API.DTO.Reports
                 LastEditedAt = note.LastEditedAt,
                 LastEditedOn = note.LastEditedAt.HasValue ? clock.ToInstanceDay(note.LastEditedAt.Value) : null,
                 AuthorDisplayName = note.AuthorDisplayName,
+                CanModify = note.CanModify,
             };
         }
     }

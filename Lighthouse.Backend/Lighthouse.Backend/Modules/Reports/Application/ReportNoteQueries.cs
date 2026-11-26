@@ -22,5 +22,8 @@ namespace Lighthouse.Backend.Modules.Reports.Application
 
             return ReportOutcome<IReadOnlyList<ReportNoteRead>>.Done(notes);
         }
+
+        public ReportOutcome<IReadOnlyList<ReportNoteRead>> List(ReportOwner owner, int reportId, ReportNoteCaller caller)
+            => throw new NotImplementedException();
     }
 }

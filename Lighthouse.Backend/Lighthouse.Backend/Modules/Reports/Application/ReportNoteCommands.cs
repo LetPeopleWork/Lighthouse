@@ -31,5 +31,11 @@ namespace Lighthouse.Backend.Modules.Reports.Application
 
             return ReportOutcome<ReportNoteRead>.Done(ReportNoteRead.Of(note));
         }
+
+        public Task<ReportOutcome<ReportNoteRead>> Edit(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller, string? text, DateTime now)
+            => throw new NotImplementedException();
+
+        public Task<ReportOutcome<ReportNoteRead>> Delete(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller)
+            => throw new NotImplementedException();
     }
 }
