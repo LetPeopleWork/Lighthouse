@@ -70,11 +70,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             // Feature order and rank are Organisation set-up's rules, not a promise; they are placed with that context.
         ];
 
-        // Words that once put a source file into Promises: the Delivery word, and the write-back and ordering names the
-        // Promises scope first held. The update code carries none of them and stays in its own folders.
+        // The word that puts a source file into Promises. The update code does not carry it and stays in its own folders.
         private static readonly string[] PromisesWordsInATypeName = ["Deliver"];
-
-        private static readonly string[] PromisesTypeNamePrefixes = ["WriteBack", "IWriteBack"];
 
         private static readonly Lazy<List<string>> TestSourcePaths = new(() => ReadSourcePaths(TestProjectDirectory, ThisFile));
 
@@ -126,7 +123,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             const string aMovedTypeLeftBehind = "Services/Implementation/DeliveryRuleService.cs";
             const string aNewcomerInTheOldSourcesFolder = "Services/Interfaces/DeliverySources/IAMadeUpSource.cs";
             const string aNewcomerNamedAfterDeliveries = "Services/Implementation/DomainEvents/AMadeUpDeliveryHandler.cs";
-            const string aNewcomerOfTheWriteBackRound = "Services/Interfaces/IWriteBackMadeUp.cs";
             const string aModuleFile = $"{ModuleFolder}/Application/DeliveryRuleService.cs";
             const string aKernelModel = "Models/Delivery.cs";
             const string anUpdater = "Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs";
@@ -134,8 +130,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             yield return new TestCaseData(everyException.Append(aMovedTypeLeftBehind).ToArray(), new[] { aMovedTypeLeftBehind }).SetArgDisplayNames("a moved type left under Services");
             yield return new TestCaseData(everyException.Append(aNewcomerInTheOldSourcesFolder).ToArray(), new[] { aNewcomerInTheOldSourcesFolder }).SetArgDisplayNames("a newcomer in the old sources folder");
-            yield return new TestCaseData(everyException.Append(aNewcomerNamedAfterDeliveries).Append(aNewcomerOfTheWriteBackRound).ToArray(), new[] { aNewcomerNamedAfterDeliveries, aNewcomerOfTheWriteBackRound })
-                .SetArgDisplayNames("a Delivery newcomer and a write-back newcomer under Services");
+            yield return new TestCaseData(everyException.Append(aNewcomerNamedAfterDeliveries).ToArray(), new[] { aNewcomerNamedAfterDeliveries })
+                .SetArgDisplayNames("a Delivery newcomer under Services");
             yield return new TestCaseData(everyException.Skip(1).ToArray(), new[] { everyException[0] }).SetArgDisplayNames("a named exception that is gone");
             yield return new TestCaseData(everyException.Concat([aModuleFile, aKernelModel, anUpdater, aFolderWithASimilarName]).ToArray(), Array.Empty<string>())
                 .SetArgDisplayNames("the named exceptions, the module, the kernel models and the update code only");
@@ -388,8 +384,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static bool CarriesAPromisesName(string typeName, HashSet<string> promisesTypes)
             => promisesTypes.Contains(typeName)
-               || PromisesWordsInATypeName.Any(word => typeName.Contains(word, StringComparison.Ordinal))
-               || PromisesTypeNamePrefixes.Any(prefix => typeName.StartsWith(prefix, StringComparison.Ordinal));
+               || PromisesWordsInATypeName.Any(word => typeName.Contains(word, StringComparison.Ordinal));
 
         private static bool IsInsideAny(string path, IEnumerable<string> folders)
             => folders.Any(folder => path.StartsWith($"{folder}/", StringComparison.Ordinal));

@@ -36,9 +36,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public const string AnyNamespace = "^";
 
-        // The write-back round shares the loose Services namespaces with types that stay there, so until it has moved its old
-        // places are named type by type; its new place is a namespace of its own.
-        public const string TheWriteBackRound = @"^Lighthouse\.Backend\.Services\.Implementation\.(WriteBackCollector|WriteBackRound|WriteBackRoundContext|WriteBackService|WriteBackTriggerService)$|^Lighthouse\.Backend\.Services\.Interfaces\.(IWriteBackCollector|IWriteBackService|IWriteBackTriggerService)$|^Lighthouse\.Backend\.Modules\.Forecasting\.Application\.WriteBack\.";
+        public const string TheWriteBackRound = @"^Lighthouse\.Backend\.Modules\.Forecasting\.Application\.WriteBack(\.|$)";
 
         private static readonly TimeSpan PatternTimeout = TimeSpan.FromSeconds(1);
 

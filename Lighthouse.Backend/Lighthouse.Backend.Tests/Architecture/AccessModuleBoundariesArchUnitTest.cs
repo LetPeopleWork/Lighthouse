@@ -150,19 +150,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         [
         ];
 
-        // The write-back round has no namespace of its own, so its types are named one by one.
-        private static readonly string[] TheWriteBackRound =
-        [
-            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackCollector",
-            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackRound",
-            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackRoundContext",
-            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackService",
-            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackTriggerService",
-            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.IWriteBackCollector",
-            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.IWriteBackService",
-            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.IWriteBackTriggerService",
-        ];
-
         private static readonly string TheLayersBelowTheApplicationAndThePlatform =
             $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{AnyModuleAdapters})|(?:{ThePlatform})";
 
@@ -431,8 +418,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static bool IsAnotherContext(TypeReference type, string roundPattern)
             => ModuleBoundaryChecks.IsATypeIn(type, TheOtherContexts)
-                || ModuleRules.IsARoundType(type, roundPattern)
-                || (type.DeclaringType is null && TheWriteBackRound.Contains(type.FullName, StringComparer.Ordinal));
+                || ModuleRules.IsARoundType(type, roundPattern);
 
         private static bool IsMatch(string typeName, string pattern) => Regex.IsMatch(typeName, pattern, RegexOptions.None, PatternTimeout);
 
