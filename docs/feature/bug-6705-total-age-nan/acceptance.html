@@ -342,7 +342,33 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h3>Waivers</h3>
 
-<p>None.</p>
+<h4>E1</h4>
+
+<pre><code>Benjamin Huser-Berta (maintainer)
+</code></pre>
+
+<pre><code>2026-11-26T17:49:03Z
+</code></pre>
+
+<pre><code>No admitted public probe shows a work item&#x27;s start date from the API; decided 2026-11-26
+</code></pre>
+
+<pre><code>WorkItemDtoTests oracle (RED before the fix, GREEN after); maintainer checks the real app after the push
+</code></pre>
+
+<h4>E2</h4>
+
+<pre><code>Benjamin Huser-Berta (maintainer)
+</code></pre>
+
+<pre><code>2026-11-26T17:49:09Z
+</code></pre>
+
+<pre><code>No admitted public probe renders the Total Work Item Age Over Time chart; decided 2026-11-26
+</code></pre>
+
+<pre><code>TotalWorkItemAgeRunChart and totalAgeOfStartedItems oracles (RED before the fix, GREEN after); maintainer checks the real app after the push
+</code></pre>
 
 <h2>Charter</h2>
 
@@ -350,6 +376,66 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Examination</h2>
 
-<p>None.</p>
+<h3>E1</h3>
+
+<p>unmet</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe nwdes --help was refused (ProbeRefused, exit 2). Admitted console scripts: architecture-rules, ef-model-unchanged, metrics-answers-compare, forecast-answers-compare, forecast-triggers-show, refresh-answers-compare, refresh-reactions-show, refresh-reactions-compare, deliveries-answers-compare, access-answers-compare, platform-answers-compare, workitems-edge-show, backend-tests, connector-throws-count, frontend-tests, feature-proof, linux-appimage, ci-live-suites-show, ci-auth-suites-show, test-selection-show, deliveries-answers-selftest, access-answers-selftest, platform-answers-selftest. No admitted name is a user-facing stimulus for a work item start date or the Total Work Item Age Over Time chart.
+</code></pre>
+
+<pre><code>Probe workitems-edge-show (exit 0, 99 tests, 99 passed) covers only: Team refresh reaction order and failure handling (E1), Work Items module ArchUnit boundary rules and Flow metrics list (E2), and Work Items unit test folder placement (E3). Its described scope contains no work item DTO StartedDate assertion and no Total Work Item Age Over Time chart render. It is a candidate test run, so it is not recorded as a user-observable stimulus for P1 or P2.
+</code></pre>
+
+<pre><code>Probe metrics-answers-compare --help exited 128 with fatal: Needed a single revision. No output, no stimulus, no response. The probe yielded no observed behaviour for P1 or P2.
+</code></pre>
+
+<p>observation_gap</p>
+
+<h4>Waiver</h4>
+
+<pre><code>Benjamin Huser-Berta (maintainer)
+</code></pre>
+
+<pre><code>2026-11-26T17:49:03Z
+</code></pre>
+
+<pre><code>No admitted public probe shows a work item&#x27;s start date from the API; decided 2026-11-26
+</code></pre>
+
+<pre><code>WorkItemDtoTests oracle (RED before the fix, GREEN after); maintainer checks the real app after the push
+</code></pre>
+
+<h3>E2</h3>
+
+<p>unmet</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe nwdes --help was refused (ProbeRefused, exit 2). Admitted console scripts: architecture-rules, ef-model-unchanged, metrics-answers-compare, forecast-answers-compare, forecast-triggers-show, refresh-answers-compare, refresh-reactions-show, refresh-reactions-compare, deliveries-answers-compare, access-answers-compare, platform-answers-compare, workitems-edge-show, backend-tests, connector-throws-count, frontend-tests, feature-proof, linux-appimage, ci-live-suites-show, ci-auth-suites-show, test-selection-show, deliveries-answers-selftest, access-answers-selftest, platform-answers-selftest. No admitted name is a user-facing stimulus for a work item start date or the Total Work Item Age Over Time chart.
+</code></pre>
+
+<pre><code>Probe workitems-edge-show (exit 0, 99 tests, 99 passed) covers only: Team refresh reaction order and failure handling (E1), Work Items module ArchUnit boundary rules and Flow metrics list (E2), and Work Items unit test folder placement (E3). Its described scope contains no work item DTO StartedDate assertion and no Total Work Item Age Over Time chart render. It is a candidate test run, so it is not recorded as a user-observable stimulus for P1 or P2.
+</code></pre>
+
+<pre><code>Probe metrics-answers-compare --help exited 128 with fatal: Needed a single revision. No output, no stimulus, no response. The probe yielded no observed behaviour for P1 or P2.
+</code></pre>
+
+<p>observation_gap</p>
+
+<h4>Waiver</h4>
+
+<pre><code>Benjamin Huser-Berta (maintainer)
+</code></pre>
+
+<pre><code>2026-11-26T17:49:09Z
+</code></pre>
+
+<pre><code>No admitted public probe renders the Total Work Item Age Over Time chart; decided 2026-11-26
+</code></pre>
+
+<pre><code>TotalWorkItemAgeRunChart and totalAgeOfStartedItems oracles (RED before the fix, GREEN after); maintainer checks the real app after the push
+</code></pre>
 
 </body></html>

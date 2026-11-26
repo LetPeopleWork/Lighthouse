@@ -77,7 +77,7 @@
 },
 "counters": {
 "E": 2,
-"F": 43,
+"F": 53,
 "P": 2,
 "S": 2
 },
@@ -129,6 +129,38 @@
 }
 }
 },
+"examination": {
+"E1": {
+"class": "observation_gap",
+"observations": [
+"F51",
+"F52",
+"F53"
+],
+"verdict": "unmet",
+"waiver": {
+"by": "F44",
+"coverage": "F47",
+"reason": "F46",
+"waived_at": "F45"
+}
+},
+"E2": {
+"class": "observation_gap",
+"observations": [
+"F51",
+"F52",
+"F53"
+],
+"verdict": "unmet",
+"waiver": {
+"by": "F44",
+"coverage": "F50",
+"reason": "F49",
+"waived_at": "F48"
+}
+}
+},
 "expectations": {
 "rows": [
 {
@@ -151,7 +183,21 @@
 ],
 "text": "F20"
 }
-]
+],
+"waivers": {
+"E1": {
+"by": "F44",
+"coverage": "F47",
+"reason": "F46",
+"waived_at": "F45"
+},
+"E2": {
+"by": "F44",
+"coverage": "F50",
+"reason": "F49",
+"waived_at": "F48"
+}
+}
 },
 "facts": {
 "F1": "Bug #6705 (reported by Gunnar R. Fischer on Slack): for one team, 'Work Items Total Work Item Age Over Time' shows nothing. The tooltip reads 'NaN days total (40 items) - Click for details'; the details list the right items. Cause found: an in-progress item with no start date is counted in progress from its created date by the server, but the client gets startedDate = null and sums NaN. Maintainer decision: the server sends the fallback start date for such an item (the frontend should not care), and if a start date can still be null, the frontend handles it gracefully.",
@@ -187,7 +233,17 @@
 "F41": "The day's total and item count in the chart cover only items that have a start date, and never read NaN",
 "F42": "A function that skips only null but lets an undefined start date through, or returns NaN or an empty result instead of 0 over 0 for a day with no started item; the four tests in this file separate those",
 "F43": "An item with no start date is left out of both the total and the item count; a chart that counts it fails on a count of 3, not 2.",
+"F44": "Benjamin Huser-Berta (maintainer)",
+"F45": "2026-11-26T17:49:03Z",
+"F46": "No admitted public probe shows a work item's start date from the API; decided 2026-11-26",
+"F47": "WorkItemDtoTests oracle (RED before the fix, GREEN after); maintainer checks the real app after the push",
+"F48": "2026-11-26T17:49:09Z",
+"F49": "No admitted public probe renders the Total Work Item Age Over Time chart; decided 2026-11-26",
 "F5": "Build the work item DTO for an item in a Doing state whose StartedDate is null and whose CreatedDate is set",
+"F50": "TotalWorkItemAgeRunChart and totalAgeOfStartedItems oracles (RED before the fix, GREEN after); maintainer checks the real app after the push",
+"F51": "Probe nwdes --help was refused (ProbeRefused, exit 2). Admitted console scripts: architecture-rules, ef-model-unchanged, metrics-answers-compare, forecast-answers-compare, forecast-triggers-show, refresh-answers-compare, refresh-reactions-show, refresh-reactions-compare, deliveries-answers-compare, access-answers-compare, platform-answers-compare, workitems-edge-show, backend-tests, connector-throws-count, frontend-tests, feature-proof, linux-appimage, ci-live-suites-show, ci-auth-suites-show, test-selection-show, deliveries-answers-selftest, access-answers-selftest, platform-answers-selftest. No admitted name is a user-facing stimulus for a work item start date or the Total Work Item Age Over Time chart.",
+"F52": "Probe workitems-edge-show (exit 0, 99 tests, 99 passed) covers only: Team refresh reaction order and failure handling (E1), Work Items module ArchUnit boundary rules and Flow metrics list (E2), and Work Items unit test folder placement (E3). Its described scope contains no work item DTO StartedDate assertion and no Total Work Item Age Over Time chart render. It is a candidate test run, so it is not recorded as a user-observable stimulus for P1 or P2.",
+"F53": "Probe metrics-answers-compare --help exited 128 with fatal: Needed a single revision. No output, no stimulus, no response. The probe yielded no observed behaviour for P1 or P2.",
 "F6": "The DTO's StartedDate equals the item's CreatedDate; a To Do item with no start date still has none, and an item with a start date keeps its own",
 "F7": "The DTO's StartedDate is null for the in-progress item, or a To Do item gains a start date"
 },

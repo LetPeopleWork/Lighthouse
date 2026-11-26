@@ -13,3 +13,10 @@
   reviewers and EXAMINE).
 - **Loading/failure looks:** unchanged; no new view or fetch.
 - **Usage data:** N/A, because this is a defect fix with no new feature to count.
+- **Day-total function test is part of S2's oracle** (decided during the candidate review): kept and approved
+  with its own RED rather than removed.
+- **Time-budget gate:** a full `pnpm test` with every test passing, whose 1–2 time-budget offenders are untouched
+  tests that pass alone with 0 offenders, counts as green for this push on a loaded machine; CI is the final
+  timing check.
+- **EXAMINE waived:** no admitted public probe shows a Work Item's start date or renders the chart, so E1 and E2
+  were observation gaps; the maintainer waived both, and looks at the real app after the push.

@@ -212,7 +212,41 @@ None.
 
 ### Waivers
 
-None.
+#### E1
+
+```text
+Benjamin Huser-Berta (maintainer)
+```
+
+```text
+2026-11-26T17:49:03Z
+```
+
+```text
+No admitted public probe shows a work item's start date from the API; decided 2026-11-26
+```
+
+```text
+WorkItemDtoTests oracle (RED before the fix, GREEN after); maintainer checks the real app after the push
+```
+
+#### E2
+
+```text
+Benjamin Huser-Berta (maintainer)
+```
+
+```text
+2026-11-26T17:49:09Z
+```
+
+```text
+No admitted public probe renders the Total Work Item Age Over Time chart; decided 2026-11-26
+```
+
+```text
+TotalWorkItemAgeRunChart and totalAgeOfStartedItems oracles (RED before the fix, GREEN after); maintainer checks the real app after the push
+```
 
 ## Charter
 
@@ -220,4 +254,78 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+unmet
+
+#### Observations
+
+```text
+Probe nwdes --help was refused (ProbeRefused, exit 2). Admitted console scripts: architecture-rules, ef-model-unchanged, metrics-answers-compare, forecast-answers-compare, forecast-triggers-show, refresh-answers-compare, refresh-reactions-show, refresh-reactions-compare, deliveries-answers-compare, access-answers-compare, platform-answers-compare, workitems-edge-show, backend-tests, connector-throws-count, frontend-tests, feature-proof, linux-appimage, ci-live-suites-show, ci-auth-suites-show, test-selection-show, deliveries-answers-selftest, access-answers-selftest, platform-answers-selftest. No admitted name is a user-facing stimulus for a work item start date or the Total Work Item Age Over Time chart.
+```
+
+```text
+Probe workitems-edge-show (exit 0, 99 tests, 99 passed) covers only: Team refresh reaction order and failure handling (E1), Work Items module ArchUnit boundary rules and Flow metrics list (E2), and Work Items unit test folder placement (E3). Its described scope contains no work item DTO StartedDate assertion and no Total Work Item Age Over Time chart render. It is a candidate test run, so it is not recorded as a user-observable stimulus for P1 or P2.
+```
+
+```text
+Probe metrics-answers-compare --help exited 128 with fatal: Needed a single revision. No output, no stimulus, no response. The probe yielded no observed behaviour for P1 or P2.
+```
+
+observation_gap
+
+#### Waiver
+
+```text
+Benjamin Huser-Berta (maintainer)
+```
+
+```text
+2026-11-26T17:49:03Z
+```
+
+```text
+No admitted public probe shows a work item's start date from the API; decided 2026-11-26
+```
+
+```text
+WorkItemDtoTests oracle (RED before the fix, GREEN after); maintainer checks the real app after the push
+```
+
+### E2
+
+unmet
+
+#### Observations
+
+```text
+Probe nwdes --help was refused (ProbeRefused, exit 2). Admitted console scripts: architecture-rules, ef-model-unchanged, metrics-answers-compare, forecast-answers-compare, forecast-triggers-show, refresh-answers-compare, refresh-reactions-show, refresh-reactions-compare, deliveries-answers-compare, access-answers-compare, platform-answers-compare, workitems-edge-show, backend-tests, connector-throws-count, frontend-tests, feature-proof, linux-appimage, ci-live-suites-show, ci-auth-suites-show, test-selection-show, deliveries-answers-selftest, access-answers-selftest, platform-answers-selftest. No admitted name is a user-facing stimulus for a work item start date or the Total Work Item Age Over Time chart.
+```
+
+```text
+Probe workitems-edge-show (exit 0, 99 tests, 99 passed) covers only: Team refresh reaction order and failure handling (E1), Work Items module ArchUnit boundary rules and Flow metrics list (E2), and Work Items unit test folder placement (E3). Its described scope contains no work item DTO StartedDate assertion and no Total Work Item Age Over Time chart render. It is a candidate test run, so it is not recorded as a user-observable stimulus for P1 or P2.
+```
+
+```text
+Probe metrics-answers-compare --help exited 128 with fatal: Needed a single revision. No output, no stimulus, no response. The probe yielded no observed behaviour for P1 or P2.
+```
+
+observation_gap
+
+#### Waiver
+
+```text
+Benjamin Huser-Berta (maintainer)
+```
+
+```text
+2026-11-26T17:49:09Z
+```
+
+```text
+No admitted public probe renders the Total Work Item Age Over Time chart; decided 2026-11-26
+```
+
+```text
+TotalWorkItemAgeRunChart and totalAgeOfStartedItems oracles (RED before the fix, GREEN after); maintainer checks the real app after the push
+```
