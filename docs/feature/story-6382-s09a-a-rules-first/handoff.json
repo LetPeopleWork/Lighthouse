@@ -1,10 +1,133 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4"
+],
+"still_passes_if": "F215",
+"test": "ThePublishedType_IsFoundAsATopLevelTypeInExactlyItsOldOrItsContractsNamespace",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs"
+},
+"expected": "F213",
+"stimulus": "F212",
+"user_result": "F214"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4"
+],
+"still_passes_if": "F219",
+"test": "ThePublishedSetOfEveryContext_EqualsTheClosureMeasuredFromTheCompiledCode_BothWays; TheClosureCheck_NamesASeedThatHoldsBehaviour_AndAClosureMemberMissingFromTheMap",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs"
+},
+"expected": "F217",
+"stimulus": "F216",
+"user_result": "F218"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5"
+],
+"still_passes_if": "F223",
+"test": "TheRulePattern_KeepsItsDeclaredRole_WhenThePublishedTypesMoveIntoContracts; EveryRulePatternThatSeesAPublishedType_IsDeclared_AndEveryDeclaredPatternIsARulePattern; TheRoleCheck_NamesAnUndeclaredPattern_AFrontDoorNotWidened_AndAnOldLocationSeeingTheContractsName",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs"
+},
+"expected": "F221",
+"stimulus": "F220",
+"user_result": "F222"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6"
+],
+"still_passes_if": "F227",
+"test": "EveryTestStringThatNamesAPublishedTypeByItsOldName_WrittenOutOrGrouped_IsOnTheRenameList_InExactlyOneOfItsForms; TheRenameListCheck_NamesAWrittenOutAndAGroupedOldName_AListedStringFoundInNeitherForm_AndOneFoundInBoth",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs"
+},
+"expected": "F225",
+"stimulus": "F224",
+"user_result": "F226"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7"
+],
+"still_passes_if": "F231",
+"test": "Lighthouse.Backend.Tests.Architecture namespace",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture"
+},
+"expected": "F229",
+"stimulus": "F228",
+"user_result": "F230"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F235",
+"test": "ContextContractsMembershipArchUnitTest",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs"
+},
+"expected": "F233",
+"stimulus": "F232",
+"user_result": "F234"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F231",
+"test": "Lighthouse.Backend.Tests.Architecture namespace",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture"
+},
+"expected": "F195",
+"stimulus": "F228",
+"user_result": "F230"
+}
+]
+},
 "counters": {
 "B": 3,
 "C": 2,
 "D": 17,
 "E": 2,
-"F": 211,
+"F": 235,
 "K": 14,
 "L": 7,
 "P": 2,
@@ -1284,8 +1407,32 @@
 "F21": "Refusals state what, why and how: each rule failure names the source, the target and its layer (what), that the target context may change it without telling anyone (why), and to name the type through Modules.B.Contracts, move a contract type there or react to an event (how), worded through ModuleWording (D-3).",
 "F210": "The architecture-rules probe with the ContextContracts fragment prints passing lines for the contracts-only rules R-C1, R-C2 and R-C3, including lines showing that the listed cross-context edges match the measured edges in both directions and that a made-up offender is caught for each rule and for each list position.",
 "F211": "Passing lines name tests but not the edges; the probe cannot show whether the list is the true complete set of cross-context edges, or that a planted offender represents a real violation.",
+"F212": "Each published type on the membership map is looked up in the compiled code",
+"F213": "Each type is found as a top-level type in exactly one of its old namespace and its context's Contracts namespace; one test line per type names its context, both namespaces and whether it is a seed or a closure member",
+"F214": "A reviewer sees what each context publishes listed one line per type, measured from the compiled code",
+"F215": "a map entry naming the right type under a wrong old namespace fails here only if the type is absent in both places; the closure test catches a wrong context",
+"F216": "The published set of the ten contexts is measured from the compiled code (shapes another context reaches, the events, and what their public signatures name) and compared with the map; a made-up pair of contexts lists a calculator as published and leaves out a record its query returns",
+"F217": "The production map equals the measurement both ways, with the seven reached behaviour classes listed as not published; for the made-up pair the check names exactly the published calculator and the missing record",
+"F218": "A reviewer can trust the published set is complete and holds no algorithm",
+"F219": "a type reached only through a string or reflection, or a constant inlined by the compiler, leaves no edge in the compiled code and is not measured",
 "F22": "Cross-layer algebra, test layer only: states are the IL type graph and the regex fields of the test assembly; operations are IsMatch on full names and edge enumeration; observations are the NUnit verdict per test and its failure text; no domain, application, adapter or infrastructure layer of production changes in feature A.",
+"F220": "Every regex field of the test assembly that sees a published type is evaluated on the old and the Contracts name of every published type, one test line per declared field with its role; a made-up set of fields holds an undeclared one, a front door not widened, a widened one, an old location seeing Contracts and one keeping off it",
+"F221": "Today the nine front doors written as Modules.X.Application fail as no longer seeing their context's published types; after they read Modules.X.(Application|Contracts) every field keeps its role; for the made-up set exactly the undeclared field, the unwidened front door and the old location seeing Contracts are named",
+"F222": "A reviewer sees every rule pattern classed front door or old location, and the front doors widened to Application or Contracts",
+"F223": "a pattern held in a C# property, not a field, is not read by the law",
+"F224": "Every string literal of the test project is read for a published type's old full name or file path, written out or inside a grouped alternation; a made-up file holds one of each, a half-renamed entry and a listed entry found nowhere",
+"F225": "The production strings equal the fixed rename list of 43 entries, each file holding one form; for the made-up file the written-out and the grouped old names, the half-renamed entry and the absent entry are each named",
+"F226": "No test string keeps naming a published type by its old place after the move",
+"F227": "a name built at run time from separate parts is not seen by the sweep",
+"F228": "The whole architecture test namespace runs before and after the front doors are widened",
+"F229": "Every existing architecture rule keeps its verdict; the only failures before widening are the nine front-door lines",
 "F23": "No formal model, laws run exhaustively on IL: No model for R-C1 to R-C3, the move law or the D-2 closure: they name no shared mutable state, no multi-step protocol, no concurrency and no crash window; they are relations over finite closed sets (compiled types, contexts, regex fields) evaluated exhaustively by NUnit; no checker selected, so no probe, install or waiver (D-16).",
+"F230": "No rule verdict changes while the rules learn about Contracts",
+"F231": "a rule that matches nothing passes on both runs",
+"F232": "The membership, role and rename checks run against the compiled code and the test project before any type moves",
+"F233": "Every published type, every rule field that sees one and every old-name string is accounted for, so a rule keeps its role when the type moves into its context's Contracts",
+"F234": "Later moves into Contracts happen under rules that keep seeing the moved types",
+"F235": "a type reached only by reflection or a string is not measured",
 "F24": "No property tests, finite domains only: every law ranges over the finite compiled assembly and the inline lists, so each is checked exhaustively as an example over the whole set; planted fixture types are the falsifiers (D-16, test-writing skill wins over nWave PBT density).",
 "F25": "No liveness claim: feature A has no process that must eventually progress; every check is a synchronous evaluation over a compiled assembly.",
 "F26": "Paradigm object oriented, preserved: the Architecture test namespace is OO C# (static rule owners, sealed records, verdict types); new types follow it: records for entries, a static owner for the membership and the enumerator, verdict records from ModuleRules.",

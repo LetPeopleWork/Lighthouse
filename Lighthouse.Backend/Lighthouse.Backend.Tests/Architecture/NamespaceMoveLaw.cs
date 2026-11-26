@@ -22,6 +22,13 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         /// <summary>An old location (the Services folder): it must not see the type in its new place.</summary>
         Place,
+
+        /// <summary>
+        /// The front door of one context, the layers other code may reach it through: like a part of the code, it must see the
+        /// type under its old and its new name when the type moves into that context's published namespace, and take in no
+        /// other context.
+        /// </summary>
+        FrontDoor,
     }
 
     /// <summary>
@@ -33,6 +40,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         public static PatternDeclaration Context(PatternSubject subject, string reason) => new(subject, PatternRole.Context, null, reason);
 
         public static PatternDeclaration Place(PatternSubject subject, string reason) => new(subject, PatternRole.Place, null, reason);
+
+        public static PatternDeclaration FrontDoor(PatternSubject subject, string reason) => new(subject, PatternRole.FrontDoor, null, reason);
 
         public static PatternDeclaration Composite(string component, string reason) => new(null, null, component, reason);
     }
@@ -190,7 +199,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
                 foreach (var answer in answers)
                 {
-                    var roleBreak = (seenOnlyByFolder.Contains(answer.Type.Name) ? PatternRole.Place : role, answer.UnderTheOld, answer.UnderTheNew) switch
+                    var readAs = role == PatternRole.FrontDoor ? PatternRole.Context : role;
+                    var roleBreak = (seenOnlyByFolder.Contains(answer.Type.Name) ? PatternRole.Place : readAs, answer.UnderTheOld, answer.UnderTheNew) switch
                     {
                         (PatternRole.Place, _, true) when seenOnlyByFolder.Contains(answer.Type.Name) => RoleBreak.FollowsATypeItSawOnlyByFolder,
                         (PatternRole.Context, true, false) => RoleBreak.StopsSeeingTheType,

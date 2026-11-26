@@ -156,7 +156,196 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Each published type on the membership map is looked up in the compiled code
+</code></pre>
+
+<pre><code>Each type is found as a top-level type in exactly one of its old namespace and its context&#x27;s Contracts namespace; one test line per type names its context, both namespaces and whether it is a seed or a closure member
+</code></pre>
+
+<pre><code>A reviewer sees what each context publishes listed one line per type, measured from the compiled code
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs</p>
+
+<p>ThePublishedType_IsFoundAsATopLevelTypeInExactlyItsOldOrItsContractsNamespace</p>
+
+<pre><code>a map entry naming the right type under a wrong old namespace fails here only if the type is absent in both places; the closure test catches a wrong context
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The published set of the ten contexts is measured from the compiled code (shapes another context reaches, the events, and what their public signatures name) and compared with the map; a made-up pair of contexts lists a calculator as published and leaves out a record its query returns
+</code></pre>
+
+<pre><code>The production map equals the measurement both ways, with the seven reached behaviour classes listed as not published; for the made-up pair the check names exactly the published calculator and the missing record
+</code></pre>
+
+<pre><code>A reviewer can trust the published set is complete and holds no algorithm
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs</p>
+
+<p>ThePublishedSetOfEveryContext_EqualsTheClosureMeasuredFromTheCompiledCode_BothWays; TheClosureCheck_NamesASeedThatHoldsBehaviour_AndAClosureMemberMissingFromTheMap</p>
+
+<pre><code>a type reached only through a string or reflection, or a constant inlined by the compiler, leaves no edge in the compiled code and is not measured
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Every regex field of the test assembly that sees a published type is evaluated on the old and the Contracts name of every published type, one test line per declared field with its role; a made-up set of fields holds an undeclared one, a front door not widened, a widened one, an old location seeing Contracts and one keeping off it
+</code></pre>
+
+<pre><code>Today the nine front doors written as Modules.X.Application fail as no longer seeing their context&#x27;s published types; after they read Modules.X.(Application|Contracts) every field keeps its role; for the made-up set exactly the undeclared field, the unwidened front door and the old location seeing Contracts are named
+</code></pre>
+
+<pre><code>A reviewer sees every rule pattern classed front door or old location, and the front doors widened to Application or Contracts
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs</p>
+
+<p>TheRulePattern_KeepsItsDeclaredRole_WhenThePublishedTypesMoveIntoContracts; EveryRulePatternThatSeesAPublishedType_IsDeclared_AndEveryDeclaredPatternIsARulePattern; TheRoleCheck_NamesAnUndeclaredPattern_AFrontDoorNotWidened_AndAnOldLocationSeeingTheContractsName</p>
+
+<pre><code>a pattern held in a C# property, not a field, is not read by the law
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Every string literal of the test project is read for a published type&#x27;s old full name or file path, written out or inside a grouped alternation; a made-up file holds one of each, a half-renamed entry and a listed entry found nowhere
+</code></pre>
+
+<pre><code>The production strings equal the fixed rename list of 43 entries, each file holding one form; for the made-up file the written-out and the grouped old names, the half-renamed entry and the absent entry are each named
+</code></pre>
+
+<pre><code>No test string keeps naming a published type by its old place after the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs</p>
+
+<p>EveryTestStringThatNamesAPublishedTypeByItsOldName_WrittenOutOrGrouped_IsOnTheRenameList_InExactlyOneOfItsForms; TheRenameListCheck_NamesAWrittenOutAndAGroupedOldName_AListedStringFoundInNeitherForm_AndOneFoundInBoth</p>
+
+<pre><code>a name built at run time from separate parts is not seen by the sweep
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The whole architecture test namespace runs before and after the front doors are widened
+</code></pre>
+
+<pre><code>Every existing architecture rule keeps its verdict; the only failures before widening are the nine front-door lines
+</code></pre>
+
+<pre><code>No rule verdict changes while the rules learn about Contracts
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture</p>
+
+<p>Lighthouse.Backend.Tests.Architecture namespace</p>
+
+<pre><code>a rule that matches nothing passes on both runs
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The membership, role and rename checks run against the compiled code and the test project before any type moves
+</code></pre>
+
+<pre><code>Every published type, every rule field that sees one and every old-name string is accounted for, so a rule keeps its role when the type moves into its context&#x27;s Contracts
+</code></pre>
+
+<pre><code>Later moves into Contracts happen under rules that keep seeing the moved types
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs</p>
+
+<p>ContextContractsMembershipArchUnitTest</p>
+
+<pre><code>a type reached only by reflection or a string is not measured
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The whole architecture test namespace runs before and after the front doors are widened
+</code></pre>
+
+<pre><code>Every existing architecture rule keeps its verdict
+</code></pre>
+
+<pre><code>No rule verdict changes while the rules learn about Contracts
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture</p>
+
+<p>Lighthouse.Backend.Tests.Architecture namespace</p>
+
+<pre><code>a rule that matches nothing passes on both runs
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 
