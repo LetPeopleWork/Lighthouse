@@ -11,11 +11,11 @@
 "L3/F70",
 "T1"
 ],
-"still_passes_if": "F174",
+"still_passes_if": "F204",
 "test": "EachOfTheFiveContexts_RegistersThroughTheAddMethodOfItsOwnModule; EachOfTheFiveContextsModules_IsStartedByTheCompositionRootAlone; TheCompositionRoot_RegistersNoTypeOfTheFiveContexts_ButTheirDomainEventHandlersAndWhatItLooksUpToSetTheHostUp",
 "test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest.cs"
 },
-"expected": "F172",
+"expected": "F203",
 "stimulus": "F171",
 "user_result": "F173"
 },
@@ -28,13 +28,13 @@
 "obligations": [
 "L3/F71"
 ],
-"still_passes_if": "F178",
-"test": "AMadeUpCompositionRootRegisteringAContextsTypes_IsReportedNamingEachType_ButNotATypeOfAContextWhoseNameBeginsAlike",
+"still_passes_if": "F208",
+"test": "AMadeUpCompositionRootRegisteringAContextsTypes_IsReportedNamingEachTypeForEveryWayOfRegistering_ButNotATypeOfAContextWhoseNameBeginsAlike",
 "test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest.cs"
 },
-"expected": "F176",
-"stimulus": "F175",
-"user_result": "F177"
+"expected": "F206",
+"stimulus": "F205",
+"user_result": "F207"
 },
 {
 "covers": [
@@ -79,13 +79,13 @@
 "obligations": [
 "L3/F70"
 ],
-"still_passes_if": "F190",
-"test": "AnAllowedEntryOfTheCompositionRoot_IsNamedOnceItIsTakenOffTheList; AnAllowedEntryAMadeUpCompositionRootDoesNotRegister_IsReportedAsGone; AMadeUpContextWithoutAWellFormedStartUpModule_IsReported",
+"still_passes_if": "F212",
+"test": "AnAllowedEntryOfTheCompositionRoot_IsNamedOnceItIsTakenOffItsList; AnAllowedEntryAMadeUpCompositionRootDoesNotRegisterOrLookUp_IsReportedAsGone; AMadeUpContextWithoutAWellFormedStartUpModule_IsReported",
 "test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest.cs"
 },
-"expected": "F188",
-"stimulus": "F187",
-"user_result": "F189"
+"expected": "F210",
+"stimulus": "F209",
+"user_result": "F211"
 },
 {
 "covers": [
@@ -136,6 +136,40 @@
 "expected": "F200",
 "stimulus": "F199",
 "user_result": "F201"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F70"
+],
+"still_passes_if": "F216",
+"test": "AMadeUpCompositionRootRegisteringAServiceListedOnlyAsLookedUp_IsReported; AMadeUpCompositionRootOnlyLookingUpAServiceListedAsLookedUp_IsNotReported",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest.cs"
+},
+"expected": "F214",
+"stimulus": "F213",
+"user_result": "F215"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F71"
+],
+"still_passes_if": "F220",
+"test": "AMadeUpCompositionRootLookingUpAContextsTypes_IsReportedNamingEachTypeForEveryWayOfLookingUp",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest.cs"
+},
+"expected": "F218",
+"stimulus": "F217",
+"user_result": "F219"
 }
 ]
 },
@@ -144,7 +178,7 @@
 "C": 1,
 "D": 8,
 "E": 3,
-"F": 202,
+"F": 220,
 "K": 4,
 "L": 4,
 "P": 3,
@@ -1075,13 +1109,7 @@
 "F17": "Preservation pin carrier (D-9, E9): StartUpRegistrationsPreservationTest in Tests/Architecture, a craft target, not an oracle or support: nwdes freezes oracle and support bytes at approval, and S2 must change its seam line (RegisterReports gone) and S3 deletes it. The S1 crafter writes it as the first commit on the pre-B1 revision, baseline captured there and observed green before any line moves; the slice and candidate reviews judge it. Seam: WebApplication.CreateBuilder with EnvironmentName Testing, then RegisterServices(builder) and RegisterReports(builder.Services) by reflection as Main calls them; only the descriptors those calls add (the suffix after the builder own) are projected. Projection per service type: the ordered list of (lifetime, service key, implementation), where implementation is ImplementationType, else the instance type, else for a factory the delegate declared return type plus the ordered service types it asks of a recording IServiceProvider that answers nothing (the closure class and method name are left out: they change when a line moves). The baseline is written out inline by full type name, never computed at test time.",
 "F170": "A passing rule line does not show the last green run of the pin was recorded before it was deleted; that belongs to review records, and the probe cannot show Program text or order.",
 "F171": "Run the composition-root rule over the compiled application for Flow metrics, Forecasting, Promises, Licensing and Access.",
-"F172": "Each of the five contexts has its own start-up module with one Add method extending the service collection. Only the composition root calls that method. The composition root registers or looks up no type of the context except two kinds, compared both ways: its domain-event handlers in the one ordered block, and the two services it looks up to set the host up (the forecast lane that the start-up banner reads, and the group writer of the identity-provider sign-in). Before the move, the rule fails for each context and names the missing module and every type that the composition root still registers.",
 "F173": "A maintainer sees for each context that its start-up lives in its own module and that the composition root only calls it.",
-"F174": "A context type registered through a non-generic overload with a typeof argument, or by reflection, stays in the composition root unseen; the review reads the diff for it.",
-"F175": "Run the same check over a made-up composition root that registers a made-up context's types itself: with Add, TryAdd and Configure, a registered generic type, a factory that looks a type up inside its lambda, a type of a context whose name begins alike, and a type outside the contexts.",
-"F176": "Every one of the made-up context's types is reported by its full name, including the types a generic registration is built from and the type looked up inside the lambda; the lookalike context's type and the type outside the contexts are not.",
-"F177": "A registration left in the composition root, whichever way it is written, is named to the maintainer by its full type name.",
-"F178": "A registration that passes the type with typeof to a non-generic overload is not read, so such a made-up registration would go unreported.",
 "F179": "Run the module-caller check over made-up types: a made-up Beta module whose Add method starts the Alpha module, and a made-up type elsewhere that starts the Alpha module, beside the made-up composition root that calls it.",
 "F18": "Composition-root rule, one oracle file per slice (nwdes approval freezes each slice bytes, so no slice edits an earlier one): S1 CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest lists FlowMetrics, Forecasting, Promises, Licensing, Access; S2 CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest lists WorkItems, TrackerIntegration, Refinement, Reports, OrganisationSetup; together they are the ten-context rule. Each asserts, per listed context: its <X>Module exists in Lighthouse.Backend.Modules.<X> with Add<X>; only Program names it; Program registers no type of that context, where registers means the type is a generic argument of a call to an IServiceCollection registration extension (Add*, TryAdd*, Configure*, AddHostedService) or of GetService/GetRequiredService, read from the IL of Program and its compiler-made nested types; allowed: the handler block entries and the order-kept registrations of that context, by full name, compared both ways. The call reading is a new support CompositionRootRegistrations written with the S1 oracle and only read afterwards. S3 ProgramNamesModulesOnlyArchUnitTest: every type of the ten contexts that Program names at all (IlDependencies.DependentsIn over Program) is a <X>Module, a handler of the block, an order-kept registration, or a measured host set-up type; RED until the strays move.",
 "F180": "Exactly the Beta module and the outsider are reported beside the composition root; Alpha's own module and a composition root that does not call the module are not.",
@@ -1091,11 +1119,7 @@
 "F184": "The Alpha module is accepted as well formed, the composition root is found calling it, and no Alpha type is reported as registered by the composition root.",
 "F185": "A context that starts only through its module passes, so the lists hold no entry nobody needs.",
 "F186": "A check that reports less than it should still passes here; the made-up offenders catch that.",
-"F187": "Take each allowed entry of the five contexts off its list in turn; compare a made-up composition root with a listed entry it does not register; look for the module of made-up contexts that have none, whose module lacks its Add method, or whose module is not a static class.",
-"F188": "Each entry taken off is named in addition to what the full list leaves named, and nothing else changes; the unregistered listed entry is named as gone; each missing or malformed module is named with what is wrong with it.",
-"F189": "Every allowed entry is needed and the lists can only shrink; a malformed start-up module is refused with the reason.",
 "F19": "Host set-up type versus stray (B3 list): a host set-up type is a module type Program needs outside the container registrations to set the host up: authentication scheme handlers and selectors in ConfigureAuthentication, MVC filters in AddControllers, the HTTP client names of ConfigureServices, and reads in PrintSystemInfo. A stray is any other module-internal name Program keeps, such as the Tracker integration OAuth provider check EnsureOAuthProvidersRegistered names (text measure at 49552e47a, noisy); a stray moves behind a <X>Module method called at the same point. The B1 acceptance designer measures the names from the IL; the S3 acceptance designer writes the list from that measure. If the measure leaves no stray after S2, S3 has no RED and goes back to the host.",
-"F190": "A module whose Add method has the right shape but registers nothing passes these checks; the preservation test catches the missing registrations.",
 "F191": "Read the domain-event handlers per event from the start-up registrations after the move.",
 "F192": "The seven pinned events keep their handlers in the written-out order, with the pin file unchanged.",
 "F193": "Every reaction to a refresh, a deletion or a forecast update runs in the same order as before.",
@@ -1110,8 +1134,26 @@
 "F200": "Before and after the move the container equals the baseline written out on the pre-move revision; each probe fails naming the service type it changed.",
 "F201": "The application starts with exactly the services, lifetimes and order it had before the move.",
 "F202": "Registrations under branches the Testing environment does not take (stub sign-in off, Redis set), and two factories asking the same services with different constants, are not told apart; the slice review reads those lines for byte equality.",
+"F203": "Each of the five contexts has its own start-up module with one Add method that extends the service collection, and only the composition root calls that method. Registrations and lookups are compared, each with its own list and both ways. The composition root may register only the context's domain-event handlers of the one ordered block. It may look up only what that block forwards to and the two services it needs to set the host up: the forecast lane that the start-up banner reads, and the group writer that the identity-provider sign-in calls. Before the move, the rule fails for each context. The failure names the missing module and every type that the composition root still registers or looks up.",
+"F204": "A context type that the composition root reaches only by reflection on a type name string stays unseen. The review reads the diff for it.",
+"F205": "Run the same check over a made-up composition root that registers a made-up context's types itself in every form: Add, TryAdd and Configure; a hosted service; a typed HTTP client with its message handler; a typed client of a named HTTP client; a keyed service; typeof through a non-generic overload; a generic service descriptor and a descriptor built with typeof; a registered generic type; and a factory that looks a type up inside its lambda. The root also registers a type of a context whose name begins alike, and a type outside the contexts.",
+"F206": "Every registered type of the made-up context is reported by its full name. The type looked up inside the lambda is reported as a lookup, not as a registration. The lookalike context's type and the type outside the contexts are not reported.",
+"F207": "A registration left in the composition root is named to the maintainer by its full type name, whichever way it is written.",
+"F208": "A registration made through an extension method of another library that takes no generic argument and no typeof, for example by assembly scanning, would go unreported.",
+"F209": "Take each allowed entry of the five contexts off its own list (registrations or lookups) in turn. Compare a made-up composition root with a listed registration and a listed lookup that it does not make. Look for the module of made-up contexts that have none, whose module lacks its Add method, or whose module is not a static class.",
 "F21": "Existing rules that list Program as an outsider: AccessModuleBoundariesArchUnitTest (HTTP adapters list), ForecastingModuleBoundariesArchUnitTest (domain list) and WorkItemsModuleBoundariesArchUnitTest (domain list) name Lighthouse.Backend.Program, compared both ways; when a move leaves that entry stale, the slice replaces that one entry by the exact <X>Module full name and nothing else (approved oracles of closed Stories, allowed as in feature A). Every other existing rule is run whole (the Architecture namespace) at each slice; an approved oracle of feature A is never edited.",
+"F210": "Each entry taken off is named in addition to what the full lists leave named, on its own side only, and nothing else changes. The registration and the lookup that are not made are named as gone. Each missing or malformed module is named with what is wrong with it.",
+"F211": "Every allowed entry is needed and the lists can only shrink. A malformed start-up module is refused with the reason.",
+"F212": "A module whose Add method has the right shape but registers nothing passes these checks. The preservation test catches the missing registrations.",
+"F213": "Run the check over a made-up composition root that registers a service whose name is on the lookup list only, and looks that service up; then over one that only looks it up.",
+"F214": "The first root is reported for registering the service, and its lookup is not reported. The second root is not reported at all.",
+"F215": "A service that the host may look up to set itself up must still be registered by its own module.",
+"F216": "A host set-up lookup listed for one context does not excuse the same service when another context's list is read. Each context has its own lists.",
+"F217": "Run the check over a made-up composition root that looks up a made-up context's types with GetServices, a required keyed lookup, a keyed lookup and the activator utilities, and looks up a lookalike context's type with GetService.",
+"F218": "Exactly the four looked-up types of the made-up context are reported as lookups. The lookalike context's type is not reported, and nothing is reported as registered.",
+"F219": "A composition root that reaches into a context through a lookup is named, whichever lookup it uses.",
 "F22": "Behaviour-free (D-0, scope out): per service type, the ordered implementations, lifetimes and keys and the set of service types are unchanged; no route, DTO, schema, migration, configuration key or log category changes; ConfigureServices, ConfigureDatabase, ConfigureHttps, ConfigureApp and Main ordering are unchanged except the S2 removal of the RegisterReports call and the S3 stray moves. Registrations under branches not taken in the Testing environment (stub mode off, Redis set) move inside their unchanged if.",
+"F220": "A non-generic lookup that passes the type with typeof is read as a registration, not a lookup. It is still reported, but on the registration side.",
 "F23": "Counts are to be re-measured at B1: the design figures (283 pinned entries, the line numbers of Program.cs) date from 952040471 or 49552e47a; B1 records the measured descriptor count, hosted-service and seeder orders, and the Program IL names per context.",
 "F24": "Program.cs is in SHARED_REGEX, so each slice end runs the full filtered backend suite (Integration included) and the push runs every live connector suite once; locally the live connector categories are never run. Tests: no nWave tags; the oracles are IL architecture tests and the pin reads a ServiceCollection, none starts a host; made-up offenders live in a fixture namespace such as Lighthouse.Backend.Tests.Architecture.CompositionRootFixtures that no module pattern matches; rules assert by the failure naming the offender, each rule asserts its subject set is not empty.",
 "F25": "No input bound applies: no stored or validated input is added or changed; the ten contexts are the inline ten of ADR-270 Decision 1 (R-C3).",

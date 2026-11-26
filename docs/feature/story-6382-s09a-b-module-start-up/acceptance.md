@@ -13,7 +13,7 @@ Run the composition-root rule over the compiled application for Flow metrics, Fo
 ```
 
 ```text
-Each of the five contexts has its own start-up module with one Add method extending the service collection. Only the composition root calls that method. The composition root registers or looks up no type of the context except two kinds, compared both ways: its domain-event handlers in the one ordered block, and the two services it looks up to set the host up (the forecast lane that the start-up banner reads, and the group writer of the identity-provider sign-in). Before the move, the rule fails for each context and names the missing module and every type that the composition root still registers.
+Each of the five contexts has its own start-up module with one Add method that extends the service collection, and only the composition root calls that method. Registrations and lookups are compared, each with its own list and both ways. The composition root may register only the context's domain-event handlers of the one ordered block. It may look up only what that block forwards to and the two services it needs to set the host up: the forecast lane that the start-up banner reads, and the group writer that the identity-provider sign-in calls. Before the move, the rule fails for each context. The failure names the missing module and every type that the composition root still registers or looks up.
 ```
 
 ```text
@@ -29,7 +29,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/CompositionRootNa
 EachOfTheFiveContexts\_RegistersThroughTheAddMethodOfItsOwnModule\; EachOfTheFiveContextsModules\_IsStartedByTheCompositionRootAlone\; TheCompositionRoot\_RegistersNoTypeOfTheFiveContexts\_ButTheirDomainEventHandlersAndWhatItLooksUpToSetTheHostUp
 
 ```text
-A context type registered through a non-generic overload with a typeof argument, or by reflection, stays in the composition root unseen; the review reads the diff for it.
+A context type that the composition root reaches only by reflection on a type name string stays unseen. The review reads the diff for it.
 ```
 
 ###### Obligations
@@ -41,15 +41,15 @@ A context type registered through a non-generic overload with a typeof argument,
 P1
 
 ```text
-Run the same check over a made-up composition root that registers a made-up context's types itself: with Add, TryAdd and Configure, a registered generic type, a factory that looks a type up inside its lambda, a type of a context whose name begins alike, and a type outside the contexts.
+Run the same check over a made-up composition root that registers a made-up context's types itself in every form: Add, TryAdd and Configure; a hosted service; a typed HTTP client with its message handler; a typed client of a named HTTP client; a keyed service; typeof through a non-generic overload; a generic service descriptor and a descriptor built with typeof; a registered generic type; and a factory that looks a type up inside its lambda. The root also registers a type of a context whose name begins alike, and a type outside the contexts.
 ```
 
 ```text
-Every one of the made-up context's types is reported by its full name, including the types a generic registration is built from and the type looked up inside the lambda; the lookalike context's type and the type outside the contexts are not.
+Every registered type of the made-up context is reported by its full name. The type looked up inside the lambda is reported as a lookup, not as a registration. The lookalike context's type and the type outside the contexts are not reported.
 ```
 
 ```text
-A registration left in the composition root, whichever way it is written, is named to the maintainer by its full type name.
+A registration left in the composition root is named to the maintainer by its full type name, whichever way it is written.
 ```
 
 ##### Disposition
@@ -58,10 +58,10 @@ Tested
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest\.cs
 
-AMadeUpCompositionRootRegisteringAContextsTypes\_IsReportedNamingEachType\_ButNotATypeOfAContextWhoseNameBeginsAlike
+AMadeUpCompositionRootRegisteringAContextsTypes\_IsReportedNamingEachTypeForEveryWayOfRegistering\_ButNotATypeOfAContextWhoseNameBeginsAlike
 
 ```text
-A registration that passes the type with typeof to a non-generic overload is not read, so such a made-up registration would go unreported.
+A registration made through an extension method of another library that takes no generic argument and no typeof, for example by assembly scanning, would go unreported.
 ```
 
 ###### Obligations
@@ -134,15 +134,15 @@ A check that reports less than it should still passes here; the made-up offender
 P1
 
 ```text
-Take each allowed entry of the five contexts off its list in turn; compare a made-up composition root with a listed entry it does not register; look for the module of made-up contexts that have none, whose module lacks its Add method, or whose module is not a static class.
+Take each allowed entry of the five contexts off its own list (registrations or lookups) in turn. Compare a made-up composition root with a listed registration and a listed lookup that it does not make. Look for the module of made-up contexts that have none, whose module lacks its Add method, or whose module is not a static class.
 ```
 
 ```text
-Each entry taken off is named in addition to what the full list leaves named, and nothing else changes; the unregistered listed entry is named as gone; each missing or malformed module is named with what is wrong with it.
+Each entry taken off is named in addition to what the full lists leave named, on its own side only, and nothing else changes. The registration and the lookup that are not made are named as gone. Each missing or malformed module is named with what is wrong with it.
 ```
 
 ```text
-Every allowed entry is needed and the lists can only shrink; a malformed start-up module is refused with the reason.
+Every allowed entry is needed and the lists can only shrink. A malformed start-up module is refused with the reason.
 ```
 
 ##### Disposition
@@ -151,10 +151,10 @@ Tested
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest\.cs
 
-AnAllowedEntryOfTheCompositionRoot\_IsNamedOnceItIsTakenOffTheList\; AnAllowedEntryAMadeUpCompositionRootDoesNotRegister\_IsReportedAsGone\; AMadeUpContextWithoutAWellFormedStartUpModule\_IsReported
+AnAllowedEntryOfTheCompositionRoot\_IsNamedOnceItIsTakenOffItsList\; AnAllowedEntryAMadeUpCompositionRootDoesNotRegisterOrLookUp\_IsReportedAsGone\; AMadeUpContextWithoutAWellFormedStartUpModule\_IsReported
 
 ```text
-A module whose Add method has the right shape but registers nothing passes these checks; the preservation test catches the missing registrations.
+A module whose Add method has the right shape but registers nothing passes these checks. The preservation test catches the missing registrations.
 ```
 
 ###### Obligations
@@ -249,6 +249,68 @@ Registrations under branches the Testing environment does not take (stub sign-in
 
 
 
+
+
+##### Covers
+
+P1
+
+```text
+Run the check over a made-up composition root that registers a service whose name is on the lookup list only, and looks that service up; then over one that only looks it up.
+```
+
+```text
+The first root is reported for registering the service, and its lookup is not reported. The second root is not reported at all.
+```
+
+```text
+A service that the host may look up to set itself up must still be registered by its own module.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest\.cs
+
+AMadeUpCompositionRootRegisteringAServiceListedOnlyAsLookedUp\_IsReported\; AMadeUpCompositionRootOnlyLookingUpAServiceListedAsLookedUp\_IsNotReported
+
+```text
+A host set-up lookup listed for one context does not excuse the same service when another context's list is read. Each context has its own lists.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Run the check over a made-up composition root that looks up a made-up context's types with GetServices, a required keyed lookup, a keyed lookup and the activator utilities, and looks up a lookalike context's type with GetService.
+```
+
+```text
+Exactly the four looked-up types of the made-up context are reported as lookups. The lookalike context's type is not reported, and nothing is reported as registered.
+```
+
+```text
+A composition root that reaches into a context through a lookup is named, whichever lookup it uses.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest\.cs
+
+AMadeUpCompositionRootLookingUpAContextsTypes\_IsReportedNamingEachTypeForEveryWayOfLookingUp
+
+```text
+A non-generic lookup that passes the type with typeof is read as a registration, not a lookup. It is still reported, but on the registration side.
+```
+
+###### Obligations
 
 
 ## Expectations
