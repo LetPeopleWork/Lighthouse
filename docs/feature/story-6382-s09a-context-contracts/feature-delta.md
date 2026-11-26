@@ -590,3 +590,7 @@ composition root delegates registration to each context.
   DI change) vs review only (rejected: S03g's EXAMINE found no probe sees `Program.cs` order).
 - Single responsibility / interface segregation: contracts hold only what is consumed; algorithms stay private and the
   few cross-context algorithm calls are listed with owners.
+
+### Maintainer decisions (2026-11-26)
+- Open question 8 (RX1 failure path): **accepted as behaviour-free.** RX1 converts to the `ForecastRoundFinished` event and D2 stays.
+- Open question 1 (size): **keep one Story.** Feature B stays in #6382, and the ADO size becomes L.
