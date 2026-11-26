@@ -11,7 +11,7 @@ object_oriented
 #### D1
 
 ```text
-Placement. The note entity ReportNote sits in Models/Reports beside Report, not in Modules/Reports/Domain, because LighthouseAppContext (Data) must map it and the Reports rules R-RP2 and R-RP3 let only API, the composition root and Reports Application reach Domain. It is a kernel persistence carrier of the Report aggregate, moves with Report when S04b ratchets Models down, and adds one type to Models/Reports. Everything else is in Modules/Reports/Application: ports IReportNoteCommands, IReportNoteQueries and the driven port IReportNoteStore, use cases ReportNoteCommands and ReportNoteQueries, the caller choice type ReportNoteCaller (Anonymous, Signed, Unresolved) and the record ReportNoteRead. IReportNoteStore is implemented by the existing ReportRepository (one aggregate root, Report with its notes), so R-RP4 gains no outside type.
+Placement. The note entity ReportNote sits in Models/Reports beside Report, not in Modules/Reports/Domain, because LighthouseAppContext (Data) must map it and the Reports rules R-RP2 and R-RP3 let only API, the composition root and Reports Application reach Domain. It is a kernel persistence carrier of the Report aggregate, moves with Report when S04b ratchets Models down, and adds one type to Models/Reports. The rest is in Modules/Reports/Application: ports IReportNoteCommands, IReportNoteQueries and the driven port IReportNoteStore, use cases ReportNoteCommands and ReportNoteQueries, in Modules/Reports/Domain the caller choice type ReportNoteCaller (Anonymous, Signed, Unresolved) and the record ReportNoteRead, which are no port files and reach only the shared Models, the base library and the Domain. IReportNoteStore is implemented by the existing ReportRepository (one aggregate root, Report with its notes), so R-RP4 gains no outside type.
 ```
 
 #### D2
@@ -71,7 +71,7 @@ Loading look and failure look of the notes area. Loading: the notes area is wrap
 #### D11
 
 ```text
-ADR-270 changes for the host to apply at finalize: add the glossary term Report note to Reports (a short, dated, attributed text a person writes on one report to give its numbers context); change the Reports row aggregate list to Reports and their notes; state that notes go with their report and that no domain event is published or consumed; add ReportNote and NoteSignature to the Models kernel list with the reason. Membership lists to update in S1: ReportsMembership.TypesThatStay gains ReportNote; ReportsMembership.MovingTypes gains the new Application types (IReportNoteCommands, IReportNoteQueries, IReportNoteStore, ReportNoteCaller, ReportNoteRead, ReportNoteCommands, ReportNoteQueries) with layer Application; ReportsModuleBoundariesArchUnitTest TypesByLayer gains the same Application types. NoteSignature is a Models kernel type outside Reports and is on no Reports list. The R-RP1 baseline count (36 types, Application 25) rises by the new Application types and the host updates the ADR table; R-RP4 and R-RP6 baselines stay unchanged because no new outside caller and no new listed outbound edge arise, to be confirmed by ReportsModuleBoundariesArchUnitTest. ARCHITECTURE.md section 4 Reports text gets the same sentence.
+ADR-270 changes for the host to apply at finalize: add the glossary term Report note to Reports (a short, dated, attributed text a person writes on one report to give its numbers context); change the Reports row aggregate list to Reports and their notes; state that notes go with their report and that no domain event is published or consumed; add ReportNote and NoteSignature to the Models kernel list with the reason. Membership lists to update in S1: ReportsMembership.TypesThatStay gains ReportNote; ReportsMembership.MovingTypes gains the new types: IReportNoteCommands, IReportNoteQueries, IReportNoteStore, ReportNoteCommands and ReportNoteQueries with layer Application, ReportNoteCaller and ReportNoteRead with layer Domain; ReportsMembership.TypesThatStay also gains ReportNoteDto and ReportNoteRequest; ReportsModuleBoundariesArchUnitTest TypesByLayer gains the same types under the Application and Domain keys. NoteSignature is a Models kernel type outside Reports and is on no Reports list. The R-RP1 baseline count (36 types, Application 25) rises by the new Application types and the host updates the ADR table; R-RP4 and R-RP6 baselines stay unchanged because no new outside caller and no new listed outbound edge arise, to be confirmed by ReportsModuleBoundariesArchUnitTest. ARCHITECTURE.md section 4 Reports text gets the same sentence.
 ```
 
 #### D12
@@ -923,7 +923,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/IReport
 Create
 
 ```text
-namespace Lighthouse.Backend.Modules.Reports.Application. public interface IReportNoteCommands { Task<ReportOutcome<ReportNoteRead>> Add(ReportOwner owner, int reportId, ReportNoteCaller caller, string? text, DateTime now); }. Outcomes: Done with the read; NotFound when the owner holds no such report; Refused with ReportRefusalCodes.NoteAuthorUnknown for an Unresolved caller, NoteTextMissing or NoteTextTooLong for the text. The check order is report found, then caller, then text. S3 adds Edit(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller, string? text, DateTime now) returning Task<ReportOutcome<ReportNoteRead>> and Delete(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller) returning Task<ReportOutcomeStatus>
+namespace Lighthouse.Backend.Modules.Reports.Application. public interface IReportNoteCommands { Task<ReportOutcome<ReportNoteRead>> Add(ReportOwner owner, int reportId, ReportNoteCaller caller, string? text, DateTime now); }. Outcomes: Done with the read; NotFound when the owner holds no such report; Refused with ReportRefusalCodes.NoteAuthorUnknown for an Unresolved caller, NoteTextMissing or NoteTextTooLong for the text. The check order is report found, then caller, then text. S3 adds Edit(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller, string? text, DateTime now) returning Task<ReportOutcome<ReportNoteRead>> and Delete(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller) returning Task<ReportOutcomeStatus> The store is held as an internal property, not an unused private field (analyzer S1144).
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/IReportNoteQueries\.cs
@@ -931,7 +931,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/IReport
 Create
 
 ```text
-public interface IReportNoteQueries { ReportOutcome<IReadOnlyList<ReportNoteRead>> List(ReportOwner owner, int reportId); }. Done with the notes of that report newest first (CreatedAt then Id, both descending), empty when it has none; NotFound when the owner holds no such report. S3 adds the overload List(ReportOwner owner, int reportId, ReportNoteCaller caller) whose reads carry CanModify; the S1 overload stays
+public interface IReportNoteQueries { ReportOutcome<IReadOnlyList<ReportNoteRead>> List(ReportOwner owner, int reportId); }. Done with the notes of that report newest first (CreatedAt then Id, both descending), empty when it has none; NotFound when the owner holds no such report. S3 adds the overload List(ReportOwner owner, int reportId, ReportNoteCaller caller) whose reads carry CanModify; the S1 overload stays The store is held as an internal property, not an unused private field (analyzer S1144).
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/IReportNoteStore\.cs
@@ -942,20 +942,20 @@ Create
 public interface IReportNoteStore { bool ReportExists(ReportOwner owner, int reportId); IReadOnlyList<ReportNote> NotesNewestFirst(ReportOwner owner, int reportId); void Add(ReportNote note); Task Save(); }. A note is reachable only through its owner and report id. S3 adds ReportNote? FindForEdit(ReportOwner owner, int reportId, int noteId), void Remove(ReportNote note) and Task<bool> TrySave(), which answers false when a concurrent delete made the save conflict
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/ReportNoteCaller\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Domain\/ReportNoteCaller\.cs
 
 Create
 
 ```text
-public abstract record ReportNoteCaller with a private protected constructor and three public nested sealed records in the same file: Anonymous (no members; authentication off), Signed(int ProfileId, string? DisplayName), Unresolved (authentication on, nobody resolved). Built with new ReportNoteCaller.Anonymous(), new ReportNoteCaller.Signed(7, "Ann"), new ReportNoteCaller.Unresolved()
+public abstract record ReportNoteCaller with a private protected constructor and three public nested sealed records in the same file: Anonymous (no members; authentication off), Signed(int ProfileId, string? DisplayName), Unresolved (authentication on, nobody resolved). Built with new ReportNoteCaller.Anonymous(), new ReportNoteCaller.Signed(7, "Ann"), new ReportNoteCaller.Unresolved() Namespace Lighthouse.Backend.Modules.Reports.Domain, layer Domain (it declares no port and reaches only the shared Models, the base library and the Domain).
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/ReportNoteRead\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Domain\/ReportNoteRead\.cs
 
 Create
 
 ```text
-public sealed record ReportNoteRead(int Id, string Text, DateTime CreatedAt, DateTime? LastEditedAt, string? AuthorDisplayName). Instants are UTC DateTime; the instance-zone day is not on this record. S3 appends bool CanModify as the last positional member
+public sealed record ReportNoteRead(int Id, string Text, DateTime CreatedAt, DateTime? LastEditedAt, string? AuthorDisplayName). Instants are UTC DateTime; the instance-zone day is not on this record. S3 appends bool CanModify as the last positional member Namespace Lighthouse.Backend.Modules.Reports.Domain, layer Domain (it declares no port and reaches only the shared Models, the base library and the Domain).
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/ReportNoteCommands\.cs
@@ -963,7 +963,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/ReportN
 Create
 
 ```text
-public sealed class ReportNoteCommands(IReportNoteStore store) : IReportNoteCommands. Add as declared on IReportNoteCommands: stores ReportNote.Write(reportId, text, signed ? profileId : null, signed ? displayName : null, now) for Anonymous (unsigned) and Signed callers, saves once, answers the read
+public sealed class ReportNoteCommands(IReportNoteStore store) : IReportNoteCommands. Add as declared on IReportNoteCommands: stores ReportNote.Write(reportId, text, signed ? profileId : null, signed ? displayName : null, now) for Anonymous (unsigned) and Signed callers, saves once, answers the read The store is held as an internal property, not an unused private field (analyzer S1144).
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/ReportNoteQueries\.cs
@@ -971,7 +971,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/ReportN
 Create
 
 ```text
-public sealed class ReportNoteQueries(IReportNoteStore store) : IReportNoteQueries. List as declared on IReportNoteQueries
+public sealed class ReportNoteQueries(IReportNoteStore store) : IReportNoteQueries. List as declared on IReportNoteQueries The store is held as an internal property, not an unused private field (analyzer S1144).
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Repositories\/ReportRepository\.cs
@@ -1003,7 +1003,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/API\/ReportNotesControllerBase\.cs
 Create
 
 ```text
-public abstract class ReportNotesControllerBase(IReportNoteQueries queries, IReportNoteCommands commands, ICurrentUserProfileService profiles, IAuthModeResolver authModes, ILighthouseClock clock) : ControllerBase, with public static ReportNoteCaller CallerOf(AuthMode mode, UserProfile? profile): Disabled gives new ReportNoteCaller.Anonymous(); Enabled with a profile gives new ReportNoteCaller.Signed(profile.Id, profile.DisplayName); Enabled with null, Misconfigured and Blocked give new ReportNoteCaller.Unresolved(). Protected actions answer the ports' outcomes with ProblemDetails carrying the code (400, 403, 404)
+public abstract class ReportNotesControllerBase(IReportNoteQueries queries, IReportNoteCommands commands, ICurrentUserProfileService profiles, IAuthModeResolver authModes, ILighthouseClock clock) : ControllerBase, with public static ReportNoteCaller CallerOf(AuthMode mode, UserProfile? profile): Disabled gives new ReportNoteCaller.Anonymous(); Enabled with a profile gives new ReportNoteCaller.Signed(profile.Id, profile.DisplayName); Enabled with null, Misconfigured and Blocked give new ReportNoteCaller.Unresolved(). Protected actions answer the ports' outcomes with ProblemDetails carrying the code (400, 403, 404) The ports (queries, commands, profiles, authModes, clock) are exposed as protected properties, because analyzer S1144 forbids unused private fields.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/API\/TeamReportNotesController\.cs
@@ -1099,7 +1099,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsMembership
 Extend
 
 ```text
-TypesThatStay gains ReportNote (Models.Reports); MovingTypes gains IReportNoteCommands, IReportNoteQueries, IReportNoteStore, ReportNoteCaller, ReportNoteRead, ReportNoteCommands, ReportNoteQueries with layer Application, in the skeleton commit
+TypesThatStay gains ReportNote (Models.Reports); MovingTypes gains IReportNoteCommands, IReportNoteQueries, IReportNoteStore, ReportNoteCommands, ReportNoteQueries with layer Application and ReportNoteCaller, ReportNoteRead with layer Domain; TypesThatStay also gains ReportNoteDto and ReportNoteRequest (the API types of the notes), in the skeleton commit
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs
@@ -1107,7 +1107,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoun
 Extend
 
 ```text
-TypesByLayer gains the new Application types
+TypesByLayer gains the new Application types ReportNoteCaller and ReportNoteRead go under the Domain key, the other new types under the Application key.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/ReportNotesControllerCallerTest\.cs
@@ -1973,12 +1973,12 @@ Extend
 note-not-yours
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/ReportNoteRead\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Domain\/ReportNoteRead\.cs
 
 Extend
 
 ```text
-CanModify decided by the note for the caller
+CanModify decided by the note for the caller In Modules/Reports/Domain.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Application\/ReportNoteCommands\.cs

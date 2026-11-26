@@ -3,7 +3,7 @@
 "B": 5,
 "D": 13,
 "E": 12,
-"F": 432,
+"F": 444,
 "K": 2,
 "L": 11,
 "N": 2,
@@ -184,7 +184,7 @@
 "decisions": [
 {
 "id": "D1",
-"text": "F317"
+"text": "F433"
 },
 {
 "id": "D2",
@@ -224,7 +224,7 @@
 },
 {
 "id": "D11",
-"text": "F321"
+"text": "F434"
 },
 {
 "id": "D12",
@@ -722,12 +722,12 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportNoteCommands.cs",
-"reason": "F407"
+"reason": "F435"
 },
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportNoteQueries.cs",
-"reason": "F408"
+"reason": "F436"
 },
 {
 "change": "Create",
@@ -736,23 +736,23 @@
 },
 {
 "change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportNoteCaller.cs",
-"reason": "F410"
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportNoteCaller.cs",
+"reason": "F437"
 },
 {
 "change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportNoteRead.cs",
-"reason": "F411"
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportNoteRead.cs",
+"reason": "F438"
 },
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportNoteCommands.cs",
-"reason": "F412"
+"reason": "F439"
 },
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportNoteQueries.cs",
-"reason": "F413"
+"reason": "F440"
 },
 {
 "change": "Extend",
@@ -772,7 +772,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/API/ReportNotesControllerBase.cs",
-"reason": "F416"
+"reason": "F441"
 },
 {
 "change": "Create",
@@ -832,12 +832,12 @@
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs",
-"reason": "F423"
+"reason": "F442"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs",
-"reason": "F347"
+"reason": "F443"
 },
 {
 "change": "Create",
@@ -1167,8 +1167,8 @@
 },
 {
 "change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportNoteRead.cs",
-"reason": "F281"
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportNoteRead.cs",
+"reason": "F444"
 },
 {
 "change": "Extend",
@@ -1499,7 +1499,6 @@
 "F279": "MayBeChangedBy and Revise",
 "F28": "The author deletes their own note",
 "F280": "note-not-yours",
-"F281": "CanModify decided by the note for the caller",
 "F282": "Edit and Delete with NotFound, then the author rule, then the text rule",
 "F283": "Reads carry CanModify for the caller",
 "F284": "Find, Remove and a save that answers false on a vanished note",
@@ -1539,11 +1538,9 @@
 "F314": "Unsigned note with authentication on",
 "F315": "Unsigned note with authentication off",
 "F316": "Signed note with authentication off",
-"F317": "Placement. The note entity ReportNote sits in Models/Reports beside Report, not in Modules/Reports/Domain, because LighthouseAppContext (Data) must map it and the Reports rules R-RP2 and R-RP3 let only API, the composition root and Reports Application reach Domain. It is a kernel persistence carrier of the Report aggregate, moves with Report when S04b ratchets Models down, and adds one type to Models/Reports. Everything else is in Modules/Reports/Application: ports IReportNoteCommands, IReportNoteQueries and the driven port IReportNoteStore, use cases ReportNoteCommands and ReportNoteQueries, the caller choice type ReportNoteCaller (Anonymous, Signed, Unresolved) and the record ReportNoteRead. IReportNoteStore is implemented by the existing ReportRepository (one aggregate root, Report with its notes), so R-RP4 gains no outside type.",
 "F318": "Maximum note length: 2000 characters after trimming, refused with code note-text-too-long. Reason: the live report lists every note without paging, so an unbounded text can swamp the report; 2000 holds a paragraph of context. Deviation from Delivery notes, which have none. The constant is ReportNote.LongestText; the mapping in LighthouseAppContext uses HasMaxLength(ReportNote.LongestText) on the text column, so the AddReportNotes migration creates the column bounded to 2000 and the database refuses a longer direct write. The number of notes per report is not capped (residue, owner maintainer).",
 "F32": "authentication is on, and a note on a report written by another user, and the user has write access on the owner",
 "F320": "Wire shape. Separate routes api/latest/teams/{teamId}/reports/{reportId}/notes and api/latest/portfolios/{portfolioId}/reports/{reportId}/notes (GET list newest first, POST, PUT {noteId}, DELETE {noteId}), two controllers over one ReportNotesControllerBase, mirroring TeamReportsController and PortfolioReportsController. ReportRead and the report routes the CLI and MCP clients read stay unchanged. The note DTO has id, text, createdAt, createdOn, lastEditedAt, lastEditedOn, authorDisplayName and canModify (decided on the server). A refusal is a ProblemDetails with a code: note-text-missing and note-text-too-long are 400, note-not-yours and note-author-unknown are 403.",
-"F321": "ADR-270 changes for the host to apply at finalize: add the glossary term Report note to Reports (a short, dated, attributed text a person writes on one report to give its numbers context); change the Reports row aggregate list to Reports and their notes; state that notes go with their report and that no domain event is published or consumed; add ReportNote and NoteSignature to the Models kernel list with the reason. Membership lists to update in S1: ReportsMembership.TypesThatStay gains ReportNote; ReportsMembership.MovingTypes gains the new Application types (IReportNoteCommands, IReportNoteQueries, IReportNoteStore, ReportNoteCaller, ReportNoteRead, ReportNoteCommands, ReportNoteQueries) with layer Application; ReportsModuleBoundariesArchUnitTest TypesByLayer gains the same Application types. NoteSignature is a Models kernel type outside Reports and is on no Reports list. The R-RP1 baseline count (36 types, Application 25) rises by the new Application types and the host updates the ADR table; R-RP4 and R-RP6 baselines stay unchanged because no new outside caller and no new listed outbound edge arise, to be confirmed by ReportsModuleBoundariesArchUnitTest. ARCHITECTURE.md section 4 Reports text gets the same sentence.",
 "F322": "Checker per claim. Quint 0.33.1 (model docs/feature/story-6564-report-notes/design/reportNoteModifyRule.qnt, receipt docs/feature/story-6564-report-notes/design/reportNoteModifyRule.receipt.txt) gives bounded checking of the safety law that a signed note is changed only by its signer over authentication switching on and off with two users and three note ids: a simulation of 2000 samples of 12 steps and a bounded verify of 8 steps found no violation, and a mutant that always answers true violates the invariant. That is bounded evidence, not a proof; the model does not generate a caller with authentication on and no profile, which is a separate rule pinned by native example tests (note-author-unknown). Cascade delete, the day reduction, ordering, the text rule and the print exclusion name no shared mutable protocol or crash window, so they get No model: single transition per request, state held by one database transaction, native example and property tests cover every transition. TLA+/TLC and Agda are not used: no liveness claim and no proof over types. Liveness has no claim: a note request is one synchronous transaction with no waiting step or background progress.",
 "F323": "DbSet ReportNotes and its mapping: cascade to Reports, SetNull to UserProfiles, an index on ReportId and HasMaxLength(ReportNote.LongestText), 2000, on the text column.",
 "F324": "The snapshot gains ReportNotes with its text column bounded to 2000, and AddReportNotes is generated with CreateMigration.",
@@ -1563,7 +1560,6 @@
 "F34": "the user sees no control to change or delete that note, and the direct request is refused",
 "F340": "Reports module rules R-RP1 to R-RP6 hold with the new types: every new Models.Reports type is on ReportsMembership.TypesThatStay, every new Modules.Reports type is on ReportsMembership.MovingTypes and in TypesByLayer, no new outside caller of Reports Application, no new listed outbound edge, and no EF Core, Access or clock reached by ReportNoteCommands, ReportNoteQueries or IReportNoteStore",
 "F341": "Every Reports type is on its membership list: ReportNote in TypesThatStay, the new Application types in MovingTypes",
-"F347": "TypesByLayer gains the new Application types",
 "F348": "With authentication on and no resolvable profile (Unresolved), add is refused with note-author-unknown and stores nothing; with authentication off (Anonymous) the note is stored unsigned; with a profile (Signed) it is stored signed with the name",
 "F349": "Anonymous add",
 "F350": "Signed add",
@@ -1623,17 +1619,10 @@
 "F404": "Does not show the protection after authentication is switched back on, nor for a note whose author has since been removed.",
 "F405": "namespace Lighthouse.Backend.Models.Reports. public sealed class ReportNote with public const int LongestText = 2000; properties int Id, int ReportId, string Text (default empty), DateTime CreatedAt, DateTime? LastEditedAt, int? AuthorUserProfileId, string? AuthorDisplayName, all get and set for EF. Static factory public static ReportOutcome<ReportNote> Write(int reportId, string? rawText, int? signedByProfileId, string? signerDisplayName, DateTime createdAt): trims rawText, answers ReportOutcome<ReportNote>.Refused(ReportRefusalCodes.NoteTextMissing) when the trimmed text is empty or the input null, Refused(ReportRefusalCodes.NoteTextTooLong) when it is over LongestText, else Done with the note (LastEditedAt null). It references no Application type, so Models stays free of Reports Application",
 "F406": "Adds public const string NoteTextMissing = \"note-text-missing\", NoteTextTooLong = \"note-text-too-long\", NoteAuthorUnknown = \"note-author-unknown\" (S3 adds NoteNotYours = \"note-not-yours\")",
-"F407": "namespace Lighthouse.Backend.Modules.Reports.Application. public interface IReportNoteCommands { Task<ReportOutcome<ReportNoteRead>> Add(ReportOwner owner, int reportId, ReportNoteCaller caller, string? text, DateTime now); }. Outcomes: Done with the read; NotFound when the owner holds no such report; Refused with ReportRefusalCodes.NoteAuthorUnknown for an Unresolved caller, NoteTextMissing or NoteTextTooLong for the text. The check order is report found, then caller, then text. S3 adds Edit(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller, string? text, DateTime now) returning Task<ReportOutcome<ReportNoteRead>> and Delete(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller) returning Task<ReportOutcomeStatus>",
-"F408": "public interface IReportNoteQueries { ReportOutcome<IReadOnlyList<ReportNoteRead>> List(ReportOwner owner, int reportId); }. Done with the notes of that report newest first (CreatedAt then Id, both descending), empty when it has none; NotFound when the owner holds no such report. S3 adds the overload List(ReportOwner owner, int reportId, ReportNoteCaller caller) whose reads carry CanModify; the S1 overload stays",
 "F409": "public interface IReportNoteStore { bool ReportExists(ReportOwner owner, int reportId); IReadOnlyList<ReportNote> NotesNewestFirst(ReportOwner owner, int reportId); void Add(ReportNote note); Task Save(); }. A note is reachable only through its owner and report id. S3 adds ReportNote? FindForEdit(ReportOwner owner, int reportId, int noteId), void Remove(ReportNote note) and Task<bool> TrySave(), which answers false when a concurrent delete made the save conflict",
 "F41": "the notes of that report are deleted with it and cannot be read any more",
-"F410": "public abstract record ReportNoteCaller with a private protected constructor and three public nested sealed records in the same file: Anonymous (no members; authentication off), Signed(int ProfileId, string? DisplayName), Unresolved (authentication on, nobody resolved). Built with new ReportNoteCaller.Anonymous(), new ReportNoteCaller.Signed(7, \"Ann\"), new ReportNoteCaller.Unresolved()",
-"F411": "public sealed record ReportNoteRead(int Id, string Text, DateTime CreatedAt, DateTime? LastEditedAt, string? AuthorDisplayName). Instants are UTC DateTime; the instance-zone day is not on this record. S3 appends bool CanModify as the last positional member",
-"F412": "public sealed class ReportNoteCommands(IReportNoteStore store) : IReportNoteCommands. Add as declared on IReportNoteCommands: stores ReportNote.Write(reportId, text, signed ? profileId : null, signed ? displayName : null, now) for Anonymous (unsigned) and Signed callers, saves once, answers the read",
-"F413": "public sealed class ReportNoteQueries(IReportNoteStore store) : IReportNoteQueries. List as declared on IReportNoteQueries",
 "F414": "Also implements IReportNoteStore over context.ReportNotes: ReportExists and NotesNewestFirst filter through the owner column of Reports, ordered by CreatedAt then Id descending, AsNoTracking; Add and Save as declared",
 "F415": "public DbSet<ReportNote> ReportNotes. Table ReportNotes: Id int primary key; ReportId int required, foreign key to Reports.Id with cascade delete, indexed; Text required, HasMaxLength(ReportNote.LongestText); CreatedAt required; LastEditedAt nullable; AuthorUserProfileId int nullable, foreign key to UserProfiles with SetNull; AuthorDisplayName nullable",
-"F416": "public abstract class ReportNotesControllerBase(IReportNoteQueries queries, IReportNoteCommands commands, ICurrentUserProfileService profiles, IAuthModeResolver authModes, ILighthouseClock clock) : ControllerBase, with public static ReportNoteCaller CallerOf(AuthMode mode, UserProfile? profile): Disabled gives new ReportNoteCaller.Anonymous(); Enabled with a profile gives new ReportNoteCaller.Signed(profile.Id, profile.DisplayName); Enabled with null, Misconfigured and Blocked give new ReportNoteCaller.Unresolved(). Protected actions answer the ports' outcomes with ProblemDetails carrying the code (400, 403, 404)",
 "F417": "public sealed class ReportNoteDto with int Id, string Text, DateTime CreatedAt, DateOnly CreatedOn, DateTime? LastEditedAt, DateOnly? LastEditedOn, string? AuthorDisplayName, and public static ReportNoteDto From(ReportNoteRead note, ILighthouseClock clock) that reduces the instants to instance-zone days with clock.ToInstanceDay. S3 adds bool CanModify",
 "F418": "export interface IReportNote { id: number; text: string; createdAt: string; createdOn: string; lastEditedAt?: string | null; lastEditedOn?: string | null; authorDisplayName?: string | null }; export const ReportNoteSchema: z.ZodType<IReportNote> = z.object({...}); export const ReportNotesSchema = z.array(ReportNoteSchema). S3 adds canModify?: boolean",
 "F419": "IReportService and ReportService gain getNotes(owner: IReportOwner, reportId: number): Promise<IReportNote[]> (GET /{teams|portfolios}/{owner.id}/reports/{reportId}/notes) and addNote(owner: IReportOwner, reportId: number, text: string): Promise<IReportNote> (POST with body { text }); S3 adds updateNote(owner, reportId, noteId, text) and deleteNote(owner, reportId, noteId)",
@@ -1641,7 +1630,6 @@
 "F420": "export default ReportNotes: React.FC<Readonly<{ owner: IReportOwner; reportId: number; mayWrite: boolean }>>; test ids report-notes (area), report-note (each note), report-note-input, save-report-note-button; text from the field is sent as typed",
 "F421": "export const reportNotesQueryKeyOf = (owner: IReportOwner, reportId: number) => [...reportQueryKeyOf(owner, reportId), \"notes\"] as const; export const useReportNotes = (owner: IReportOwner, reportId: number) => UseQueryResult<IReportNote[]> reading reportService.getNotes",
 "F422": "Renders <ReportNotes owner={owner} reportId={reportId} mayWrite={isEditor} /> when isEditor (S2: for every reader)",
-"F423": "TypesThatStay gains ReportNote (Models.Reports); MovingTypes gains IReportNoteCommands, IReportNoteQueries, IReportNoteStore, ReportNoteCaller, ReportNoteRead, ReportNoteCommands, ReportNoteQueries with layer Application, in the skeleton commit",
 "F424": "Calls ReportNotesControllerBase.CallerOf(AuthMode, UserProfile?) over the four AuthMode members and a present or absent profile, including Enabled with a profile when the RBAC switch is off",
 "F425": "Over the real context: table ReportNotes, columns Id, ReportId, Text, CreatedAt, LastEditedAt, AuthorUserProfileId, AuthorDisplayName; a 2001-character Text is refused and 2000 accepted; deleting a Report deletes its ReportNotes; removing a UserProfile sets AuthorUserProfileId to null",
 "F426": "Before any behaviour, in a separate commit, add the declared public surface of this slice as behaviour-free skeletons: the C# types ReportNote (entity with LongestText and properties; Write throws NotImplementedException), ReportNoteCaller with its three nested records, ReportNoteRead, IReportNoteCommands, IReportNoteQueries, IReportNoteStore, ReportNoteCommands and ReportNoteQueries (every member throws NotImplementedException), ReportNotesControllerBase with CallerOf throwing, the DTO ReportNoteDto with From throwing, the three refusal code constants, and the TypeScript IReportNote, ReportNoteSchema, the getNotes and addNote members on IReportService and ReportService (throwing), and the ReportNotes and useReportNotes exports (not rendered). Nothing is registered in Program.cs, mapped in LighthouseAppContext, migrated, routed or rendered, so no behaviour changes; ReportsMembership and TypesByLayer list the new types so the architecture tests stay GREEN. Where an analyser flags NotImplementedException the skeleton carries a narrow inline suppression with its reason. The S1 oracle is then written against this surface and fails on behaviour (NotImplementedException, missing rows), a semantic RED, not on a missing type",
@@ -1652,7 +1640,19 @@
 "F430": "Controller -> ports -> ReportNote and store; the instant comes in from the controller clock; ReportNote references no Application type",
 "F431": "The instance-zone day a note was written, observed through ReportNoteDto.From(read, clock) with the harness clock and no web host; the port itself exposes only instants. The wire contract test belongs to S2 and is not needed for S1, so one wire test serves the Request",
 "F432": "A DTO built by From from one the controller serialises; the serialised shape is observed in S2",
+"F433": "Placement. The note entity ReportNote sits in Models/Reports beside Report, not in Modules/Reports/Domain, because LighthouseAppContext (Data) must map it and the Reports rules R-RP2 and R-RP3 let only API, the composition root and Reports Application reach Domain. It is a kernel persistence carrier of the Report aggregate, moves with Report when S04b ratchets Models down, and adds one type to Models/Reports. The rest is in Modules/Reports/Application: ports IReportNoteCommands, IReportNoteQueries and the driven port IReportNoteStore, use cases ReportNoteCommands and ReportNoteQueries, in Modules/Reports/Domain the caller choice type ReportNoteCaller (Anonymous, Signed, Unresolved) and the record ReportNoteRead, which are no port files and reach only the shared Models, the base library and the Domain. IReportNoteStore is implemented by the existing ReportRepository (one aggregate root, Report with its notes), so R-RP4 gains no outside type.",
+"F434": "ADR-270 changes for the host to apply at finalize: add the glossary term Report note to Reports (a short, dated, attributed text a person writes on one report to give its numbers context); change the Reports row aggregate list to Reports and their notes; state that notes go with their report and that no domain event is published or consumed; add ReportNote and NoteSignature to the Models kernel list with the reason. Membership lists to update in S1: ReportsMembership.TypesThatStay gains ReportNote; ReportsMembership.MovingTypes gains the new types: IReportNoteCommands, IReportNoteQueries, IReportNoteStore, ReportNoteCommands and ReportNoteQueries with layer Application, ReportNoteCaller and ReportNoteRead with layer Domain; ReportsMembership.TypesThatStay also gains ReportNoteDto and ReportNoteRequest; ReportsModuleBoundariesArchUnitTest TypesByLayer gains the same types under the Application and Domain keys. NoteSignature is a Models kernel type outside Reports and is on no Reports list. The R-RP1 baseline count (36 types, Application 25) rises by the new Application types and the host updates the ADR table; R-RP4 and R-RP6 baselines stay unchanged because no new outside caller and no new listed outbound edge arise, to be confirmed by ReportsModuleBoundariesArchUnitTest. ARCHITECTURE.md section 4 Reports text gets the same sentence.",
+"F435": "namespace Lighthouse.Backend.Modules.Reports.Application. public interface IReportNoteCommands { Task<ReportOutcome<ReportNoteRead>> Add(ReportOwner owner, int reportId, ReportNoteCaller caller, string? text, DateTime now); }. Outcomes: Done with the read; NotFound when the owner holds no such report; Refused with ReportRefusalCodes.NoteAuthorUnknown for an Unresolved caller, NoteTextMissing or NoteTextTooLong for the text. The check order is report found, then caller, then text. S3 adds Edit(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller, string? text, DateTime now) returning Task<ReportOutcome<ReportNoteRead>> and Delete(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller) returning Task<ReportOutcomeStatus> The store is held as an internal property, not an unused private field (analyzer S1144).",
+"F436": "public interface IReportNoteQueries { ReportOutcome<IReadOnlyList<ReportNoteRead>> List(ReportOwner owner, int reportId); }. Done with the notes of that report newest first (CreatedAt then Id, both descending), empty when it has none; NotFound when the owner holds no such report. S3 adds the overload List(ReportOwner owner, int reportId, ReportNoteCaller caller) whose reads carry CanModify; the S1 overload stays The store is held as an internal property, not an unused private field (analyzer S1144).",
+"F437": "public abstract record ReportNoteCaller with a private protected constructor and three public nested sealed records in the same file: Anonymous (no members; authentication off), Signed(int ProfileId, string? DisplayName), Unresolved (authentication on, nobody resolved). Built with new ReportNoteCaller.Anonymous(), new ReportNoteCaller.Signed(7, \"Ann\"), new ReportNoteCaller.Unresolved() Namespace Lighthouse.Backend.Modules.Reports.Domain, layer Domain (it declares no port and reaches only the shared Models, the base library and the Domain).",
+"F438": "public sealed record ReportNoteRead(int Id, string Text, DateTime CreatedAt, DateTime? LastEditedAt, string? AuthorDisplayName). Instants are UTC DateTime; the instance-zone day is not on this record. S3 appends bool CanModify as the last positional member Namespace Lighthouse.Backend.Modules.Reports.Domain, layer Domain (it declares no port and reaches only the shared Models, the base library and the Domain).",
+"F439": "public sealed class ReportNoteCommands(IReportNoteStore store) : IReportNoteCommands. Add as declared on IReportNoteCommands: stores ReportNote.Write(reportId, text, signed ? profileId : null, signed ? displayName : null, now) for Anonymous (unsigned) and Signed callers, saves once, answers the read The store is held as an internal property, not an unused private field (analyzer S1144).",
 "F44": "Adding a note with write access on the report owner; changing and deleting a note by the same rule as Delivery notes.",
+"F440": "public sealed class ReportNoteQueries(IReportNoteStore store) : IReportNoteQueries. List as declared on IReportNoteQueries The store is held as an internal property, not an unused private field (analyzer S1144).",
+"F441": "public abstract class ReportNotesControllerBase(IReportNoteQueries queries, IReportNoteCommands commands, ICurrentUserProfileService profiles, IAuthModeResolver authModes, ILighthouseClock clock) : ControllerBase, with public static ReportNoteCaller CallerOf(AuthMode mode, UserProfile? profile): Disabled gives new ReportNoteCaller.Anonymous(); Enabled with a profile gives new ReportNoteCaller.Signed(profile.Id, profile.DisplayName); Enabled with null, Misconfigured and Blocked give new ReportNoteCaller.Unresolved(). Protected actions answer the ports' outcomes with ProblemDetails carrying the code (400, 403, 404) The ports (queries, commands, profiles, authModes, clock) are exposed as protected properties, because analyzer S1144 forbids unused private fields.",
+"F442": "TypesThatStay gains ReportNote (Models.Reports); MovingTypes gains IReportNoteCommands, IReportNoteQueries, IReportNoteStore, ReportNoteCommands, ReportNoteQueries with layer Application and ReportNoteCaller, ReportNoteRead with layer Domain; TypesThatStay also gains ReportNoteDto and ReportNoteRequest (the API types of the notes), in the skeleton commit",
+"F443": "TypesByLayer gains the new Application types ReportNoteCaller and ReportNoteRead go under the Domain key, the other new types under the Application key.",
+"F444": "CanModify decided by the note for the caller In Modules/Reports/Domain.",
 "F45": "Notes are deleted together with their report.",
 "F46": "Notes in print and PDF (maintainer, 2026-11-26: out for now). A reader of only the PDF sees no context.",
 "F47": "A separate event date on a note, or two kinds of note (maintainer, 2026-11-26: the day it was written is enough).",
