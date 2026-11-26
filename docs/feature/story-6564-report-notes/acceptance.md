@@ -704,6 +704,598 @@ The field shows to everyone, which the reader cases pin elsewhere
 ###### Obligations
 
 
+### S3
+
+##### Covers
+
+P7
+
+```text
+The author changes their own note, for a Team and a Portfolio report, then the notes are listed
+```
+
+```text
+The list shows the new text without outer blanks, marked as edited with the day of the edit, in the same place and with the same writer; the other note is not marked
+```
+
+```text
+The author corrects their note and sees it corrected and marked as edited
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteChangeScenarios\.cs
+
+The\_author\_changes\_their\_note\_and\_the\_report\_shows\_the\_new\_text\_marked\_as\_edited\_with\_the\_day\_in\_the\_same\_place
+
+```text
+A change that rewrites the creation day or moves the note to the top, stores the text with its blanks, or marks every note as edited
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P7
+
+```text
+The author changes a note to blank text, to 2001 characters, then to exactly 2000 characters between blanks, and to the same text
+```
+
+```text
+Blank is refused note-text-missing, 2001 is refused note-text-too-long, 2000 is kept, same text still carries the edited day, and refused changes leave no edited mark
+```
+
+```text
+The same text rules as for writing a note apply when correcting it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteChangeScenarios\.cs
+
+A\_change\_to\_no\_text\_is\_not\_saved\_and\_the\_note\_stays\_as\_it\_was
+
+```text
+A change that skips the text rule and saves blank text, or marks a refused change as edited
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P8
+
+```text
+The author deletes their own note on a Team and a Portfolio report, then the notes are listed
+```
+
+```text
+The delete is accepted and answers the removed note; the list no longer has it and keeps the others
+```
+
+```text
+The author removes their note and the live report no longer shows it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteChangeScenarios\.cs
+
+The\_author\_deletes\_their\_note\_and\_the\_report\_no\_longer\_lists\_it\_and\_keeps\_the\_others
+
+```text
+A delete that removes every note of the report or answers success without removing the note
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P9
+
+```text
+A writer who did not sign a note changes it and deletes it; then the notes are listed for the author and for that writer
+```
+
+```text
+Both are refused note-not-yours, the note is unchanged, and the other writer is offered no controls while the author is
+```
+
+```text
+Somebody else cannot rewrite or remove another person's words and sees no control to try
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteChangeScenarios\.cs
+
+A\_writer\_who\_is\_not\_the\_author\_is\_refused\_a\_change\_and\_a\_delete\_and\_the\_note\_stays\_as\_written
+
+```text
+A refusal under a different code, a refusal that still changes the note, or a list that offers the controls to the wrong person
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P9
+
+```text
+A writer changes a signed note of another person with blank text
+```
+
+```text
+The refusal is note-not-yours, not a missing-text refusal
+```
+
+```text
+A person told they may not change a note is told that first
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteChangeScenarios\.cs
+
+Who\_may\_change\_a\_note\_is\_judged\_before\_what\_is\_written
+
+```text
+A rule that judges the text before the author
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P10
+
+```text
+A signed-in writer and a writer with sign-in off each change one note nobody signed and delete another, after listing the notes
+```
+
+```text
+Both are offered the controls and accepted, and the list shows the change marked as edited with no author and the deleted note gone
+```
+
+```text
+Any writer can correct or remove a note nobody signed
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteChangeScenarios\.cs
+
+A\_note\_nobody\_signed\_is\_changed\_and\_deleted\_by\_any\_writer\_whether\_sign\_in\_is\_on\_or\_off\_now
+
+```text
+A rule that compares ids directly so an unsigned note is changeable by nobody, or by only one of the two kinds of writer
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P12
+
+```text
+A note signed while sign-in was on is listed, changed and deleted with sign-in now off
+```
+
+```text
+No control is offered, the change and the delete are refused note-not-yours, and the note is unchanged
+```
+
+```text
+A signed note stays its author's after sign-in is switched off
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteChangeScenarios\.cs
+
+A\_note\_signed\_while\_sign\_in\_was\_on\_stays\_its\_authors\_after\_sign\_in\_is\_switched\_off
+
+```text
+A rule that lets any caller with no profile change a signed note
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P9
+
+P10
+
+P12
+
+```text
+Five pairings of signer and caller: own signed note, another's signed note, unsigned with sign-in on, unsigned with sign-in off, signed with sign-in off; list the notes, then change one and delete another
+```
+
+```text
+What the list offers equals whether the change and the delete are accepted, and a refusal names note-not-yours
+```
+
+```text
+The controls shown beside a note agree with what the server will accept
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteChangeScenarios\.cs
+
+A\_note\_is\_offered\_a\_change\_and\_a\_delete\_exactly\_when\_a\_direct\_request\_for\_them\_is\_accepted
+
+```text
+A list that always says false or always true, or a flag decided by a different rule from the command
+```
+
+###### Obligations
+
+
+
+
+
+
+##### Covers
+
+P9
+
+```text
+Signed in with no resolvable profile, somebody changes a signed note and deletes an unsigned one
+```
+
+```text
+Both are refused note-author-unknown and the notes are unchanged
+```
+
+```text
+Nobody can be named, so nothing is changed in their name
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteChangeScenarios\.cs
+
+Signed\_in\_with\_nobody\_nameable\_a\_change\_and\_a\_delete\_are\_refused\_for\_that\_reason\_whoever\_signed\_the\_note\_and\_the\_notes\_stay\_as\_they\_were
+
+```text
+An unresolved caller treated as anonymous, which would let them change an unsigned note
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P9
+
+P10
+
+```text
+Every pairing of signer (nobody or one of three people) and caller, changing one note and deleting another
+```
+
+```text
+Each change or delete is accepted only for an unsigned note or its signer
+```
+
+```text
+Whoever signed a note keeps it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteChangeScenarios\.cs
+
+Every\_pairing\_of\_signer\_and\_caller\_is\_accepted\_only\_for\_an\_unsigned\_note\_or\_the\_signer
+
+```text
+A rule right for one signer but wrong for another profile id, or one that lets a no-profile caller change a signed note
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P9
+
+P10
+
+```text
+Random sequences of writes by people signed in or not, then changes and deletes by any of them, with a printed seed
+```
+
+```text
+Each is accepted exactly as the model of signers says and the report lists exactly the notes still held
+```
+
+```text
+No history of writes lets someone take over another person's note
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteChangeScenarios\.cs
+
+Whatever\_was\_written\_and\_changed\_before\_a\_change\_is\_accepted\_only\_for\_an\_unsigned\_note\_or\_the\_signer
+
+```text
+A rule that only holds for a note's first change
+```
+
+###### Obligations
+
+
+##### Covers
+
+P8
+
+```text
+A note already deleted is changed with an unresolved caller and blank text and deleted again, a note id that never existed, and a note asked for through a report or owner that does not hold it
+```
+
+```text
+Each answers not found before anything else is judged and the other notes stay
+```
+
+```text
+A note that is gone is reported gone, not refused for some other reason
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteChangeScenarios\.cs
+
+A\_note\_that\_is\_gone\_is\_found\_missing\_before\_anything\_else\_is\_judged\_and\_the\_other\_notes\_stay
+
+```text
+A vanished note answered with a refusal about the author or the text
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P9
+
+```text
+A reader with read access only sends PUT and DELETE for a note of a Team and of a Portfolio report
+```
+
+```text
+Both answer 403 and the note is unchanged
+```
+
+```text
+A reader cannot change or delete notes even by sending the request directly
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Reports\/ReportNotesWireContractTest\.cs
+
+A\_caller\_with\_read\_access\_only\_is\_forbidden\_to\_change\_or\_delete\_a\_note
+
+```text
+A route that answers 404 or 405 for a reader, or lets a reader through
+```
+
+###### Obligations
+
+
+##### Covers
+
+P9
+
+P12
+
+```text
+A writer who did not sign a note sends PUT and DELETE for a Team and a Portfolio note signed by somebody else
+```
+
+```text
+Both answer 403 naming note-not-yours and the note is unchanged
+```
+
+```text
+Another writer is turned away on the wire and told the note is not theirs
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Reports\/ReportNotesWireContractTest\.cs
+
+A\_writer\_who\_did\_not\_sign\_a\_note\_is\_forbidden\_to\_change\_or\_delete\_it\_and\_is\_told\_it\_is\_not\_theirs
+
+```text
+A 403 without the problem code, or a 400 for the not-yours refusal
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P7
+
+P8
+
+P9
+
+P12
+
+```text
+The notes area is shown for a writer with notes the server marks changeable and not changeable, and for a user who may not write; the user edits and saves, cancels, saves refused text, deletes, and a delete fails
+```
+
+```text
+Edit and Delete appear only on changeable notes and only for a writer; a saved edit shows the new text marked edited with the day; cancel changes nothing; refused text says why and keeps the field; a deleted note leaves the list; a failed delete keeps the note
+```
+
+```text
+The screen shows controls only where the user may use them and every outcome is visible
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportNotes\.change\.test\.tsx
+
+Changing and deleting the notes of a report
+
+```text
+Controls shown on every note, hidden from the writer who may change a note, or an edit marker that is not shown
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P9
+
+```text
+The access rules of every report note route action are checked, including the new PUT and DELETE
+```
+
+```text
+Every action declares its access
+```
+
+```text
+No note route is left open to somebody who may not use it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/EveryActionDeclaresItsAccessArchitectureTest\.cs
+
+EveryActionDeclaresItsAccessArchitectureTest
+
+```text
+A new route without an access guard on the unchanged list
+```
+
+###### Obligations
+
+
+##### Covers
+
+P7
+
+```text
+The Reports module boundaries are checked with the new change types
+```
+
+```text
+The module rules hold with the new types
+```
+
+```text
+Notes stay inside the Reports module the way the design promises
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs
+
+ReportsModuleBoundariesArchUnitTest
+
+```text
+A new type placed outside the module that nothing flags
+```
+
+###### Obligations
+
+
+##### Covers
+
+P7
+
+```text
+The Reports membership lists are checked with the new change types
+```
+
+```text
+Every Reports type is on its membership list
+```
+
+```text
+Notes stay inside the Reports module the way the design promises
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsMembershipArchUnitTest\.cs
+
+ReportsMembershipArchUnitTest
+
+```text
+A new type missing from the lists
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

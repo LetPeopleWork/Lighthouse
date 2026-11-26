@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Modules.Reports.Application;
 using Lighthouse.Backend.Modules.Reports.Domain;
@@ -76,6 +77,48 @@ namespace Lighthouse.Backend.Tests.Contracts.Reports
             }
         }
 
+        [TestCase("team")]
+        [TestCase("portfolio")]
+        public async Task A_caller_with_read_access_only_is_forbidden_to_change_or_delete_a_note(string ownerKind)
+        {
+            var report = await ReportWithANote(ownerKind);
+            var theNote = (await NotesOf(report))[0].GetProperty("id").GetInt32();
+
+            using var change = await ReaderOf(report).PutAsJsonAsync($"{NotesRoute(report)}/{theNote}", new { text = "Rewritten" });
+            using var delete = await ReaderOf(report).DeleteAsync($"{NotesRoute(report)}/{theNote}");
+            var afterwards = await TextsOfTheNotes(report);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(change.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"WHAT: a reader changing note {theNote} was answered {(int)change.StatusCode}. WHY: changing a note takes write access on the report's owner. HOW: guard the PUT with write access on the owner named in the route.");
+                Assert.That(delete.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"WHAT: a reader deleting note {theNote} was answered {(int)delete.StatusCode}. WHY: deleting a note takes write access on the report's owner. HOW: guard the DELETE with write access on the owner named in the route.");
+                Assert.That(afterwards, Is.EqualTo(new[] { TheNote }), "WHAT: the note is not as it was written. WHY: refused requests change nothing. HOW: refuse before writing.");
+            }
+        }
+
+        [TestCase("team")]
+        [TestCase("portfolio")]
+        public async Task A_writer_who_did_not_sign_a_note_is_forbidden_to_change_or_delete_it_and_is_told_it_is_not_theirs(string ownerKind)
+        {
+            var report = await ReportWithANote(ownerKind, signedBy: "Ann");
+            var theNote = (await NotesOf(report))[0].GetProperty("id").GetInt32();
+
+            using var change = await WriterOf(report).PutAsJsonAsync($"{NotesRoute(report)}/{theNote}", new { text = "Rewritten" });
+            var changeBody = await change.Content.ReadAsStringAsync();
+            using var delete = await WriterOf(report).DeleteAsync($"{NotesRoute(report)}/{theNote}");
+            var deleteBody = await delete.Content.ReadAsStringAsync();
+            var afterwards = await TextsOfTheNotes(report);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(change.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"WHAT: a writer changing a note somebody else signed was answered {(int)change.StatusCode}. WHY: a signed note stays its author's. HOW: answer 403 when the note is not the caller's.");
+                Assert.That(changeBody, Does.Contain(ReportRefusalCodes.NoteNotYours), "WHAT: the refusal does not name why. WHY: the client matches on the code. HOW: answer the problem code note-not-yours.");
+                Assert.That(delete.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"WHAT: a writer deleting a note somebody else signed was answered {(int)delete.StatusCode}. WHY: a signed note stays its author's. HOW: answer 403 when the note is not the caller's.");
+                Assert.That(deleteBody, Does.Contain(ReportRefusalCodes.NoteNotYours));
+                Assert.That(afterwards, Is.EqualTo(new[] { TheNote }), "WHAT: the note is not as it was written. WHY: refused requests change nothing. HOW: refuse before writing.");
+            }
+        }
+
         private sealed record ReportAt(string OwnerKind, int OwnerId, int ReportId);
 
         private static string NotesRoute(ReportAt report)
@@ -96,7 +139,7 @@ namespace Lighthouse.Backend.Tests.Contracts.Reports
         private async Task<string?[]> TextsOfTheNotes(ReportAt report)
             => (await NotesOf(report)).Select(note => note.GetProperty("text").GetString()).ToArray();
 
-        private async Task<ReportAt> ReportWithANote(string ownerKind)
+        private async Task<ReportAt> ReportWithANote(string ownerKind, string? signedBy = null)
         {
             using var scope = NewScope();
             foreach (var seeder in scope.ServiceProvider.GetServices<ISeeder>())
@@ -127,7 +170,16 @@ namespace Lighthouse.Backend.Tests.Contracts.Reports
             Assert.That(created.Status, Is.EqualTo(ReportOutcomeStatus.Done), $"the report was not created: {created.Code}");
 
             var reportId = created.Value!.Id;
-            var added = await scope.ServiceProvider.GetRequiredService<IReportNoteCommands>().Add(owner, reportId, new ReportNoteCaller.Anonymous(), TheNote, DateTime.UtcNow);
+            ReportNoteCaller author = new ReportNoteCaller.Anonymous();
+            if (signedBy is not null)
+            {
+                var profile = new UserProfile { Subject = signedBy.ToLowerInvariant(), SubjectClaimType = "sub", DisplayName = signedBy, CreatedAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow };
+                context.UserProfiles.Add(profile);
+                context.SaveChanges();
+                author = new ReportNoteCaller.Signed(profile.Id, signedBy);
+            }
+
+            var added = await scope.ServiceProvider.GetRequiredService<IReportNoteCommands>().Add(owner, reportId, author, TheNote, DateTime.UtcNow);
             Assert.That(added.Status, Is.EqualTo(ReportOutcomeStatus.Done), $"the note was not saved: {added.Code}");
 
             return new ReportAt(ownerKind, owner.Id, reportId);

@@ -232,6 +232,35 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             return scope.ServiceProvider.GetRequiredService<IReportNoteQueries>().List(owner, reportId);
         }
 
+        /// <summary>The text of a note is changed as the route that changes one asks, and the outcome is returned as it is: the changed note, no such note, or a refusal.</summary>
+        protected async Task<ReportOutcome<ReportNoteRead>> ChangeANote(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller, string? text, DateTime changedAt)
+        {
+            using var scope = harness.NewScope();
+            return await scope.ServiceProvider.GetRequiredService<IReportNoteCommands>().Edit(owner, reportId, noteId, caller, text, changedAt);
+        }
+
+        /// <summary>A note is deleted as the route that deletes one asks, and the outcome is returned as it is: the removed note, no such note, or a refusal.</summary>
+        protected async Task<ReportOutcome<ReportNoteRead>> DeleteANote(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller)
+        {
+            using var scope = harness.NewScope();
+            return await scope.ServiceProvider.GetRequiredService<IReportNoteCommands>().Delete(owner, reportId, noteId, caller);
+        }
+
+        /// <summary>The notes of a report as the live report lists them for this caller, each saying whether the caller may change it.</summary>
+        protected ReportOutcome<IReadOnlyList<ReportNoteRead>> ReadTheNotesAs(ReportOwner owner, int reportId, ReportNoteCaller caller)
+        {
+            using var scope = harness.NewScope();
+            return scope.ServiceProvider.GetRequiredService<IReportNoteQueries>().List(owner, reportId, caller);
+        }
+
+        /// <summary>Which notes of a report the caller is offered a change or a delete on, by text, newest first.</summary>
+        protected IReadOnlyList<(string Text, bool CanModify)> TheNotesAsOfferedTo(ReportOwner owner, int reportId, ReportNoteCaller caller)
+        {
+            var read = ReadTheNotesAs(owner, reportId, caller);
+            Assert.That(read.Status, Is.EqualTo(ReportOutcomeStatus.Done), $"the notes could not be read: {read.Status} {read.Code}");
+            return [.. read.Value!.Select(note => (note.Text, note.CanModify))];
+        }
+
         /// <summary>One note as a reader sees it: the text, the instance's day it was written and edited, and who wrote it.</summary>
         protected sealed record ShownNote(string Text, DateOnly WrittenOn, DateOnly? EditedOn, string? Author);
 

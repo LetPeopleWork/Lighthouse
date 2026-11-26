@@ -770,6 +770,526 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>The author changes their own note, for a Team and a Portfolio report, then the notes are listed
+</code></pre>
+
+<pre><code>The list shows the new text without outer blanks, marked as edited with the day of the edit, in the same place and with the same writer; the other note is not marked
+</code></pre>
+
+<pre><code>The author corrects their note and sees it corrected and marked as edited
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs</p>
+
+<p>The_author_changes_their_note_and_the_report_shows_the_new_text_marked_as_edited_with_the_day_in_the_same_place</p>
+
+<pre><code>A change that rewrites the creation day or moves the note to the top, stores the text with its blanks, or marks every note as edited
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>The author changes a note to blank text, to 2001 characters, then to exactly 2000 characters between blanks, and to the same text
+</code></pre>
+
+<pre><code>Blank is refused note-text-missing, 2001 is refused note-text-too-long, 2000 is kept, same text still carries the edited day, and refused changes leave no edited mark
+</code></pre>
+
+<pre><code>The same text rules as for writing a note apply when correcting it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs</p>
+
+<p>A_change_to_no_text_is_not_saved_and_the_note_stays_as_it_was</p>
+
+<pre><code>A change that skips the text rule and saves blank text, or marks a refused change as edited
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P8</p>
+
+<pre><code>The author deletes their own note on a Team and a Portfolio report, then the notes are listed
+</code></pre>
+
+<pre><code>The delete is accepted and answers the removed note; the list no longer has it and keeps the others
+</code></pre>
+
+<pre><code>The author removes their note and the live report no longer shows it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs</p>
+
+<p>The_author_deletes_their_note_and_the_report_no_longer_lists_it_and_keeps_the_others</p>
+
+<pre><code>A delete that removes every note of the report or answers success without removing the note
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P9</p>
+
+<pre><code>A writer who did not sign a note changes it and deletes it; then the notes are listed for the author and for that writer
+</code></pre>
+
+<pre><code>Both are refused note-not-yours, the note is unchanged, and the other writer is offered no controls while the author is
+</code></pre>
+
+<pre><code>Somebody else cannot rewrite or remove another person&#x27;s words and sees no control to try
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs</p>
+
+<p>A_writer_who_is_not_the_author_is_refused_a_change_and_a_delete_and_the_note_stays_as_written</p>
+
+<pre><code>A refusal under a different code, a refusal that still changes the note, or a list that offers the controls to the wrong person
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P9</p>
+
+<pre><code>A writer changes a signed note of another person with blank text
+</code></pre>
+
+<pre><code>The refusal is note-not-yours, not a missing-text refusal
+</code></pre>
+
+<pre><code>A person told they may not change a note is told that first
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs</p>
+
+<p>Who_may_change_a_note_is_judged_before_what_is_written</p>
+
+<pre><code>A rule that judges the text before the author
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>A signed-in writer and a writer with sign-in off each change one note nobody signed and delete another, after listing the notes
+</code></pre>
+
+<pre><code>Both are offered the controls and accepted, and the list shows the change marked as edited with no author and the deleted note gone
+</code></pre>
+
+<pre><code>Any writer can correct or remove a note nobody signed
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs</p>
+
+<p>A_note_nobody_signed_is_changed_and_deleted_by_any_writer_whether_sign_in_is_on_or_off_now</p>
+
+<pre><code>A rule that compares ids directly so an unsigned note is changeable by nobody, or by only one of the two kinds of writer
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P12</p>
+
+<pre><code>A note signed while sign-in was on is listed, changed and deleted with sign-in now off
+</code></pre>
+
+<pre><code>No control is offered, the change and the delete are refused note-not-yours, and the note is unchanged
+</code></pre>
+
+<pre><code>A signed note stays its author&#x27;s after sign-in is switched off
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs</p>
+
+<p>A_note_signed_while_sign_in_was_on_stays_its_authors_after_sign_in_is_switched_off</p>
+
+<pre><code>A rule that lets any caller with no profile change a signed note
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P9</p>
+
+<p>P10</p>
+
+<p>P12</p>
+
+<pre><code>Five pairings of signer and caller: own signed note, another&#x27;s signed note, unsigned with sign-in on, unsigned with sign-in off, signed with sign-in off; list the notes, then change one and delete another
+</code></pre>
+
+<pre><code>What the list offers equals whether the change and the delete are accepted, and a refusal names note-not-yours
+</code></pre>
+
+<pre><code>The controls shown beside a note agree with what the server will accept
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs</p>
+
+<p>A_note_is_offered_a_change_and_a_delete_exactly_when_a_direct_request_for_them_is_accepted</p>
+
+<pre><code>A list that always says false or always true, or a flag decided by a different rule from the command
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P9</p>
+
+<pre><code>Signed in with no resolvable profile, somebody changes a signed note and deletes an unsigned one
+</code></pre>
+
+<pre><code>Both are refused note-author-unknown and the notes are unchanged
+</code></pre>
+
+<pre><code>Nobody can be named, so nothing is changed in their name
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs</p>
+
+<p>Signed_in_with_nobody_nameable_a_change_and_a_delete_are_refused_for_that_reason_whoever_signed_the_note_and_the_notes_stay_as_they_were</p>
+
+<pre><code>An unresolved caller treated as anonymous, which would let them change an unsigned note
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P9</p>
+
+<p>P10</p>
+
+<pre><code>Every pairing of signer (nobody or one of three people) and caller, changing one note and deleting another
+</code></pre>
+
+<pre><code>Each change or delete is accepted only for an unsigned note or its signer
+</code></pre>
+
+<pre><code>Whoever signed a note keeps it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs</p>
+
+<p>Every_pairing_of_signer_and_caller_is_accepted_only_for_an_unsigned_note_or_the_signer</p>
+
+<pre><code>A rule right for one signer but wrong for another profile id, or one that lets a no-profile caller change a signed note
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P9</p>
+
+<p>P10</p>
+
+<pre><code>Random sequences of writes by people signed in or not, then changes and deletes by any of them, with a printed seed
+</code></pre>
+
+<pre><code>Each is accepted exactly as the model of signers says and the report lists exactly the notes still held
+</code></pre>
+
+<pre><code>No history of writes lets someone take over another person&#x27;s note
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs</p>
+
+<p>Whatever_was_written_and_changed_before_a_change_is_accepted_only_for_an_unsigned_note_or_the_signer</p>
+
+<pre><code>A rule that only holds for a note&#x27;s first change
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P8</p>
+
+<pre><code>A note already deleted is changed with an unresolved caller and blank text and deleted again, a note id that never existed, and a note asked for through a report or owner that does not hold it
+</code></pre>
+
+<pre><code>Each answers not found before anything else is judged and the other notes stay
+</code></pre>
+
+<pre><code>A note that is gone is reported gone, not refused for some other reason
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs</p>
+
+<p>A_note_that_is_gone_is_found_missing_before_anything_else_is_judged_and_the_other_notes_stay</p>
+
+<pre><code>A vanished note answered with a refusal about the author or the text
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P9</p>
+
+<pre><code>A reader with read access only sends PUT and DELETE for a note of a Team and of a Portfolio report
+</code></pre>
+
+<pre><code>Both answer 403 and the note is unchanged
+</code></pre>
+
+<pre><code>A reader cannot change or delete notes even by sending the request directly
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Reports/ReportNotesWireContractTest.cs</p>
+
+<p>A_caller_with_read_access_only_is_forbidden_to_change_or_delete_a_note</p>
+
+<pre><code>A route that answers 404 or 405 for a reader, or lets a reader through
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P9</p>
+
+<p>P12</p>
+
+<pre><code>A writer who did not sign a note sends PUT and DELETE for a Team and a Portfolio note signed by somebody else
+</code></pre>
+
+<pre><code>Both answer 403 naming note-not-yours and the note is unchanged
+</code></pre>
+
+<pre><code>Another writer is turned away on the wire and told the note is not theirs
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Reports/ReportNotesWireContractTest.cs</p>
+
+<p>A_writer_who_did_not_sign_a_note_is_forbidden_to_change_or_delete_it_and_is_told_it_is_not_theirs</p>
+
+<pre><code>A 403 without the problem code, or a 400 for the not-yours refusal
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<p>P8</p>
+
+<p>P9</p>
+
+<p>P12</p>
+
+<pre><code>The notes area is shown for a writer with notes the server marks changeable and not changeable, and for a user who may not write; the user edits and saves, cancels, saves refused text, deletes, and a delete fails
+</code></pre>
+
+<pre><code>Edit and Delete appear only on changeable notes and only for a writer; a saved edit shows the new text marked edited with the day; cancel changes nothing; refused text says why and keeps the field; a deleted note leaves the list; a failed delete keeps the note
+</code></pre>
+
+<pre><code>The screen shows controls only where the user may use them and every outcome is visible
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.change.test.tsx</p>
+
+<p>Changing and deleting the notes of a report</p>
+
+<pre><code>Controls shown on every note, hidden from the writer who may change a note, or an edit marker that is not shown
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P9</p>
+
+<pre><code>The access rules of every report note route action are checked, including the new PUT and DELETE
+</code></pre>
+
+<pre><code>Every action declares its access
+</code></pre>
+
+<pre><code>No note route is left open to somebody who may not use it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs</p>
+
+<p>EveryActionDeclaresItsAccessArchitectureTest</p>
+
+<pre><code>A new route without an access guard on the unchanged list
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>The Reports module boundaries are checked with the new change types
+</code></pre>
+
+<pre><code>The module rules hold with the new types
+</code></pre>
+
+<pre><code>Notes stay inside the Reports module the way the design promises
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs</p>
+
+<p>ReportsModuleBoundariesArchUnitTest</p>
+
+<pre><code>A new type placed outside the module that nothing flags
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>The Reports membership lists are checked with the new change types
+</code></pre>
+
+<pre><code>Every Reports type is on its membership list
+</code></pre>
+
+<pre><code>Notes stay inside the Reports module the way the design promises
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs</p>
+
+<p>ReportsMembershipArchUnitTest</p>
+
+<pre><code>A new type missing from the lists
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

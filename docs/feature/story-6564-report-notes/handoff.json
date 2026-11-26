@@ -389,13 +389,305 @@
 "stimulus": "F529",
 "user_result": "F531"
 }
+],
+"S3": [
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F565",
+"test": "The_author_changes_their_note_and_the_report_shows_the_new_text_marked_as_edited_with_the_day_in_the_same_place",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs"
+},
+"expected": "F563",
+"stimulus": "F562",
+"user_result": "F564"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F569",
+"test": "A_change_to_no_text_is_not_saved_and_the_note_stays_as_it_was",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs"
+},
+"expected": "F567",
+"stimulus": "F566",
+"user_result": "F568"
+},
+{
+"covers": [
+"P8"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F573",
+"test": "The_author_deletes_their_note_and_the_report_no_longer_lists_it_and_keeps_the_others",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs"
+},
+"expected": "F571",
+"stimulus": "F570",
+"user_result": "F572"
+},
+{
+"covers": [
+"P9"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F577",
+"test": "A_writer_who_is_not_the_author_is_refused_a_change_and_a_delete_and_the_note_stays_as_written",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs"
+},
+"expected": "F575",
+"stimulus": "F574",
+"user_result": "F576"
+},
+{
+"covers": [
+"P9"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F581",
+"test": "Who_may_change_a_note_is_judged_before_what_is_written",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs"
+},
+"expected": "F579",
+"stimulus": "F578",
+"user_result": "F580"
+},
+{
+"covers": [
+"P10"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F585",
+"test": "A_note_nobody_signed_is_changed_and_deleted_by_any_writer_whether_sign_in_is_on_or_off_now",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs"
+},
+"expected": "F583",
+"stimulus": "F582",
+"user_result": "F584"
+},
+{
+"covers": [
+"P12"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F589",
+"test": "A_note_signed_while_sign_in_was_on_stays_its_authors_after_sign_in_is_switched_off",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs"
+},
+"expected": "F587",
+"stimulus": "F586",
+"user_result": "F588"
+},
+{
+"covers": [
+"P9",
+"P10",
+"P12"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F312",
+"L7/F313",
+"L7/F314",
+"L7/F315",
+"L7/F316"
+],
+"still_passes_if": "F593",
+"test": "A_note_is_offered_a_change_and_a_delete_exactly_when_a_direct_request_for_them_is_accepted",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs"
+},
+"expected": "F591",
+"stimulus": "F590",
+"user_result": "F592"
+},
+{
+"covers": [
+"P9"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L10/F361",
+"L10/F362"
+],
+"still_passes_if": "F597",
+"test": "Signed_in_with_nobody_nameable_a_change_and_a_delete_are_refused_for_that_reason_whoever_signed_the_note_and_the_notes_stay_as_they_were",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs"
+},
+"expected": "F595",
+"stimulus": "F594",
+"user_result": "F596"
+},
+{
+"covers": [
+"P9",
+"P10"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F307",
+"L6"
+],
+"still_passes_if": "F601",
+"test": "Every_pairing_of_signer_and_caller_is_accepted_only_for_an_unsigned_note_or_the_signer",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs"
+},
+"expected": "F599",
+"stimulus": "F598",
+"user_result": "F600"
+},
+{
+"covers": [
+"P9",
+"P10"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F307"
+],
+"still_passes_if": "F605",
+"test": "Whatever_was_written_and_changed_before_a_change_is_accepted_only_for_an_unsigned_note_or_the_signer",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs"
+},
+"expected": "F603",
+"stimulus": "F602",
+"user_result": "F604"
+},
+{
+"covers": [
+"P8"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F609",
+"test": "A_note_that_is_gone_is_found_missing_before_anything_else_is_judged_and_the_other_notes_stay",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs"
+},
+"expected": "F607",
+"stimulus": "F606",
+"user_result": "F608"
+},
+{
+"covers": [
+"P9"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F613",
+"test": "A_caller_with_read_access_only_is_forbidden_to_change_or_delete_a_note",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Reports/ReportNotesWireContractTest.cs"
+},
+"expected": "F611",
+"stimulus": "F610",
+"user_result": "F612"
+},
+{
+"covers": [
+"P9",
+"P12"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F617",
+"test": "A_writer_who_did_not_sign_a_note_is_forbidden_to_change_or_delete_it_and_is_told_it_is_not_theirs",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Reports/ReportNotesWireContractTest.cs"
+},
+"expected": "F615",
+"stimulus": "F614",
+"user_result": "F616"
+},
+{
+"covers": [
+"P7",
+"P8",
+"P9",
+"P12"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F621",
+"test": "Changing and deleting the notes of a report",
+"test_path": "Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.change.test.tsx"
+},
+"expected": "F619",
+"stimulus": "F618",
+"user_result": "F620"
+},
+{
+"covers": [
+"P9"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F625",
+"test": "EveryActionDeclaresItsAccessArchitectureTest",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs"
+},
+"expected": "F623",
+"stimulus": "F622",
+"user_result": "F624"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F629",
+"test": "ReportsModuleBoundariesArchUnitTest",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs"
+},
+"expected": "F627",
+"stimulus": "F626",
+"user_result": "F628"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T4"
+],
+"still_passes_if": "F632",
+"test": "ReportsMembershipArchUnitTest",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs"
+},
+"expected": "F631",
+"stimulus": "F630",
+"user_result": "F628"
+}
 ]
 },
 "counters": {
 "B": 5,
 "D": 13,
 "E": 12,
-"F": 561,
+"F": 632,
 "K": 2,
 "L": 11,
 "N": 2,
@@ -2173,12 +2465,83 @@
 "F56": "Notes stay out of print and PDF for now (maintainer, 2026-11-26).",
 "F560": "Move DeliveryNoteRequest out of DeliveryNotesController.cs into its own file DeliveryNoteRequest.cs (split-now, a separate commit before the behaviour change), then extract DeliveryNotesController.MayModify unchanged into the kernel value NoteSignature, which makes the report note rule a second asker of one decision Third step, in a separate commit after the two Delivery moves and before any behaviour: add the S3 member contracts as behaviour-free skeletons wired to no route and no UI, so the S3 oracle compiles and fails on behaviour (NotImplementedException), not on a missing member. C#: NoteSignature (Models, namespace Lighthouse.Backend.Models) is created by the second move with the Delivery rule unchanged, and sits in no Reports membership list; ReportRefusalCodes.NoteNotYours = \"note-not-yours\"; ReportNote.MayBeChangedBy(int? callerProfileId) returning bool and ReportNote.Revise(string? rawText, DateTime editedAt) returning ReportOutcome<ReportNote>, both throwing; ReportNoteRead gains the last positional member bool CanModify (the S1 mapping passes false); IReportNoteCommands gains Edit(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller, string? text, DateTime now) returning Task<ReportOutcome<ReportNoteRead>> and Delete(ReportOwner owner, int reportId, int noteId, ReportNoteCaller caller) returning Task<ReportOutcome<ReportNoteRead>> (the removed note on Done, so a refusal keeps its code); IReportNoteQueries gains the overload List(ReportOwner owner, int reportId, ReportNoteCaller caller); IReportNoteStore gains ReportNote? FindForEdit(ReportOwner owner, int reportId, int noteId), void Remove(ReportNote note) and Task<bool> TrySave(); ReportNoteCommands, ReportNoteQueries and ReportRepository implement them by throwing; ReportNoteDto gains bool CanModify taken from the read; ReportNotesControllerBase gains protected EditNote and DeleteNote members that throw and are exposed by no controller action. TypeScript: IReportNote gains canModify?: boolean; IReportService and ReportService gain updateNote(owner: IReportOwner, reportId: number, noteId: number, text: string): Promise<IReportNote> and deleteNote(owner: IReportOwner, reportId: number, noteId: number): Promise<void>, which reject with an Error; ReportNotes.tsx is unchanged. No new type lands in a Reports membership list (the only new type, NoteSignature, is in Models outside Reports, and ReportNoteRead stays in the Domain layer reaching only Models and the base library), so ReportsMembership and TypesByLayer need no change.",
 "F561": "Delivery note behaviour: a signed note only by its author, an unsigned note by any writer, whatever the authentication setting; same routes and same DTO; and for the skeleton step every Reports behaviour of S1 and S2, since nothing is registered, routed or rendered",
+"F562": "The author changes their own note, for a Team and a Portfolio report, then the notes are listed",
+"F563": "The list shows the new text without outer blanks, marked as edited with the day of the edit, in the same place and with the same writer; the other note is not marked",
+"F564": "The author corrects their note and sees it corrected and marked as edited",
+"F565": "A change that rewrites the creation day or moves the note to the top, stores the text with its blanks, or marks every note as edited",
+"F566": "The author changes a note to blank text, to 2001 characters, then to exactly 2000 characters between blanks, and to the same text",
+"F567": "Blank is refused note-text-missing, 2001 is refused note-text-too-long, 2000 is kept, same text still carries the edited day, and refused changes leave no edited mark",
+"F568": "The same text rules as for writing a note apply when correcting it",
+"F569": "A change that skips the text rule and saves blank text, or marks a refused change as edited",
 "F57": "Notes are not added to the CLI and MCP report reads now (maintainer, 2026-11-26).",
+"F570": "The author deletes their own note on a Team and a Portfolio report, then the notes are listed",
+"F571": "The delete is accepted and answers the removed note; the list no longer has it and keeps the others",
+"F572": "The author removes their note and the live report no longer shows it",
+"F573": "A delete that removes every note of the report or answers success without removing the note",
+"F574": "A writer who did not sign a note changes it and deletes it; then the notes are listed for the author and for that writer",
+"F575": "Both are refused note-not-yours, the note is unchanged, and the other writer is offered no controls while the author is",
+"F576": "Somebody else cannot rewrite or remove another person's words and sees no control to try",
+"F577": "A refusal under a different code, a refusal that still changes the note, or a list that offers the controls to the wrong person",
+"F578": "A writer changes a signed note of another person with blank text",
+"F579": "The refusal is note-not-yours, not a missing-text refusal",
+"F580": "A person told they may not change a note is told that first",
+"F581": "A rule that judges the text before the author",
+"F582": "A signed-in writer and a writer with sign-in off each change one note nobody signed and delete another, after listing the notes",
+"F583": "Both are offered the controls and accepted, and the list shows the change marked as edited with no author and the deleted note gone",
+"F584": "Any writer can correct or remove a note nobody signed",
+"F585": "A rule that compares ids directly so an unsigned note is changeable by nobody, or by only one of the two kinds of writer",
+"F586": "A note signed while sign-in was on is listed, changed and deleted with sign-in now off",
+"F587": "No control is offered, the change and the delete are refused note-not-yours, and the note is unchanged",
+"F588": "A signed note stays its author's after sign-in is switched off",
+"F589": "A rule that lets any caller with no profile change a signed note",
+"F590": "Five pairings of signer and caller: own signed note, another's signed note, unsigned with sign-in on, unsigned with sign-in off, signed with sign-in off; list the notes, then change one and delete another",
+"F591": "What the list offers equals whether the change and the delete are accepted, and a refusal names note-not-yours",
+"F592": "The controls shown beside a note agree with what the server will accept",
+"F593": "A list that always says false or always true, or a flag decided by a different rule from the command",
+"F594": "Signed in with no resolvable profile, somebody changes a signed note and deletes an unsigned one",
+"F595": "Both are refused note-author-unknown and the notes are unchanged",
+"F596": "Nobody can be named, so nothing is changed in their name",
+"F597": "An unresolved caller treated as anonymous, which would let them change an unsigned note",
+"F598": "Every pairing of signer (nobody or one of three people) and caller, changing one note and deleting another",
+"F599": "Each change or delete is accepted only for an unsigned note or its signer",
 "F6": "the user adds a note with text to the report in the live report",
 "F60": "When a Team or Portfolio is deleted, its reports and their notes go with it.",
+"F600": "Whoever signed a note keeps it",
+"F601": "A rule right for one signer but wrong for another profile id, or one that lets a no-profile caller change a signed note",
+"F602": "Random sequences of writes by people signed in or not, then changes and deletes by any of them, with a printed seed",
+"F603": "Each is accepted exactly as the model of signers says and the report lists exactly the notes still held",
+"F604": "No history of writes lets someone take over another person's note",
+"F605": "A rule that only holds for a note's first change",
+"F606": "A note already deleted is changed with an unresolved caller and blank text and deleted again, a note id that never existed, and a note asked for through a report or owner that does not hold it",
+"F607": "Each answers not found before anything else is judged and the other notes stay",
+"F608": "A note that is gone is reported gone, not refused for some other reason",
+"F609": "A vanished note answered with a refusal about the author or the text",
 "F61": "Two users who change the same note at once: the last save wins, as for Delivery notes.",
+"F610": "A reader with read access only sends PUT and DELETE for a note of a Team and of a Portfolio report",
+"F611": "Both answer 403 and the note is unchanged",
+"F612": "A reader cannot change or delete notes even by sending the request directly",
+"F613": "A route that answers 404 or 405 for a reader, or lets a reader through",
+"F614": "A writer who did not sign a note sends PUT and DELETE for a Team and a Portfolio note signed by somebody else",
+"F615": "Both answer 403 naming note-not-yours and the note is unchanged",
+"F616": "Another writer is turned away on the wire and told the note is not theirs",
+"F617": "A 403 without the problem code, or a 400 for the not-yours refusal",
+"F618": "The notes area is shown for a writer with notes the server marks changeable and not changeable, and for a user who may not write; the user edits and saves, cancels, saves refused text, deletes, and a delete fails",
+"F619": "Edit and Delete appear only on changeable notes and only for a writer; a saved edit shows the new text marked edited with the day; cancel changes nothing; refused text says why and keeps the field; a deleted note leaves the list; a failed delete keeps the note",
 "F62": "Whether a note has a maximum length; Delivery notes have none today.",
+"F620": "The screen shows controls only where the user may use them and every outcome is visible",
+"F621": "Controls shown on every note, hidden from the writer who may change a note, or an edit marker that is not shown",
+"F622": "The access rules of every report note route action are checked, including the new PUT and DELETE",
+"F623": "Every action declares its access",
+"F624": "No note route is left open to somebody who may not use it",
+"F625": "A new route without an access guard on the unchanged list",
+"F626": "The Reports module boundaries are checked with the new change types",
+"F627": "The module rules hold with the new types",
+"F628": "Notes stay inside the Reports module the way the design promises",
+"F629": "A new type placed outside the module that nothing flags",
 "F63": "Where the notes sit in the live report (above the panels, below them, or beside them); settled by the UI sketch at the start of DELIVER.",
+"F630": "The Reports membership lists are checked with the new change types",
+"F631": "Every Reports type is on its membership list",
+"F632": "A new type missing from the lists",
 "F64": "A coach opens a Team or Portfolio report in the live report and reads its notes next to the numbers.",
 "F65": "emotion: not supplied",
 "F66": "The coach adds a note, for example how large the Team is or a training that took place, and sees it at the top of the list with the day and their name.",
