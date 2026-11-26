@@ -729,7 +729,7 @@
 "B": 5,
 "D": 13,
 "E": 12,
-"F": 644,
+"F": 645,
 "K": 2,
 "L": 11,
 "N": 2,
@@ -1987,6 +1987,56 @@
 }
 }
 },
+"examination": {
+"E1": {
+"reason": "F645",
+"verdict": "not_examined"
+},
+"E10": {
+"reason": "F645",
+"verdict": "not_examined"
+},
+"E11": {
+"reason": "F645",
+"verdict": "not_examined"
+},
+"E12": {
+"reason": "F645",
+"verdict": "not_examined"
+},
+"E2": {
+"reason": "F645",
+"verdict": "not_examined"
+},
+"E3": {
+"reason": "F645",
+"verdict": "not_examined"
+},
+"E4": {
+"reason": "F645",
+"verdict": "not_examined"
+},
+"E5": {
+"reason": "F645",
+"verdict": "not_examined"
+},
+"E6": {
+"reason": "F645",
+"verdict": "not_examined"
+},
+"E7": {
+"reason": "F645",
+"verdict": "not_examined"
+},
+"E8": {
+"reason": "F645",
+"verdict": "not_examined"
+},
+"E9": {
+"reason": "F645",
+"verdict": "not_examined"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -2597,6 +2647,7 @@
 "F642": "The change is not saved when the note was deleted meanwhile and the deleted note does not come back; it is saved otherwise",
 "F643": "A correction of a note that somebody removed is not silently reported as saved",
 "F644": "A save that answers true although the note is gone, or one that answers false for every change",
+"F645": "No public observation of report notes is available to the examiner: public projection empty and no admitted probe drives the stimulus (O1, O2, O3). Evidence-capture owner: operator; prerequisite: declare examine.public or a candidate console script for report notes, then rebuild the examine prompt.",
 "F65": "emotion: not supplied",
 "F66": "The coach adds a note, for example how large the Team is or a training that took place, and sees it at the top of the list with the day and their name.",
 "F67": "If the note has no text, the coach is told it needs some text and writes it again.",

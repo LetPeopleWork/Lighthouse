@@ -1646,4 +1646,98 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+not_examined
+
+```text
+No public observation of report notes is available to the examiner: public projection empty and no admitted probe drives the stimulus (O1, O2, O3). Evidence-capture owner: operator; prerequisite: declare examine.public or a candidate console script for report notes, then rebuild the examine prompt.
+```
+
+### E2
+
+not_examined
+
+```text
+No public observation of report notes is available to the examiner: public projection empty and no admitted probe drives the stimulus (O1, O2, O3). Evidence-capture owner: operator; prerequisite: declare examine.public or a candidate console script for report notes, then rebuild the examine prompt.
+```
+
+### E3
+
+not_examined
+
+```text
+No public observation of report notes is available to the examiner: public projection empty and no admitted probe drives the stimulus (O1, O2, O3). Evidence-capture owner: operator; prerequisite: declare examine.public or a candidate console script for report notes, then rebuild the examine prompt.
+```
+
+### E4
+
+not_examined
+
+```text
+No public observation of report notes is available to the examiner: public projection empty and no admitted probe drives the stimulus (O1, O2, O3). Evidence-capture owner: operator; prerequisite: declare examine.public or a candidate console script for report notes, then rebuild the examine prompt.
+```
+
+### E5
+
+not_examined
+
+```text
+No public observation of report notes is available to the examiner: public projection empty and no admitted probe drives the stimulus (O1, O2, O3). Evidence-capture owner: operator; prerequisite: declare examine.public or a candidate console script for report notes, then rebuild the examine prompt.
+```
+
+### E6
+
+not_examined
+
+```text
+No public observation of report notes is available to the examiner: public projection empty and no admitted probe drives the stimulus (O1, O2, O3). Evidence-capture owner: operator; prerequisite: declare examine.public or a candidate console script for report notes, then rebuild the examine prompt.
+```
+
+### E7
+
+not_examined
+
+```text
+No public observation of report notes is available to the examiner: public projection empty and no admitted probe drives the stimulus (O1, O2, O3). Evidence-capture owner: operator; prerequisite: declare examine.public or a candidate console script for report notes, then rebuild the examine prompt.
+```
+
+### E8
+
+not_examined
+
+```text
+No public observation of report notes is available to the examiner: public projection empty and no admitted probe drives the stimulus (O1, O2, O3). Evidence-capture owner: operator; prerequisite: declare examine.public or a candidate console script for report notes, then rebuild the examine prompt.
+```
+
+### E9
+
+not_examined
+
+```text
+No public observation of report notes is available to the examiner: public projection empty and no admitted probe drives the stimulus (O1, O2, O3). Evidence-capture owner: operator; prerequisite: declare examine.public or a candidate console script for report notes, then rebuild the examine prompt.
+```
+
+### E10
+
+not_examined
+
+```text
+No public observation of report notes is available to the examiner: public projection empty and no admitted probe drives the stimulus (O1, O2, O3). Evidence-capture owner: operator; prerequisite: declare examine.public or a candidate console script for report notes, then rebuild the examine prompt.
+```
+
+### E11
+
+not_examined
+
+```text
+No public observation of report notes is available to the examiner: public projection empty and no admitted probe drives the stimulus (O1, O2, O3). Evidence-capture owner: operator; prerequisite: declare examine.public or a candidate console script for report notes, then rebuild the examine prompt.
+```
+
+### E12
+
+not_examined
+
+```text
+No public observation of report notes is available to the examiner: public projection empty and no admitted probe drives the stimulus (O1, O2, O3). Evidence-capture owner: operator; prerequisite: declare examine.public or a candidate console script for report notes, then rebuild the examine prompt.
+```
