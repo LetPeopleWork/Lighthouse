@@ -17,6 +17,8 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private const string TheOldNameKind = "names a round type by its old Services place";
 
+        private const string TheGroupedKind = "names a round type in a grouped alternation after its old Services place";
+
         private const string TheInlineListKind = "holds its own list of the round's types";
 
         private const string ThePrefixKind = "guards the round by a type-name prefix";
@@ -31,6 +33,16 @@ namespace Lighthouse.Backend.Tests.Architecture
                 new Regex("(?!)", RegexOptions.None, NamespaceMoveLaw.PatternTimeout),
                 []),
             new PatternRoleMap(new Dictionary<string, PatternDeclaration>(), new Dictionary<(string Field, string Type), string>()));
+
+        private static readonly Regex TheGroupedAlternation = new(
+            @"Services\.(?<area>Implementation|Interfaces|\((?:\?:)?Implementation\|Interfaces\))\.\((?:\?:)?(?<names>[A-Za-z0-9_|`]+)\)",
+            RegexOptions.None,
+            NamespaceMoveLaw.PatternTimeout);
+
+        private static readonly Regex TheGroupedAfterTheBackend = new(
+            @"Backend\.\((?:\?:)?(?<areas>Services\.(?:Implementation|Interfaces)(?:\|Services\.(?:Implementation|Interfaces))*)\)\.\((?:\?:)?(?<names>[A-Za-z0-9_|`]+)\)",
+            RegexOptions.None,
+            NamespaceMoveLaw.PatternTimeout);
 
         private static readonly Regex TheOldFolderNewcomer = new(
             @"(?<![A-Za-z0-9_])Services/(Implementation|Interfaces)/I?WriteBack",
@@ -149,6 +161,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             {
                 findings.AddRange(TheSweepLaw.OldPathStringsIn(path, source, []).Select(found => new Finding(path, TheOldNameKind, found)));
 
+                findings.AddRange(GroupedRoundNamesIn(source).Select(found => new Finding(path, TheGroupedKind, found)));
+
                 var namedByNewFullName = WriteBackMembership.MovingTypes
                     .Where(type => source.Contains($"\"{type.NewFullName}\"", StringComparison.Ordinal))
                     .Select(type => type.Name)
@@ -171,6 +185,33 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
 
             return findings;
+        }
+
+        // A regex lists several names after one old place, as in Services.Implementation.(A|B|C); the contiguous old-path
+        // reference misses that form, so each alternative is read as if written out in full.
+        private static List<string> GroupedRoundNamesIn(string source)
+        {
+            var text = ProductionSource.WithoutComments(source).Replace("\\", string.Empty, StringComparison.Ordinal);
+            var found = new List<string>();
+            foreach (Match group in TheGroupedAlternation.Matches(text))
+            {
+                var area = group.Groups["area"].Value;
+                var names = group.Groups["names"].Value.Split('|');
+                found.AddRange(WriteBackMembership.MovingTypes
+                    .Where(type => names.Contains(type.Name, StringComparer.Ordinal) && (area.StartsWith('(') || type.OldNamespace.EndsWith($".{area}", StringComparison.Ordinal)))
+                    .Select(type => type.OldFullName));
+            }
+
+            foreach (Match group in TheGroupedAfterTheBackend.Matches(text))
+            {
+                var areas = group.Groups["areas"].Value.Split('|').Select(area => area[(area.LastIndexOf('.') + 1)..]).ToList();
+                var names = group.Groups["names"].Value.Split('|');
+                found.AddRange(WriteBackMembership.MovingTypes
+                    .Where(type => names.Contains(type.Name, StringComparer.Ordinal) && areas.Any(area => type.OldNamespace.EndsWith($".{area}", StringComparison.Ordinal)))
+                    .Select(type => type.OldFullName));
+            }
+
+            return found;
         }
 
         private static List<string> WhenThePatternsAreReadAgainstTheOldPlaces(IEnumerable<RulePattern> patterns, IReadOnlyDictionary<string, PatternDeclaration> roles, IEnumerable<string> mustSeeTheRoundInForecasting)
@@ -347,6 +388,8 @@ namespace Lighthouse.Backend.Tests.Architecture.WriteBackRulesNameOnlyFixtures
 
         public static IReadOnlyList<(string Path, string Kind)> TheFindingsTheSweepMustMake { get; } =
         [
+            ($"{Folder}AMadeUpGroupedAfterTheBackendRule.cs", "names a round type in a grouped alternation after its old Services place"),
+            ($"{Folder}AMadeUpGroupedRule.cs", "names a round type in a grouped alternation after its old Services place"),
             ($"{Folder}AMadeUpListingTest.cs", "holds its own list of the round's types"),
             ($"{Folder}AMadeUpOldNameRule.cs", "names a round type by its old Services place"),
             ($"{Folder}AMadeUpPlacementTest.cs", "guards the old Services folders against a round newcomer"),
@@ -358,7 +401,9 @@ namespace Lighthouse.Backend.Tests.Architecture.WriteBackRulesNameOnlyFixtures
             ($"{Folder}AMadeUpOldNameRule.cs", Source($"var left = \"{string.Join('.', "Lighthouse.Backend.Services.Implementation", "WriteBackCollector")}\";")),
             ($"{Folder}AMadeUpListingTest.cs", Source(string.Join(Environment.NewLine, WriteBackMembership.MovingTypes.Select(type => $"    \"{type.NewFullName}\",")))),
             ($"{Folder}AMadeUpPlacementTest.cs", Source($"var prefixes = new[] {{ \"WriteBack\", \"IWriteBack\" }};{Environment.NewLine}var newcomer = \"{string.Join('/', "Services", "Interfaces", "IWriteBackMadeUp.cs")}\";")),
-            ($"{Folder}ACleanRuleFile.cs", Source($"var round = \"{WriteBackMembership.TheNewNamespace}.WriteBackService\";{Environment.NewLine}var edge = \"{WriteBackMembership.TheNewNamespace}.WriteBackTriggerService -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService\";")),
+            ($"{Folder}AMadeUpGroupedRule.cs", Source("var round = @\"" + string.Join(string.Empty, @"^Lighthouse\.Backend\.Services\.Implementation\.", "(FeatureListService|WriteBackService|WriteBackRound)$") + "\";")),
+            ($"{Folder}AMadeUpGroupedAfterTheBackendRule.cs", Source("var round = @\"" + string.Join(string.Empty, @"^Lighthouse\.Backend\.(Services\.Implementation|Services\.Interfaces)\.", "(IFeatureListService|IWriteBackService)$") + "\";")),
+            ($"{Folder}ACleanRuleFile.cs", Source("var stays = @\"" + string.Join(string.Empty, @"^Lighthouse\.Backend\.Services\.Implementation\.", "(FeatureListService|EstimateNormalizer)$") + "\";" + Environment.NewLine + $"var round = \"{WriteBackMembership.TheNewNamespace}.WriteBackService\";{Environment.NewLine}var edge = \"{WriteBackMembership.TheNewNamespace}.WriteBackTriggerService -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService\";")),
         ];
 
         public static string AnExtraExistingPath(IReadOnlyList<string> onDisk) => onDisk.First(path => path.EndsWith("ModuleRules.cs", StringComparison.Ordinal));
