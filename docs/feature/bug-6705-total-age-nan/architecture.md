@@ -77,12 +77,12 @@ Lighthouse\.Frontend\/src\/components\/Common\/Charts\/TotalWorkItemAgeRunChart\
 #### Verification
 
 ```text
-pnpm --dir Lighthouse.Frontend vitest run src/components/Common/Charts/TotalWorkItemAgeRunChart.test.tsx
+pnpm --dir Lighthouse.Frontend vitest run src/components/Common/Charts/TotalWorkItemAgeRunChart.test.tsx src/components/Common/Charts/totalAgeOfStartedItems.test.ts
 ```
 
 #### Supports
 
-None.
+Lighthouse\.Frontend\/src\/components\/Common\/Charts\/totalAgeOfStartedItems\.test\.ts
 
 None.
 

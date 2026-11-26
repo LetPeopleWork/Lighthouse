@@ -100,6 +100,9 @@
 ],
 "stimulus": "F15"
 },
+"supports": [
+"Lighthouse.Frontend/src/components/Common/Charts/totalAgeOfStartedItems.test.ts"
+],
 "targets": [
 {
 "change": "Extend",
@@ -107,7 +110,7 @@
 }
 ],
 "verification": [
-"pnpm --dir Lighthouse.Frontend vitest run src/components/Common/Charts/TotalWorkItemAgeRunChart.test.tsx"
+"pnpm --dir Lighthouse.Frontend vitest run src/components/Common/Charts/TotalWorkItemAgeRunChart.test.tsx src/components/Common/Charts/totalAgeOfStartedItems.test.ts"
 ]
 }
 }
