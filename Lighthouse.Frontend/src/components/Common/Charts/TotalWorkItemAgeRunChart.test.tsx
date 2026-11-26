@@ -441,9 +441,9 @@ describe("TotalWorkItemAgeRunChart", () => {
 			series.valueFormatter(series.data[dayIndex], { dataIndex: dayIndex });
 
 		// Day 0: ages 3 and 1; day 1: ages 4 and 2
-		expect(series.data, "each day totals only items with a start date").toEqual([
-			4, 6,
-		]);
+		expect(series.data, "each day totals only items with a start date").toEqual(
+			[4, 6],
+		);
 		expect(tooltipOn(0)).toBe("4 days total (2 items) - Click for details");
 		expect(tooltipOn(1)).toBe("6 days total (2 items) - Click for details");
 	});
