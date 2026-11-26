@@ -1,0 +1,122 @@
+review_result:
+  round: 2 of 2
+  verdict: NEEDS_REVISION
+  artifact_path: "docs/feature/story-6564-report-notes/diverge/"
+  reviewer: "nw-diverger-reviewer (Prism)"
+  coverage: >-
+    Re-read all 5 files (ctx_read full, fresh) at rev. 1. Checked: jobs.yaml entry; Models/Team.cs, Models/Reports/Report.cs (creator field absent, owner Team or Portfolio); ReportWizard.tsx exists; nw-taste-evaluation rubric (T1-T4 and DVF wording match quotes). Cited URLs: Grafana and TeamRhythm quotes found on page; Power BI found; Datadog quotes NOT reproduced by a plain fetch (0 of 2), may be JS-rendered.
+  recomputed:
+    option_1_notes_to_reports: "0.30 x 4.33 + 0.8 + 0.8 + 0.6 + 0.6 = 4.10 (correct)"
+    option_4_wizard: "0.30 x 3.00 + 0.6 + 0.6 + 0.45 + 0.75 = 3.30 (correct)"
+    option_5_events_store: "0.30 x 3.67 + 0.6 + 0.4 + 0.45 + 0.6 = 3.15 (correct)"
+    margins: "1 vs 4 = 0.80 (DVF +0.40, T1 +0.20, T2 +0.20, T3 +0.15, T4 -0.15: correct); 4 vs 5 = 0.15 (correct)"
+    curated_distribution: "raw sum 2.10; curated 0.333/0.167/0.071/0.071/0.095/0.262 sum to 1.00 (correct); head/tail split correct"
+  fix_status:
+    F1_option2_degree_variant: FIXED (degree variant moved to Eliminated; six mechanisms now distinct)
+    F2_head_clustering_family_read: FIXED (one text-list option of six; heads are different mechanisms)
+    F3_tail_probability_derivation: FIXED (derivation from lens shown and normalised)
+    F4_constraint_cherry_picking: FIXED (per-option a-d table, one rule; residual minor items N2, N3)
+    F5_research_sourcing_and_absence: FIXED (quotes and links; ActionableAgile not verified; scope stated; Datadog quotes residual N8)
+    F6_team_size_marking: PARTLY FIXED (decision statement and For the requester OK; body residual B1)
+    F7_standing_dated_marking: PARTLY FIXED (For the requester OK; body residual B2)
+    F8_handles_in_recommendation: PARTLY FIXED (option numbers and Team-size handle removed; headings and a label still carry coined handles, B3)
+    F9_your_questions_attribution: FIXED
+    F10_only_survivor_claim: FIXED (replaced by score basis; 0.80 and breakdown correct)
+    F11_gate_verdict_in_options_raw: FIXED
+    F12_rubric_levels_quoted: FIXED (quotes match nw-taste-evaluation wording)
+    F13_weights_lock_record: FIXED (locked 2026-11-26, equal to default column and 5878/6535)
+    F14_option_number_label_in_taste: FIXED in prose (number labels remain in tables, see N6)
+    F15_C1_trigger_reasoning: FIXED (reason stated; judgement, see N5)
+    F16_dissent_margin_and_unserved_job: FIXED (0.80 margin; job-share-numbers-outside-lighthouse named)
+    F17_claim_text_checked: PARTLY FIXED (quotes added; Datadog not reproduced, N8)
+    F18_absence_scope: FIXED (Team.cs plus Models search for assignee, capacity, memberCount, TeamSize, contributors; trackers not searched, stated)
+  dimensions:
+    jtbd_rigor: PASSED
+    research_quality: PASSED
+    option_diversity: PASSED
+    taste_application: PASSED
+    recommendation_coherence: FAILED
+  blocking_findings:
+    - id: B1
+      file: recommendation.md
+      location: "Removed before scoring paragraph (line 43)"
+      quoted: >-
+        fails "generic": a Portfolio report has no Team size
+      issue: >-
+        Team size is a new term (requester words are how large the Team is). This is its first mention in the body and it is unmarked. Rule 4 requires [new] at first mention in the body. Residual of F6.
+      fix: >-
+        Write Team size [new], or use how large the Team is.
+    - id: B2
+      file: recommendation.md
+      location: "Answers to the two open questions, C2 (line 53); Hire when (line 40)"
+      quoted: >-
+        Standing context or a dated event: one note concept for now.
+      issue: >-
+        standing context and dated event are new terms (not requester spans; the requester wrote on a date). First mention in the body is unmarked. Rule 4. Residual of F7. The same applies to dated events in the Hire when line of the events option.
+      fix: >-
+        Mark [new] at first mention in the body, or write what happened on a date in the requester's words.
+    - id: B3
+      file: recommendation.md
+      location: "Headings at lines 27, 35, 57; label at line 54"
+      quoted: >-
+        ### A context step in the report-creation wizard [new] — 3.30; ### Events kept once for a Team or the organisation and listed by date [new] — 3.15; Events kept once and listed by date (3.15)
+      issue: >-
+        These headings reproduce the coined handles of options-raw.md (Option 4 and Option 5 headings). Line 54 cites the handle as a label with its score. Rule 5 allows coined handles only in options-raw.md headings and the taste-evaluation.md scoring table. Residual of F8. The dissent heading (line 57) repeats the wizard handle too.
+      fix: >-
+        Describe each by mechanism, for example: a wizard step that stores fixed context fields on the report [new] (3.30); a store of dated events outside the reports, listed by date [new] (3.15). Use that wording in the headings, the dissent heading and line 54.
+  minor_findings:
+    - id: N1
+      file: taste-evaluation.md
+      location: "Section 2 constraint table row labels"
+      issue: >-
+        Rows are labelled with the coined handles (2 Team size value on the Team, 4 context step in the report-creation wizard, 5 events kept once) and option numbers are used in prose ("option 2 and option 3"). Rule 5 limits handles to the scoring table. Fix: label rows by mechanism only.
+    - id: N2
+      file: taste-evaluation.md
+      location: "Section 2, option 5 row, (d) generic"
+      issue: >-
+        Pass rests on an assumption the file defers to DISCUSS (a Portfolio report lists organisation events). Options 2 and 3 were eliminated on (d) with evidence, so the Pass is not symmetric. Fix: mark (d) for option 5 as open pending DISCUSS, or evidence the Portfolio case. Survival does not change the recommendation.
+    - id: N3
+      file: taste-evaluation.md
+      location: "Section 2, option 4 row, (a) and (d)"
+      issue: >-
+        (a) reads Pass, at a cost, which is not one of the rule's three outcomes (Pass, Fail, N/A). (d) rests on every template having a wizard; ReportWizard.tsx exists, but per-template coverage was not checked. Fix: state (a) as Pass-with-new-field or Fail by the rule; check wizard coverage per template.
+    - id: N4
+      file: taste-evaluation.md
+      location: "Section 2, option 6 DVF row"
+      issue: >-
+        D = 1 is scored as no evidence of want, but the stated reason is data not held (a feasibility matter). The data search covers Models/ only, and trackers were not searched. Fix: score D on the want evidence; put the data gap under F and mark it conditional on the tracker search. Option 6 would still rank below the recommendation.
+    - id: N5
+      file: recommendation.md
+      location: "Answers, C1"
+      issue: >-
+        Nobody asked to compute with team size is a judgement. Jessie's stated reason is that throughput differs by team size, which is close to a computation. Fix: say why the reason is not a request to compute, or state that the trigger is contested.
+    - id: N6
+      file: recommendation.md
+      location: "Why it ranks first"
+      issue: >-
+        Says Desirability and Feasibility (DVF 4.33 against 3.00), but 4.33 and 3.00 are DVF averages that include Viability. Fix: say DVF average.
+    - id: N7
+      file: recommendation.md
+      location: "Events option, Why it scores well"
+      issue: >-
+        Market precedent is a sheet-as-source for Grafana, which the research file records as not read (search summary only). Fix: say known from a search summary, or cite the page once read.
+    - id: N8
+      file: competitive-research.md
+      location: "Products table, Datadog row"
+      issue: >-
+        The quoted Datadog phrases were not found on a plain fetch (0 of 2). The file says quotes were read on the page. Fix: re-check the quotes, or mark the row as read from a search summary.
+    - id: N9
+      file: taste-evaluation.md
+      location: "Section 2 note, Eliminated before taste scoring"
+      issue: >-
+        Eliminate if total < 6 is stated as a rule but is not shown in the nw-taste-evaluation DVF section I checked (the scale definitions match). Fix: cite the threshold source or label it as a local rule.
+  approval_status: rejected_pending_revisions
+  verdict_note: "NEEDS_REVISION: three rule-4 and rule-5 residuals in recommendation.md (B1-B3). All other dimensions pass. Each fix is a wording change, no re-score."
+  blocking_issues: [B1, B2, B3]
+
+host_resolution:
+  date: 2026-11-26
+  note: >
+    Revision limit (2 rounds) reached. The host fixed the three blocking wording findings B1-B3 in recommendation.md
+    (Team size wording, the dated-event term, coined handles replaced by mechanism descriptions). No score changed.
+    Minor findings N1-N9 are carried into DISCUSS as known weaknesses, not fixed.

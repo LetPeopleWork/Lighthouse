@@ -1,0 +1,109 @@
+review_id: "discuss-review-story-6564-report-notes"
+reviewer: "nw-product-owner-reviewer (Eclipse), read-only"
+artifacts_reviewed:
+  - "docs/feature/story-6564-report-notes/brief.md"
+  - "docs/feature/story-6564-report-notes/feature-delta.md"
+  - "docs/feature/story-6564-report-notes/diverge/request.md"
+  - "docs/feature/story-6564-report-notes/diverge/recommendation.md"
+  - "Lighthouse.Backend/Lighthouse.Backend/API/DeliveryNotesController.cs (prior art)"
+  - ".claude/skills/feature-checklists/SKILL.md (DISCUSS checklist)"
+  - "docs/product/architecture/adr-271-ui-surfaces-follow-units-and-levels-and-settings-split-by-audience.md"
+
+verdict: NEEDS_REVISION
+
+findings:
+  - id: F1
+    severity: blocking
+    rule: "6 (decision status)"
+    where: "brief.md, Decisions: 'Notes belong to the report, not to its template ... how large the Team is goes in as note text (DIVERGE recommendation, accepted by the maintainer 2026-11-26)', status Confirmed; brief.md Scope: 'A structured Team size value; how large the Team is goes in as note text'"
+    defect: >
+      feature-delta.md records seven maintainer answers. None accepts the DIVERGE recommendation, and none
+      decides that Team size is written as note text. The 'accepted by the maintainer' attribution has no
+      record behind it, so a Proposed item is shown as agreed. The 'every report type' part is supported by
+      the ADO description ('generic concept for all report types'); the Team-size-as-text part is not.
+    fix: >
+      Quote the maintainer's actual answer into feature-delta.md under DISCUSS maintainer decisions, or set
+      these two decisions to Proposed and ask the maintainer one question. Cite the ADO description as the
+      source of the 'all report types' scope.
+
+  - id: F2
+    severity: blocking
+    rule: "2 (promises faithful to Delivery-notes rules) and 6 (no undecided case shown as agreed)"
+    where: "brief.md P10 ('authentication is off, and a note on a report' / 'a user with write access on the owner changes or deletes the note'); feature-delta.md answer 5 ('With it off, any user with write access may'); brief.md Decision 'Changing and deleting a note follows Delivery notes'"
+    defect: >
+      Delivery notes (DeliveryNotesController.MayModify) allow any writer to change or delete only notes that
+      have no author. A note signed while authentication was on keeps its author, and with authentication off
+      the caller is the shared subject, so nobody else can match it. The controller comment describes this
+      exact switch case. P10 says 'any note', which is broader than the Delivery rule it claims to copy.
+      The auth-on-to-auth-off switch is not covered by any promise, scenario, or Open/Proposed decision.
+      The maintainer's answer 5 has the same gap in its wording.
+    fix: >
+      Put the switch case to the maintainer as a decision. Either (a) keep the Delivery rule and rewrite P10
+      as 'any writer may change or delete a note that has no author; a note signed while authentication was
+      on keeps its author rule', or (b) confirm 'any note' as a deliberate departure from Delivery notes and
+      record it as such. Add a scenario for the chosen rule and record the decision in feature-delta.md.
+
+  - id: F3
+    severity: minor
+    rule: "5 (slice judged in one short pass)"
+    where: "brief.md S3 ('changes or deletes their own note ..., others cannot, and deleting a report deletes its notes'), promise P11"
+    defect: >
+      S3 combines the author edit/delete rule with report-deletion cascade (P11). The cascade is a report
+      lifecycle behaviour, not a note-authorship behaviour. Notes exist from S1, so until S3 ships a deleted
+      report leaves orphan note rows (not visible, since the report is gone).
+    fix: >
+      Move P11 to its own slice S4 (depends on S1), or move it into S1 with the note creation. If it stays in
+      S3, name the two behaviours in the slice text.
+
+  - id: F4
+    severity: minor
+    rule: "5 (one user-observable behaviour per slice)"
+    where: "brief.md S2 ('a reader without write access sees the notes ..., and print and PDF leave the notes out'), promises P5, P6"
+    defect: >
+      S2 bundles two observations: the read-only reader view and the print/PDF exclusion. Both are small and
+      each can be judged in one pass, but the exclusion is a negative guard that becomes relevant as soon as
+      notes exist in S1.
+    fix: >
+      Acceptable as written. Optionally move P6 into S1 as the negative case for the first note, or split S2
+      into two slices.
+
+  - id: F5
+    severity: minor
+    rule: "2 (sad paths stated by Delivery notes)"
+    where: "brief.md Decisions and Open list; no promise or N/A for archiving"
+    defect: >
+      DeliveryNotesController.RefuseWhenArchived blocks writes to notes of an archived Delivery. The brief has
+      no statement of the report equivalent. Under the no-silent-N/A rule the DISCUSS needs an explicit line,
+      either 'reports have no archived state, so no freeze rule' or a promise.
+    fix: >
+      Add one explicit line in Decisions: 'N/A: reports have no archived state, so notes are not frozen', after
+      confirming that in the Report model, or add a promise if reports can be archived.
+
+  - id: F6
+    severity: minor
+    rule: "6 (status traceability)"
+    where: "brief.md Decision 'The author name is the name as it stood when the note was written ...', status Confirmed"
+    defect: >
+      The attribution is 'requester: same as Delivery notes', which is a reference to a rule and not a recorded
+      maintainer answer in feature-delta.md. The rule itself is supported by the controller (AuthorDisplayName
+      stored at write time).
+    fix: >
+      Record the rule in feature-delta.md with the requester's words, so the Confirmed status has a record.
+
+checks_passed:
+  - "Rule 1: the brief's Request block matches the chat request in diverge/request.md word for word. Scope items trace to the maintainer answers 1-6 or to the ADO description (all report types, Team and Portfolio). No scope item goes beyond the request or those answers."
+  - "Rule 2: sad paths with their own promises are P3 (no author), P4 (empty text), P5 (reader refused), P9 (other author refused), P11 (report deleted), P6 (print/PDF excluded). P4 and P9 match the controller (BadRequest 'A note needs some text.', Forbid). P7 marked-as-edited matches LastEditedAt. Newest-first matches CreatedAt desc then Id desc. Write access matches PortfolioWrite."
+  - "Rule 3: every marker that gates or is read has a reader (status fields in the human decision list, the Design/Open tags, the marked-as-edited line in the live report). The 'Amendment: None' and 'Rework: None' lines gate nothing."
+  - "Rule 4: journey has no orphan or dead-end step. The only error step (no text) leads to re-writing. Emotions are 'not supplied', not invented."
+  - "Rule 5: S1 is a thin walking skeleton (add a note, see it listed, through the live report). S2 and S3 extend it. No technical-layer slice. S1 Depends on: None; S2 and S3 Depend on S1."
+  - "Rule 6: Proposed items (concurrent edits, Team/Portfolio deletion, maximum length, placement) are labelled Proposed or Open and are not presented as agreed in the brief's scope or journey. The only problem is F1 and F2."
+  - "Rule 7: the DISCUSS checklist answers all four feature-checklists items (RBAC, Clients CLI/MCP, website, context map) and the UI surface. Each has an explicit answer with a reason. ADR-271 line 46 confirms 'Reports | every level'."
+  - "Wording: no 'Epic' or 'Story' in product text (the words appear only in internal feature-delta/ADO references). Team, Portfolio and Feature are used."
+  - "Journey coherence and emotion: 'emotion: not supplied' is used throughout, as the rules require."
+
+recommendations:
+  blocking: ["F1 (decision status record)", "F2 (auth-off rule and auth-on-to-off switch case)"]
+  minor: ["F3 (move P11 cascade out of S3)", "F4 (optional: P6 into S1)", "F5 (explicit archive N/A)", "F6 (record author-name rule)"]
+
+approval_status: "rejected_pending_revisions"
+approval_conditions: "Resolve F1 and F2 (record or re-status the decisions, and decide the auth-off switch case with the maintainer). Then re-review the brief. F3 to F6 may be handled in the same revision."

@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-11-07
+updated: 2026-11-26
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -75,6 +75,7 @@ feature_context:
   - epic-6473-settings-split
   - story-6501-ordered-parent-fields
   - epic-6577-system-wide-access
+  - story-6564-report-notes
 
 jobs:
   - id: job-rbac-bootstrap
@@ -9030,3 +9031,54 @@ jobs:
       emotional: Confident that nothing is hidden and nothing is drowned by one item.
       social: Put the picture in front of a stakeholder and answer both questions.
     related: [job-flow-coach-spot-pace-outliers]
+
+  - id: job-flow-coach-keep-the-context-with-the-numbers
+    title: Keep the context a reader needs next to the numbers in a report
+    persona: "flow-coach (also delivery-lead-rte)"
+    feature_context: story-6564-report-notes
+    ado: "Story #6564 Add notes to reports (no parent Epic)"
+    created: 2026-11-26
+    note: >
+      NEW in DISCOVER of story-6564-report-notes. Evidence is one customer workshop on 2026-11-06 (Part 1,
+      2:06:41-2:07:31, recording on Proton Drive, Resources/2026/11), two informants from the same organisation,
+      relayed in the ADO item. Observations: (O1) Jessie wants the report to show how large the Team is, because a
+      Team of three and a Team of ten have very different Throughput; (O2) Peter wants to record what happened,
+      for example a change that started or a training, on a date. Inference: both are the same job - numbers in a
+      report are misread without context the tracker does not hold. Hypothesis, not observed: today the context
+      travels by voice in the review or is typed onto a slide. Counter-evidence considered: (C1) O1 may be better
+      served by a structured Team-size value than by free text - Lighthouse holds no Team size today (Models/Team.cs),
+      so a note is the only carrier for it; that is a DIVERGE question. (C2) O1 is context that always applies, O2
+      belongs to a date; whether one note concept serves both is open. Prior art: job-lead-annotate-what-happened-to-a-delivery
+      (#5639) shipped dated, attributed notes on Deliveries; attribution degrades to unattributed when
+      authentication is off. The request is generic for every report type, not Then & Now only. Open: print and
+      PDF - the ADO item says "probably yes, those readers have the least context"; the maintainer leans to live
+      report only for now (2026-11-26), which leaves job-share-numbers-outside-lighthouse unserved by this Story.
+      Decision: VALIDATED at low-to-medium confidence (two voices, one organisation, no severity or workaround
+      measured); the build reuses a shipped pattern, so the cost of being wrong is small. Scores are desk estimates.
+      2026-11-26 - DIVERGE of story-6564-report-notes (two review rounds; the last round's three wording findings
+      were fixed by the host in recommendation.md, no re-score): six mechanisms, three survived the constraint rule
+      and DVF. Recommended: notes to reports, a list kept by the report, each with text and a day, author shown when
+      authentication is on, live report only, every report type; how large the Team is goes in as note text (4.10).
+      Dissent: a wizard step that stores fixed context fields on the report (3.30). Third: a store of dated events
+      outside the reports (3.15), the direction to revisit if readers need the event's own date. C1 settled as note
+      text until someone needs to compute with Team size; C2 settled as one note concept. Job wording unchanged.
+      See docs/feature/story-6564-report-notes/diverge/.
+      2026-11-26 - DISCUSS of story-6564-report-notes: promises P1-P11 in three slices; maintainer decisions: the day a
+      note was written is enough, write access on the Team or Portfolio adds a note, change and delete follow Delivery
+      notes (author only when authentication is on), notes go with their report, print/PDF out for now, CLI/MCP not now.
+      Job wording unchanged.
+    job_story: >
+      When I put a report in front of people who were not there when its numbers were made,
+      I want the facts that explain those numbers - how large the Team is, what changed and when - to sit with the report,
+      so the reader does not misread the numbers and I do not have to narrate every caveat from memory.
+    dimensions:
+      functional: Add short notes to any report; readers of the live report see them, with who wrote them when authentication is on.
+      emotional: From uneasy ("they will compare our Throughput with a team three times our size") to confident that the context travels with the report.
+      social: Be the coach whose report explains itself, not the one asked "why did it drop?" with no answer on the page.
+    forces:
+      push: Reports show numbers with no place for the context; workshop users asked for it unprompted (O1, O2).
+      pull: Delivery notes already do this for Deliveries (#5639).
+      anxiety: "Will a note look like an official number? Who wrote it? Will it reach readers I did not mean it for (print/PDF)?"
+      habit: Explaining the context aloud in the review, or typing it onto the slide next to a screenshot (hypothesis).
+    opportunity_score: {importance: 3, current_satisfaction: 1, gap: 2, rationale: "Desk estimate; two informants, one workshop; nothing in a report carries context today."}
+    related: [job-lead-annotate-what-happened-to-a-delivery, job-share-numbers-outside-lighthouse, job-flow-coach-show-whether-flow-changed]

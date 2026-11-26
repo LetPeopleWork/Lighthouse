@@ -1,0 +1,371 @@
+{
+"counters": {
+"F": 91,
+"P": 12,
+"S": 3
+},
+"facts": {
+"F1": "Idea: similar to deliveries, I'd like to bea ble to add notes to reports. if auth is on, we should identify who wrote it. Notes should be visible in the \"live report\" in lighthouse, i think (for nwo) we keep them out of the print to pdf",
+"F10": "a user adds a note to a report",
+"F11": "the live report lists the note with its text and the day it was written, and shows no author name",
+"F12": "A note without text is not saved",
+"F13": "a user with write access on the owner of a report",
+"F14": "the user tries to save a note that is empty or holds only blanks",
+"F15": "no note is saved, and the user is told that a note needs some text",
+"F16": "A reader without write access sees notes but cannot add or change them",
+"F17": "a user with read access, and no write access, on the Team or Portfolio that owns a report with notes",
+"F18": "the user opens the report in the live report",
+"F19": "the user sees the notes, with no control to add, change or delete a note, and a direct request to add, change or delete one is refused",
+"F2": "A person reading a report in Lighthouse sees the notes written on it (what happened, how large the Team is), with who wrote them when authentication is on, so the numbers are not misread without their context.",
+"F20": "Print and PDF leave the notes out",
+"F21": "a report that has notes",
+"F22": "a user prints the report or exports it to PDF, alone or together with other reports",
+"F23": "the printed or PDF version shows no notes",
+"F24": "The author changes their own note",
+"F25": "authentication is on, and a note on a report that the user wrote",
+"F26": "the user changes the text of the note",
+"F27": "the live report shows the new text, marked as edited with the day of the edit",
+"F28": "The author deletes their own note",
+"F29": "the user deletes the note",
+"F3": "A reader of a report in Lighthouse sees the notes written on it, so its numbers carry the context that explains them.",
+"F30": "the live report no longer lists the note",
+"F31": "Only the author may change or delete a note",
+"F32": "authentication is on, and a note on a report written by another user, and the user has write access on the owner",
+"F33": "the user opens the report, or sends a direct request to change or delete that note",
+"F34": "the user sees no control to change or delete that note, and the direct request is refused",
+"F38": "the change or the deletion is saved and shows in the live report",
+"F39": "Deleting a report deletes its notes",
+"F4": "A writer adds a note to a report",
+"F40": "a user deletes the report, alone or through bulk removal",
+"F41": "the notes of that report are deleted with it and cannot be read any more",
+"F42": "Notes on reports: plain text, listed newest first, each with the day it was written and, when authentication is on, its author.",
+"F43": "Notes in the live report in Lighthouse, for every report type and for both Team and Portfolio reports.",
+"F44": "Adding a note with write access on the report owner; changing and deleting a note by the same rule as Delivery notes.",
+"F45": "Notes are deleted together with their report.",
+"F46": "Notes in print and PDF (maintainer, 2026-11-26: out for now). A reader of only the PDF sees no context.",
+"F47": "A separate event date on a note, or two kinds of note (maintainer, 2026-11-26: the day it was written is enough).",
+"F48": "A structured Team size value; how large the Team is goes in as note text.",
+"F49": "Notes in the Lighthouse CLI and MCP report reads (maintainer, 2026-11-26: not now).",
+"F5": "authentication is on, and a user has write access on the Team or Portfolio that owns a report",
+"F50": "Notes drawn as marks on the report charts.",
+"F51": "Notes written by the system.",
+"F52": "The day a note was written is enough; there is one kind of note, with no separate event date (maintainer, 2026-11-26).",
+"F53": "Write access on the Team or Portfolio that owns the report is enough to add a note (maintainer, 2026-11-26).",
+"F55": "Notes are deleted when their report is deleted (maintainer, 2026-11-26).",
+"F56": "Notes stay out of print and PDF for now (maintainer, 2026-11-26).",
+"F57": "Notes are not added to the CLI and MCP report reads now (maintainer, 2026-11-26).",
+"F6": "the user adds a note with text to the report in the live report",
+"F60": "When a Team or Portfolio is deleted, its reports and their notes go with it.",
+"F61": "Two users who change the same note at once: the last save wins, as for Delivery notes.",
+"F62": "Whether a note has a maximum length; Delivery notes have none today.",
+"F63": "Where the notes sit in the live report (above the panels, below them, or beside them); settled by the UI sketch at the start of DELIVER.",
+"F64": "A coach opens a Team or Portfolio report in the live report and reads its notes next to the numbers.",
+"F65": "emotion: not supplied",
+"F66": "The coach adds a note, for example how large the Team is or a training that took place, and sees it at the top of the list with the day and their name.",
+"F67": "If the note has no text, the coach is told it needs some text and writes it again.",
+"F68": "Later the coach corrects or deletes their own note.",
+"F69": "A reader with read access opens the same report and reads the notes, without controls to change them.",
+"F7": "the live report lists the note, newest first, with its text, the day it was written and the name of the user who wrote it",
+"F70": "The coach exports the report to PDF; the PDF shows the numbers without the notes.",
+"F72": "Context can be put on a report and is read next to its numbers.",
+"F73": "A reader without write access sees the notes of a report but no control to add or change them, and print and PDF leave the notes out.",
+"F74": "Every reader of the live report gets the context, and the notes reach no one through print or PDF.",
+"F76": "Notes stay correct over time without anyone rewriting another person's words.",
+"F77": "A note nobody signed may be changed or deleted by any writer",
+"F78": "a note on a report that has no author, because it was written while authentication was off",
+"F79": "any user with write access on the owner changes or deletes the note, whether authentication is on or off now",
+"F8": "A note written with authentication off has no author",
+"F80": "Maintainer, 2026-11-26, answering who may change or delete a note: \"same as delivery notes\".",
+"F81": "The first wording said any writer may change any note while authentication is off. Delivery notes decide by the note instead: a note nobody signed belongs to nobody, and a signed note stays its author's.",
+"F82": "A signed note stays its author's after authentication is switched off",
+"F83": "a note on a report signed by a user while authentication was on, and authentication is now off",
+"F84": "a user with write access on the owner tries to change or delete the note",
+"F85": "the user sees no control to change or delete that note, and a direct request to do so is refused",
+"F86": "A frozen, read-only state for notes: reports have no archived state, unlike Deliveries, so no note is ever frozen.",
+"F87": "Changing and deleting a note follows Delivery notes, decided by the note: a signed note only by its author; a note nobody signed (written with authentication off) by any user with write access on the owner (maintainer, 2026-11-26: \"same as delivery notes\").",
+"F88": "Notes belong to the report, not to its template, so every report type has them (ADO #6564: \"a generic concept for all report types\"); how large the Team is goes in as note text (DIVERGE recommendation; the maintainer was asked to object to this direction and answered with the four DISCUSS answers and \"Start discuss\", 2026-11-26).",
+"F89": "The author name is the name as it stood when the note was written, as for Delivery notes, so a note does not re-label itself when someone is renamed or removed (maintainer, 2026-11-26: \"similar to deliveries\", \"same as delivery notes\").",
+"F9": "authentication is off",
+"F90": "A user with write access adds a note to a report in the live report and sees it listed, newest first, with the day it was written and their name (no name when authentication is off); a note without text is not saved; deleting the report deletes its notes.",
+"F91": "The author changes or deletes their own note, others cannot, and a note nobody signed may be changed or deleted by any writer."
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F52"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F53"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F87"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F55"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F56"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F57"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F88"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F89"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F60"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F61"
+},
+{
+"status": {
+"kind": "Open",
+"owner": "Design"
+},
+"text": "F62"
+},
+{
+"status": {
+"kind": "Open",
+"owner": "Design"
+},
+"text": "F63"
+}
+],
+"journey": [
+{
+"emotion": "F65",
+"step": "F64"
+},
+{
+"emotion": "F65",
+"step": "F66"
+},
+{
+"emotion": "F65",
+"step": "F67"
+},
+{
+"emotion": "F65",
+"step": "F68"
+},
+{
+"emotion": "F65",
+"step": "F69"
+},
+{
+"emotion": "F65",
+"step": "F70"
+}
+],
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"given": "F5",
+"id": "P2",
+"kind": "Scenario",
+"then": "F7",
+"title": "F4",
+"when": "F6"
+},
+{
+"given": "F9",
+"id": "P3",
+"kind": "Scenario",
+"then": "F11",
+"title": "F8",
+"when": "F10"
+},
+{
+"given": "F13",
+"id": "P4",
+"kind": "Scenario",
+"then": "F15",
+"title": "F12",
+"when": "F14"
+},
+{
+"given": "F17",
+"id": "P5",
+"kind": "Scenario",
+"then": "F19",
+"title": "F16",
+"when": "F18"
+},
+{
+"given": "F21",
+"id": "P6",
+"kind": "Scenario",
+"then": "F23",
+"title": "F20",
+"when": "F22"
+},
+{
+"given": "F25",
+"id": "P7",
+"kind": "Scenario",
+"then": "F27",
+"title": "F24",
+"when": "F26"
+},
+{
+"given": "F25",
+"id": "P8",
+"kind": "Scenario",
+"then": "F30",
+"title": "F28",
+"when": "F29"
+},
+{
+"given": "F32",
+"id": "P9",
+"kind": "Scenario",
+"then": "F34",
+"title": "F31",
+"when": "F33"
+},
+{
+"amendment": {
+"authority": "F80",
+"reason": "F81"
+},
+"given": "F78",
+"id": "P10",
+"kind": "Scenario",
+"then": "F38",
+"title": "F77",
+"when": "F79"
+},
+{
+"given": "F21",
+"id": "P11",
+"kind": "Scenario",
+"then": "F41",
+"title": "F39",
+"when": "F40"
+},
+{
+"given": "F83",
+"id": "P12",
+"kind": "Scenario",
+"then": "F85",
+"title": "F82",
+"when": "F84"
+}
+],
+"scope_in": [
+"F42",
+"F43",
+"F44",
+"F45"
+],
+"scope_out": [
+"F46",
+"F47",
+"F48",
+"F49",
+"F50",
+"F51",
+"F86"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F90",
+"promises": [
+"P1",
+"P2",
+"P3",
+"P4",
+"P11"
+],
+"work": {
+"size": "M",
+"value": "F72"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F73",
+"promises": [
+"P5",
+"P6"
+],
+"work": {
+"size": "S",
+"value": "F74"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S3",
+"observation": "F91",
+"promises": [
+"P7",
+"P8",
+"P9",
+"P10",
+"P12"
+],
+"work": {
+"size": "M",
+"value": "F76"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6564-report-notes",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
