@@ -1,23 +1,988 @@
 {
 "counters": {
-"F": 13,
+"B": 2,
+"C": 1,
+"D": 8,
+"F": 164,
+"K": 4,
+"L": 4,
 "P": 3,
-"S": 3
+"S": 3,
+"T": 3,
+"Y": 5
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F48",
+"driven_ports": [
+"F47"
+],
+"driving_port": "F46",
+"failures": [
+{
+"condition": "F49",
+"id": "B1",
+"observation": "F50",
+"outcome": "Refusal"
+},
+{
+"condition": "F51",
+"id": "B2",
+"observation": "F52",
+"outcome": "Refusal"
+}
+]
+},
+"claims": [
+{
+"admitted_input": "F82",
+"bypass": "F84",
+"constructor": "<X>Module.Add<X>",
+"consumer": "Program.RegisterServices",
+"harm": "F81",
+"id": "C1",
+"owner": "CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest",
+"proposition": "F80",
+"public_observation": "F83"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F89",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F88"
+},
+{
+"axis": "Inhabitation",
+"basis": "F90",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F88"
+},
+{
+"axis": "PublicReachability",
+"basis": "F91",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F88"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F22"
+},
+{
+"id": "K2",
+"text": "F23"
+},
+{
+"id": "K3",
+"text": "F24"
+},
+{
+"id": "K4",
+"text": "F25"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F14"
+},
+{
+"id": "D2",
+"text": "F15"
+},
+{
+"id": "D3",
+"text": "F16"
+},
+{
+"id": "D4",
+"text": "F17"
+},
+{
+"id": "D5",
+"text": "F18"
+},
+{
+"id": "D6",
+"text": "F19"
+},
+{
+"id": "D7",
+"text": "F20"
+},
+{
+"id": "D8",
+"text": "F21"
+}
+],
+"equality": [
+{
+"definition": "F59",
+"under": "container projection"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "composition-root",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1349",
+"reason": "F36"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules",
+"reason": "F37"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "architecture-tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs:175",
+"reason": "F38"
+},
+{
+"decision": "Changed",
+"kind": "architecture-tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:98",
+"reason": "F39"
+},
+{
+"decision": "Changed",
+"kind": "architecture-tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:115",
+"reason": "F40"
+},
+{
+"decision": "Changed",
+"kind": "architecture-tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:131",
+"reason": "F41"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "host-tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests",
+"reason": "F42"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "ci",
+"locator": "Scripts/test-selection/path-classifier.sh",
+"reason": "F43"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "StartUpRegistrationsPreservationTest",
+"statement": "F60",
+"treatment": {
+"cases": [
+"F61",
+"F62",
+"F63",
+"F64"
+],
+"kind": "Finite",
+"reason": "F65"
+}
+},
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "DomainEventHandlerOrderPinTest",
+"statement": "F66",
+"treatment": {
+"cases": [
+"F67"
+],
+"kind": "Finite",
+"reason": "F68"
+}
+},
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest",
+"statement": "F69",
+"treatment": {
+"cases": [
+"F70",
+"F71",
+"F72",
+"F73"
+],
+"kind": "Finite",
+"reason": "F74"
+}
+},
+{
+"id": "L4",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "ProgramNamesModulesOnlyArchUnitTest",
+"statement": "F75",
+"treatment": {
+"cases": [
+"F76",
+"F77",
+"F78"
+],
+"kind": "Finite",
+"reason": "F79"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F44"
+},
+{
+"analysis": "contract_tests",
+"reason": "F45"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F54",
+"description": "F53",
+"result_type": "map of service type to ordered list of triples"
+},
+{
+"cannot_distinguish": "F56",
+"description": "F55",
+"result_type": "set of full type names per context"
+},
+{
+"cannot_distinguish": "F58",
+"description": "F57",
+"result_type": "set of full type names"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs:175",
+"reason": "F26",
+"symbol": "StartUpDomainEventHandlers"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs:18",
+"reason": "F27",
+"symbol": "DomainEventHandlerOrderPinTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1349",
+"reason": "F28",
+"symbol": "RegisterServices"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1327",
+"reason": "F29",
+"symbol": "RegisterReports"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/PostHogUsageDataPublisher.cs:299",
+"reason": "F30",
+"symbol": "AddUsageDataPublishing"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules",
+"reason": "F31",
+"symbol": "<X>Module"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IlDependencies.cs:36",
+"reason": "F32",
+"symbol": "DependentsIn"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:35",
+"reason": "F33",
+"symbol": "TheCompositionRoot"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PackagedContexts.cs:12",
+"reason": "F34",
+"symbol": "InTheAssembly"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootRegistrations.cs",
+"reason": "F35",
+"symbol": "CompositionRootRegistrations"
+}
+],
+"risks": [
+{
+"allowed": "F94",
+"forbidden": "F95",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "DomainEventHandlerOrderPinTest",
+"preserved": "F93",
+"residue": "F96",
+"source": "F92"
+},
+{
+"allowed": "F99",
+"forbidden": "F100",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "StartUpRegistrationsPreservationTest",
+"preserved": "F98",
+"residue": "F101",
+"source": "F97"
+},
+{
+"allowed": "F104",
+"forbidden": "F105",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "StartUpRegistrationsPreservationTest",
+"preserved": "F103",
+"residue": "F106",
+"source": "F102"
+},
+{
+"allowed": "F109",
+"forbidden": "F110",
+"id": "Y4",
+"kind": "Bypass",
+"owner": "slice review",
+"preserved": "F108",
+"residue": "F111",
+"source": "F107"
+},
+{
+"allowed": "F114",
+"forbidden": "F115",
+"id": "Y5",
+"kind": "SinglePointOfFailure",
+"owner": "S3 crafter and reviewer",
+"preserved": "F113",
+"residue": "F116",
+"source": "F112"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"state": "F85"
+},
+{
+"kind": "Excluded",
+"owner": "CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest",
+"state": "F86"
+},
+{
+"kind": "Unknown",
+"owner": "slice review",
+"state": "F87"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest.cs",
+"public_oracle": {
+"expected": "F127",
+"falsifier": "F128",
+"promises": [
+"P1"
+],
+"stimulus": "F126"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest",
+"id": "T1",
+"obligation": "F136",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs",
+"reason": "F133"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/ForecastingModule.cs",
+"reason": "F133"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/PromisesModule.cs",
+"reason": "F133"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Licensing/LicensingModule.cs",
+"reason": "F133"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/AccessModule.cs",
+"reason": "F133"
+},
+{
+"decision": "Changed",
+"kind": "architecture-tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StartUpRegistrationsPreservationTest.cs",
+"reason": "F134"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F135"
+}
+],
+"reuse": [
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs",
+"reason": "F129",
+"symbol": "FlowMetricsModule"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/ForecastingModule.cs",
+"reason": "F129",
+"symbol": "ForecastingModule"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/PromisesModule.cs",
+"reason": "F129",
+"symbol": "PromisesModule"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Licensing/LicensingModule.cs",
+"reason": "F129",
+"symbol": "LicensingModule"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/AccessModule.cs",
+"reason": "F129",
+"symbol": "AccessModule"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StartUpRegistrationsPreservationTest.cs",
+"reason": "F130",
+"symbol": "StartUpRegistrationsPreservationTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:98",
+"reason": "F131",
+"symbol": "ForecastingModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:115",
+"reason": "F132",
+"symbol": "AccessModuleBoundariesArchUnitTest"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootRegistrations.cs"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs",
+"reason": "F117"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/ForecastingModule.cs",
+"reason": "F118"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/PromisesModule.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Licensing/LicensingModule.cs",
+"reason": "F120"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/AccessModule.cs",
+"reason": "F121"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F122"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StartUpRegistrationsPreservationTest.cs",
+"reason": "F123"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs",
+"reason": "F124"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs",
+"reason": "F125"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~StartUpRegistrationsPreservationTest|FullyQualifiedName~DomainEventHandlerOrderPinTest\"",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest.cs",
+"public_oracle": {
+"expected": "F146",
+"falsifier": "F147",
+"promises": [
+"P2"
+],
+"stimulus": "F145"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest",
+"id": "T2",
+"obligation": "F152",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/WorkItemsModule.cs",
+"reason": "F133"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/TrackerIntegrationModule.cs",
+"reason": "F133"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/RefinementModule.cs",
+"reason": "F133"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/ReportsModule.cs",
+"reason": "F133"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/OrganisationSetupModule.cs",
+"reason": "F133"
+},
+{
+"decision": "Changed",
+"kind": "architecture-tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StartUpRegistrationsPreservationTest.cs",
+"reason": "F150"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F151"
+}
+],
+"reuse": [
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/WorkItemsModule.cs",
+"reason": "F129",
+"symbol": "WorkItemsModule"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/TrackerIntegrationModule.cs",
+"reason": "F129",
+"symbol": "TrackerIntegrationModule"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/RefinementModule.cs",
+"reason": "F129",
+"symbol": "RefinementModule"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/ReportsModule.cs",
+"reason": "F129",
+"symbol": "ReportsModule"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/OrganisationSetupModule.cs",
+"reason": "F129",
+"symbol": "OrganisationSetupModule"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StartUpRegistrationsPreservationTest.cs",
+"reason": "F148",
+"symbol": "StartUpRegistrationsPreservationTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:131",
+"reason": "F149",
+"symbol": "WorkItemsModuleBoundariesArchUnitTest"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootRegistrations.cs"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/WorkItemsModule.cs",
+"reason": "F137"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/TrackerIntegrationModule.cs",
+"reason": "F138"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/RefinementModule.cs",
+"reason": "F139"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/ReportsModule.cs",
+"reason": "F140"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/OrganisationSetupModule.cs",
+"reason": "F141"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F142"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StartUpRegistrationsPreservationTest.cs",
+"reason": "F143"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
+"reason": "F144"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest|FullyQualifiedName~CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest\"",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~StartUpRegistrationsPreservationTest|FullyQualifiedName~DomainEventHandlerOrderPinTest\"",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+},
+"S3": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProgramNamesModulesOnlyArchUnitTest.cs",
+"public_oracle": {
+"expected": "F157",
+"falsifier": "F158",
+"promises": [
+"P3"
+],
+"stimulus": "F156"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ProgramNamesModulesOnlyArchUnitTest",
+"id": "T3",
+"obligation": "F164",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProgramNamesModulesOnlyArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "architecture-tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StartUpRegistrationsPreservationTest.cs",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/TrackerIntegrationModule.cs",
+"reason": "F162"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F163"
+}
+],
+"reuse": [
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StartUpRegistrationsPreservationTest.cs",
+"reason": "F159",
+"symbol": "StartUpRegistrationsPreservationTest"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/TrackerIntegrationModule.cs",
+"reason": "F160",
+"symbol": "TrackerIntegrationModule"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/TrackerIntegrationModule.cs",
+"reason": "F154"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StartUpRegistrationsPreservationTest.cs",
+"reason": "F155"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ProgramNamesModulesOnlyArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~StartUpRegistrationsPreservationTest|FullyQualifiedName~DomainEventHandlerOrderPinTest\"",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+}
+}
 },
 "facts": {
 "F1": "Story 6382 S09a feature B, module start-up: pin every start-up registration at the composition-root port without a host, then move each context's registrations out of Program into its own Add<X> method at the module root (five contexts, then the other five), leaving Program with only the Add<X> calls, host set-up and the one ordered domain-event handler block, and remove the temporary pin.",
 "F10": "The composition-root rule with all ten contexts listed fails until their registrations leave Program; the preservation pin and the handler order pin stay green and unchanged.",
+"F100": "A reordered multi-registration",
+"F101": "None under Testing: the pin",
+"F102": "Negated: a factory can be observed without its dependencies",
+"F103": "Factory identity by requested services",
+"F104": "Recording provider answers nothing",
+"F105": "Running a factory against the database or the key ring",
+"F106": "A factory asking for nothing runs for real; none is registered under Testing (Redis multiplexer is behind a set connection string)",
+"F107": "Branches not taken under Testing; reflection or typeof registrations",
+"F108": "The same lines inside the same if",
+"F109": "Review of the diff",
 "F11": "The other five contexts start themselves up; the handler block stays in one ordered block in Program.",
+"F110": "Editing a moved line",
+"F111": "Unpinned branches",
+"F112": "The pin is temporary and deleted in S3",
+"F113": "Order pin and the three rules stay",
+"F114": "Later DI changes need no pin edit",
+"F115": "Deleting the pin before its last green run is recorded on the S3 candidate",
+"F116": "After S3 container equivalence is not re-checked; walked second set: a hosted service reordered later is caught only by tests of its behaviour",
+"F117": "AddFlowMetrics with the context registration lines moved from Program.RegisterServices.",
+"F118": "AddForecasting with the context registration lines moved from Program.RegisterServices.",
+"F119": "AddPromises with the context registration lines moved from Program.RegisterServices.",
 "F12": "The composition-root rule's list of Program's remaining module-internal names, emptied to the handlers and measured host types, fails until the strays move; the preservation test is deleted in the same commit as its last recorded green run.",
+"F120": "AddLicensing with the context registration lines moved from Program.RegisterServices.",
+"F121": "AddAccess with the context registration lines moved from Program.RegisterServices.",
+"F122": "The five contexts lines leave RegisterServices, replaced by the Add<X> calls at the order-keeping positions.",
+"F123": "The temporary container pin, first commit on the pre-B1 revision with the baseline captured there, green before any line moves.",
+"F124": "Only if its Lighthouse.Backend.Program entry goes stale: replaced by ForecastingModule, nothing else.",
+"F125": "Only if its Lighthouse.Backend.Program entry goes stale: replaced by AccessModule, nothing else.",
+"F126": "Run the S1 oracle class through dotnet test over the compiled assembly: it reads the IL of Lighthouse.Backend.Program for FlowMetrics, Forecasting, Promises, Licensing and Access.",
+"F127": "Before craft: RED by assertion, naming for each of the five contexts the missing <X>Module and the context types Program still registers. After craft: green; StartUpRegistrationsPreservationTest and DomainEventHandlerOrderPinTest green; the Architecture namespace green.",
+"F128": "A made-up composition root in CompositionRootFixtures that registers a type of a listed context is reported by its full name; a made-up type outside Program naming a <X>Module is reported; a compliant twin is not; the pin goes red on a swapped IHostedService line, a changed lifetime and a dropped line (reverted probes recorded as craft commands).",
+"F129": "No type owns this context registrations today; Program.RegisterServices holds them (D-9). Lines move verbatim.",
 "F13": "Program names modules only; the temporary pin is gone.",
+"F130": "The order pin reads only handler registrations; no test pins every descriptor. Its seam copies StartUpDomainEventHandlers rather than editing the approved order pin.",
+"F131": "Existing approved rule of a closed Story; only its Lighthouse.Backend.Program entry is replaced by ForecastingModule, and only if the move leaves it stale.",
+"F132": "Existing approved rule of a closed Story; only its Lighthouse.Backend.Program entry is replaced by AccessModule, and only if the move leaves it stale.",
+"F133": "New module start-up holder; its only caller is Program.RegisterServices.",
+"F134": "New temporary pin, baseline captured on the pre-B1 revision.",
+"F135": "Per file: Program.cs holds one top-level type (Program), nothing to split; the five <X>Module.cs and StartUpRegistrationsPreservationTest.cs are new, one type each; ForecastingModuleBoundariesArchUnitTest.cs and AccessModuleBoundariesArchUnitTest.cs change one list entry at most, no move. The behaviour-free moves are the slice itself, guarded by the pin written first.",
+"F136": "Five contexts are registered only through their own module, only Program names a module, container and handler order unchanged.",
+"F137": "AddWorkItems with the context registration lines moved from Program.",
+"F138": "AddTrackerIntegration with the context registration lines moved from Program.",
+"F139": "AddRefinement with the context registration lines moved from Program.",
+"F14": "Module start-up holder (D-9, option a): one file Modules/<X>/<X>Module.cs per context, public static class <X>Module in namespace Lighthouse.Backend.Modules.<X>, with Add<X>(this IServiceCollection services, IConfiguration configuration) for FlowMetrics, Forecasting, Promises, Licensing, Access (S1) and WorkItems, TrackerIntegration, Refinement, Reports, OrganisationSetup (S2). No such holder exists today: the only extension-method registrar in the backend is Platform/UsageData AddUsageDataPublishing, which is not a context. Lines move verbatim, in today relative order, comments with them. A static extension class breaks calisthenics rule 10 (stateless class); composition code is exempt, and it is the .NET registration idiom. A context whose moved lines read no configuration still takes the parameter only if the build stays clean; otherwise it takes IServiceCollection alone, stated in the craft record.",
+"F140": "AddReports with the context registration lines moved from Program.",
+"F141": "AddOrganisationSetup with the context registration lines moved from Program.",
+"F142": "The other five contexts lines leave; RegisterReports folds into AddReports and Main stops calling it; every handler line gathered into RegisterDomainEventHandlers, called from RegisterServices, no line reordered within an event.",
+"F143": "Seam line only: the RegisterReports invocation goes with the method; the baseline bytes stay unchanged.",
+"F144": "Only if its Lighthouse.Backend.Program entry goes stale: replaced by WorkItemsModule, nothing else.",
+"F145": "Run the S2 oracle class with the S1 class: together they list the ten contexts; the S2 class reads the IL of Program for WorkItems, TrackerIntegration, Refinement, Reports and OrganisationSetup.",
+"F146": "Before craft: RED by assertion naming each missing <X>Module and the context types Program still registers. After craft: both classes green; StartUpRegistrationsPreservationTest baseline unchanged and green; DomainEventHandlerOrderPinTest unchanged and green; Program holds every IDomainEventHandler<> line in RegisterDomainEventHandlers.",
+"F147": "A made-up composition root registering a Reports type is reported; dropping the AddReports call turns the pin red on the Reports service types; moving a TeamDataRefreshed handler into an Add<X> turns the order pin or the rule red (reverted probes recorded).",
+"F148": "Created by S1 of this feature, not yet on main; here only its seam line changes (RegisterReports invocation removed), baseline unchanged.",
+"F149": "Existing approved rule of a closed Story; only its Lighthouse.Backend.Program entry is replaced by WorkItemsModule, and only if the move leaves it stale.",
+"F15": "Call sites: every Add<X> is called from inside Program.RegisterServices(WebApplicationBuilder), which keeps its name and signature because the order pin reflects on it. Each call sits where the context relative order inside every multi-registered service type is kept: IHostedService (today OverTimeHistoryFiller, TeamUpdater, PortfolioUpdater, ConnectionHealthProber, the two usage-data services), ISeeder (ForecastInputsForgottenAtStartSeeder is seventh of nine), IReportMetric and every other service type registered more than once. A registration whose order no call position can keep stays in Program and goes on the composition-root rule allowed list, exactly as the handlers do; measured at B1 and B2.",
+"F150": "Seam line only; the baseline bytes do not change.",
+"F151": "Per file: Program.cs holds one type (Program); the five <X>Module.cs are new, one type each; StartUpRegistrationsPreservationTest.cs holds one test class plus its seam, one line changes; WorkItemsModuleBoundariesArchUnitTest.cs changes one list entry at most. No file holds several types to split.",
+"F152": "The other five contexts register only through their module; handlers stay in one ordered block; container unchanged.",
+"F153": "The strays leave Program behind a <X>Module method called at the same point; Program keeps Add<X> calls, host set-up and the handler block.",
+"F154": "Receives the Tracker integration strays (the OAuth provider start check), if the B1 measure classifies them as strays.",
+"F155": "Deleted, in the same commit as its last green run on the S3 craft is recorded as a craft command.",
+"F156": "Run the S3 oracle class over the compiled assembly: it reads every type of the ten contexts that Program and its nested types name.",
+"F157": "Before craft: RED by assertion naming each stray module-internal type Program still names. After craft: green with the list of handlers, order-kept registrations and measured host set-up types; the S1 and S2 rules and the order pin green; StartUpRegistrationsPreservationTest absent, its last green run recorded on the craft revision just before deletion.",
+"F158": "A made-up composition root naming a module-internal type off the list is reported by full name; the listed ten equal PackagedContexts.InTheAssembly, so an eleventh context fails; a list entry Program no longer names fails as stale.",
+"F159": "Created by S1 of this feature, not yet on main; deleted here after its last recorded green run (P3).",
+"F16": "Handler block: every IDomainEventHandler<> registration, including the two ReconstructionMemo forwards and its singleton, stays in Program in one method Program.RegisterDomainEventHandlers(IServiceCollection), ordered by event across contexts, called from RegisterServices. S1 leaves handler lines where they are; S2 gathers them (today lines 1424-1426 and 1632-1657 at 49552e47a) into that method without reordering any line within an event. RegisterReports folds into ReportsModule.AddReports in S2, and Main stops calling it.",
+"F160": "Created by S2 of this feature, not yet on main; receives the Tracker integration strays behind a method Program calls at the same point.",
+"F161": "Deleted; DomainEventHandlerOrderPinTest stays the permanent pin.",
+"F162": "Gains the stray start check, same call point and timing.",
+"F163": "Per file: Program.cs holds one type (Program); TrackerIntegrationModule.cs holds one type; StartUpRegistrationsPreservationTest.cs is deleted. Nothing to split.",
+"F164": "Program names modules only, apart from the handler block and the measured host set-up types.",
+"F17": "Preservation pin carrier (D-9, E9): StartUpRegistrationsPreservationTest in Tests/Architecture, a craft target, not an oracle or support: nwdes freezes oracle and support bytes at approval, and S2 must change its seam line (RegisterReports gone) and S3 deletes it. The S1 crafter writes it as the first commit on the pre-B1 revision, baseline captured there and observed green before any line moves; the slice and candidate reviews judge it. Seam: WebApplication.CreateBuilder with EnvironmentName Testing, then RegisterServices(builder) and RegisterReports(builder.Services) by reflection as Main calls them; only the descriptors those calls add (the suffix after the builder own) are projected. Projection per service type: the ordered list of (lifetime, service key, implementation), where implementation is ImplementationType, else the instance type, else for a factory the delegate declared return type plus the ordered service types it asks of a recording IServiceProvider that answers nothing (the closure class and method name are left out: they change when a line moves). The baseline is written out inline by full type name, never computed at test time.",
+"F18": "Composition-root rule, one oracle file per slice (nwdes approval freezes each slice bytes, so no slice edits an earlier one): S1 CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest lists FlowMetrics, Forecasting, Promises, Licensing, Access; S2 CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest lists WorkItems, TrackerIntegration, Refinement, Reports, OrganisationSetup; together they are the ten-context rule. Each asserts, per listed context: its <X>Module exists in Lighthouse.Backend.Modules.<X> with Add<X>; only Program names it; Program registers no type of that context, where registers means the type is a generic argument of a call to an IServiceCollection registration extension (Add*, TryAdd*, Configure*, AddHostedService) or of GetService/GetRequiredService, read from the IL of Program and its compiler-made nested types; allowed: the handler block entries and the order-kept registrations of that context, by full name, compared both ways. The call reading is a new support CompositionRootRegistrations written with the S1 oracle and only read afterwards. S3 ProgramNamesModulesOnlyArchUnitTest: every type of the ten contexts that Program names at all (IlDependencies.DependentsIn over Program) is a <X>Module, a handler of the block, an order-kept registration, or a measured host set-up type; RED until the strays move.",
+"F19": "Host set-up type versus stray (B3 list): a host set-up type is a module type Program needs outside the container registrations to set the host up: authentication scheme handlers and selectors in ConfigureAuthentication, MVC filters in AddControllers, the HTTP client names of ConfigureServices, and reads in PrintSystemInfo. A stray is any other module-internal name Program keeps, such as the Tracker integration OAuth provider check EnsureOAuthProvidersRegistered names (text measure at 49552e47a, noisy); a stray moves behind a <X>Module method called at the same point. The B1 acceptance designer measures the names from the IL; the S3 acceptance designer writes the list from that measure. If the measure leaves no stray after S2, S3 has no RED and goes back to the host.",
 "F2": "Each context starts itself up, and the composition root only names modules, so moving a context's types later (features C and D) no longer means editing Program, while the container and handler order are proven unchanged.",
+"F20": "Formal verification (D-16 confirmed): No model for container equivalence, handler order or the composition-root rule: there is no shared mutable state between actors, no multi-step protocol, no concurrency or crash window; each claim is a relation over closed finite sets (descriptors per service type, IL references of one type) executed exhaustively by the pin, the order pin and the rules. No checker is selected, so none is probed. No liveness claim: start-up registration is one synchronous pass with nothing that must eventually happen. PBT: not applicable, the domains are closed and finite and are enumerated whole.",
+"F21": "Existing rules that list Program as an outsider: AccessModuleBoundariesArchUnitTest (HTTP adapters list), ForecastingModuleBoundariesArchUnitTest (domain list) and WorkItemsModuleBoundariesArchUnitTest (domain list) name Lighthouse.Backend.Program, compared both ways; when a move leaves that entry stale, the slice replaces that one entry by the exact <X>Module full name and nothing else (approved oracles of closed Stories, allowed as in feature A). Every other existing rule is run whole (the Architecture namespace) at each slice; an approved oracle of feature A is never edited.",
+"F22": "Behaviour-free (D-0, scope out): per service type, the ordered implementations, lifetimes and keys and the set of service types are unchanged; no route, DTO, schema, migration, configuration key or log category changes; ConfigureServices, ConfigureDatabase, ConfigureHttps, ConfigureApp and Main ordering are unchanged except the S2 removal of the RegisterReports call and the S3 stray moves. Registrations under branches not taken in the Testing environment (stub mode off, Redis set) move inside their unchanged if.",
+"F23": "Counts are to be re-measured at B1: the design figures (283 pinned entries, the line numbers of Program.cs) date from 952040471 or 49552e47a; B1 records the measured descriptor count, hosted-service and seeder orders, and the Program IL names per context.",
+"F24": "Program.cs is in SHARED_REGEX, so each slice end runs the full filtered backend suite (Integration included) and the push runs every live connector suite once; locally the live connector categories are never run. Tests: no nWave tags; the oracles are IL architecture tests and the pin reads a ServiceCollection, none starts a host; made-up offenders live in a fixture namespace such as Lighthouse.Backend.Tests.Architecture.CompositionRootFixtures that no module pattern matches; rules assert by the failure naming the offender, each rule asserts its subject set is not empty.",
+"F25": "No input bound applies: no stored or validated input is added or changed; the ten contexts are the inline ten of ADR-270 Decision 1 (R-C3).",
+"F26": "Its seam (CreateBuilder Testing, RegisterServices by reflection) is the pin seam; the pin copies the seam into its own file instead of editing the approved order pin, whose file stays unchanged through B.",
+"F27": "Stays the permanent handler-order pin, unchanged; green after every slice.",
+"F28": "Keeps name and signature (the seam both pins reflect on); its context lines move out and it calls Add<X> and RegisterDomainEventHandlers instead.",
+"F29": "The only per-context registrar today; folded into ReportsModule.AddReports in S2 (D-9).",
 "F3": "The start-up registrations are pinned at the composition-root port without a host. Flow metrics, Forecasting, Promises, Licensing and Access register through their own Add<X> method, with the container unchanged.",
+"F30": "Precedent for an IServiceCollection extension; Platform is not a context, so it stays called from Program unchanged.",
+"F31": "No type owns a context registrations today (only Program.RegisterServices and RegisterReports); one holder per context at the module root (D-9).",
+"F32": "Reads every type Program names, nested closures included; the S3 rule reads with it unchanged.",
+"F33": "The one name of the composition root, read by the three rules; not edited.",
+"F34": "The enumerator of the ten contexts (R-C3); the S3 rule checks its ten listed contexts equal it, so a new context cannot escape.",
+"F35": "IlDependencies reads which types a type names, not which types it passes to a registration call; the per-call reading the S1 and S2 rules need does not exist. Written with the S1 oracle as its support.",
+"F36": "Registration lines leave for Add<X>; handler block gathered; RegisterReports folded; strays moved (S3).",
+"F37": "Ten new <X>Module.cs files at the module roots, holding moved lines only.",
+"F38": "Seam RegisterServices(WebApplicationBuilder) is kept and still registers every handler, in order.",
+"F39": "Only if the move leaves its Program entry stale: that entry becomes ForecastingModule, nothing else.",
 "F4": "Work Items, Tracker integration, Refinement, Reports and Organisation set-up register through Add<X>. The domain-event handler block stays in one ordered block in Program, with the container and handler order unchanged.",
+"F40": "Only if the move leaves its Program entry stale: that entry becomes AccessModule, nothing else.",
+"F41": "Only if the move leaves its Program entry stale: that entry becomes WorkItemsModule, nothing else.",
+"F42": "WebApplicationFactory hosts call Main, which still registers the same container; the full filtered suite at each slice end observes it.",
+"F43": "Program.cs already in SHARED_REGEX; Modules/<X>/<X>Module.cs fall under each module existing folder classification.",
+"F44": "No shared wire, schema or configuration contract changes: Add<X> has one caller, Program, in the same deployable and the same commit; configuration keys are read unchanged.",
+"F45": "Single deployable; producer (Add<X>) and consumer (Program) change in the same commit; nothing persisted or on the wire outlives a version.",
+"F46": "The composition-root port: Program.RegisterServices(WebApplicationBuilder) (and, until S2 folds it, Program.RegisterReports(IServiceCollection)) filling the builder service collection, read without a host the way StartUpDomainEventHandlers in DomainEventHandlerOrderPinTest reads it; and the compiled IL of Lighthouse.Backend.Program read with IlDependencies.",
+"F47": "None new: the moved registrations name the same implementations, adapters and hosted services.",
+"F48": "Program -> <X>Module.Add<X> -> the context own Application, Domain and Adapters types. Only Program names a <X>Module; no module names another module start-up type; Program names no module-internal type but the domain-event handlers of its one ordered handler block and the measured host set-up types.",
+"F49": "A rule or the pin finds a difference",
 "F5": "Program keeps only the Add<X> calls, host set-up and the handler block. The temporary preservation pin is removed once its last green run is recorded.",
+"F50": "Assertion failure naming the service type or the offending type full name, why it matters and how to fix (WHAT/WHY/HOW).",
+"F51": "The seam method RegisterServices(WebApplicationBuilder) is missing",
+"F52": "Set-up failure naming the method to point the pin at.",
+"F53": "Container projection: per service type, the ordered list of (lifetime, key, implementation) of the descriptors RegisterServices and RegisterReports add, read without a host",
+"F54": "Two factories asking the same services but differing in constants or captured locals; options values bound from configuration; registrations under branches not taken in the Testing environment; ConfigureServices and ConfigureDatabase registrations (not read).",
+"F55": "Registered-by-Program names: types of a listed context passed as generic arguments to registration or GetService calls in the IL of Program and its nested types",
+"F56": "Which method of Program made the call; a type registered through a non-generic overload (typeof argument) unless the support reads it.",
+"F57": "Names of Program: every type of the ten contexts Program or its nested types reference in IL",
+"F58": "XML-doc crefs, event declarations and named attribute arguments (not in IL references read by IlDependencies).",
+"F59": "Two start-ups are equal when they have the same set of service types and, per service type, the same ordered list of (lifetime, key, implementation); order between different service types is ignored (container resolution does not depend on it).",
 "F6": "The module start-up of the ten contexts; the preservation pin and the composition-root rule.",
+"F60": "Moving registrations into Add<X> leaves the container projection equal to the pre-B1 baseline.",
+"F61": "Every service type of the baseline, compared both ways",
+"F62": "Planted swap of two IHostedService lines: fails naming IHostedService",
+"F63": "Planted lifetime change of one line: fails naming its service type",
+"F64": "Planted dropped line: fails naming its service type",
+"F65": "Closed finite set of descriptors, enumerated whole.",
+"F66": "Handlers of each event come in the written-out order.",
+"F67": "The seven pinned events, unchanged file",
+"F68": "Existing permanent pin, closed set.",
+"F69": "For every listed context, Program registers no type of it outside the allowed list, the context module exists with Add<X>, and only Program names that module.",
 "F7": "Any Contracts move (feature C); domain events and RX1 (feature D); any behaviour, registration lifetime, order, schema, route or DTO change.",
+"F70": "Each listed context, real Program",
+"F71": "Made-up composition root in CompositionRootFixtures registering a type of a listed context: reported by name",
+"F72": "Made-up type outside Program naming a <X>Module: reported",
+"F73": "Compliant twin registering only through a made-up module: not reported",
+"F74": "Closed finite IL of one type and ten contexts.",
+"F75": "Program names no type of the ten contexts but <X>Module types, handler-block entries, order-kept registrations and the measured host set-up types.",
+"F76": "Real Program after S3",
+"F77": "Made-up composition root naming a module-internal type off the list: reported",
+"F78": "Listed contexts equal PackagedContexts.InTheAssembly",
+"F79": "Closed finite IL.",
 "F8": "The start-up registrations preservation test (baseline captured before the move) stays green and the composition-root rule, listing Flow metrics, Forecasting, Promises, Licensing and Access as registered by their module, fails until their registrations leave Program.",
-"F9": "Five contexts start themselves up and the container is proven unchanged without a host."
+"F80": "Only Program composes the modules, and the container stays what it was.",
+"F81": "A dropped, duplicated or reordered registration changes start-up, hosted-service or handler order silently.",
+"F82": "Compiled Lighthouse.Backend assembly",
+"F83": "dotnet test exit and the failing rule naming the offender",
+"F84": "Reflection or a non-generic registration overload (typeof argument) escapes the registration reading; branches not taken under Testing escape the pin; the review reads the diff for both.",
+"F85": "A context registers through its own Add<X>, called once from RegisterServices.",
+"F86": "Program registering a type of a listed context outside the allowed list; a module naming another <X>Module.",
+"F87": "Registrations under branches not taken in the Testing environment (stub mode off, Redis set): not pinned.",
+"F88": "module start-up",
+"F89": "The three rules and the pin exclude stray registration, a wrong caller and a changed container over closed finite sets.",
+"F9": "Five contexts start themselves up and the container is proven unchanged without a host.",
+"F90": "Each <X>Module.Add<X> is built from moved lines; the pin shows the composed container equals the baseline.",
+"F91": "Main -> RegisterServices -> Add<X> -> container; observed through the seam and the full filtered suite hosts.",
+"F92": "Negated: per-module blocks keep handler order (false for TeamDataRefreshed)",
+"F93": "Handler order per event",
+"F94": "Handlers stay in Program",
+"F95": "A handler inside an Add<X>",
+"F96": "None: order pin",
+"F97": "Negated: hosted services and seeders keep their order when a context block moves",
+"F98": "Order within IHostedService, ISeeder and every multi-registered type",
+"F99": "Add<X> placed at the kept position, or the line stays in Program, listed"
 },
 "product": {
 "promises": [
