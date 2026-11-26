@@ -25,6 +25,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "IDeliverySourceResolver",
             "IDeliverySourceSyncService",
             "PortfolioSourcePreview",
+            "PromisesModule",
         ];
 
         public static IReadOnlyList<string> ModelsTypesThatMove { get; } =

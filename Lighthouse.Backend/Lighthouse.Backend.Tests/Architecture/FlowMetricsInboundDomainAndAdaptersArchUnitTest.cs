@@ -32,6 +32,11 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string CompositionRoot = "CompositionRoot";
 
+        // Flow metrics starts itself up, so its own start-up module is the one type outside its layers that may reach its adapters.
+        private const string TheFlowMetricsStartUp = "Lighthouse.Backend.Modules.FlowMetrics.FlowMetricsModule";
+
+        private const string BelowTheFlowMetricsStartUp = @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.";
+
         private const string ApplicationCallers = "ApplicationCallers";
 
         private const string FormerCallers = "FormerCallers";
@@ -79,7 +84,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheModuleAdapters_AreReachedFromOutsideOnlyByTheCompositionRoot()
         {
-            ModuleRules.AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot(ProductionModule.Value).Check();
+            ModuleRules.AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot(ProductionModule.Value, TheFlowMetricsStartUp, BelowTheFlowMetricsStartUp).Check();
         }
 
         [TestCase(ReachedLayer.Domain)]

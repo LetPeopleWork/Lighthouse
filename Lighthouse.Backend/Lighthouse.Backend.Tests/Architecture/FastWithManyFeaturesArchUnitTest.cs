@@ -22,6 +22,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string TheCompositionRoot = "Program.cs";
 
+        private const string TheForecastingStartUp = "Modules/Forecasting/ForecastingModule.cs";
+
         private const string TheLaneFileName = "ForecastLane.cs";
 
         private const string TheListController = "Lighthouse.Backend.API.FeatureListController";
@@ -68,7 +70,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void Only_the_forecast_updater_and_the_composition_root_reach_the_forecast_threads()
         {
             var lane = TheLaneFile();
-            var allowed = new HashSet<string>(StringComparer.Ordinal) { TheOnlyFileNamed(TheForecastUpdater), TheCompositionRoot };
+            var allowed = new HashSet<string>(StringComparer.Ordinal) { TheOnlyFileNamed(TheForecastUpdater), TheCompositionRoot, TheForecastingStartUp };
             if (lane is not null)
             {
                 allowed.Add(lane);

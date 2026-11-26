@@ -74,10 +74,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         [
             .. AccessAndLicensingMembership.AccessDomain, .. AccessAndLicensingMembership.AccessApplication,
             .. AccessAndLicensingMembership.AccessAdaptersHttp, .. AccessAndLicensingMembership.ModelsTypesThatMoveIntoAccess,
+            .. AccessAndLicensingMembership.AccessModuleRoot,
         ];
 
         private static IReadOnlyList<string> LicensingLists =>
-            [.. AccessAndLicensingMembership.LicensingApplication, .. AccessAndLicensingMembership.LicensingAdaptersHttp];
+            [.. AccessAndLicensingMembership.LicensingApplication, .. AccessAndLicensingMembership.LicensingAdaptersHttp, .. AccessAndLicensingMembership.LicensingModuleRoot];
 
         [OneTimeTearDown]
         public void DisposeModules()

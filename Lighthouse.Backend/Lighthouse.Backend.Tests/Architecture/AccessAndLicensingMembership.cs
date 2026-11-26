@@ -50,6 +50,11 @@ namespace Lighthouse.Backend.Tests.Architecture
             "SmartAuthSchemeSelector",
         ];
 
+        public static IReadOnlyList<string> AccessModuleRoot { get; } =
+        [
+            "AccessModule",
+        ];
+
         public static IReadOnlyList<string> LicensingApplication { get; } =
         [
             "ILicenseService",
@@ -61,6 +66,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         public static IReadOnlyList<string> LicensingAdaptersHttp { get; } =
         [
             "LicenseGuardAttribute",
+        ];
+
+        public static IReadOnlyList<string> LicensingModuleRoot { get; } =
+        [
+            "LicensingModule",
         ];
 
         public static IReadOnlyList<string> ModelsTypesThatMoveIntoAccess { get; } =

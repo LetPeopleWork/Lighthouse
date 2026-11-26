@@ -45,6 +45,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static string[] TheForecastingTypesReachingTheRound =>
         [
             "Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater",
+            "Lighthouse.Backend.Modules.Forecasting.ForecastingModule",
         ];
 
         [OneTimeTearDown]

@@ -50,6 +50,11 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string ForecastingAdapters = @"^Lighthouse\.Backend\.Modules\.Forecasting\.Adapters(\.|$)";
 
+        // Forecasting starts itself up, so its own start-up module is the one type outside its layers that may reach its adapters.
+        private const string TheForecastingStartUp = "Lighthouse.Backend.Modules.Forecasting.ForecastingModule";
+
+        private const string BelowTheForecastingStartUp = @"^Lighthouse\.Backend\.Modules\.Forecasting\.";
+
         private const string FlowMetricsApplication = @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.(Application|Contracts)(\.|$)";
 
         private const string TheCompositionRootAndItsNestedTypes = @"^Lighthouse\.Backend\.Program(\+|$)";
@@ -95,7 +100,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         // The outside types that reach Forecasting's Domain. The list only shrinks.
         private static readonly string[] OutsideTypesReachingTheDomain =
         [
-            "Lighthouse.Backend.Program",
         ];
 
         // The outside types, besides the API, the composition root and Refinement, that reach Forecasting's Application.
@@ -180,7 +184,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheForecastingAdapters_AreReachedFromOutsideOnlyByTheCompositionRoot()
         {
-            var verdict = ForecastingsAdaptersRule(ProductionModule.Value, ModuleRules.TheCompositionRoot, ForecastingModule, ForecastingAdapters, ModuleRules.AnyNamespace);
+            var verdict = ForecastingsAdaptersRule(ProductionModule.Value, TheForecastingStartUp, BelowTheForecastingStartUp, ForecastingAdapters, ModuleRules.AnyNamespace);
 
             verdict.Check();
         }

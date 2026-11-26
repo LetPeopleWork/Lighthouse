@@ -39,6 +39,9 @@ namespace Lighthouse.Backend.Tests.Architecture
             $"{nameof(ContextContractsStringsTheMoveRenames)}.cs",
             $"{nameof(ContextContractsMembershipArchUnitTest)}.cs",
             $"{nameof(NamespaceMoveLaw)}.cs",
+
+            // The temporary start-up pin names every registered type by its full name today, so it can tell a moved line from a changed one.
+            $"{nameof(StartUpRegistrationsPreservationTest)}.cs",
         ];
 
         private static readonly Regex StringLiteral = new(

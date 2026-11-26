@@ -53,6 +53,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["DependencySingleDecisionArchUnitTest.TheNamespaceThisEpicOwns"] = PatternDeclaration.Context(Namespace, WholeContextOrMore),
             ["FastWithManyFeaturesArchUnitTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, WholeContextOrMore),
             ["FlowMetricsInboundApplicationArchUnitTest.TheLegalCallerNamespaces"] = PatternDeclaration.Context(Namespace, WholeContextOrMore),
+            ["FlowMetricsInboundDomainAndAdaptersArchUnitTest.BelowTheFlowMetricsStartUp"] = PatternDeclaration.Context(Namespace, WholeContextOrMore),
+            ["ForecastingModuleBoundariesArchUnitTest.BelowTheForecastingStartUp"] = PatternDeclaration.Context(Namespace, WholeContextOrMore),
             ["ForecastingModuleBoundariesArchUnitTest.FlowMetricsLegalCallers"] = PatternDeclaration.Context(Namespace, WholeContextOrMore),
             ["ForecastingModuleBoundariesArchUnitTest.ForecastingModule"] = PatternDeclaration.Context(Namespace, WholeContextOrMore),
             ["ForecastingModuleBoundariesArchUnitTest.TheLayersBelowTheApplicationAndTheLicence"] = PatternDeclaration.Context(Namespace, WholeContextOrMore),
