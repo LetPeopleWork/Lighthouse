@@ -1,0 +1,20 @@
+{
+"counters": {
+"F": 2
+},
+"facts": {
+"F1": "Story 6382 S09a feature B, module start-up: pin every start-up registration at the composition-root port without a host, then move each context's registrations out of Program into its own Add<X> method at the module root (five contexts, then the other five), leaving Program with only the Add<X> calls, host set-up and the one ordered domain-event handler block, and remove the temporary pin.",
+"F2": "Each context starts itself up, and the composition root only names modules, so moving a context's types later (features C and D) no longer means editing Program, while the container and handler order are proven unchanged."
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6382-s09a-b-module-start-up",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "L",
+"value": "F2"
+}
+}
