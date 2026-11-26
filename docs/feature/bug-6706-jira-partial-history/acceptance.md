@@ -210,7 +210,41 @@ None.
 
 ### Waivers
 
-None.
+#### E1
+
+```text
+Benjamin Huser-Berta (maintainer)
+```
+
+```text
+2026-11-26T19:48:48Z
+```
+
+```text
+No admitted public probe shows a Jira item's start or closed date; decided 2026-11-26
+```
+
+```text
+JiraPartialHistoryDatingTest oracle on Data Center and Cloud (8 failed before the fix, 10 passed after); the reporter's changelog.total vs histories discriminator and the maintainer's check in the real app after the push
+```
+
+#### E2
+
+```text
+Benjamin Huser-Berta (maintainer)
+```
+
+```text
+2026-11-26T19:48:49Z
+```
+
+```text
+No admitted public probe shows a Jira item's start or closed date; decided 2026-11-26
+```
+
+```text
+JiraPartialHistoryDatingTest oracle on Data Center and Cloud (8 failed before the fix, 10 passed after); the reporter's changelog.total vs histories discriminator and the maintainer's check in the real app after the push
+```
 
 ## Charter
 
@@ -218,4 +252,78 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+unmet
+
+#### Observations
+
+```text
+Public read of workspace W with no PATH listed public/ and scratch/ as empty; no public document supplies the Jira partial-history behaviour for P1, E1 or E2 (read exit 0, zero entries).
+```
+
+```text
+Probe of 'nwdes --help' was refused (ProbeRefused, no output from the candidate); the admitted console-script list holds 23 candidate commands and none is a Jira partial-history or Jira connector capture.
+```
+
+```text
+Probe of 'lighthouse-jira-probe --help' was refused (ProbeRefused) with the same admitted list; the examiner cannot capture a team's Jira search answer, changelog.total or whole-history route (rest/api/2/issue/KEY?expand=changelog on Data Center; paged issue changelog on Cloud) from the public surface, and the packet supplies no fixture for either deployment.
+```
+
+observation_gap
+
+#### Waiver
+
+```text
+Benjamin Huser-Berta (maintainer)
+```
+
+```text
+2026-11-26T19:48:48Z
+```
+
+```text
+No admitted public probe shows a Jira item's start or closed date; decided 2026-11-26
+```
+
+```text
+JiraPartialHistoryDatingTest oracle on Data Center and Cloud (8 failed before the fix, 10 passed after); the reporter's changelog.total vs histories discriminator and the maintainer's check in the real app after the push
+```
+
+### E2
+
+unmet
+
+#### Observations
+
+```text
+Public read of workspace W with no PATH listed public/ and scratch/ as empty; no public document supplies the Jira partial-history behaviour for P1, E1 or E2 (read exit 0, zero entries).
+```
+
+```text
+Probe of 'nwdes --help' was refused (ProbeRefused, no output from the candidate); the admitted console-script list holds 23 candidate commands and none is a Jira partial-history or Jira connector capture.
+```
+
+```text
+Probe of 'lighthouse-jira-probe --help' was refused (ProbeRefused) with the same admitted list; the examiner cannot capture a team's Jira search answer, changelog.total or whole-history route (rest/api/2/issue/KEY?expand=changelog on Data Center; paged issue changelog on Cloud) from the public surface, and the packet supplies no fixture for either deployment.
+```
+
+observation_gap
+
+#### Waiver
+
+```text
+Benjamin Huser-Berta (maintainer)
+```
+
+```text
+2026-11-26T19:48:49Z
+```
+
+```text
+No admitted public probe shows a Jira item's start or closed date; decided 2026-11-26
+```
+
+```text
+JiraPartialHistoryDatingTest oracle on Data Center and Cloud (8 failed before the fix, 10 passed after); the reporter's changelog.total vs histories discriminator and the maintainer's check in the real app after the push
+```

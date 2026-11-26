@@ -75,7 +75,7 @@
 },
 "counters": {
 "E": 2,
-"F": 35,
+"F": 43,
 "P": 1,
 "S": 1
 },
@@ -108,6 +108,38 @@
 }
 }
 },
+"examination": {
+"E1": {
+"class": "observation_gap",
+"observations": [
+"F41",
+"F42",
+"F43"
+],
+"verdict": "unmet",
+"waiver": {
+"by": "F36",
+"coverage": "F39",
+"reason": "F38",
+"waived_at": "F37"
+}
+},
+"E2": {
+"class": "observation_gap",
+"observations": [
+"F41",
+"F42",
+"F43"
+],
+"verdict": "unmet",
+"waiver": {
+"by": "F36",
+"coverage": "F39",
+"reason": "F38",
+"waived_at": "F40"
+}
+}
+},
 "expectations": {
 "rows": [
 {
@@ -130,7 +162,21 @@
 ],
 "text": "F10"
 }
-]
+],
+"waivers": {
+"E1": {
+"by": "F36",
+"coverage": "F39",
+"reason": "F38",
+"waived_at": "F37"
+},
+"E2": {
+"by": "F36",
+"coverage": "F39",
+"reason": "F38",
+"waived_at": "F40"
+}
+}
 },
 "facts": {
 "F1": "Bug 6706 — Jira: an in-progress item gets no start date when the search returns only part of its history. Found while fixing Bug #6705 (Jira Data Center). An item moved Open → waiting for approval → In analysis → In Progress on 16 May 2025, then In Progress → Suspended (a Doing state) on 13 Nov 2025, with many other edits in between. Lighthouse stored it as Doing with no start date. Effect: an old item still in progress gets no start date (since #6705 the server falls back to its created date, which overstates its age). A finished item gets its start from the closed-date fallback, so its cycle time can be wrong too. Fix direction: when the search answer holds only part of an item's history, fetch the item's full changelog before working out its start and closed dates.",
@@ -158,7 +204,15 @@
 "F33": "The read of the team's items fails loudly with an HTTP request error instead of dating the item from the partial answer",
 "F34": "A wrong start date is never stored; the failure shows and the next refresh reads the item again",
 "F35": "A connector that swallows the refusal and dates the item from the partial search answer",
+"F36": "Benjamin Huser-Berta (maintainer)",
+"F37": "2026-11-26T19:48:48Z",
+"F38": "No admitted public probe shows a Jira item's start or closed date; decided 2026-11-26",
+"F39": "JiraPartialHistoryDatingTest oracle on Data Center and Cloud (8 failed before the fix, 10 passed after); the reporter's changelog.total vs histories discriminator and the maintainer's check in the real app after the push",
 "F4": "A Jira item whose search answer holds fewer changelog entries than its changelog total gets its start and closed dates from its whole history, on Data Center and on Cloud",
+"F40": "2026-11-26T19:48:49Z",
+"F41": "Public read of workspace W with no PATH listed public/ and scratch/ as empty; no public document supplies the Jira partial-history behaviour for P1, E1 or E2 (read exit 0, zero entries).",
+"F42": "Probe of 'nwdes --help' was refused (ProbeRefused, no output from the candidate); the admitted console-script list holds 23 candidate commands and none is a Jira partial-history or Jira connector capture.",
+"F43": "Probe of 'lighthouse-jira-probe --help' was refused (ProbeRefused) with the same admitted list; the examiner cannot capture a team's Jira search answer, changelog.total or whole-history route (rest/api/2/issue/KEY?expand=changelog on Data Center; paged issue changelog on Cloud) from the public surface, and the packet supplies no fixture for either deployment.",
 "F5": "The connector reads a team's items; Jira's search answer for an item in a Doing state holds only its latest history entries (a move within Doing), with changelog.total larger than the entries returned, and the item's full history (which holds the earlier move into Doing) is available from the deployment's own whole-history route: rest/api/2/issue/<KEY>?expand=changelog on Data Center, the paged issue changelog route on Cloud",
 "F6": "The item's start date is the date it first entered Doing in its whole history (16 May 2025 in the reported case), not empty; a finished item's start date likewise comes from its whole history rather than its closed date; when the whole-history read is itself still partial, the item stays marked as not holding its whole history",
 "F7": "The item has no start date (or a Done item's start equals its closed date) although its whole history holds the move into Doing; or a Data Center item is dated only from the truncated search answer; or a Cloud item with a truncated answer of 30 or fewer total entries is never re-read",
