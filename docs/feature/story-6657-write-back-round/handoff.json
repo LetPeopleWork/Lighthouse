@@ -1,9 +1,114 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F180",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::EveryRoundType_IsFoundInItsOldOrItsNewNamespace_AndEveryNeighbourThatStays_IsFoundWithItsOwnerAndReason; Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::TheMembershipCheck_NamesAMadeUpRoundTypeFoundInNeitherNamespace_AndAMadeUpNeighbourThatIsNowhereOrHasNoOwner"
+},
+"expected": "F178",
+"stimulus": "F177",
+"user_result": "F179"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F184",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::EveryRulePatternThatSeesARoundType_IsDeclared_AndKeepsItsRoleOnTheSubjectItsRuleReads; Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::TheRoleCheck_NamesEachMadeUpPatternThatBreaksItsRole_AndPassesTheOnesThatKeepIt"
+},
+"expected": "F182",
+"stimulus": "F181",
+"user_result": "F183"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F188",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::AMadeUpWorkItemsTypeReachingARoundTypeInItsNewPlace_IsRefusedByExactlyTheWorkItemsRulesTheMembershipRecords"
+},
+"expected": "F186",
+"stimulus": "F185",
+"user_result": "F187"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F192",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::EveryTestStringThatNamesARoundTypeByItsOldPath_IsOnTheRenameList_InExactlyOneOfItsForms; Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::TheRenameListCheck_NamesAnUnlistedOldPathString_AListedStringFoundInNeitherForm_AndOneFoundInBoth"
+},
+"expected": "F190",
+"stimulus": "F189",
+"user_result": "F191"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2",
+"L2/F127",
+"T1"
+],
+"still_passes_if": "F196",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::AMadeUpTypeOfAContextThatMayNotJoinTheRound_ReachingARoundTypeInItsNewPlace_IsRefusedByTheRoundPattern_AndItsTwinReachingForecastingIsNot (PromisesMayNotJoinTheRound_ThoughItMayAskForecasting, AccessMayNotJoinTheRound, LicensingMayNotJoinTheRound)"
+},
+"expected": "F194",
+"stimulus": "F193",
+"user_result": "F195"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2",
+"L2/F128",
+"L2/F129",
+"T1"
+],
+"still_passes_if": "F200",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs::APromisesTypeReachingTheWriteBackRound_IsNamed; Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs::AnAccessTypeReachingTheWriteBackRound_IsNamed; the ModuleEdgesIntoUpstreamCode product rows of the Promises, Access and Licensing boundary tests"
+},
+"expected": "F198",
+"stimulus": "F197",
+"user_result": "F199"
+}
+]
+},
 "counters": {
 "C": 1,
 "D": 19,
 "E": 3,
-"F": 176,
+"F": 200,
 "K": 6,
 "L": 4,
 "P": 3,
@@ -1815,10 +1920,34 @@
 "F174": "For every architecture and layout rule that judges the write-back round, the architecture-rules probe shows the same pass/fail verdict after the round moves as before it, with no rule loosened and no rule dropped or silently emptied; rules still see the round's types.",
 "F175": "The write-back round's types and its unit tests are listed under Forecasting's Application/WriteBack place, and no longer under the old loose Services namespaces; types that stay in those loose namespaces are untouched; the backend tests and the EF model probe show no behaviour change.",
 "F176": "Rules refer to the round only by its Forecasting namespace (the old Services path no longer names it), and the architecture-rules probe lists boundary rules specific to the write-back round that pass, each catching a made-up offender.",
+"F177": "The eight write-back round types and the round's staying neighbours are looked up in the compiled code by their names, and a made-up type and made-up neighbours are looked up the same way.",
+"F178": "Each round type is found in exactly one of its old Services namespace and its new Forecasting WriteBack namespace; each staying neighbour exists with an owner and a reason; the made-up entries, and only they, are named.",
+"F179": "A maintainer can trust that the map the move rules read names every round type where it really is, before, during and after the move.",
 "F18": "D-4 Tracker integration edge stays listed by name, one caller: WriteBackService is the only outside type of Tracker integration's write-back port (R-T4 entry renamed); Forecasting is not made a legal caller by namespace. ADR-270 gets the row Tracker integration to Forecasting, customer of the ACL's write-back capability, one listed type.",
+"F180": "A round type existed in its old place under a different arity or as a nested type only; the lookup is by exact top-level full name.",
+"F181": "The shared namespace-move law is run with the write-back map over every rule pattern of the test assembly, and over made-up rule keys.",
+"F182": "Every pattern that sees a round type is declared: parts of the code keep seeing it, old locations never see the new place, and the round pattern and Forecasting patterns see every round type in its new place. Today it fails only because the round pattern does not exist yet. The made-up blind, widened-old-location and undeclared keys, and the blind or missing admitted round patterns, are named.",
+"F183": "No architecture rule silently stops seeing a write-back round type when the round moves.",
+"F184": "A rule pattern held as a property or built inside a method body sees the round; the law reads only constant and static read-only string fields.",
+"F185": "A made-up Work Items Application type reaches a made-up type in the round's real new namespace, and every Work Items outbound rule judges the edge.",
+"F186": "The Work Items rules that refuse it are exactly the ones the membership records; measured today: none, because Work Items refuses the round only by its old full names.",
+"F187": "The maintainer knows whether Work Items still refuses the round after the move before its old names are taken away.",
+"F188": "A Work Items rule refuses the real round types only by their full names; a made-up type cannot carry those names.",
+"F189": "Every string literal of the test project is swept for the old Services path of a round type and compared with the fixed rename list; a made-up rule file and list are swept the same way.",
 "F19": "D-5 Rules first (S1): one owner ModuleRules.TheWriteBackRound, matched against the full name, equal to the 8 old full names union the new namespace; the Access, Licensing and Promises predicates take the round pattern as an argument (production value for the real rule, a made-up value naming the fixture namespace for the falsifier) instead of reading their 8-name lists. The shared NamespaceMoveLaw is reused unchanged with a write-back map; the literal sweep WriteBackStringsTheMoveRenames is fixed from the pre-move grep and only shrinks in meaning.",
+"F190": "The literals naming a round type by its old path are exactly the listed ones, each file holding exactly one form unless the entry may leave; the made-up unlisted string, the listed string found nowhere and the half-renamed string are each named.",
+"F191": "No test string keeps naming the round by its old Services path unnoticed when the round moves.",
+"F192": "An old path written in a comment or built at run time from parts; the sweep reads literals outside comments only.",
+"F193": "A made-up Promises, Access or Licensing Application type reaches a made-up round port in a made-up Forecasting WriteBack namespace, and its twin reaches a made-up Forecasting port outside the round; each context's outbound predicate judges both, handed a round pattern naming the made-up round.",
+"F194": "Each predicate refuses exactly the type joining the round and not its twin. Today all three refuse nothing, because they read only the eight old full names.",
+"F195": "A Promises, Access or Licensing type cannot take part in the write-back round unseen, wherever the round lives.",
+"F196": "The real rule hands the predicate a pattern other than ModuleRules.TheWriteBackRound; the real-rule wiring is observed by the existing product rule tests of the three classes.",
+"F197": "The existing made-up Access and Promises fixtures reach the round's trigger port, and the product rules read the production Promises, Access and Licensing types.",
+"F198": "The fixtures are refused and no production Promises, Access or Licensing type reaches the round, with the predicates reading the round pattern.",
+"F199": "The existing guards keep refusing the round while it moves.",
 "F2": "The last named exception of the Promises packaging leaves Services; the round sits inside the context that owns it, so S09a sees it there",
 "F20": "D-6 Tests move with production: the 8 unit-test files move in S2 to Tests/Modules/Forecasting/Application/WriteBack, namespace equals folder; RoundWriteBackDuringDatabaseMaintenanceTest stays with the update code unless S1 finds it constructs only round types. Acceptance, host and container tests stay; only their using lines change. Improve-the-tests-you-touch is waived for move-only and using-only edits.",
+"F200": "Only the old-name alternatives of the round pattern are exercised by these fixtures; the new place is covered by the falsifier row.",
 "F21": "D-7 Platform lane to Forecasting edges (UpdateQueueService and its nested HeldUpdate creating, handing over and flushing the round) are listed in Forecasting's inbound list, not in the platform lane's list, as DatabaseMaintenanceGate is in Flow metrics. Inverting the flush behind a queue-owned port is noted for S09a, not done here.",
 "F22": "D-8 Update code to Forecasting edges are listed (TeamUpdater, UpdateServiceBase with its generic arity; PortfolioUpdater already listed); owner Epic 6474 slice 12.",
 "F23": "D-9 Order: after Story 6468, before Story 6382 (S09a); the move does not wait for S09a. S1 first runs the three merged checks for 6365, 6366 and 6468 and stops if any fails.",
