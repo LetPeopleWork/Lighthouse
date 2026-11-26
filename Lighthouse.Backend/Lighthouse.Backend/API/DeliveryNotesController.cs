@@ -221,9 +221,4 @@ namespace Lighthouse.Backend.API
             return null;
         }
     }
-
-    public class DeliveryNoteRequest
-    {
-        public string Text { get; set; } = string.Empty;
-    }
 }
