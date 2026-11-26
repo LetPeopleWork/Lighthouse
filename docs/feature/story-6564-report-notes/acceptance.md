@@ -541,7 +541,7 @@ Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportNotes\.reader\.test\.ts
 lists the notes of a \%s report above the numbers\, newest first\, with no way to add\, change or delete one
 
 ```text
-The notes area shows for readers but with the add field still visible, or lists notes in oldest-first order
+The notes area shows for readers but the add field is still visible, or the notes are listed oldest first
 ```
 
 ###### Obligations
@@ -552,11 +552,11 @@ The notes area shows for readers but with the add field still visible, or lists 
 P5
 
 ```text
-A reader opens a report with no notes, a report whose notes cannot be loaded, and a report while the reader's roles are still on their way
+A reader opens a report with no notes, a report whose notes cannot be loaded, and a report while the reader roles are still on their way
 ```
 
 ```text
-No notes yet. with no field; Could not load the notes with a Retry that brings the notes, numbers still in view; no writing control before or after the roles arrive
+No notes yet. with no field; Could not load the notes with a Retry that brings the notes and the numbers in view; no writing control before or after the roles arrive
 ```
 
 ```text
@@ -604,7 +604,7 @@ Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportNotes\.reader\.test\.ts
 carries none of the notes the report has\, and never asks for them
 
 ```text
-Notes read and hidden by styling only, or rendered in the frame host rather than the print page
+Notes fetched and hidden by styling only, or drawn in the frame host rather than the print page
 ```
 
 ###### Obligations
@@ -619,7 +619,7 @@ The modules the print pages and the export frame import are followed through
 ```
 
 ```text
-None is the notes component, the notes hook or the note model
+Neither the notes component nor the notes hook is among them
 ```
 
 ```text
@@ -635,38 +635,7 @@ Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/print\/reportPrint\.enforceme
 never reaches \%s
 
 ```text
-A note component imported by the print page but unused at runtime is not caught beyond the three named files
-```
-
-###### Obligations
-
-
-##### Covers
-
-P5
-
-```text
-A writer opens a report with notes
-```
-
-```text
-The notes are listed and the add field is present
-```
-
-```text
-A writer can add a note
-```
-
-##### Disposition
-
-Tested
-
-Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportNotes\.add\.test\.tsx
-
-saves what the writer typed as typed\, shows the new note first and empties the field
-
-```text
-The field shows to everyone, since the reader cases pin its absence elsewhere
+A new note component imported by the print page under another file name
 ```
 
 ###### Obligations
@@ -697,12 +666,43 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Reports\/ReportNotes
 A\_caller\_with\_read\_access\_only\_is\_refused\_a\_new\_note
 
 ```text
-Change and delete answer any refusal such as 405 rather than 403, because those routes do not exist yet
+Change and delete answer any refusal such as 405 rather than 403 until those routes exist
 ```
 
 ###### Obligations
 
 None.
+
+##### Covers
+
+P5
+
+```text
+A writer opens a report with notes
+```
+
+```text
+The notes are listed and the add field is present
+```
+
+```text
+A writer can add a note
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportNotes\.add\.test\.tsx
+
+saves what the writer typed as typed\, shows the new note first and empties the field
+
+```text
+The field shows to everyone, which the reader cases pin elsewhere
+```
+
+###### Obligations
+
 
 ## Expectations
 

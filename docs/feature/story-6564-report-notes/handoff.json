@@ -298,7 +298,7 @@
 "obligations": [
 "L5/F272"
 ],
-"still_passes_if": "F516",
+"still_passes_if": "F549",
 "test": "lists the notes of a %s report above the numbers, newest first, with no way to add, change or delete one",
 "test_path": "Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.reader.test.tsx"
 },
@@ -320,8 +320,8 @@
 "test": "says there are no notes yet to a reader of a report without notes, and still offers no field",
 "test_path": "Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.reader.test.tsx"
 },
-"expected": "F518",
-"stimulus": "F517",
+"expected": "F551",
+"stimulus": "F550",
 "user_result": "F519"
 },
 {
@@ -333,7 +333,7 @@
 "obligations": [
 "L4/F269"
 ],
-"still_passes_if": "F524",
+"still_passes_if": "F552",
 "test": "carries none of the notes the report has, and never asks for them",
 "test_path": "Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.reader.test.tsx"
 },
@@ -348,15 +348,29 @@
 "disposition": {
 "kind": "Tested",
 "obligations": [
-"L4/F268"
+"L4/F542"
 ],
-"still_passes_if": "F528",
+"still_passes_if": "F554",
 "test": "never reaches %s",
 "test_path": "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrint.enforcement.test.ts"
 },
-"expected": "F526",
+"expected": "F553",
 "stimulus": "F525",
 "user_result": "F527"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F555",
+"test": "A_caller_with_read_access_only_is_refused_a_new_note",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Reports/ReportNotesWireContractTest.cs"
+},
+"expected": "F534",
+"stimulus": "F533",
+"user_result": "F535"
 },
 {
 "covers": [
@@ -367,27 +381,13 @@
 "obligations": [
 "L5/F271"
 ],
-"still_passes_if": "F532",
+"still_passes_if": "F556",
 "test": "saves what the writer typed as typed, shows the new note first and empties the field",
 "test_path": "Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.add.test.tsx"
 },
 "expected": "F530",
 "stimulus": "F529",
 "user_result": "F531"
-},
-{
-"covers": [
-"P5"
-],
-"disposition": {
-"kind": "Tested",
-"still_passes_if": "F536",
-"test": "A_caller_with_read_access_only_is_refused_a_new_note",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Reports/ReportNotesWireContractTest.cs"
-},
-"expected": "F534",
-"stimulus": "F533",
-"user_result": "F535"
 }
 ]
 },
@@ -395,7 +395,7 @@
 "B": 5,
 "D": 13,
 "E": 12,
-"F": 548,
+"F": 556,
 "K": 2,
 "L": 11,
 "N": 2,
@@ -2114,29 +2114,21 @@
 "F513": "A reader with read access only opens a Team report and a Portfolio report that have notes",
 "F514": "The notes are listed newest first with day and author above the numbers, with no add field, no Add note button and no edit or delete control",
 "F515": "The reader sees the context the notes give and cannot change it",
-"F516": "The notes area shows for readers but with the add field still visible, or lists notes in oldest-first order",
-"F517": "A reader opens a report with no notes, a report whose notes cannot be loaded, and a report while the reader's roles are still on their way",
-"F518": "No notes yet. with no field; Could not load the notes with a Retry that brings the notes, numbers still in view; no writing control before or after the roles arrive",
 "F519": "The reader always sees the notes area in its own state and never a writing control",
 "F52": "The day a note was written is enough; there is one kind of note, with no separate event date (maintainer, 2026-11-26).",
 "F520": "A reader whose roles are loading briefly sees the add field, or a failed load shows an empty area",
 "F521": "The print page of a report that has notes is opened",
 "F522": "No note text appears in the printed page and the notes are never requested",
 "F523": "Print and PDF show the numbers without the notes",
-"F524": "Notes read and hidden by styling only, or rendered in the frame host rather than the print page",
 "F525": "The modules the print pages and the export frame import are followed through",
-"F526": "None is the notes component, the notes hook or the note model",
 "F527": "Print and PDF cannot show notes because nothing that draws them is in the print bundle",
-"F528": "A note component imported by the print page but unused at runtime is not caught beyond the three named files",
 "F529": "A writer opens a report with notes",
 "F53": "Write access on the Team or Portfolio that owns the report is enough to add a note (maintainer, 2026-11-26).",
 "F530": "The notes are listed and the add field is present",
 "F531": "A writer can add a note",
-"F532": "The field shows to everyone, since the reader cases pin its absence elsewhere",
 "F533": "A caller with read access only reads, adds, changes and deletes a note of a Team or Portfolio report by direct request",
 "F534": "The read answers 200 with the note; the add answers 403 and the note is unchanged; change and delete do not succeed and the note is unchanged",
 "F535": "A direct write by a reader is refused and nothing changes",
-"F536": "Change and delete answer any refusal such as 405 rather than 403, because those routes do not exist yet",
 "F537": "Frontend. A Reports-owned component ReportNotes in pages/Common/Reports is rendered by ReportView beside ReportPanels, never inside ReportPanels or anything the print bundle imports, so print and PDF stay free of notes by construction; the print enforcement test gets a never-reaches rule for ReportNotes.tsx and useReportNotes.ts only (models/Reports/ReportNote.ts is a shared data type that print already reaches through the shared service interface and renders nothing). It is not extracted from DeliveryNotesPanel (FE2 will move that file); layout and copy are reused by value. Notes are read with a keyed TanStack query keyed by owner and report id, writes invalidate it. The add control shows when useMayEditReports(owner).isEditor; the change and delete controls show per note from canModify. The exact placement is decided at the UI sketch at the start of DELIVER.",
 "F538": "The real note routes answer the real client schema and refuse a reader on write: GET lists for a reader, a reader's POST is 403, a reader's PUT and DELETE are not a success and leave the note unchanged (405 until S3 adds them, 403 after), and a refusal carries its code",
 "F539": "The never-reaches list gains pages/Common/Reports/ReportNotes.tsx and pages/Common/Reports/useReportNotes.ts. The model is a shared data type that print already reaches through the shared service interface and it renders nothing; what must never reach print is the component and the hook that fetch and render notes.",
@@ -2149,7 +2141,15 @@
 "F546": "A signed note changed by a non-author, an unsigned note refused to a writer, or a canModify that disagrees with the refusal, or a reader's PUT or DELETE that is not refused",
 "F547": "An editor of a report opens it while it has one written note",
 "F548": "The editor sees the written note above the numbers",
+"F549": "The notes area shows for readers but the add field is still visible, or the notes are listed oldest first",
 "F55": "Notes are deleted when their report is deleted (maintainer, 2026-11-26).",
+"F550": "A reader opens a report with no notes, a report whose notes cannot be loaded, and a report while the reader roles are still on their way",
+"F551": "No notes yet. with no field; Could not load the notes with a Retry that brings the notes and the numbers in view; no writing control before or after the roles arrive",
+"F552": "Notes fetched and hidden by styling only, or drawn in the frame host rather than the print page",
+"F553": "Neither the notes component nor the notes hook is among them",
+"F554": "A new note component imported by the print page under another file name",
+"F555": "Change and delete answer any refusal such as 405 rather than 403 until those routes exist",
+"F556": "The field shows to everyone, which the reader cases pin elsewhere",
 "F56": "Notes stay out of print and PDF for now (maintainer, 2026-11-26).",
 "F57": "Notes are not added to the CLI and MCP report reads now (maintainer, 2026-11-26).",
 "F6": "the user adds a note with text to the report in the live report",

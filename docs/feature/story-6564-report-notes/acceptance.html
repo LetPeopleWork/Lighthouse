@@ -627,7 +627,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>lists the notes of a %s report above the numbers, newest first, with no way to add, change or delete one</p>
 
-<pre><code>The notes area shows for readers but with the add field still visible, or lists notes in oldest-first order
+<pre><code>The notes area shows for readers but the add field is still visible, or the notes are listed oldest first
 </code></pre>
 
 <h6>Obligations</h6>
@@ -637,10 +637,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P5</p>
 
-<pre><code>A reader opens a report with no notes, a report whose notes cannot be loaded, and a report while the reader&#x27;s roles are still on their way
+<pre><code>A reader opens a report with no notes, a report whose notes cannot be loaded, and a report while the reader roles are still on their way
 </code></pre>
 
-<pre><code>No notes yet. with no field; Could not load the notes with a Retry that brings the notes, numbers still in view; no writing control before or after the roles arrive
+<pre><code>No notes yet. with no field; Could not load the notes with a Retry that brings the notes and the numbers in view; no writing control before or after the roles arrive
 </code></pre>
 
 <pre><code>The reader always sees the notes area in its own state and never a writing control
@@ -682,7 +682,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>carries none of the notes the report has, and never asks for them</p>
 
-<pre><code>Notes read and hidden by styling only, or rendered in the frame host rather than the print page
+<pre><code>Notes fetched and hidden by styling only, or drawn in the frame host rather than the print page
 </code></pre>
 
 <h6>Obligations</h6>
@@ -695,7 +695,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>The modules the print pages and the export frame import are followed through
 </code></pre>
 
-<pre><code>None is the notes component, the notes hook or the note model
+<pre><code>Neither the notes component nor the notes hook is among them
 </code></pre>
 
 <pre><code>Print and PDF cannot show notes because nothing that draws them is in the print bundle
@@ -709,34 +709,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>never reaches %s</p>
 
-<pre><code>A note component imported by the print page but unused at runtime is not caught beyond the three named files
-</code></pre>
-
-<h6>Obligations</h6>
-
-
-<h5>Covers</h5>
-
-<p>P5</p>
-
-<pre><code>A writer opens a report with notes
-</code></pre>
-
-<pre><code>The notes are listed and the add field is present
-</code></pre>
-
-<pre><code>A writer can add a note
-</code></pre>
-
-<h5>Disposition</h5>
-
-<p>Tested</p>
-
-<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.add.test.tsx</p>
-
-<p>saves what the writer typed as typed, shows the new note first and empties the field</p>
-
-<pre><code>The field shows to everyone, since the reader cases pin its absence elsewhere
+<pre><code>A new note component imported by the print page under another file name
 </code></pre>
 
 <h6>Obligations</h6>
@@ -763,12 +736,39 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>A_caller_with_read_access_only_is_refused_a_new_note</p>
 
-<pre><code>Change and delete answer any refusal such as 405 rather than 403, because those routes do not exist yet
+<pre><code>Change and delete answer any refusal such as 405 rather than 403 until those routes exist
 </code></pre>
 
 <h6>Obligations</h6>
 
 <p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A writer opens a report with notes
+</code></pre>
+
+<pre><code>The notes are listed and the add field is present
+</code></pre>
+
+<pre><code>A writer can add a note
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.add.test.tsx</p>
+
+<p>saves what the writer typed as typed, shows the new note first and empties the field</p>
+
+<pre><code>The field shows to everyone, which the reader cases pin elsewhere
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 

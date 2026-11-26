@@ -85,6 +85,26 @@ describe("what the print pages are built from", () => {
 	});
 });
 
+describe("what the print pages leave out", () => {
+	// A report's notes are for the live report only; the print pages and the export frame must not reach them.
+	it.each([
+		"pages/Common/Reports/ReportNotes.tsx",
+		"pages/Common/Reports/useReportNotes.ts",
+	])("never reaches %s", (file) => {
+		const reachedByThePages = whatThePrintPagesReach();
+		const hosts = productionModulesNaming(/from\s+["']@emotion\/cache["']/);
+		const reachedByTheFrameHost = whatThePrintPagesReach(
+			resolve(sourceRoot, hosts[0]),
+		);
+
+		expect(reachedByThePages).toContain(
+			"pages/Common/Reports/print/ReportPrintPage.tsx",
+		);
+		expect(reachedByThePages).not.toContain(file);
+		expect(reachedByTheFrameHost).not.toContain(file);
+	});
+});
+
 const THE_BROWSER = "(?:globalThis|window|self)";
 
 /** Every way a module can reach the browser's print dialog: called, called if present, indexed, or taken apart. */
