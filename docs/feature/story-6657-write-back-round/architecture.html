@@ -1,30 +1,35 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><style>:root{
-  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
-  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  /* The font stack is inlined here because the nwdes renderer injects only
+     this stylesheet; the nwave_ai page builder takes the same stack from
+     manifest.json. Both carriers are pinned by tests. */
+  --nwave-font-stack:"Lato", -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --paper:#131316; --ink:#F2F2F2; --muted:#A3A3A8; --rule:#313135;
+  --panel:#181820; --raised:#1F1F24; --accent:#FBCF09; --accent-soft:rgba(251,207,9,0.14);
   --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
   --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
   --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
 }
 @media (prefers-color-scheme:dark){
   :root{
-    --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
-    --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+    --paper:#131316; --ink:#F2F2F2; --muted:#A3A3A8; --rule:#313135;
+    --panel:#181820; --raised:#1F1F24; --accent:#FBCF09; --accent-soft:rgba(251,207,9,0.14);
     --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
     --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
     --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
   }
 }
 :root[data-theme="light"]{
-  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
-  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --paper:#131316; --ink:#F2F2F2; --muted:#A3A3A8; --rule:#313135;
+  --panel:#181820; --raised:#1F1F24; --accent:#FBCF09; --accent-soft:rgba(251,207,9,0.14);
   --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
   --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
   --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
 }
 :root[data-theme="dark"]{
-  --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
-  --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+  --paper:#131316; --ink:#F2F2F2; --muted:#A3A3A8; --rule:#313135;
+  --panel:#181820; --raised:#1F1F24; --accent:#FBCF09; --accent-soft:rgba(251,207,9,0.14);
   --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
   --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
   --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
@@ -37,7 +42,7 @@ body{
 }
 .wrap{max-width:1180px;margin:0 auto;padding:2.5rem 1.5rem 6rem;
   display:flex;flex-direction:column;gap:1.1rem}
-.brandbar{background:#11141a;border-radius:4px;padding:.7rem 1rem;display:flex;align-items:center}
+.brandbar{background:#131316;border-radius:4px;padding:.7rem 1rem;display:flex;align-items:center}
 .brandbar-logo{height:1.9rem;width:auto;display:block}
 .provenance{
   display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:baseline;
@@ -841,6 +846,10 @@ dotnet build Lighthouse.Backend
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackStringsTheMoveRenames.cs</p>
 
+<p>None.</p>
+
+<p>None.</p>
+
 <h4>Public oracle</h4>
 
 <pre><code>Run WriteBackMembershipArchUnitTest: (1) each type of WriteBackMembership exists in its old or its new namespace in the compiled IL, top-level names only; (2) NamespaceMoveLaw with the write-back map and WriteBackPatternRoles over every regex field of the test assembly; (3) a made-up Promises Application type reaching a made-up round type, judged by Promises&#x27; upstream predicate given a round pattern naming the fixture namespace; (4) a made-up Work Items Application type reaching a made-up round type in the new place, judged by Work Items&#x27; rules; (5) the literal sweep with WriteBackStringsTheMoveRenames.
@@ -1614,6 +1623,10 @@ dotnet build Lighthouse.Backend
 <h4>Supports</h4>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembership.cs</p>
+
+<p>None.</p>
+
+<p>None.</p>
 
 <h4>Public oracle</h4>
 
@@ -2577,6 +2590,10 @@ dotnet build Lighthouse.Backend
 </code></pre>
 
 <h4>Supports</h4>
+
+<p>None.</p>
+
+<p>None.</p>
 
 <p>None.</p>
 

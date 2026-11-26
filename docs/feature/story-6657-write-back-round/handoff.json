@@ -11,7 +11,8 @@
 "L1"
 ],
 "still_passes_if": "F180",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::EveryRoundType_IsFoundInItsOldOrItsNewNamespace_AndEveryNeighbourThatStays_IsFoundWithItsOwnerAndReason; Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::TheMembershipCheck_NamesAMadeUpRoundTypeFoundInNeitherNamespace_AndAMadeUpNeighbourThatIsNowhereOrHasNoOwner"
+"test": "EveryRoundType_IsFoundInItsOldOrItsNewNamespace_AndEveryNeighbourThatStays_IsFoundWithItsOwnerAndReason; Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::TheMembershipCheck_NamesAMadeUpRoundTypeFoundInNeitherNamespace_AndAMadeUpNeighbourThatIsNowhereOrHasNoOwner",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs"
 },
 "expected": "F178",
 "stimulus": "F177",
@@ -26,12 +27,13 @@
 "obligations": [
 "L1"
 ],
-"still_passes_if": "F184",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::EveryRulePatternThatSeesARoundType_IsDeclared_AndKeepsItsRoleOnTheSubjectItsRuleReads; Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::TheRoleCheck_NamesEachMadeUpPatternThatBreaksItsRole_AndPassesTheOnesThatKeepIt"
+"still_passes_if": "F230",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::EveryRulePatternThatSeesARoundType_IsDeclared_AndKeepsItsRoleOnTheSubjectItsRuleReads; Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::TheRoleCheck_NamesEachMadeUpPatternThatBreaksItsRole_AndPassesTheOnesThatKeepIt",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs"
 },
-"expected": "F182",
+"expected": "F228",
 "stimulus": "F181",
-"user_result": "F183"
+"user_result": "F229"
 },
 {
 "covers": [
@@ -43,7 +45,8 @@
 "L2"
 ],
 "still_passes_if": "F188",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::AMadeUpWorkItemsTypeReachingARoundTypeInItsNewPlace_IsRefusedByExactlyTheWorkItemsRulesTheMembershipRecords"
+"test": "AMadeUpWorkItemsTypeReachingARoundTypeInItsNewPlace_IsRefusedByExactlyTheWorkItemsRulesTheMembershipRecords",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs"
 },
 "expected": "F186",
 "stimulus": "F185",
@@ -59,7 +62,8 @@
 "L1"
 ],
 "still_passes_if": "F192",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::EveryTestStringThatNamesARoundTypeByItsOldPath_IsOnTheRenameList_InExactlyOneOfItsForms; Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::TheRenameListCheck_NamesAnUnlistedOldPathString_AListedStringFoundInNeitherForm_AndOneFoundInBoth"
+"test": "EveryTestStringThatNamesARoundTypeByItsOldPath_IsOnTheRenameList_InExactlyOneOfItsForms; Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::TheRenameListCheck_NamesAnUnlistedOldPathString_AListedStringFoundInNeitherForm_AndOneFoundInBoth",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs"
 },
 "expected": "F190",
 "stimulus": "F189",
@@ -77,7 +81,8 @@
 "T1"
 ],
 "still_passes_if": "F196",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs::AMadeUpTypeOfAContextThatMayNotJoinTheRound_ReachingARoundTypeInItsNewPlace_IsRefusedByTheRoundPattern_AndItsTwinReachingForecastingIsNot (PromisesMayNotJoinTheRound_ThoughItMayAskForecasting, AccessMayNotJoinTheRound, LicensingMayNotJoinTheRound)"
+"test": "AMadeUpTypeOfAContextThatMayNotJoinTheRound_ReachingARoundTypeInItsNewPlace_IsRefusedByTheRoundPattern_AndItsTwinReachingForecastingIsNot (PromisesMayNotJoinTheRound_ThoughItMayAskForecasting, AccessMayNotJoinTheRound, LicensingMayNotJoinTheRound)",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs"
 },
 "expected": "F194",
 "stimulus": "F193",
@@ -96,7 +101,8 @@
 "T1"
 ],
 "still_passes_if": "F200",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs::APromisesTypeReachingTheWriteBackRound_IsNamed; Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs::AnAccessTypeReachingTheWriteBackRound_IsNamed; the ModuleEdgesIntoUpstreamCode product rows of the Promises, Access and Licensing boundary tests"
+"test": "APromisesTypeReachingTheWriteBackRound_IsNamed; Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs::AnAccessTypeReachingTheWriteBackRound_IsNamed; the ModuleEdgesIntoUpstreamCode product rows of the Promises, Access and Licensing boundary tests",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs"
 },
 "expected": "F198",
 "stimulus": "F197",
@@ -115,7 +121,8 @@
 "T4"
 ],
 "still_passes_if": "F204",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::EveryRoundTypeLivesInForecastingsWriteBackNamespaceAndNowhereElse"
+"test": "EveryRoundTypeLivesInForecastingsWriteBackNamespaceAndNowhereElse",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs"
 },
 "expected": "F202",
 "stimulus": "F201",
@@ -134,7 +141,8 @@
 "L4/F171"
 ],
 "still_passes_if": "F208",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::ThePlacementCheckNamesEachWayTheMoveGoesWrong"
+"test": "ThePlacementCheckNamesEachWayTheMoveGoesWrong",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs"
 },
 "expected": "F206",
 "stimulus": "F205",
@@ -150,7 +158,8 @@
 "T4"
 ],
 "still_passes_if": "F212",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::TheEightRoundUnitTestFilesSitBesideTheirSubjectAndDeclareTheNamespaceOfTheirFolder"
+"test": "TheEightRoundUnitTestFilesSitBesideTheirSubjectAndDeclareTheNamespaceOfTheirFolder",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs"
 },
 "expected": "F210",
 "stimulus": "F209",
@@ -166,7 +175,8 @@
 "L4"
 ],
 "still_passes_if": "F216",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::TheTestFileCheckNamesEachTestFileLeftBehind"
+"test": "TheTestFileCheckNamesEachTestFileLeftBehind",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs"
 },
 "expected": "F214",
 "stimulus": "F213",
@@ -182,7 +192,8 @@
 "T4"
 ],
 "still_passes_if": "F220",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::WorkItemsStillRefusesTheRoundByItsNewFullNamesAndNoLongerNamesItsOldOnes"
+"test": "WorkItemsStillRefusesTheRoundByItsNewFullNamesAndNoLongerNamesItsOldOnes",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs"
 },
 "expected": "F218",
 "stimulus": "F217",
@@ -198,7 +209,8 @@
 "T4"
 ],
 "still_passes_if": "F224",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs::TheWorkItemsCheckNamesARoundTypeItsListDoesNotSeeInItsNewPlace"
+"test": "TheWorkItemsCheckNamesARoundTypeItsListDoesNotSeeInItsNewPlace",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs"
 },
 "expected": "F222",
 "stimulus": "F221",
@@ -210,7 +222,7 @@
 "C": 1,
 "D": 19,
 "E": 3,
-"F": 227,
+"F": 230,
 "K": 6,
 "L": 4,
 "P": 3,
@@ -2039,9 +2051,6 @@
 "F18": "D-4 Tracker integration edge stays listed by name, one caller: WriteBackService is the only outside type of Tracker integration's write-back port (R-T4 entry renamed); Forecasting is not made a legal caller by namespace. ADR-270 gets the row Tracker integration to Forecasting, customer of the ACL's write-back capability, one listed type.",
 "F180": "A round type existed in its old place under a different arity or as a nested type only; the lookup is by exact top-level full name.",
 "F181": "The shared namespace-move law is run with the write-back map over every rule pattern of the test assembly, and over made-up rule keys.",
-"F182": "Every pattern that sees a round type is declared: parts of the code keep seeing it, old locations never see the new place, and the round pattern and Forecasting patterns see every round type in its new place. Today it fails only because the round pattern does not exist yet. The made-up blind, widened-old-location and undeclared keys, and the blind or missing admitted round patterns, are named.",
-"F183": "No architecture rule silently stops seeing a write-back round type when the round moves.",
-"F184": "A rule pattern held as a property or built inside a method body sees the round; the law reads only constant and static read-only string fields.",
 "F185": "A made-up Work Items Application type reaches a made-up type in the round's real new namespace, and every Work Items outbound rule judges the edge.",
 "F186": "The Work Items rules that refuse it are exactly the ones the membership records; measured today: none, because Work Items refuses the round only by its old full names.",
 "F187": "The maintainer knows whether Work Items still refuses the round after the move before its old names are taken away.",
@@ -2090,7 +2099,10 @@
 "F225": "D-15 New since the design, from Story 6468: (a) WorkItemsModuleBoundariesArchUnitTest.StrayLooseImplementation and StrayLooseInterfaces (and the composite StrayLooseServices, also read by RecurringBlackoutEventsSeamArchUnitTest) name the 8 round types by old full name as regex alternatives. S1 declares them Place on the full name in WriteBackPatternRoles and puts them on the sweep, and proves with a planted Work Items Application type reaching a made-up round type in the new place that no Work Items rule refuses the edge; so S2 replaces the 8 alternatives by the new full names (Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.<Type>), keeping every other entry, and no Work Items rule reads the round pattern. (b) OrganisationSetupMembership.cs lists 3 round files by old path as staying neighbours; S2 renames those paths. (c) NamespaceMoveLaw has no exception for a move into an existing area: admissions live per move in its PatternRoles class (6468 WholeParentPatterns and NamedByTheModuleOnly), so S1 creates WriteBackPatternRoles and leaves the law unchanged (M3 answered).",
 "F226": "StrayLooseImplementation and StrayLooseInterfaces replace the 8 round alternatives by their new full names; every other entry stays.",
 "F227": "The 8 round alternatives in StrayLooseImplementation and StrayLooseInterfaces take the new full names; no other entry changes.",
+"F228": "Every pattern that sees a round type is declared: parts of the code keep seeing it, old locations never see the new place, and the round pattern and Forecasting patterns see every round type in its new place. The only old locations that may see the new place are the Work Items lists of types left in the loose Services namespaces, which name the round by its exact new full names; a listed pattern that takes in any other name of the new place, or is no rule pattern, is named. Today it fails only because the round pattern does not exist yet. The made-up blind, widened-old-location, whole-new-place-listed and undeclared keys, and the blind or missing admitted round patterns and the missing listed entry, are named; the made-up old location renamed to a round type's exact new full name passes.",
+"F229": "No architecture rule silently stops seeing a write-back round type when the round moves, and Work Items keeps refusing the round by its exact new names without any old location taking in the whole new place.",
 "F23": "D-9 Order: after Story 6468, before Story 6382 (S09a); the move does not wait for S09a. S1 first runs the three merged checks for 6365, 6366 and 6468 and stops if any fails.",
+"F230": "A rule pattern held as a property or built inside a method body sees the round; the law reads only constant and static read-only string fields. A listed old location naming one round type by a full name that is not on the move map is not checked against the map.",
 "F24": "D-10 Commit per slice, moves in refactor(forecasting) commits apart from edits; push S1 to S3 together once all three are green, so the Program.cs change triggers one live connector run.",
 "F25": "D-11 Behaviour-free proof reuses the admitted probes: architecture-rules (all), ef-model-unchanged, backend-tests on the unchanged write-back acceptance and host test classes on both revisions, test-selection-show for Modules/Forecasting paths and Program.cs. No new compare command.",
 "F26": "D-12 Mutation bar last, on frozen code: Stryker.NET over Modules/Forecasting/Application/WriteBack compared with the same files on the pre-move revision; no survivor or no-coverage mutant added; the 80 percent project bar reported.",

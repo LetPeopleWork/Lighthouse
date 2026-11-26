@@ -1,30 +1,35 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><style>:root{
-  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
-  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+<html lang="en"><head><meta charset="utf-8"><style>:root{
+  /* The font stack is inlined here because the nwdes renderer injects only
+     this stylesheet; the nwave_ai page builder takes the same stack from
+     manifest.json. Both carriers are pinned by tests. */
+  --nwave-font-stack:"Lato", -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --paper:#131316; --ink:#F2F2F2; --muted:#A3A3A8; --rule:#313135;
+  --panel:#181820; --raised:#1F1F24; --accent:#FBCF09; --accent-soft:rgba(251,207,9,0.14);
   --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
   --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
   --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
 }
 @media (prefers-color-scheme:dark){
   :root{
-    --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
-    --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+    --paper:#131316; --ink:#F2F2F2; --muted:#A3A3A8; --rule:#313135;
+    --panel:#181820; --raised:#1F1F24; --accent:#FBCF09; --accent-soft:rgba(251,207,9,0.14);
     --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
     --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
     --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
   }
 }
 :root[data-theme="light"]{
-  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
-  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --paper:#131316; --ink:#F2F2F2; --muted:#A3A3A8; --rule:#313135;
+  --panel:#181820; --raised:#1F1F24; --accent:#FBCF09; --accent-soft:rgba(251,207,9,0.14);
   --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
   --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
   --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
 }
 :root[data-theme="dark"]{
-  --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
-  --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+  --paper:#131316; --ink:#F2F2F2; --muted:#A3A3A8; --rule:#313135;
+  --panel:#181820; --raised:#1F1F24; --accent:#FBCF09; --accent-soft:rgba(251,207,9,0.14);
   --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
   --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
   --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
@@ -37,7 +42,7 @@ body{
 }
 .wrap{max-width:1180px;margin:0 auto;padding:2.5rem 1.5rem 6rem;
   display:flex;flex-direction:column;gap:1.1rem}
-.brandbar{background:#11141a;border-radius:4px;padding:.7rem 1rem;display:flex;align-items:center}
+.brandbar{background:#131316;border-radius:4px;padding:.7rem 1rem;display:flex;align-items:center}
 .brandbar-logo{height:1.9rem;width:auto;display:block}
 .provenance{
   display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:baseline;
@@ -151,15 +156,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Request</h2>
 
-<pre><code>Place the write-back round (Story 6657): move the 8 write-back round files from the loose Services namespaces into Modules/Forecasting/Application/WriteBack, behaviour-free, with rules first and rules by namespace after
-</code></pre>
+<p>Place the write-back round (Story 6657): move the 8 write-back round files from the loose Services namespaces into Modules/Forecasting/Application/WriteBack, behaviour-free, with rules first and rules by namespace after</p>
 
 <h2>Work</h2>
 
 <p>M</p>
 
-<pre><code>The last named exception of the Promises packaging leaves Services; the round sits inside the context that owns it, so S09a sees it there
-</code></pre>
+<p>The last named exception of the Promises packaging leaves Services; the round sits inside the context that owns it, so S09a sees it there</p>
 
 <h3>Rework</h3>
 
@@ -171,30 +174,37 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Outcome</p>
 
-<pre><code>Every rule keeps its verdict for the write-back round while it moves.
-</code></pre>
+<p>Every rule keeps its verdict for the write-back round while it moves.</p>
+
+<h4>Amendment</h4>
+
+<p>None.</p>
 
 <h3>P2</h3>
 
 <p>Outcome</p>
 
-<pre><code>The write-back round and its unit tests live in Forecasting&#x27;s Application/WriteBack, with no behaviour change.
-</code></pre>
+<p>The write-back round and its unit tests live in Forecasting&#x27;s Application/WriteBack, with no behaviour change.</p>
+
+<h4>Amendment</h4>
+
+<p>None.</p>
 
 <h3>P3</h3>
 
 <p>Outcome</p>
 
-<pre><code>Rules name the round by its Forecasting namespace only, and the round has its own boundary rules.
-</code></pre>
+<p>Rules name the round by its Forecasting namespace only, and the round has its own boundary rules.</p>
+
+<h4>Amendment</h4>
+
+<p>None.</p>
 
 <h2>Scope</h2>
 
-<pre><code>The 8 write-back round files (5 classes, 3 ports), their unit tests, the rule files that name them, Program.cs and the consumers&#x27; using lines, ARCHITECTURE.md §4 and ADR-270.
-</code></pre>
+<p>The 8 write-back round files (5 classes, 3 ports), their unit tests, the rule files that name them, Program.cs and the consumers&#x27; using lines, ARCHITECTURE.md §4 and ADR-270.</p>
 
-<pre><code>Models/WriteBack (stays in the kernel), Tracker integration&#x27;s write-back port and connectors, the acceptance and host tests, registration extensions (S09a), any behaviour, schema, route or DTO change.
-</code></pre>
+<p>Models/WriteBack (stays in the kernel), Tracker integration&#x27;s write-back port and connectors, the acceptance and host tests, registration extensions (S09a), any behaviour, schema, route or DTO change.</p>
 
 <h2>Decisions</h2>
 
@@ -208,8 +218,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h3>S1</h3>
 
-<pre><code>The rules see the write-back round&#x27;s move before it happens: its membership is measured from the compiled code, the shared namespace-move law covers the write-back map, and the round pattern sees both the old and the new namespace.
-</code></pre>
+<p>The rules see the write-back round&#x27;s move before it happens: its membership is measured from the compiled code, the shared namespace-move law covers the write-back map, and the round pattern sees both the old and the new namespace.</p>
 
 <h4>Promises</h4>
 
@@ -223,8 +232,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>M</p>
 
-<pre><code>No rule loses a write-back edge while the round moves
-</code></pre>
+<p>No rule loses a write-back edge while the round moves</p>
 
 <h5>Rework</h5>
 
@@ -232,8 +240,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h3>S2</h3>
 
-<pre><code>The write-back round lives in Modules/Forecasting/Application/WriteBack and its unit tests sit beside it; production changes only in namespace and using lines.
-</code></pre>
+<p>The write-back round lives in Modules/Forecasting/Application/WriteBack and its unit tests sit beside it; production changes only in namespace and using lines.</p>
 
 <h4>Promises</h4>
 
@@ -247,8 +254,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>M</p>
 
-<pre><code>The round sits in Forecasting
-</code></pre>
+<p>The round sits in Forecasting</p>
 
 <h5>Rework</h5>
 
@@ -256,8 +262,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h3>S3</h3>
 
-<pre><code>Every rule names the write-back round by its Forecasting namespace only; the round has its own boundary rules; the architecture docs show it placed in Forecasting.
-</code></pre>
+<p>Every rule names the write-back round by its Forecasting namespace only; the round has its own boundary rules; the architecture docs show it placed in Forecasting.</p>
 
 <h4>Promises</h4>
 
@@ -271,8 +276,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>M</p>
 
-<pre><code>No rule names the old home; the round is guarded by its own rules
-</code></pre>
+<p>No rule names the old home; the round is guarded by its own rules</p>
 
 <h5>Rework</h5>
 

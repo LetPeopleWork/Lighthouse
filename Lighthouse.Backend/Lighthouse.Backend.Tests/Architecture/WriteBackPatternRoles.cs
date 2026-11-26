@@ -116,6 +116,19 @@ namespace Lighthouse.Backend.Tests.Architecture
         };
 
         /// <summary>
+        /// An old location named by the full names of the types that still sit in the loose Services namespaces, whose round
+        /// entries follow the round to its new full names, so Work Items keeps refusing the round with no gap while it moves.
+        /// Such a pattern sees a round type in its new place by its exact full name; the role check admits that for these
+        /// patterns only, and only while each takes in no other name of the new place. Keyed like <see cref="PatternRoles"/>.
+        /// </summary>
+        public static IReadOnlyDictionary<string, string> NameTheRoundByItsNewFullNames { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["WorkItemsModuleBoundariesArchUnitTest.StrayLooseImplementation"] = "the round's classes are listed by their new full names, so Work Items keeps refusing them",
+            ["WorkItemsModuleBoundariesArchUnitTest.StrayLooseInterfaces"] = "the round's ports are listed by their new full names, so Work Items keeps refusing them",
+            ["WorkItemsModuleBoundariesArchUnitTest.StrayLooseServices"] = "built from the two lists above, with the round named by its new full names",
+        };
+
+        /// <summary>
         /// A part of the code that saw a moving round type only through the Services folder the type lived in. For that pattern the
         /// type is read as an old location: the pattern must not follow it into Forecasting. Keyed by the pattern and the type's name.
         /// </summary>

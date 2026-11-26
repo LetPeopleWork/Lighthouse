@@ -83,7 +83,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var patterns = GivenTheRulePatternsOfTheTestAssembly();
 
-            var check = WhenTheRoleCheckRuns(TheLaw, patterns, WriteBackPatternRoles.PatternRoles, WriteBackPatternRoles.SeeTheRoundInItsNewPlace);
+            var check = WhenTheRoleCheckRuns(TheLaw, patterns, WriteBackPatternRoles.PatternRoles, WriteBackPatternRoles.SeeTheRoundInItsNewPlace, WriteBackPatternRoles.NameTheRoundByItsNewFullNames);
 
             ThenNoPatternBreaksItsRole(check);
         }
@@ -93,7 +93,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var patterns = GivenTheMadeUpRulePatterns();
 
-            var check = WhenTheRoleCheckRuns(MadeUpRoundRuleRoles.TheLaw, patterns, MadeUpRoundRuleRoles.Roles, MadeUpRoundRuleRoles.SeeTheRoundInItsNewPlace);
+            var check = WhenTheRoleCheckRuns(MadeUpRoundRuleRoles.TheLaw, patterns, MadeUpRoundRuleRoles.Roles, MadeUpRoundRuleRoles.SeeTheRoundInItsNewPlace, MadeUpRoundRuleRoles.NameTheRoundByItsNewFullNames);
 
             ThenTheMadeUpBreaksNamedAre(check);
         }
@@ -239,16 +239,23 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         // A pattern on the admission set must see the new name of every moving type at every step; whether it sees the old name
-        // is left free, so that the round pattern may see both places during the move and only the new one after it.
-        private static RoleCheck WhenTheRoleCheckRuns(NamespaceMoveLaw law, List<RulePattern> patterns, IReadOnlyDictionary<string, PatternDeclaration> roles, IReadOnlyDictionary<string, string> seeTheRoundInItsNewPlace)
+        // is left free, so that the round pattern may see both places during the move and only the new one after it. An old
+        // location on the exact-name list may see a round type in its new place, but only by that type's full name: a pattern of
+        // the list that takes in any other name of the new place, or is no rule pattern, is named and keeps its breaks.
+        private static RoleCheck WhenTheRoleCheckRuns(NamespaceMoveLaw law, List<RulePattern> patterns, IReadOnlyDictionary<string, PatternDeclaration> roles, IReadOnlyDictionary<string, string> seeTheRoundInItsNewPlace, IReadOnlyDictionary<string, string> nameTheRoundByItsNewFullNames)
         {
+            var exactNameProblems = nameTheRoundByItsNewFullNames.Keys
+                .Select(field => (Field: field, Problem: ExactNameProblemOf(field, patterns, roles)))
+                .ToList();
+            var soundExactNames = exactNameProblems.Where(entry => entry.Problem is null).Select(entry => entry.Field).ToHashSet(StringComparer.Ordinal);
             var breaks = law.RoleBreaksOf(patterns)
                 .Where(found => !(seeTheRoundInItsNewPlace.ContainsKey(found.Pattern.Field) && found.Break is RoleBreak.SeesAnAreaItNeverSaw or RoleBreak.StopsSeeingTheType))
+                .Where(found => !(soundExactNames.Contains(found.Pattern.Field) && found.Break is RoleBreak.SeesTheTypeInItsNewPlace or RoleBreak.KeepsAPlatformAlternativeAsAnOldLocation))
                 .Select(found => $"{found.Pattern.Field} = {found.Pattern.Value} ({found.Declared}){Environment.NewLine}{found.Describe()}")
                 .Distinct(StringComparer.Ordinal)
                 .ToList();
 
-            var unsoundAdmissions = new List<string>();
+            var unsoundAdmissions = exactNameProblems.Where(entry => entry.Problem is not null).Select(entry => $"{entry.Field}: {entry.Problem}").ToList();
             foreach (var field in seeTheRoundInItsNewPlace.Keys)
             {
                 var pattern = patterns.FirstOrDefault(candidate => candidate.Field == field);
@@ -271,6 +278,38 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
 
             return new RoleCheck(breaks, unsoundAdmissions);
+        }
+
+        private static string? ExactNameProblemOf(string field, List<RulePattern> patterns, IReadOnlyDictionary<string, PatternDeclaration> roles)
+        {
+            var pattern = patterns.FirstOrDefault(candidate => candidate.Field == field);
+            if (pattern is null)
+            {
+                return "on the exact-name list, but not a rule pattern of the test assembly";
+            }
+
+            var declaration = roles.GetValueOrDefault(field);
+            var seen = new HashSet<string>(StringComparer.Ordinal) { field };
+            while (declaration?.CompositeOf is { } component && seen.Add(component))
+            {
+                declaration = roles.GetValueOrDefault(component);
+            }
+
+            if (declaration is not { Role: PatternRole.Place, Subject: PatternSubject.FullName })
+            {
+                return "on the exact-name list, but not declared as an old location matched against the full name";
+            }
+
+            var otherNamesOfTheNewPlace = WriteBackMembership.MovingTypes
+                .Select(type => type.NewNamespace)
+                .Distinct(StringComparer.Ordinal)
+                .SelectMany(place => new[] { place, $"{place}.ATypeThatIsNotTheRound", $"{place}.ATypeThatIsNotTheRound+Nested" })
+                .Where(name => NamespaceMoveLaw.IsMatch(name, pattern.Value))
+                .ToList();
+
+            return otherNamesOfTheNewPlace.Count == 0
+                ? null
+                : $"on the exact-name list, but {pattern.Value} takes in {string.Join(", ", otherNamesOfTheNewPlace)}, which is not a round type";
         }
 
         private static List<string> WhenTheContextsPredicateJudgesItsMadeUpTypes(RoundGuard guard, string roundPattern)
@@ -391,11 +430,13 @@ namespace Lighthouse.Backend.Tests.Architecture
                     {
                         $"{nameof(MadeUpRoundRuleKeys)}.{nameof(MadeUpRoundRuleKeys.AContextThatSeesOnlyTheOldPlace)}",
                         $"{nameof(MadeUpRoundRuleKeys)}.{nameof(MadeUpRoundRuleKeys.APlaceWidenedIntoTheNewPlace)}",
+                        $"{nameof(MadeUpRoundRuleKeys)}.{nameof(MadeUpRoundRuleKeys.AnOldLocationListedButTakingInTheWholeNewPlace)}",
                         $"{nameof(MadeUpRoundRuleKeys)}.{nameof(MadeUpRoundRuleKeys.AnUndeclaredPatternSeeingAnOldFullName)}",
                         $"{nameof(MadeUpRoundRuleKeys)}.{nameof(MadeUpRoundRuleKeys.AnUndeclaredPatternSeeingTheNewPlace)}",
                     }),
                     $"The role check named [{string.Join(", ", named)}]. Expected the part of the code that sees only the old place, the old location widened into the new place, " +
-                    "and the two undeclared patterns, and not the part of the code widened to the new place, the old location left in the old place or the admitted round patterns. " +
+                    "the old location on the exact-name list that takes in the whole new place, and the two undeclared patterns, and not the part of the code widened to the new place, " +
+                    "the old location left in the old place, the old location renamed to a round type's new full name or the admitted round patterns. " +
                     "Why it matters: a check that lets an undeclared pattern pass, or accepts an old location that sees the new place, lets a rule go blind or wrong at the move. " +
                     "How to fix: evaluate every declared pattern on its subject and role, and every undeclared one on both subjects.");
                 Assert.That(
@@ -404,8 +445,10 @@ namespace Lighthouse.Backend.Tests.Architecture
                     {
                         $"{nameof(MadeUpRoundRuleKeys)}.{nameof(MadeUpRoundRuleKeys.ARoundPatternBlindToTheNewPlace)}",
                         $"{nameof(MadeUpRoundRuleKeys)}.ARoundPatternThatIsNotThere",
+                        $"{nameof(MadeUpRoundRuleKeys)}.{nameof(MadeUpRoundRuleKeys.AnOldLocationListedButTakingInTheWholeNewPlace)}",
+                        $"{nameof(MadeUpRoundRuleKeys)}.AnOldLocationListedThatIsNotThere",
                     }),
-                    $"The admission check named [{string.Join(", ", unsound)}]. Expected the round pattern that does not see the new place and the admitted entry that is no rule pattern, " +
+                    $"The admission check named [{string.Join(", ", unsound)}]. Expected the round pattern that does not see the new place, the admitted entry that is no rule pattern, and the two exact-name entries that take in the whole new place or are no rule pattern, " +
                     "and not the round pattern of both places or the one of the new place only. Why it matters: an admission that does not demand the new place hides a pattern blind to the moved round. " +
                     "How to fix: require every admitted pattern to exist and to match the new name of every round type, and leave its old name free.");
             }
@@ -517,6 +560,10 @@ namespace Lighthouse.Backend.Tests.Architecture.WriteBackMembershipFixtures
 
         public const string ARoundPatternOfTheNewPlaceOnly = @"^Lighthouse\.Backend\.Modules\.Forecasting\.Application\.WriteBack\.";
 
+        public const string AnOldLocationRenamedToARoundTypesNewFullName = @"^Lighthouse\.Backend\.(Services\.Implementation\.EstimateNormalizer|Modules\.Forecasting\.Application\.WriteBack\.WriteBackRound)(\+.*)?$";
+
+        public const string AnOldLocationListedButTakingInTheWholeNewPlace = @"^Lighthouse\.Backend\.(Services\.Implementation\.EstimateNormalizer|Modules\.Forecasting\.Application\.WriteBack\..*)$";
+
         public const string ARoundPatternBlindToTheNewPlace = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.I?WriteBack(Collector|Round|RoundContext|Service|TriggerService)$";
     }
 
@@ -532,6 +579,15 @@ namespace Lighthouse.Backend.Tests.Architecture.WriteBackMembershipFixtures
             ["MadeUpRoundRuleKeys.ARoundPatternOfBothPlaces"] = PatternDeclaration.Context(PatternSubject.FullName, "the round while it moves"),
             ["MadeUpRoundRuleKeys.ARoundPatternOfTheNewPlaceOnly"] = PatternDeclaration.Context(PatternSubject.FullName, "the round after it moved"),
             ["MadeUpRoundRuleKeys.ARoundPatternBlindToTheNewPlace"] = PatternDeclaration.Context(PatternSubject.FullName, "the round by its old names only"),
+            ["MadeUpRoundRuleKeys.AnOldLocationRenamedToARoundTypesNewFullName"] = PatternDeclaration.Place(PatternSubject.FullName, "an old location whose round entry follows the type to its new full name"),
+            ["MadeUpRoundRuleKeys.AnOldLocationListedButTakingInTheWholeNewPlace"] = PatternDeclaration.Place(PatternSubject.FullName, "an old location that took in the whole new place"),
+        };
+
+        public static IReadOnlyDictionary<string, string> NameTheRoundByItsNewFullNames { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["MadeUpRoundRuleKeys.AnOldLocationRenamedToARoundTypesNewFullName"] = "admitted, names the round type by its new full name",
+            ["MadeUpRoundRuleKeys.AnOldLocationListedButTakingInTheWholeNewPlace"] = "listed, but takes in the whole new place",
+            ["MadeUpRoundRuleKeys.AnOldLocationListedThatIsNotThere"] = "listed, but no such pattern",
         };
 
         public static IReadOnlyDictionary<string, string> SeeTheRoundInItsNewPlace { get; } = new Dictionary<string, string>(StringComparer.Ordinal)

@@ -808,6 +808,10 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackPatternR
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackStringsTheMoveRenames\.cs
 
+None.
+
+None.
+
 #### Public oracle
 
 ```text
@@ -1680,6 +1684,10 @@ dotnet build Lighthouse.Backend
 #### Supports
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackMembership\.cs
+
+None.
+
+None.
 
 #### Public oracle
 
@@ -2748,6 +2756,10 @@ dotnet build Lighthouse.Backend
 ```
 
 #### Supports
+
+None.
+
+None.
 
 None.
 

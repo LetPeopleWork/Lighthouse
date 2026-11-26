@@ -28,6 +28,10 @@ Outcome
 Every rule keeps its verdict for the write-back round while it moves.
 ```
 
+#### Amendment
+
+None.
+
 ### P2
 
 Outcome
@@ -36,6 +40,10 @@ Outcome
 The write-back round and its unit tests live in Forecasting's Application/WriteBack, with no behaviour change.
 ```
 
+#### Amendment
+
+None.
+
 ### P3
 
 Outcome
@@ -43,6 +51,10 @@ Outcome
 ```text
 Rules name the round by its Forecasting namespace only, and the round has its own boundary rules.
 ```
+
+#### Amendment
+
+None.
 
 ## Scope
 
