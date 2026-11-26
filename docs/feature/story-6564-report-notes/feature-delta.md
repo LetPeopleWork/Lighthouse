@@ -82,6 +82,32 @@ property: not which report or report type, not which Team or Portfolio, not the 
   Portfolio, not the note's text or length, not who wrote it**").
 - **Host default, AFK:** the maintainer may want to revisit the choice of name-only.
 
+## Start of DELIVER: maintainer decisions (2026-11-26, sketch review)
+
+- **Placement: Option A**, the notes area above the numbers. It sits under the report summary and before the
+  panels, outside anything the print bundle renders. Maintainer: "Lets take A. I can see later that we may be able
+  to arrange the reports more freely, so let's stick with this for now and eventually change it later." A freer
+  arrangement of the report is a possible later item, not part of this Story.
+- **Layout and copy, as sketched and not objected to:**
+  - "Notes" heading.
+  - "No notes yet." when the list is empty.
+  - A multi-line field with "Add note", for writers only.
+  - Each note shows its text, then "<day> · <author>" and "· edited <day>" when changed. A note nobody signed
+    shows the day only.
+  - Edit and Delete on the notes the user may change.
+  - Errors: "A note needs some text." and "A note can have at most 2000 characters."
+  - Loading: "Loading notes" with a spinner. Failure: "Could not load the notes" with Retry, and no add field.
+    The report numbers still show.
+  - It reuses the Delivery notes panel's layout.
+- **Rigor profile, all slices: `standard`.** The crafter and acceptance designer run on Sonnet; the reviewers and
+  EXAMINE on Haiku. Agreed at AFK entry.
+- **Defaults the maintainer has not answered, kept and listed again at the hold:**
+  - 2000 characters as the maximum.
+  - A note write is refused when authentication is on and no profile resolves.
+  - `NoteSignature` is shared with Delivery notes.
+  - The usage-data event `ReportNoteAdded` carries no property.
+  - Delivery notes have the same gap for authentication on with no profile (a possible Bug, not created).
+
 ## Open, for DESIGN
 
 - Maximum length of a note (Delivery notes have none).

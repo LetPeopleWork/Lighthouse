@@ -160,6 +160,226 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>A user reading a report in the live report sees the notes written on that report alongside the report numbers, so the numbers carry the context that explains them.
+</code></pre>
+
+<pre><code>Checks that notes are visible; does not show that the notes sit next to the numbers they explain in the live view for a report with notes and for one without.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>With authentication on, a user with write access on the owning Team or Portfolio adds a note with text, and the live report lists it newest first with its text, the day written and the name of the user who wrote it.
+</code></pre>
+
+<pre><code>A single-note check cannot show newest-first order across several notes or the author name shown for each of several authors.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>With authentication off, a note added to a report appears in the live report with its text and the day written, and shows no author name.
+</code></pre>
+
+<pre><code>Covers only the live report; does not show that no author name appears in a reloaded or exported view of the same note.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>A note with empty or blank-only text is not saved when a writer tries to save it; the user is told that a note needs some text.
+</code></pre>
+
+<pre><code>Does not show that the note list is unchanged after the refused save when the report is reloaded, nor the exact message wording.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P5</p>
+
+<pre><code>A user with read access but no write access on the owning Team or Portfolio sees the notes of a report, has no control to add, change or delete a note, and a direct request to add, change or delete a note is refused.
+</code></pre>
+
+<pre><code>Checks the visible controls and one refused request; does not show a refused direct request for each of add, change and delete, nor for a note the reader did not write.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P6</p>
+
+<pre><code>Printing or exporting to PDF a report that has notes, alone or together with other reports, produces output that shows no notes.
+</code></pre>
+
+<pre><code>Does not show absence of notes in a bulk export of several reports that each have notes, nor in a note added moments before the print.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E7</h4>
+
+<h5>Promises</h5>
+
+<p>P7</p>
+
+<pre><code>With authentication on, the author of a note on a report they wrote changes its text, and the live report shows the new text marked as edited with the day of the edit.
+</code></pre>
+
+<pre><code>Does not show that the edited mark and day survive a reload, nor that the original text is no longer shown anywhere in the live report.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E8</h4>
+
+<h5>Promises</h5>
+
+<p>P8</p>
+
+<pre><code>With authentication on, the author of a note on a report they wrote deletes it, and the live report no longer lists the note.
+</code></pre>
+
+<pre><code>Does not show that the deleted note stays gone after a reload or cannot be read by a direct request.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E9</h4>
+
+<h5>Promises</h5>
+
+<p>P9</p>
+
+<pre><code>With authentication on, a writer on the owner who did not write a note on a report sees no control to change or delete it, and a direct request to change or delete that note is refused.
+</code></pre>
+
+<pre><code>Covers one note by another author; does not show the refusal for a note by a user who has since been removed, nor the refusal of a request that names an already deleted note.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E10</h4>
+
+<h5>Promises</h5>
+
+<p>P10</p>
+
+<pre><code>As amended on 2026-11-26 to follow delivery notes: a note with no author, written while authentication was off, can be changed or deleted by any user with write access on the owner, whether authentication is on or off now, and the change or deletion is saved and shows in the live report.
+</code></pre>
+
+<pre><code>Does not show the edited mark on the changed note, nor that a changed unsigned note stays unsigned, nor that a signed note on the same report stays protected in the same session.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E11</h4>
+
+<h5>Promises</h5>
+
+<p>P11</p>
+
+<pre><code>Deleting a report, alone or through bulk removal, deletes its notes, which can then no longer be read in the report or by a direct request.
+</code></pre>
+
+<pre><code>Does not show that every report selected in a bulk removal loses its notes, nor that a direct read of a deleted note fails rather than returning stale content.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E12</h4>
+
+<h5>Promises</h5>
+
+<p>P12</p>
+
+<pre><code>After authentication is switched off, a note signed while authentication was on stays protected: a writer on the owner sees no control to change or delete it, and a direct request to do so is refused.
+</code></pre>
+
+<pre><code>Does not show the protection after authentication is switched back on, nor for a note whose author has since been removed.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h3>Waivers</h3>
+
 <p>None.</p>
 
 <h2>Charter</h2>
