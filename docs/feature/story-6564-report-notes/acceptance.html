@@ -1290,6 +1290,90 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h5>Covers</h5>
+
+<p>P9</p>
+
+<pre><code>The count of guarded actions in the Access HTTP adapters is measured after the four new PUT and DELETE note actions are guarded
+</code></pre>
+
+<pre><code>The measured number of guarded actions is 251, four more than before
+</code></pre>
+
+<pre><code>Every new note route is guarded the way the other routes are
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessHttpAdaptersLayoutArchUnitTest.cs</p>
+
+<p>AccessHttpAdaptersLayoutArchUnitTest</p>
+
+<pre><code>A new unguarded route that leaves the measured number unchanged
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>A refusal of a changed note&#x27;s text is turned into words for the user: no text, more than 2000 characters, another reason, and something that is not a refusal
+</code></pre>
+
+<pre><code>Each gets its own sentence, and anything else gets the general could-not-save sentence
+</code></pre>
+
+<pre><code>A user whose correction is refused is told why in plain words
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/reportNoteRefusalCopy.test.ts</p>
+
+<p>The words for a note the server did not keep</p>
+
+<pre><code>A mapping that gives every refusal the general sentence
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P8</p>
+
+<pre><code>A change to a note is read, somebody deletes the note, then the change is saved; and the same without the deletion
+</code></pre>
+
+<pre><code>The change is not saved when the note was deleted meanwhile and the deleted note does not come back; it is saved otherwise
+</code></pre>
+
+<pre><code>A correction of a note that somebody removed is not silently reported as saved
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs</p>
+
+<p>A_change_is_saved_unless_somebody_deleted_the_note_after_it_was_read_and_a_deleted_note_stays_deleted</p>
+
+<pre><code>A save that answers true although the note is gone, or one that answers false for every change
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

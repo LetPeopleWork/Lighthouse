@@ -680,6 +680,48 @@
 "expected": "F631",
 "stimulus": "F630",
 "user_result": "F628"
+},
+{
+"covers": [
+"P9"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F636",
+"test": "AccessHttpAdaptersLayoutArchUnitTest",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessHttpAdaptersLayoutArchUnitTest.cs"
+},
+"expected": "F634",
+"stimulus": "F633",
+"user_result": "F635"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F640",
+"test": "The words for a note the server did not keep",
+"test_path": "Lighthouse.Frontend/src/pages/Common/Reports/reportNoteRefusalCopy.test.ts"
+},
+"expected": "F638",
+"stimulus": "F637",
+"user_result": "F639"
+},
+{
+"covers": [
+"P8"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F644",
+"test": "A_change_is_saved_unless_somebody_deleted_the_note_after_it_was_read_and_a_deleted_note_stays_deleted",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs"
+},
+"expected": "F642",
+"stimulus": "F641",
+"user_result": "F643"
 }
 ]
 },
@@ -687,7 +729,7 @@
 "B": 5,
 "D": 13,
 "E": 12,
-"F": 632,
+"F": 644,
 "K": 2,
 "L": 11,
 "N": 2,
@@ -2542,7 +2584,19 @@
 "F630": "The Reports membership lists are checked with the new change types",
 "F631": "Every Reports type is on its membership list",
 "F632": "A new type missing from the lists",
+"F633": "The count of guarded actions in the Access HTTP adapters is measured after the four new PUT and DELETE note actions are guarded",
+"F634": "The measured number of guarded actions is 251, four more than before",
+"F635": "Every new note route is guarded the way the other routes are",
+"F636": "A new unguarded route that leaves the measured number unchanged",
+"F637": "A refusal of a changed note's text is turned into words for the user: no text, more than 2000 characters, another reason, and something that is not a refusal",
+"F638": "Each gets its own sentence, and anything else gets the general could-not-save sentence",
+"F639": "A user whose correction is refused is told why in plain words",
 "F64": "A coach opens a Team or Portfolio report in the live report and reads its notes next to the numbers.",
+"F640": "A mapping that gives every refusal the general sentence",
+"F641": "A change to a note is read, somebody deletes the note, then the change is saved; and the same without the deletion",
+"F642": "The change is not saved when the note was deleted meanwhile and the deleted note does not come back; it is saved otherwise",
+"F643": "A correction of a note that somebody removed is not silently reported as saved",
+"F644": "A save that answers true although the note is gone, or one that answers false for every change",
 "F65": "emotion: not supplied",
 "F66": "The coach adds a note, for example how large the Team is or a training that took place, and sees it at the top of the list with the day and their name.",
 "F67": "If the note has no text, the coach is told it needs some text and writes it again.",

@@ -246,6 +246,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             return await scope.ServiceProvider.GetRequiredService<IReportNoteCommands>().Delete(owner, reportId, noteId, caller);
         }
 
+        /// <summary>A note is read for a change, somebody else may delete it before the change is saved, and whether the change was saved is returned.</summary>
+        protected async Task<bool> SavedAChangeWhile(ReportOwner owner, int reportId, int noteId, bool theNoteIsDeletedMeanwhile)
+        {
+            using var scope = harness.NewScope();
+            var store = scope.ServiceProvider.GetRequiredService<IReportNoteStore>();
+            var note = store.FindForEdit(owner, reportId, noteId);
+            Assert.That(note, Is.Not.Null, "the note must be there to be read for a change");
+            if (theNoteIsDeletedMeanwhile)
+            {
+                await DeleteANote(owner, reportId, noteId, new ReportNoteCaller.Anonymous());
+            }
+
+            note!.Revise("Changed meanwhile", DateTime.UtcNow);
+            return await store.TrySave();
+        }
+
         /// <summary>The notes of a report as the live report lists them for this caller, each saying whether the caller may change it.</summary>
         protected ReportOutcome<IReadOnlyList<ReportNoteRead>> ReadTheNotesAs(ReportOwner owner, int reportId, ReportNoteCaller caller)
         {

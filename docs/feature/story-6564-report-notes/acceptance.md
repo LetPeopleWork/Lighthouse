@@ -1296,6 +1296,102 @@ A new type missing from the lists
 ###### Obligations
 
 
+##### Covers
+
+P9
+
+```text
+The count of guarded actions in the Access HTTP adapters is measured after the four new PUT and DELETE note actions are guarded
+```
+
+```text
+The measured number of guarded actions is 251, four more than before
+```
+
+```text
+Every new note route is guarded the way the other routes are
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessHttpAdaptersLayoutArchUnitTest\.cs
+
+AccessHttpAdaptersLayoutArchUnitTest
+
+```text
+A new unguarded route that leaves the measured number unchanged
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P7
+
+```text
+A refusal of a changed note's text is turned into words for the user: no text, more than 2000 characters, another reason, and something that is not a refusal
+```
+
+```text
+Each gets its own sentence, and anything else gets the general could-not-save sentence
+```
+
+```text
+A user whose correction is refused is told why in plain words
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/reportNoteRefusalCopy\.test\.ts
+
+The words for a note the server did not keep
+
+```text
+A mapping that gives every refusal the general sentence
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P8
+
+```text
+A change to a note is read, somebody deletes the note, then the change is saved; and the same without the deletion
+```
+
+```text
+The change is not saved when the note was deleted meanwhile and the deleted note does not come back; it is saved otherwise
+```
+
+```text
+A correction of a note that somebody removed is not silently reported as saved
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteChangeScenarios\.cs
+
+A\_change\_is\_saved\_unless\_somebody\_deleted\_the\_note\_after\_it\_was\_read\_and\_a\_deleted\_note\_stays\_deleted
+
+```text
+A save that answers true although the note is gone, or one that answers false for every change
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

@@ -32,8 +32,7 @@ vi.mock("../../../services/TerminologyContext", async (importOriginal) => ({
 
 const A_REPORT = ENGAGEMENT_START_ID;
 const NEEDS_TEXT = "A note needs some text.";
-const AT_MOST_2000 = "A note can have at most 2000 characters.";
-const COULD_NOT_SAVE = "This note couldn't be saved. Try again.";
+const COULD_NOT_DELETE = "This note couldn't be deleted. Try again.";
 
 const aNote = (overrides: Partial<IReportNote> = {}): IReportNote => ({
 	id: 1,
@@ -189,40 +188,21 @@ describe("Changing and deleting the notes of a report", () => {
 		expect(within(theNotes()[0]).queryByRole("textbox")).toBeNull();
 	});
 
-	it.each([
-		["a note with no text", "", 400, "note-text-missing", NEEDS_TEXT],
-		[
-			"a note over 2000 characters",
-			"too long",
-			400,
-			"note-text-too-long",
-			AT_MOST_2000,
-		],
-		[
-			"a change the server could not make",
-			"Fine",
-			500,
-			"not-saved",
-			COULD_NOT_SAVE,
-		],
-	])(
-		"says why %s is not saved, keeps the field with what was typed and keeps the note as it was",
-		async (_what, typed, status, code, message) => {
-			const reportService = openTheNotes();
-			vi.mocked(reportService.updateNote).mockRejectedValue(
-				aRefusal(status, code),
-			);
-			await waitFor(() => expect(theNotes()).toHaveLength(2));
+	it("says why a note with no text is not saved, keeps the field with what was typed and keeps the note as it was", async () => {
+		const reportService = openTheNotes();
+		vi.mocked(reportService.updateNote).mockRejectedValue(
+			aRefusal(400, "note-text-missing"),
+		);
+		await waitFor(() => expect(theNotes()).toHaveLength(2));
 
-			const field = await startEditing("Team grew to 9");
-			await replaceTheTextWith(field, typed);
-			await saveTheEdit(theNotes()[0]);
+		const field = await startEditing("Team grew to 9");
+		await replaceTheTextWith(field, "");
+		await saveTheEdit(theNotes()[0]);
 
-			expect(await screen.findByText(message)).toBeInTheDocument();
-			expect(within(theNotes()[0]).getByRole("textbox")).toHaveValue(typed);
-			expect(theNotes()).toHaveLength(2);
-		},
-	);
+		expect(await screen.findByText(NEEDS_TEXT)).toBeInTheDocument();
+		expect(within(theNotes()[0]).getByRole("textbox")).toHaveValue("");
+		expect(theNotes()).toHaveLength(2);
+	});
 
 	it("deletes the note the user chose and lists the others", async () => {
 		const reportService = openTheNotes();
@@ -249,6 +229,9 @@ describe("Changing and deleting the notes of a report", () => {
 		await deleteTheNoteShowing("Team grew to 9");
 
 		await waitFor(() => expect(reportService.deleteNote).toHaveBeenCalled());
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			COULD_NOT_DELETE,
+		);
 		expect(theNotes()).toHaveLength(2);
 		expect(deleteOf(theNoteWith("Team grew to 9"))).toBeInTheDocument();
 	});

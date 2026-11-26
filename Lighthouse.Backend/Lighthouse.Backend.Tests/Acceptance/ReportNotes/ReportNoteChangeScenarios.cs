@@ -338,6 +338,23 @@ namespace Lighthouse.Backend.Tests.Acceptance.ReportNotes
             }
         }
 
+        [TestCase(true)]
+        [TestCase(false)]
+        public async Task A_change_is_saved_unless_somebody_deleted_the_note_after_it_was_read_and_a_deleted_note_stays_deleted(bool deletedMeanwhile)
+        {
+            var owner = ATeam("Lightspeed");
+            var report = await AReportOf(owner);
+            var note = await AddANote(owner, report, SignInIsOff, Training, MorningOnThe2nd);
+
+            var saved = await SavedAChangeWhile(owner, report, IdOf(note), deletedMeanwhile);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(saved, Is.EqualTo(!deletedMeanwhile), "a change to a note somebody deleted meanwhile is not saved, and any other change is");
+                Assert.That(TheNotesListed(owner, report).Select(shown => shown.Text), Is.EqualTo(deletedMeanwhile ? Array.Empty<string>() : ["Changed meanwhile"]), "the deleted note does not come back");
+            }
+        }
+
         /// <summary>For every pairing of who signed a note and who asks, in both the change and the delete, a note nobody signed is changed by anyone and a signed note only by its signer.</summary>
         [Test]
         public async Task Every_pairing_of_signer_and_caller_is_accepted_only_for_an_unsigned_note_or_the_signer()
