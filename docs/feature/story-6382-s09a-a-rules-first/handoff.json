@@ -1,20 +1,1345 @@
 {
 "counters": {
-"F": 10,
+"B": 3,
+"C": 2,
+"D": 17,
+"F": 207,
+"K": 14,
+"L": 7,
 "P": 2,
-"S": 2
+"S": 2,
+"T": 4,
+"Y": 6
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F61",
+"driven_ports": [
+"F60"
+],
+"driving_port": "F59",
+"failures": [
+{
+"condition": "F62",
+"id": "B1",
+"observation": "F63",
+"outcome": "Refusal"
+},
+{
+"condition": "F64",
+"id": "B2",
+"observation": "F65",
+"outcome": "Refusal"
+},
+{
+"condition": "F66",
+"id": "B3",
+"observation": "F67",
+"outcome": "Indeterminate"
+}
+]
+},
+"claims": [
+{
+"admitted_input": "F111",
+"bypass": "F113",
+"constructor": "PatternDeclaration.FrontDoor plus NamespaceMoveLaw over the contracts map",
+"consumer": "Every per-module inbound rule and placement rule reading a declared field",
+"harm": "F110",
+"id": "C1",
+"owner": "ContextContractsMembershipArchUnitTest",
+"proposition": "F109",
+"public_observation": "F112"
+},
+{
+"admitted_input": "F116",
+"bypass": "F118",
+"constructor": "ModuleRules.ReachesOtherContextsOnlyThroughContracts plus PackagedContexts.InTheAssembly",
+"consumer": "R-C1, R-C2, R-C3 tests and feature C ratchet slices",
+"harm": "F115",
+"id": "C2",
+"owner": "ContextContractsArchUnitTest",
+"proposition": "F114",
+"public_observation": "F117"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F127",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F126"
+},
+{
+"axis": "Inhabitation",
+"basis": "F128",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F126"
+},
+{
+"axis": "PublicReachability",
+"basis": "F129",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F126"
+},
+{
+"axis": "Liveness",
+"basis": "F130",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F126"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F28"
+},
+{
+"id": "K2",
+"text": "F29"
+},
+{
+"id": "K3",
+"text": "F30"
+},
+{
+"id": "K4",
+"text": "F31"
+},
+{
+"id": "K5",
+"text": "F32"
+},
+{
+"id": "K6",
+"text": "F33"
+},
+{
+"id": "K7",
+"text": "F34"
+},
+{
+"id": "K8",
+"text": "F35"
+},
+{
+"id": "K9",
+"text": "F36"
+},
+{
+"id": "K10",
+"text": "F37"
+},
+{
+"id": "K11",
+"text": "F38"
+},
+{
+"id": "K12",
+"text": "F39"
+},
+{
+"id": "K13",
+"text": "F40"
+},
+{
+"id": "K14",
+"text": "F41"
+}
+],
+"constructors": [
+{
+"name": "ContextContractsMembership.Entries",
+"signature": "IReadOnlyList<(MovingType Type, ContractAdmission Admission)>"
+},
+{
+"name": "PatternDeclaration.FrontDoor",
+"signature": "PatternDeclaration FrontDoor(PatternSubject subject, string reason)"
+},
+{
+"name": "ModuleRules.ReachesOtherContextsOnlyThroughContracts",
+"signature": "OutboundVerdict ReachesOtherContextsOnlyThroughContracts(ModuleDefinition module, IReadOnlyCollection<string> listed, string modules, string contracts, string kernel, ModuleWording? wording = null)"
+},
+{
+"name": "PackagedContexts.InTheAssembly",
+"signature": "IReadOnlyList<string> InTheAssembly(ModuleDefinition module)"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F11"
+},
+{
+"id": "D2",
+"text": "F12"
+},
+{
+"id": "D3",
+"text": "F13"
+},
+{
+"id": "D4",
+"text": "F14"
+},
+{
+"id": "D5",
+"text": "F15"
+},
+{
+"id": "D6",
+"text": "F16"
+},
+{
+"id": "D7",
+"text": "F17"
+},
+{
+"id": "D8",
+"text": "F18"
+},
+{
+"id": "D9",
+"text": "F19"
+},
+{
+"id": "D10",
+"text": "F20"
+},
+{
+"id": "D11",
+"text": "F21"
+},
+{
+"id": "D12",
+"text": "F22"
+},
+{
+"id": "D13",
+"text": "F23"
+},
+{
+"id": "D14",
+"text": "F24"
+},
+{
+"id": "D15",
+"text": "F25"
+},
+{
+"id": "D16",
+"text": "F26"
+},
+{
+"id": "D17",
+"text": "F27"
+}
+],
+"equality": [
+{
+"definition": "F72",
+"under": "membership and lists"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "ContextContractsArchUnitTest",
+"statement": "F73",
+"treatment": {
+"cases": [
+"F74",
+"F75",
+"F76"
+],
+"kind": "Finite",
+"reason": "F77"
+}
+},
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "ContextContractsArchUnitTest",
+"statement": "F78",
+"treatment": {
+"cases": [
+"F79",
+"F80"
+],
+"kind": "Finite",
+"reason": "F81"
+}
+},
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "ContextContractsArchUnitTest",
+"statement": "F82",
+"treatment": {
+"cases": [
+"F83",
+"F84",
+"F85"
+],
+"kind": "Finite",
+"reason": "F86"
+}
+},
+{
+"id": "L4",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "ContextContractsMembershipArchUnitTest",
+"statement": "F87",
+"treatment": {
+"cases": [
+"F88",
+"F89",
+"F90"
+],
+"kind": "Finite",
+"reason": "F86"
+}
+},
+{
+"id": "L5",
+"kind": "Refinement",
+"layer": "Adapter",
+"owner": "ContextContractsMembershipArchUnitTest",
+"statement": "F91",
+"treatment": {
+"cases": [
+"F92",
+"F93",
+"F94"
+],
+"kind": "Finite",
+"reason": "F95"
+}
+},
+{
+"id": "L6",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "ContextContractsMembershipArchUnitTest",
+"statement": "F96",
+"treatment": {
+"cases": [
+"F97",
+"F98"
+],
+"kind": "Finite",
+"reason": "F99"
+}
+},
+{
+"id": "L7",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "ArchitectureNamespace",
+"statement": "F100",
+"treatment": {
+"cases": [
+"F101"
+],
+"kind": "Finite",
+"reason": "F102"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F57"
+},
+{
+"analysis": "contract_tests",
+"reason": "F58"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F69",
+"description": "F68",
+"result_type": "NUnit test outcome line"
+},
+{
+"cannot_distinguish": "F71",
+"description": "F70",
+"result_type": "NUnit assertion message"
+}
+],
+"refuted": [
+{
+"cause": "F104",
+"counterexample": "F105",
+"statement": "F103"
+},
+{
+"cause": "F107",
+"counterexample": "F108",
+"statement": "F106"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:105",
+"reason": "F42",
+"symbol": "NamespaceMoveLaw"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:31",
+"reason": "F43",
+"symbol": "PatternDeclaration"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:41",
+"reason": "F44",
+"symbol": "MovingType"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:87",
+"reason": "F45",
+"symbol": "ApplicationIsReachedFromOutsideOnlyBy"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:15",
+"reason": "F46",
+"symbol": "ModuleRules"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:140",
+"reason": "F47",
+"symbol": "OutboundEdges"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IlDependencies.cs:13",
+"reason": "F48",
+"symbol": "IlDependencies"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InlineBaseline.cs:11",
+"reason": "F49",
+"symbol": "AssertMatches"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleWording.cs:7",
+"reason": "F50",
+"symbol": "ModuleWording"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembership.cs:12",
+"reason": "F51",
+"symbol": "WriteBackMembership"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackPatternRoles.cs:8",
+"reason": "F52",
+"symbol": "WriteBackPatternRoles"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs:27",
+"reason": "F53",
+"symbol": "ModuleRulesCatchANewOffenderArchUnitTest"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LighthouseArchitecture.cs:7",
+"reason": "F54",
+"symbol": "LighthouseArchitecture"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembership.cs:1",
+"reason": "F55",
+"symbol": "ContextContractsMembership"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:1",
+"reason": "F56",
+"symbol": "ContextContractsArchUnitTest"
+}
+],
+"risks": [
+{
+"allowed": "F133",
+"forbidden": "F134",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "ContextContractsMembershipArchUnitTest",
+"preserved": "F132",
+"residue": "F135",
+"source": "F131"
+},
+{
+"allowed": "F138",
+"forbidden": "F139",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "IlDependencies",
+"preserved": "F137",
+"residue": "F140",
+"source": "F136"
+},
+{
+"allowed": "F143",
+"forbidden": "F144",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "ContextContractsMembershipArchUnitTest",
+"preserved": "F142",
+"residue": "F145",
+"source": "F141"
+},
+{
+"allowed": "F148",
+"forbidden": "F149",
+"id": "Y4",
+"kind": "Bypass",
+"owner": "Epic 6510",
+"preserved": "F147",
+"residue": "F150",
+"source": "F146"
+},
+{
+"allowed": "F153",
+"forbidden": "F154",
+"id": "Y5",
+"kind": "SinglePointOfFailure",
+"owner": "IlDependencies",
+"preserved": "F152",
+"residue": "F155",
+"source": "F151"
+},
+{
+"allowed": "F158",
+"forbidden": "F159",
+"id": "Y6",
+"kind": "Stressor",
+"owner": "ContextContractsArchUnitTest",
+"preserved": "F157",
+"residue": "F160",
+"source": "F156"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "ContextContractsArchUnitTest",
+"state": "F119"
+},
+{
+"kind": "Admitted",
+"owner": "ContextContractsArchUnitTest",
+"state": "F120"
+},
+{
+"kind": "Excluded",
+"owner": "ContextContractsArchUnitTest",
+"state": "F121"
+},
+{
+"kind": "Excluded",
+"owner": "ContextContractsArchUnitTest",
+"state": "F122"
+},
+{
+"kind": "Excluded",
+"owner": "ContextContractsArchUnitTest",
+"state": "F123"
+},
+{
+"kind": "Excluded",
+"owner": "ContextContractsMembershipArchUnitTest",
+"state": "F124"
+},
+{
+"kind": "Unknown",
+"owner": "IlDependencies",
+"state": "F125"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs",
+"public_oracle": {
+"expected": "F164",
+"falsifier": "F165",
+"promises": [
+"P1"
+],
+"stimulus": "F163"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ContextContractsMembershipArchUnitTest",
+"id": "T1",
+"obligation": "F194",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs"
+},
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"id": "T2",
+"obligation": "F195",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture"
+}
+],
+"constraints": [
+"F169"
+],
+"decisions": [
+"F166",
+"F167",
+"F168"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:1",
+"reason": "F172"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:1",
+"reason": "F172"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:1",
+"reason": "F172"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:1",
+"reason": "F172"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:1",
+"reason": "F172"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs:1",
+"reason": "F172"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs:1",
+"reason": "F172"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:1",
+"reason": "F172"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:1",
+"reason": "F172"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs:1",
+"reason": "F172"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsUnitTestPlacementTest.cs:1",
+"reason": "F173"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs:1",
+"reason": "F173"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupUnitTestPlacementTest.cs:1",
+"reason": "F173"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs:1",
+"reason": "F173"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs:1",
+"reason": "F173"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsUnitTestPlacementTest.cs:1",
+"reason": "F173"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementUnitTestsBesideTheModuleArchUnitTest.cs:1",
+"reason": "F173"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsUnitTestsBesideTheModuleArchUnitTest.cs:1",
+"reason": "F173"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "architecture test consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembershipArchUnitTest.cs:1",
+"reason": "F174"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "architecture test consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs:1",
+"reason": "F174"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "architecture test consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembershipArchUnitTest.cs:1",
+"reason": "F174"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "architecture test consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs:1",
+"reason": "F174"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "architecture test consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs:1",
+"reason": "F174"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "architecture test support",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:105",
+"reason": "F175"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F176"
+},
+{
+"analysis": "prefactoring",
+"reason": "F177"
+},
+{
+"analysis": "prefactoring",
+"reason": "F178"
+},
+{
+"analysis": "prefactoring",
+"reason": "F179"
+},
+{
+"analysis": "prefactoring",
+"reason": "F180"
+},
+{
+"analysis": "prefactoring",
+"reason": "F181"
+},
+{
+"analysis": "prefactoring",
+"reason": "F182"
+},
+{
+"analysis": "prefactoring",
+"reason": "F183"
+},
+{
+"analysis": "prefactoring",
+"reason": "F184"
+},
+{
+"analysis": "prefactoring",
+"reason": "F185"
+},
+{
+"analysis": "prefactoring",
+"reason": "F186"
+},
+{
+"analysis": "prefactoring",
+"reason": "F187"
+},
+{
+"analysis": "prefactoring",
+"reason": "F188"
+},
+{
+"analysis": "prefactoring",
+"reason": "F189"
+},
+{
+"analysis": "prefactoring",
+"reason": "F190"
+},
+{
+"analysis": "prefactoring",
+"reason": "F191"
+},
+{
+"analysis": "prefactoring",
+"reason": "F192"
+},
+{
+"analysis": "prefactoring",
+"reason": "F193"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:36",
+"reason": "F170",
+"symbol": "AccessModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:21",
+"reason": "F170",
+"symbol": "FlowMetricsInboundApplicationArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:43",
+"reason": "F170",
+"symbol": "ForecastingModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:36",
+"reason": "F170",
+"symbol": "LicensingModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:36",
+"reason": "F170",
+"symbol": "PromisesModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs:41",
+"reason": "F170",
+"symbol": "RefinementModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs:42",
+"reason": "F170",
+"symbol": "ReportsModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:29",
+"reason": "F170",
+"symbol": "TrackerIntegrationModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:35",
+"reason": "F170",
+"symbol": "WorkItemsModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs:17",
+"reason": "F170",
+"symbol": "ConnectorsDeclareNoUnsupportedMembersArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsUnitTestPlacementTest.cs:15",
+"reason": "F171",
+"symbol": "FlowMetricsUnitTestPlacementTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs:16",
+"reason": "F171",
+"symbol": "ForecastingUnitTestPlacementTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupUnitTestPlacementTest.cs:10",
+"reason": "F171",
+"symbol": "OrganisationSetupUnitTestPlacementTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs:17",
+"reason": "F171",
+"symbol": "PromisesUnitTestPlacementTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs:18",
+"reason": "F171",
+"symbol": "TrackerIntegrationUnitTestPlacementTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsUnitTestPlacementTest.cs:17",
+"reason": "F171",
+"symbol": "WorkItemsUnitTestPlacementTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementUnitTestsBesideTheModuleArchUnitTest.cs:17",
+"reason": "F171",
+"symbol": "RefinementUnitTestsBesideTheModuleArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsUnitTestsBesideTheModuleArchUnitTest.cs:13",
+"reason": "F171",
+"symbol": "ReportsUnitTestsBesideTheModuleArchUnitTest"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembership.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsPatternRoles.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsStringsTheMoveRenames.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsUnitTestPlacementTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupUnitTestPlacementTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsUnitTestPlacementTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementUnitTestsBesideTheModuleArchUnitTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsUnitTestsBesideTheModuleArchUnitTest.cs",
+"reason": "F162"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ContextContractsMembershipArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet build Lighthouse.Backend"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs",
+"public_oracle": {
+"expected": "F198",
+"falsifier": "F199",
+"promises": [
+"P2"
+],
+"stimulus": "F197"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ContextContractsArchUnitTest",
+"id": "T3",
+"obligation": "F207",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs"
+},
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"id": "T4",
+"obligation": "F195",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture"
+}
+],
+"decisions": [
+"F200",
+"F201"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PackagedContexts.cs:1",
+"reason": "F203"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "architecture test support",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:15",
+"reason": "F204"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F205"
+},
+{
+"analysis": "prefactoring",
+"reason": "F206"
+}
+],
+"reuse": [
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PackagedContexts.cs:1",
+"reason": "F202",
+"symbol": "PackagedContexts"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PackagedContexts.cs",
+"reason": "F196"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ContextContractsArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet build Lighthouse.Backend"
+]
+}
+}
 },
 "facts": {
 "F1": "Story 6382 S09a feature A, rules first: measure the published set of every context from the compiled code (ContextContractsMembership), classify every rule pattern FrontDoor or Place and widen FrontDoor patterns to Application|Contracts, then add the contracts-only rule (R-C1..R-C3) with its complete measured baseline, before any type moves.",
 "F10": "Any new cross-context edge outside what a context publishes is refused from now on.",
+"F100": "Every existing architecture rule keeps its verdict across each slice",
+"F101": "dotnet test filtered to Lighthouse.Backend.Tests.Architecture green before and after each slice",
+"F102": "Finite suite",
+"F103": "A text search over using lines and type names finds every cross-context edge",
+"F104": "Text sees crefs and comments and misses same-namespace and fully qualified references",
+"F105": "DemoBlockedHistoryBackfillHandler names WorkItemBlockedTransitionCaptureHandler only in a see cref, which yields no IL edge",
+"F106": "A type moved from Modules.X.Application to Modules.X.Contracts stays under its module rules",
+"F107": "Every inbound rule keys on a layer pattern Modules\\.X\\.Application(\\.|$)",
+"F108": "ILicenseService moved to Modules.Licensing.Contracts is no longer matched by LicensingApplication, so a new caller would pass unseen",
+"F109": "No architecture rule silently stops seeing a type when it later moves into its context Contracts",
+"F11": "No behaviour or schema change in feature A: only Architecture test files change; no entity, DbSet, migration, route, DTO, usage-data event or configuration key, and no production file is touched (D-0).",
+"F110": "A rule passes over an empty subject set and a forbidden caller of a published type ships unseen",
+"F111": "Compiled test assembly regex fields, ContextContractsMembership and ContextContractsPatternRoles",
+"F112": "dotnet test --filter FullyQualifiedName~ContextContractsMembershipArchUnitTest fails naming the field, the type and the role break",
+"F113": "Patterns built at run time or held in properties; rules selecting by short name; inline method-body literals (only the sweep sees them)",
+"F114": "No new cross-context edge outside the target Contracts ships unseen, and no context appears or vanishes without being named",
+"F115": "Contexts couple to each other internals and features B to D move types under a rule that does not bite",
+"F116": "Compiled production IL and the inline lists",
+"F117": "dotnet test --filter FullyQualifiedName~ContextContractsArchUnitTest fails naming source, target and layer, or the missing or unknown context",
+"F118": "Code in Services, Data, API and the platform lane is outside R-C1; IL-invisible edges (event declarations, named attribute arguments, reflection)",
+"F119": "An edge from Modules.A to a type in Modules.B.Contracts, to the kernel, the BCL or the platform lane",
+"F12": "Contracts is the namespace a context publishes: Modules/<X>/Contracts, namespace equals folder, holds what other contexts may name; a facade per context, an inline type list and one shared contracts root were rejected (D-1).",
+"F120": "An edge from Modules.A to a Modules.B type outside Contracts that is on CrossContextEdgesOutsideContracts",
+"F121": "An unlisted edge from Modules.A to a Modules.B type outside Contracts",
+"F122": "A Contracts type reaching its own Domain, Application or Adapters, or Data, API, Services or the platform lane",
+"F123": "A Lighthouse.Backend.Modules root not on the inline ten, or one of the ten missing",
+"F124": "A FrontDoor field that stops seeing a published type, or a Place field that sees its new name, or an undeclared field that sees it",
+"F125": "Edges carried only by event declarations, named attribute arguments, reflection or type names in strings",
+"F126": "contracts rules and move law",
+"F127": "Excluded states are refused by R-C1 to R-C3 and the move law, each with a planted offender per rule and list position; not built yet",
+"F128": "Every listed type exists today in its old namespace (re-measured in S1); the ten module roots exist on main (git ls-files); the R-C1 list is built from the measured edges",
+"F129": "compiled assembly -> ContextContractsMembership and PackagedContexts -> NamespaceMoveLaw and ModuleRules helper -> NUnit test outcome through dotnet test and the architecture-rules probe",
+"F13": "Published set is a measured IL closure: seeds are X types another context reaches in the IL that are interfaces, enums, dependency-free records or structs, constant classes or X events; closure adds X types named in their public signatures, minus kernel Models and BCL; behaviour classes stay and their edges are listed with an owner (D-2).",
+"F130": "No liveness claim: synchronous evaluation over a compiled assembly, nothing must eventually happen",
+"F131": "Negates: moving a type keeps it under its module rules",
+"F132": "Every per-module rule keeps seeing a published type",
+"F133": "FrontDoor fields widen to Application|Contracts permanently",
+"F134": "A field silently stops matching a moved type",
+"F135": "Fields built at run time or held in properties are not read by the law",
+"F136": "Negates: a text measure finds every edge",
+"F137": "Edges and the published set come from the IL only",
+"F138": "Design counts differ from S1 counts",
+"F139": "A text-only edge listed, or an IL edge missed by the list",
+"F14": "ContextContractsMembership holds the measured published set: one entry per top-level type with context, old namespace, new namespace Modules.<X>.Contracts and admission Seed or Closure, carried as the existing MovingType record plus a closed ContractAdmission enum, owned by the Architecture test namespace; it is the measured projection of the future namespace, not a second owner (D-2, reuse of the Membership shape).",
+"F140": "IL-invisible edges (event declarations, named attribute arguments)",
+"F141": "Negates: the earlier Stories left the counts as measured at 952040471",
+"F142": "The hypothesis threshold is fixed before measuring",
+"F143": "Counts change and are recorded",
+"F144": "The threshold moved after measuring",
+"F145": "None",
+"F146": "Code outside Modules (Services, Data, API, platform lane) and reflection or string type names",
+"F147": "Per-module inbound rules keep governing outsiders",
+"F148": "R-C1 does not see them",
+"F149": "Claiming R-C1 covers them",
+"F15": "FrontDoor is Context scoped to a layer: a pattern that must see a moving type under old and new name is declared FrontDoor and widened permanently from Modules.X.Application to Modules.X.(Application|Contracts); a layer-location pattern is Place and must not see the new name; the declaration is added to PatternDeclaration in NamespaceMoveLaw beside Context and Place (D-7).",
+"F150": "Kernel width (S04b) and Services code (S05, S10) remain",
+"F151": "IlDependencies is the one IL reader for every rule",
+"F152": "All rules read the same edge set",
+"F153": "A reader defect affects every rule equally",
+"F154": "A reader change that drops edges silently",
+"F155": "Each rule asserts its subject set is not empty and plants an offender",
+"F156": "Second set, walkthrough not execution: a later Story adds a module folder without naming it; a Contracts interface signature drags an Application record; a nested type +Inner shares a short name; a widened FrontDoor field also matches another context Contracts",
+"F157": "R-C3 fails until named; R-C2 fails; top-level reduction; widening is per context so other contexts Contracts stay unmatched",
+"F158": "One more list edit per new context",
+"F159": "A green rule over a silently unmatched type",
+"F16": "Move law runs over the contracts map: NamespaceMoveLaw is extended so one law call covers the ten possible Contracts places, every regex field of the test assembly is evaluated by IsMatch on old and new full names, alternations and interpolated readers included; earlier maps keep their verdicts (D-7).",
+"F160": "None found by the walkthrough",
+"F161": "Widen each field the law declares FrontDoor from Modules\\.X\\.Application to Modules\\.X\\.(Application|Contracts), same context only; no row, list entry or planted type changes.",
+"F162": "Admit Contracts in the layer set of the placement rule (a Place field, widened by layer list, not narrowed); per-class rows unchanged.",
+"F163": "Run ContextContractsMembershipArchUnitTest: (1) each ContextContractsMembership entry exists as a top-level type in its old or its new namespace; (2) the membership equals the D-2 closure computed from the production IL, both ways; (3) NamespaceMoveLaw with the contracts map and ContextContractsPatternRoles over every regex field of the test assembly; (4) the literal sweep with its fixed rename list, grouped alternations included; then the whole Architecture namespace",
+"F164": "RED today on (3): every FrontDoor field Modules\\.X\\.Application(\\.|$) stops seeing X published types under Modules.X.Contracts. GREEN once those fields read Modules\\.X\\.(Application|Contracts); (1), (2), (4) and every existing Architecture test green before and after; the probe lists each entry with context, namespaces and admission, and each field with its role",
+"F165": "A listed seed that is a behaviour class, a closure member missing from the map, an undeclared field seeing a moving type, a FrontDoor field not widened, a Place field matching a new name, or a literal (flat or grouped) naming an old full name not on the rename list each fails naming the entry, field or file",
+"F166": "S1 RED is the move law, not a stub: before widening, the law over the contracts map names every FrontDoor field Modules\\.X\\.Application(\\.|$) as StopsSeeingTheType for X published types; the crafter widens the fields to GREEN.",
+"F167": "Oracle-side files written with the oracle: ContextContractsMembership, ContextContractsPatternRoles, ContextContractsStringsTheMoveRenames and the NamespaceMoveLaw extension are authored by the acceptance designer before RED and frozen at approval; the S1 oracle and supports do not name ModuleRules.",
+"F168": "Membership and roles visible in probe output: one test case per membership entry (type, context, old and new namespace, Seed or Closure) and one per classified field (field, FrontDoor or Place), so architecture-rules lists them.",
+"F169": "Start-condition checks, the re-measured counts (edges, targets, published set, D-5 event owners, D-6 command list from the IL) and the DoR-3 threshold result are recorded as S1 craft commands with their output; the commit check for 6365 and 6468 finds no commit by --grep=\"story <id>\" (their commits use scope names), so the host decides the equivalent check.",
+"F17": "One shared contracts rule over every pair: ContextContractsArchUnitTest holds R-C1 surface (Modules.A reaches Modules.B only through Modules.B.Contracts except the inline CrossContextEdgesOutsideContracts list), R-C2 contracts point inward only (kernel, BCL, Microsoft.Extensions abstractions, any Contracts), R-C3 enumerator (contexts read from the assembly equal the inline ten, both ways); direction stays with the per-module inbound rules (D-3).",
+"F170": "Owns this module rule and its FrontDoor field; extended in place by widening the field value; no second rule owner.",
+"F171": "Owns this module unit-test placement rule; extended in place by admitting Contracts in its layer set.",
+"F172": "FrontDoor field values widen; verdicts unchanged.",
+"F173": "Layer set admits Contracts; verdicts unchanged.",
+"F174": "Earlier move laws read every regex field; a widened FrontDoor value keeps their declared roles; confirmed by the whole Architecture run.",
+"F175": "Extended by the acceptance designer with FrontDoor and the contracts map before RED; earlier maps keep their results.",
+"F176": "AccessModuleBoundariesArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.",
+"F177": "FlowMetricsInboundApplicationArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.",
+"F178": "ForecastingModuleBoundariesArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.",
+"F179": "LicensingModuleBoundariesArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.",
+"F18": "Ratchet list lands complete in S2: R-C1 lists every measured cross-context edge by full type names Source -> Target with an owner comment, green on writing, compared both ways through InlineBaseline, only shrinks; feature C deletes entries per slice (D-8).",
+"F180": "PromisesModuleBoundariesArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.",
+"F181": "RefinementModuleBoundariesArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.",
+"F182": "ReportsModuleBoundariesArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.",
+"F183": "TrackerIntegrationModuleBoundariesArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.",
+"F184": "WorkItemsModuleBoundariesArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.",
+"F185": "ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.",
+"F186": "FlowMetricsUnitTestPlacementTest.cs holds its placement test class and at most its own planted twins; S1 only admits a layer name, so no type moves in this slice.",
+"F187": "ForecastingUnitTestPlacementTest.cs holds its placement test class and at most its own planted twins; S1 only admits a layer name, so no type moves in this slice.",
+"F188": "OrganisationSetupUnitTestPlacementTest.cs holds its placement test class and at most its own planted twins; S1 only admits a layer name, so no type moves in this slice.",
+"F189": "PromisesUnitTestPlacementTest.cs holds its placement test class and at most its own planted twins; S1 only admits a layer name, so no type moves in this slice.",
+"F19": "Kernel and platform lane stay legal targets: every Models type counts as kernel for R-C1 and R-C2; Lighthouse.Backend.Platform, Services, Data and API are not contexts and R-C1 does not govern edges into or out of them (D-4).",
+"F190": "TrackerIntegrationUnitTestPlacementTest.cs holds its placement test class and at most its own planted twins; S1 only admits a layer name, so no type moves in this slice.",
+"F191": "WorkItemsUnitTestPlacementTest.cs holds its placement test class and at most its own planted twins; S1 only admits a layer name, so no type moves in this slice.",
+"F192": "RefinementUnitTestsBesideTheModuleArchUnitTest.cs holds its placement test class and at most its own planted twins; S1 only admits a layer name, so no type moves in this slice.",
+"F193": "ReportsUnitTestsBesideTheModuleArchUnitTest.cs holds its placement test class and at most its own planted twins; S1 only admits a layer name, so no type moves in this slice.",
+"F194": "Every rule pattern that sees a published type keeps its role when the type moves into its context Contracts; the published set equals the IL closure; no literal names a moving type by its old name",
+"F195": "Every existing architecture rule keeps its verdict",
+"F196": "R-C3 enumerator: every Lighthouse.Backend.Modules.<X> namespace root of the production IL, top-level, sorted.",
+"F197": "Run ContextContractsArchUnitTest over the production IL and planted Modules.<X>Fixtures types: R-C1 with CrossContextEdgesOutsideContracts, R-C2, R-C3 with the inline ten and PackagedContexts, plus one planted offender per rule and per list position; then the whole Architecture namespace",
+"F198": "RED today on R-C3: the enumerator returns nothing, so the ten contexts are named missing. GREEN once PackagedContexts reads the module roots from the IL; R-C1 (every measured edge listed) and R-C2 (empty) green on writing; each planted offender fails its rule naming source, target and layer or the context; every existing Architecture test stays green",
+"F199": "A planted type in one fixture context naming another fixture context Domain type, a planted Contracts type naming its own Application, a planted extra module root, a removed list entry, or a stale list entry each fails naming the offender; an enumerator that returns nothing or a fixed list fails R-C3",
 "F2": "Before any context publishes a Contracts namespace, the rules already know what each context publishes and refuse any new cross-context edge outside it, so features B to D move types under a rule that bites.",
+"F20": "R-C3 enumerator is its own craft target: PackagedContexts reads every Lighthouse.Backend.Modules.<X> namespace root of the production IL; the oracle compares it with the inline ten names, so a new or vanished module root fails until named (gate predicate-needs-its-own-enumerator).",
+"F200": "R-C3 RED against an empty enumerator: the acceptance designer creates PackagedContexts.InTheAssembly as a declaration returning no contexts so the oracle compiles and R-C3 fails by assertion naming the ten missing contexts; the crafter makes it read the IL (design A2). R-C1 and R-C2 are green on writing through the ModuleRules helper the acceptance designer adds.",
+"F201": "R-C1 baseline is every measured edge: at S2 no Contracts exists, so CrossContextEdgesOutsideContracts lists every module-to-module edge in the IL by full names Source -> Target with an owner comment; R-C2 baseline is empty.",
+"F202": "No enumerator of module roots exists; R-C3 needs its own enumerator beside the predicate.",
+"F203": "New enumerator read only by R-C3.",
+"F204": "Additive helper ReachesOtherContextsOnlyThroughContracts written with the oracle; existing members and their callers unchanged.",
+"F205": "PackagedContexts.cs is a new file holding one type; nothing moves.",
+"F206": "ModuleRules.cs holds ModuleRules and its two verdict records InboundVerdict and OutboundVerdict and is extended additively by the acceptance designer, not by craft; splitting the verdict records would touch every approved rule oracle that names them and is outside this slice.",
+"F207": "R-C1: a type in Modules.A reaches Modules.B (B not A) only through Modules.B.Contracts or a listed edge; R-C2: Contracts reach only kernel, BCL, Microsoft.Extensions abstractions and Contracts; R-C3: contexts read from the assembly equal the inline ten",
+"F21": "Refusals state what, why and how: each rule failure names the source, the target and its layer (what), that the target context may change it without telling anyone (why), and to name the type through Modules.B.Contracts, move a contract type there or react to an event (how), worded through ModuleWording (D-3).",
+"F22": "Cross-layer algebra, test layer only: states are the IL type graph and the regex fields of the test assembly; operations are IsMatch on full names and edge enumeration; observations are the NUnit verdict per test and its failure text; no domain, application, adapter or infrastructure layer of production changes in feature A.",
+"F23": "No formal model, laws run exhaustively on IL: No model for R-C1 to R-C3, the move law or the D-2 closure: they name no shared mutable state, no multi-step protocol, no concurrency and no crash window; they are relations over finite closed sets (compiled types, contexts, regex fields) evaluated exhaustively by NUnit; no checker selected, so no probe, install or waiver (D-16).",
+"F24": "No property tests, finite domains only: every law ranges over the finite compiled assembly and the inline lists, so each is checked exhaustively as an example over the whole set; planted fixture types are the falsifiers (D-16, test-writing skill wins over nWave PBT density).",
+"F25": "No liveness claim: feature A has no process that must eventually progress; every check is a synchronous evaluation over a compiled assembly.",
+"F26": "Paradigm object oriented, preserved: the Architecture test namespace is OO C# (static rule owners, sealed records, verdict types); new types follow it: records for entries, a static owner for the membership and the enumerator, verdict records from ModuleRules.",
+"F27": "Behaviour-free proof uses admitted probes only: architecture-rules (one line per test) observes every new and existing rule; no new probe; test names carry the observed facts (type, context, admission; field and role) so the probe output shows them (D-14).",
+"F28": "Start condition is S1s first action: per Story 6365, 6366, 6468, 6657 the ADO state is Closed, the final rules commit is an ancestor of HEAD, and git ls-files shows Modules/Refinement, Modules/Reports, Modules/OrganisationSetup and no Services/Implementation/WriteBack*.cs; a failed check stops S1 and is reported with Story, check and output; results are recorded as craft commands.",
+"F29": "Every count in the design was measured as text at 952040471 and is to be re-measured at A1 from the IL: the 38 edges, about 25 targets, the published-set table, the event owners of D-5 and the command list of D-6; a difference is recorded, not argued with.",
 "F3": "Every context's published set is measured from the compiled code and every rule pattern is classified FrontDoor or Place, with front doors widened to Application|Contracts, and no rule verdict changes.",
+"F30": "Hypothesis threshold, fixed before S1: if after the published set is drawn the listed non-contract cross-context edges exceed 15, or one context pair carries more than 5, S1 stops and the finding goes to the ADR-270 owner as a wrong cut.",
+"F31": "The contexts are exactly the ten of ADR-270 Decision 1: OrganisationSetup, TrackerIntegration, WorkItems, FlowMetrics, Forecasting, Promises, Refinement, Reports, Access, Licensing; the platform lane is not a context. Promises, Refinement and Reports are expected to publish nothing (no Contracts folder; open question 3 default).",
+"F32": "No rule or list is loosened: every existing Architecture test keeps its verdict before and after each slice; widening a FrontDoor pattern admits only Contracts of the same context; the whole Architecture namespace runs before each close.",
+"F33": "IL facts only: IlDependencies.TypesIn returns nested types, so holdings and exact sets compare top-level names (the part before +); the IL misses event declarations and named attribute arguments and XML-doc crefs produce no edge.",
+"F34": "Lists inline by full type name, compared both ways (InlineBaseline), each R-C1 entry with its owner in a trailing comment; a rule exemption is exact per type and nested types, never a namespace or layer.",
+"F35": "Planted offenders live in fixture namespaces such as Lighthouse.Backend.Modules.<X>Fixtures in the oracle file, checked against every existing lookalike guard; each rule asserts its subject set is not empty; each list position has a planted offender; rule tests assert by the failure naming the offender, never by counts.",
+"F36": "Old-name sweep reads grouped alternations (Services\\.(Implementation|Interfaces)\\.(A|B) and Lighthouse\\.Backend\\.(X|Y)\\.(A|B)) with a made-up file in each form; the sweep and any fix live in the slice oracle file, never in a shared support an approved oracle uses.",
+"F37": "One oracle file per slice; an approved oracle or support file of this feature is never edited, not even a using; oracles name types as strings; a craft target is never an oracle support.",
+"F38": "Test rules: the Lighthouse test-writing skill and its backend half win over nWave defaults (per-test timing, PBT density); no nWave scenario tags in code; layout oracles are IL architecture tests and start no host; default per-test budgets apply, no derogation, no infrastructure suite.",
+"F39": "Commands are recorded without the flock prefix; every dotnet and pwsh run is made under flock -o on the scratchpad lock; long suites run as ctx_shell background jobs.",
 "F4": "The contracts-only rule (R-C1 to R-C3) exists, lists every measured cross-context edge, and catches a planted offender per rule and per list position.",
+"F40": "No stored or validated user input is involved: the inputs are the compiled assemblies and inline lists, with no range or size bound in the authority and none added by the design.",
+"F41": "Earlier Stories module-boundary rule files are rule files, not frozen oracles of this feature: S1 edits only the FrontDoor field values in them (as Story 6657 S1 did), adding no rows and removing no list entries.",
+"F42": "Owns proving that rules keep seeing a moving type; extended with the contracts map (ten possible new places) and the FrontDoor declaration; earlier maps unchanged.",
+"F43": "Owns the role of a rule pattern; FrontDoor added beside Context and Place as the Context role scoped to a layer.",
+"F44": "Already carries name, area, old and new namespace; used for each membership entry with the context as area.",
+"F45": "Owns per-module direction; only its application argument values widen; no second direction owner.",
+"F46": "Owns shared edge rules with verdicts; gains ReachesOtherContextsOnlyThroughContracts for R-C1 and R-C2, since no per-pair form exists (OutboundEdges is per module and target).",
+"F47": "Shape and listed-edge comparison reused by the new helper; not changed.",
+"F48": "The only IL reader (generic arguments, attributes, catch types, GetRequiredService); all measurements come from it.",
+"F49": "Owns both-ways inline list comparison (ADR-268) for the membership and the R-C1 list.",
 "F5": "The Architecture test files of this feature: ContextContractsMembership and its test, the namespace-move law contracts map, ContextContractsArchUnitTest, and the widened FrontDoor patterns.",
+"F50": "Owns per-context refusal wording.",
+"F51": "Shape of a membership map (static owner of inline entries) copied for ContextContractsMembership; the type itself is not changed.",
+"F52": "Shape of a pattern-role map keyed by class and field copied for ContextContractsPatternRoles.",
+"F53": "Planted-offender falsifier style reused for R-C1 to R-C3.",
+"F54": "Loads the production assembly once per test assembly (shared read-only world).",
+"F55": "No type owns what a context publishes: no Contracts namespace exists yet and the existing Membership maps each describe one move, not the published set of ten contexts.",
+"F56": "No rule governs edges between every pair of contexts; per-module rules govern direction only.",
+"F57": "No shared wire, schema or configuration contract changes: only test-assembly rule code changes and production bytes are untouched (D-0).",
+"F58": "Single deployable; producers and consumers of every touched type change in the same commit and no persisted or wire data outlives a version.",
+"F59": "Compiled production and test assemblies read through IlDependencies and LighthouseArchitecture.Production by NUnit architecture tests (in-process; nearest argv: dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture)",
 "F6": "Any production move (feature C and D), module start-up (feature B), domain events (D1), the forecast refresh-log reaction (D2), and any behaviour, schema, route or DTO change.",
+"F60": "None at runtime: production is unchanged; the tests read the IL with Mono.Cecil and the test project source text for the literal sweep",
+"F61": "Architecture tests depend on the production assembly; production depends on nothing new; the new rule and membership types depend on IlDependencies, InlineBaseline, ModuleRules, ModuleWording and NamespaceMoveLaw only",
+"F62": "A cross-context edge outside the target Contracts that is not listed",
+"F63": "R-C1 fails naming source, target and layer with WHAT, WHY, HOW",
+"F64": "A listed R-C1 edge no longer in the IL",
+"F65": "InlineBaseline fails naming the stale entry and asks to delete it",
+"F66": "The IL cannot be loaded or a rule subject set is empty",
+"F67": "The test fails at set-up or on the not-empty assertion; never a pass",
+"F68": "Per architecture test: its name and outcome as printed by the architecture-rules probe and dotnet test (passed, failed, setup failed)",
+"F69": "Why a passing rule passes over an empty subject set; therefore each rule asserts its subject set is not empty",
 "F7": "A reviewer reading the architecture-rules output sees each context's published set listed from the compiled code (type, context, old and new namespace, seed or closure), every rule pattern classed FrontDoor or Place, and the front-door patterns widened to Application|Contracts. The namespace-move law over the contracts map is RED before the widening and GREEN after, every existing rule keeps its verdict, and the start-condition checks for the four earlier Stories and the re-measured counts are recorded.",
+"F70": "Rule failure message naming each offender: source type, target type and layer, or field, type and role break, with WHAT, WHY and HOW",
+"F71": "Edges the IL does not carry (event declarations, named attribute arguments, reflection, string type names)",
+"F72": "Two published sets are equal when their top-level full names, contexts and admissions agree as sets; two edge lists are equal when their Source -> Target full-name strings agree as sets; order and comments do not count",
+"F73": "Every legal edge between two contexts goes through the target Contracts or is listed: the set of Modules.A to Modules.B edges (A not B) whose target is outside Modules.B.Contracts equals CrossContextEdgesOutsideContracts",
+"F74": "Production IL: equal to the inline list, both ways",
+"F75": "Planted Modules.<X>Fixtures type naming another fixture context Domain type: named as offender",
+"F76": "Each list position removed: that edge named as unlisted",
+"F77": "Finite closed set: every compiled type and every list entry is evaluated",
+"F78": "Contracts point inward only: no type in Modules.X.Contracts reaches its own Domain, Application or Adapters, Data, API, Services or the platform lane",
+"F79": "Production IL: no offender",
 "F8": "Later features move types into Contracts under rules that already know what each context publishes.",
-"F9": "A reviewer sees the contracts rule fail on a planted cross-context type outside a context's published set, once per rule R-C1, R-C2, R-C3 and once per list position. R-C3 (ten contexts) is observed RED against an enumerator that returns nothing, then GREEN when it reads the assembly. R-C1 lists every measured cross-context edge, and R-C2 is empty."
+"F80": "Planted Contracts type naming its own Application: named as offender",
+"F81": "Finite closed set evaluated exhaustively",
+"F82": "The contexts read from the assembly equal the inline ten, both ways",
+"F83": "Enumerator returning nothing: all ten named missing",
+"F84": "Production IL: equal",
+"F85": "A planted extra module root: named as unknown",
+"F86": "Finite closed set",
+"F87": "Each membership entry exists as a top-level type in exactly its old or its new namespace, and the membership equals the D-2 closure computed from the IL (seeds by criterion plus public-signature closure, minus kernel and BCL)",
+"F88": "Production IL: every entry found and the closure equal both ways",
+"F89": "A listed seed that is a behaviour class: named",
+"F9": "A reviewer sees the contracts rule fail on a planted cross-context type outside a context's published set, once per rule R-C1, R-C2, R-C3 and once per list position. R-C3 (ten contexts) is observed RED against an enumerator that returns nothing, then GREEN when it reads the assembly. R-C1 lists every measured cross-context edge, and R-C2 is empty.",
+"F90": "A closure member missing from the map: named",
+"F91": "For every regex field of the test assembly and every membership type: a FrontDoor field matches old and new full name, a Place field does not match the new name, and every field matching a moving type is declared",
+"F92": "Before widening: each Modules\\.X\\.Application(\\.|$) FrontDoor field named as StopsSeeingTheType",
+"F93": "After widening to (Application|Contracts): no break",
+"F94": "An undeclared field seeing a moving type: named",
+"F95": "Finite closed set of fields times types",
+"F96": "No string literal in the test project names a moving type by its old full name, grouped alternations included, unless the fixed rename list renames it",
+"F97": "A made-up file with a flat old name: named",
+"F98": "A made-up file with a grouped alternation naming the old name: named",
+"F99": "Finite set of files and literals"
 },
 "product": {
 "promises": [

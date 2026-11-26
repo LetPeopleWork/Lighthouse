@@ -156,13 +156,1875 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Paradigm</h2>
 
-<p>None.</p>
+<p>object_oriented</p>
 
 <h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>No behaviour or schema change in feature A: only Architecture test files change; no entity, DbSet, migration, route, DTO, usage-data event or configuration key, and no production file is touched (D-0).
+</code></pre>
+
+<h4>D2</h4>
+
+<pre><code>Contracts is the namespace a context publishes: Modules/&lt;X&gt;/Contracts, namespace equals folder, holds what other contexts may name; a facade per context, an inline type list and one shared contracts root were rejected (D-1).
+</code></pre>
+
+<h4>D3</h4>
+
+<pre><code>Published set is a measured IL closure: seeds are X types another context reaches in the IL that are interfaces, enums, dependency-free records or structs, constant classes or X events; closure adds X types named in their public signatures, minus kernel Models and BCL; behaviour classes stay and their edges are listed with an owner (D-2).
+</code></pre>
+
+<h4>D4</h4>
+
+<pre><code>ContextContractsMembership holds the measured published set: one entry per top-level type with context, old namespace, new namespace Modules.&lt;X&gt;.Contracts and admission Seed or Closure, carried as the existing MovingType record plus a closed ContractAdmission enum, owned by the Architecture test namespace; it is the measured projection of the future namespace, not a second owner (D-2, reuse of the Membership shape).
+</code></pre>
+
+<h4>D5</h4>
+
+<pre><code>FrontDoor is Context scoped to a layer: a pattern that must see a moving type under old and new name is declared FrontDoor and widened permanently from Modules.X.Application to Modules.X.(Application|Contracts); a layer-location pattern is Place and must not see the new name; the declaration is added to PatternDeclaration in NamespaceMoveLaw beside Context and Place (D-7).
+</code></pre>
+
+<h4>D6</h4>
+
+<pre><code>Move law runs over the contracts map: NamespaceMoveLaw is extended so one law call covers the ten possible Contracts places, every regex field of the test assembly is evaluated by IsMatch on old and new full names, alternations and interpolated readers included; earlier maps keep their verdicts (D-7).
+</code></pre>
+
+<h4>D7</h4>
+
+<pre><code>One shared contracts rule over every pair: ContextContractsArchUnitTest holds R-C1 surface (Modules.A reaches Modules.B only through Modules.B.Contracts except the inline CrossContextEdgesOutsideContracts list), R-C2 contracts point inward only (kernel, BCL, Microsoft.Extensions abstractions, any Contracts), R-C3 enumerator (contexts read from the assembly equal the inline ten, both ways); direction stays with the per-module inbound rules (D-3).
+</code></pre>
+
+<h4>D8</h4>
+
+<pre><code>Ratchet list lands complete in S2: R-C1 lists every measured cross-context edge by full type names Source -&gt; Target with an owner comment, green on writing, compared both ways through InlineBaseline, only shrinks; feature C deletes entries per slice (D-8).
+</code></pre>
+
+<h4>D9</h4>
+
+<pre><code>Kernel and platform lane stay legal targets: every Models type counts as kernel for R-C1 and R-C2; Lighthouse.Backend.Platform, Services, Data and API are not contexts and R-C1 does not govern edges into or out of them (D-4).
+</code></pre>
+
+<h4>D10</h4>
+
+<pre><code>R-C3 enumerator is its own craft target: PackagedContexts reads every Lighthouse.Backend.Modules.&lt;X&gt; namespace root of the production IL; the oracle compares it with the inline ten names, so a new or vanished module root fails until named (gate predicate-needs-its-own-enumerator).
+</code></pre>
+
+<h4>D11</h4>
+
+<pre><code>Refusals state what, why and how: each rule failure names the source, the target and its layer (what), that the target context may change it without telling anyone (why), and to name the type through Modules.B.Contracts, move a contract type there or react to an event (how), worded through ModuleWording (D-3).
+</code></pre>
+
+<h4>D12</h4>
+
+<pre><code>Cross-layer algebra, test layer only: states are the IL type graph and the regex fields of the test assembly; operations are IsMatch on full names and edge enumeration; observations are the NUnit verdict per test and its failure text; no domain, application, adapter or infrastructure layer of production changes in feature A.
+</code></pre>
+
+<h4>D13</h4>
+
+<pre><code>No formal model, laws run exhaustively on IL: No model for R-C1 to R-C3, the move law or the D-2 closure: they name no shared mutable state, no multi-step protocol, no concurrency and no crash window; they are relations over finite closed sets (compiled types, contexts, regex fields) evaluated exhaustively by NUnit; no checker selected, so no probe, install or waiver (D-16).
+</code></pre>
+
+<h4>D14</h4>
+
+<pre><code>No property tests, finite domains only: every law ranges over the finite compiled assembly and the inline lists, so each is checked exhaustively as an example over the whole set; planted fixture types are the falsifiers (D-16, test-writing skill wins over nWave PBT density).
+</code></pre>
+
+<h4>D15</h4>
+
+<pre><code>No liveness claim: feature A has no process that must eventually progress; every check is a synchronous evaluation over a compiled assembly.
+</code></pre>
+
+<h4>D16</h4>
+
+<pre><code>Paradigm object oriented, preserved: the Architecture test namespace is OO C# (static rule owners, sealed records, verdict types); new types follow it: records for entries, a static owner for the membership and the enumerator, verdict records from ModuleRules.
+</code></pre>
+
+<h4>D17</h4>
+
+<pre><code>Behaviour-free proof uses admitted probes only: architecture-rules (one line per test) observes every new and existing rule; no new probe; test names carry the observed facts (type, context, admission; field and role) so the probe output shows them (D-14).
+</code></pre>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Start condition is S1s first action: per Story 6365, 6366, 6468, 6657 the ADO state is Closed, the final rules commit is an ancestor of HEAD, and git ls-files shows Modules/Refinement, Modules/Reports, Modules/OrganisationSetup and no Services/Implementation/WriteBack*.cs; a failed check stops S1 and is reported with Story, check and output; results are recorded as craft commands.
+</code></pre>
+
+<h4>K2</h4>
+
+<pre><code>Every count in the design was measured as text at 952040471 and is to be re-measured at A1 from the IL: the 38 edges, about 25 targets, the published-set table, the event owners of D-5 and the command list of D-6; a difference is recorded, not argued with.
+</code></pre>
+
+<h4>K3</h4>
+
+<pre><code>Hypothesis threshold, fixed before S1: if after the published set is drawn the listed non-contract cross-context edges exceed 15, or one context pair carries more than 5, S1 stops and the finding goes to the ADR-270 owner as a wrong cut.
+</code></pre>
+
+<h4>K4</h4>
+
+<pre><code>The contexts are exactly the ten of ADR-270 Decision 1: OrganisationSetup, TrackerIntegration, WorkItems, FlowMetrics, Forecasting, Promises, Refinement, Reports, Access, Licensing; the platform lane is not a context. Promises, Refinement and Reports are expected to publish nothing (no Contracts folder; open question 3 default).
+</code></pre>
+
+<h4>K5</h4>
+
+<pre><code>No rule or list is loosened: every existing Architecture test keeps its verdict before and after each slice; widening a FrontDoor pattern admits only Contracts of the same context; the whole Architecture namespace runs before each close.
+</code></pre>
+
+<h4>K6</h4>
+
+<pre><code>IL facts only: IlDependencies.TypesIn returns nested types, so holdings and exact sets compare top-level names (the part before +); the IL misses event declarations and named attribute arguments and XML-doc crefs produce no edge.
+</code></pre>
+
+<h4>K7</h4>
+
+<pre><code>Lists inline by full type name, compared both ways (InlineBaseline), each R-C1 entry with its owner in a trailing comment; a rule exemption is exact per type and nested types, never a namespace or layer.
+</code></pre>
+
+<h4>K8</h4>
+
+<pre><code>Planted offenders live in fixture namespaces such as Lighthouse.Backend.Modules.&lt;X&gt;Fixtures in the oracle file, checked against every existing lookalike guard; each rule asserts its subject set is not empty; each list position has a planted offender; rule tests assert by the failure naming the offender, never by counts.
+</code></pre>
+
+<h4>K9</h4>
+
+<pre><code>Old-name sweep reads grouped alternations (Services\.(Implementation|Interfaces)\.(A|B) and Lighthouse\.Backend\.(X|Y)\.(A|B)) with a made-up file in each form; the sweep and any fix live in the slice oracle file, never in a shared support an approved oracle uses.
+</code></pre>
+
+<h4>K10</h4>
+
+<pre><code>One oracle file per slice; an approved oracle or support file of this feature is never edited, not even a using; oracles name types as strings; a craft target is never an oracle support.
+</code></pre>
+
+<h4>K11</h4>
+
+<pre><code>Test rules: the Lighthouse test-writing skill and its backend half win over nWave defaults (per-test timing, PBT density); no nWave scenario tags in code; layout oracles are IL architecture tests and start no host; default per-test budgets apply, no derogation, no infrastructure suite.
+</code></pre>
+
+<h4>K12</h4>
+
+<pre><code>Commands are recorded without the flock prefix; every dotnet and pwsh run is made under flock -o on the scratchpad lock; long suites run as ctx_shell background jobs.
+</code></pre>
+
+<h4>K13</h4>
+
+<pre><code>No stored or validated user input is involved: the inputs are the compiled assemblies and inline lists, with no range or size bound in the authority and none added by the design.
+</code></pre>
+
+<h4>K14</h4>
+
+<pre><code>Earlier Stories module-boundary rule files are rule files, not frozen oracles of this feature: S1 edits only the FrontDoor field values in them (as Story 6657 S1 did), adding no rows and removing no list entries.
+</code></pre>
+
+<h3>Reuse</h3>
+
+<p>NamespaceMoveLaw</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:105</p>
+
+<p>Extend</p>
+
+<pre><code>Owns proving that rules keep seeing a moving type; extended with the contracts map (ten possible new places) and the FrontDoor declaration; earlier maps unchanged.
+</code></pre>
+
+<p>PatternDeclaration</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:31</p>
+
+<p>Extend</p>
+
+<pre><code>Owns the role of a rule pattern; FrontDoor added beside Context and Place as the Context role scoped to a layer.
+</code></pre>
+
+<p>MovingType</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:41</p>
+
+<p>Reuse</p>
+
+<pre><code>Already carries name, area, old and new namespace; used for each membership entry with the context as area.
+</code></pre>
+
+<p>ApplicationIsReachedFromOutsideOnlyBy</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:87</p>
+
+<p>Reuse</p>
+
+<pre><code>Owns per-module direction; only its application argument values widen; no second direction owner.
+</code></pre>
+
+<p>ModuleRules</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:15</p>
+
+<p>Extend</p>
+
+<pre><code>Owns shared edge rules with verdicts; gains ReachesOtherContextsOnlyThroughContracts for R-C1 and R-C2, since no per-pair form exists (OutboundEdges is per module and target).
+</code></pre>
+
+<p>OutboundEdges</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:140</p>
+
+<p>Reuse</p>
+
+<pre><code>Shape and listed-edge comparison reused by the new helper; not changed.
+</code></pre>
+
+<p>IlDependencies</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IlDependencies.cs:13</p>
+
+<p>Reuse</p>
+
+<pre><code>The only IL reader (generic arguments, attributes, catch types, GetRequiredService); all measurements come from it.
+</code></pre>
+
+<p>AssertMatches</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InlineBaseline.cs:11</p>
+
+<p>Reuse</p>
+
+<pre><code>Owns both-ways inline list comparison (ADR-268) for the membership and the R-C1 list.
+</code></pre>
+
+<p>ModuleWording</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleWording.cs:7</p>
+
+<p>Reuse</p>
+
+<pre><code>Owns per-context refusal wording.
+</code></pre>
+
+<p>WriteBackMembership</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembership.cs:12</p>
+
+<p>Reuse</p>
+
+<pre><code>Shape of a membership map (static owner of inline entries) copied for ContextContractsMembership; the type itself is not changed.
+</code></pre>
+
+<p>WriteBackPatternRoles</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackPatternRoles.cs:8</p>
+
+<p>Reuse</p>
+
+<pre><code>Shape of a pattern-role map keyed by class and field copied for ContextContractsPatternRoles.
+</code></pre>
+
+<p>ModuleRulesCatchANewOffenderArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs:27</p>
+
+<p>Reuse</p>
+
+<pre><code>Planted-offender falsifier style reused for R-C1 to R-C3.
+</code></pre>
+
+<p>LighthouseArchitecture</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LighthouseArchitecture.cs:7</p>
+
+<p>Reuse</p>
+
+<pre><code>Loads the production assembly once per test assembly (shared read-only world).
+</code></pre>
+
+<p>ContextContractsMembership</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembership.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No type owns what a context publishes: no Contracts namespace exists yet and the existing Membership maps each describe one move, not the published set of ten contexts.
+</code></pre>
+
+<p>ContextContractsArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No rule governs edges between every pair of contexts; per-module rules govern direction only.
+</code></pre>
+
+<h3>Impact</h3>
+
+<p>None.</p>
+
+<h3>Agreement</h3>
+
+<p>None.</p>
+
+<h3>Not applicable</h3>
+
+<p>agreement</p>
+
+<pre><code>No shared wire, schema or configuration contract changes: only test-assembly rule code changes and production bytes are untouched (D-0).
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>Single deployable; producers and consumers of every touched type change in the same commit and no persisted or wire data outlives a version.
+</code></pre>
+
+<h3>Boundaries</h3>
+
+<pre><code>Compiled production and test assemblies read through IlDependencies and LighthouseArchitecture.Production by NUnit architecture tests (in-process; nearest argv: dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture)
+</code></pre>
+
+<h4>Driven ports</h4>
+
+<pre><code>None at runtime: production is unchanged; the tests read the IL with Mono.Cecil and the test project source text for the literal sweep
+</code></pre>
+
+<pre><code>Architecture tests depend on the production assembly; production depends on nothing new; the new rule and membership types depend on IlDependencies, InlineBaseline, ModuleRules, ModuleWording and NamespaceMoveLaw only
+</code></pre>
+
+<h4>Failures</h4>
+
+<h5>B1</h5>
+
+<pre><code>A cross-context edge outside the target Contracts that is not listed
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>R-C1 fails naming source, target and layer with WHAT, WHY, HOW
+</code></pre>
+
+<h5>B2</h5>
+
+<pre><code>A listed R-C1 edge no longer in the IL
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>InlineBaseline fails naming the stale entry and asks to delete it
+</code></pre>
+
+<h5>B3</h5>
+
+<pre><code>The IL cannot be loaded or a rule subject set is empty
+</code></pre>
+
+<p>Indeterminate</p>
+
+<pre><code>The test fails at set-up or on the not-empty assertion; never a pass
+</code></pre>
+
+<h3>Observations</h3>
+
+<pre><code>Per architecture test: its name and outcome as printed by the architecture-rules probe and dotnet test (passed, failed, setup failed)
+</code></pre>
+
+<p>NUnit test outcome line</p>
+
+<pre><code>Why a passing rule passes over an empty subject set; therefore each rule asserts its subject set is not empty
+</code></pre>
+
+<pre><code>Rule failure message naming each offender: source type, target type and layer, or field, type and role break, with WHAT, WHY and HOW
+</code></pre>
+
+<p>NUnit assertion message</p>
+
+<pre><code>Edges the IL does not carry (event declarations, named attribute arguments, reflection, string type names)
+</code></pre>
+
+<h3>Equality</h3>
+
+<p>membership and lists</p>
+
+<pre><code>Two published sets are equal when their top-level full names, contexts and admissions agree as sets; two edge lists are equal when their Source -&gt; Target full-name strings agree as sets; order and comments do not count
+</code></pre>
+
+<h3>Constructors</h3>
+
+<p>ContextContractsMembership.Entries</p>
+
+<p>IReadOnlyList&lt;(MovingType Type, ContractAdmission Admission)&gt;</p>
+
+<p>PatternDeclaration.FrontDoor</p>
+
+<p>PatternDeclaration FrontDoor(PatternSubject subject, string reason)</p>
+
+<p>ModuleRules.ReachesOtherContextsOnlyThroughContracts</p>
+
+<p>OutboundVerdict ReachesOtherContextsOnlyThroughContracts(ModuleDefinition module, IReadOnlyCollection&lt;string&gt; listed, string modules, string contracts, string kernel, ModuleWording? wording = null)</p>
+
+<p>PackagedContexts.InTheAssembly</p>
+
+<p>IReadOnlyList&lt;string&gt; InTheAssembly(ModuleDefinition module)</p>
+
+<h3>Laws</h3>
+
+<h4>L1</h4>
+
+<pre><code>Every legal edge between two contexts goes through the target Contracts or is listed: the set of Modules.A to Modules.B edges (A not B) whose target is outside Modules.B.Contracts equals CrossContextEdgesOutsideContracts
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>ContextContractsArchUnitTest</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Production IL: equal to the inline list, both ways
+</code></pre>
+
+<pre><code>Planted Modules.&lt;X&gt;Fixtures type naming another fixture context Domain type: named as offender
+</code></pre>
+
+<pre><code>Each list position removed: that edge named as unlisted
+</code></pre>
+
+<pre><code>Finite closed set: every compiled type and every list entry is evaluated
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h4>L2</h4>
+
+<pre><code>Contracts point inward only: no type in Modules.X.Contracts reaches its own Domain, Application or Adapters, Data, API, Services or the platform lane
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>ContextContractsArchUnitTest</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Production IL: no offender
+</code></pre>
+
+<pre><code>Planted Contracts type naming its own Application: named as offender
+</code></pre>
+
+<pre><code>Finite closed set evaluated exhaustively
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h4>L3</h4>
+
+<pre><code>The contexts read from the assembly equal the inline ten, both ways
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>ContextContractsArchUnitTest</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Enumerator returning nothing: all ten named missing
+</code></pre>
+
+<pre><code>Production IL: equal
+</code></pre>
+
+<pre><code>A planted extra module root: named as unknown
+</code></pre>
+
+<pre><code>Finite closed set
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h4>L4</h4>
+
+<pre><code>Each membership entry exists as a top-level type in exactly its old or its new namespace, and the membership equals the D-2 closure computed from the IL (seeds by criterion plus public-signature closure, minus kernel and BCL)
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>ContextContractsMembershipArchUnitTest</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Production IL: every entry found and the closure equal both ways
+</code></pre>
+
+<pre><code>A listed seed that is a behaviour class: named
+</code></pre>
+
+<pre><code>A closure member missing from the map: named
+</code></pre>
+
+<pre><code>Finite closed set
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h4>L5</h4>
+
+<pre><code>For every regex field of the test assembly and every membership type: a FrontDoor field matches old and new full name, a Place field does not match the new name, and every field matching a moving type is declared
+</code></pre>
+
+<p>Refinement</p>
+
+<p>Adapter</p>
+
+<p>ContextContractsMembershipArchUnitTest</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Before widening: each Modules\.X\.Application(\.|$) FrontDoor field named as StopsSeeingTheType
+</code></pre>
+
+<pre><code>After widening to (Application|Contracts): no break
+</code></pre>
+
+<pre><code>An undeclared field seeing a moving type: named
+</code></pre>
+
+<pre><code>Finite closed set of fields times types
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h4>L6</h4>
+
+<pre><code>No string literal in the test project names a moving type by its old full name, grouped alternations included, unless the fixed rename list renames it
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>ContextContractsMembershipArchUnitTest</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>A made-up file with a flat old name: named
+</code></pre>
+
+<pre><code>A made-up file with a grouped alternation naming the old name: named
+</code></pre>
+
+<pre><code>Finite set of files and literals
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h4>L7</h4>
+
+<pre><code>Every existing architecture rule keeps its verdict across each slice
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>ArchitectureNamespace</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>dotnet test filtered to Lighthouse.Backend.Tests.Architecture green before and after each slice
+</code></pre>
+
+<pre><code>Finite suite
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<pre><code>A text search over using lines and type names finds every cross-context edge
+</code></pre>
+
+<pre><code>Text sees crefs and comments and misses same-namespace and fully qualified references
+</code></pre>
+
+<pre><code>DemoBlockedHistoryBackfillHandler names WorkItemBlockedTransitionCaptureHandler only in a see cref, which yields no IL edge
+</code></pre>
+
+<pre><code>A type moved from Modules.X.Application to Modules.X.Contracts stays under its module rules
+</code></pre>
+
+<pre><code>Every inbound rule keys on a layer pattern Modules\.X\.Application(\.|$)
+</code></pre>
+
+<pre><code>ILicenseService moved to Modules.Licensing.Contracts is no longer matched by LicensingApplication, so a new caller would pass unseen
+</code></pre>
+
+<h3>Claims</h3>
+
+<h4>C1</h4>
+
+<pre><code>No architecture rule silently stops seeing a type when it later moves into its context Contracts
+</code></pre>
+
+<pre><code>A rule passes over an empty subject set and a forbidden caller of a published type ships unseen
+</code></pre>
+
+<p>ContextContractsMembershipArchUnitTest</p>
+
+<pre><code>Compiled test assembly regex fields, ContextContractsMembership and ContextContractsPatternRoles
+</code></pre>
+
+<p>PatternDeclaration.FrontDoor plus NamespaceMoveLaw over the contracts map</p>
+
+<p>Every per-module inbound rule and placement rule reading a declared field</p>
+
+<pre><code>dotnet test --filter FullyQualifiedName~ContextContractsMembershipArchUnitTest fails naming the field, the type and the role break
+</code></pre>
+
+<pre><code>Patterns built at run time or held in properties; rules selecting by short name; inline method-body literals (only the sweep sees them)
+</code></pre>
+
+<h4>C2</h4>
+
+<pre><code>No new cross-context edge outside the target Contracts ships unseen, and no context appears or vanishes without being named
+</code></pre>
+
+<pre><code>Contexts couple to each other internals and features B to D move types under a rule that does not bite
+</code></pre>
+
+<p>ContextContractsArchUnitTest</p>
+
+<pre><code>Compiled production IL and the inline lists
+</code></pre>
+
+<p>ModuleRules.ReachesOtherContextsOnlyThroughContracts plus PackagedContexts.InTheAssembly</p>
+
+<p>R-C1, R-C2, R-C3 tests and feature C ratchet slices</p>
+
+<pre><code>dotnet test --filter FullyQualifiedName~ContextContractsArchUnitTest fails naming source, target and layer, or the missing or unknown context
+</code></pre>
+
+<pre><code>Code in Services, Data, API and the platform lane is outside R-C1; IL-invisible edges (event declarations, named attribute arguments, reflection)
+</code></pre>
+
+<h3>States</h3>
+
+<p>Admitted</p>
+
+<pre><code>An edge from Modules.A to a type in Modules.B.Contracts, to the kernel, the BCL or the platform lane
+</code></pre>
+
+<p>ContextContractsArchUnitTest</p>
+
+<p>Admitted</p>
+
+<pre><code>An edge from Modules.A to a Modules.B type outside Contracts that is on CrossContextEdgesOutsideContracts
+</code></pre>
+
+<p>ContextContractsArchUnitTest</p>
+
+<p>Excluded</p>
+
+<pre><code>An unlisted edge from Modules.A to a Modules.B type outside Contracts
+</code></pre>
+
+<p>ContextContractsArchUnitTest</p>
+
+<p>Excluded</p>
+
+<pre><code>A Contracts type reaching its own Domain, Application or Adapters, or Data, API, Services or the platform lane
+</code></pre>
+
+<p>ContextContractsArchUnitTest</p>
+
+<p>Excluded</p>
+
+<pre><code>A Lighthouse.Backend.Modules root not on the inline ten, or one of the ten missing
+</code></pre>
+
+<p>ContextContractsArchUnitTest</p>
+
+<p>Excluded</p>
+
+<pre><code>A FrontDoor field that stops seeing a published type, or a Place field that sees its new name, or an undeclared field that sees it
+</code></pre>
+
+<p>ContextContractsMembershipArchUnitTest</p>
+
+<p>Unknown</p>
+
+<pre><code>Edges carried only by event declarations, named attribute arguments, reflection or type names in strings
+</code></pre>
+
+<p>IlDependencies</p>
+
+<h3>Models</h3>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<pre><code>contracts rules and move law
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Excluded states are refused by R-C1 to R-C3 and the move law, each with a planted offender per rule and list position; not built yet
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>contracts rules and move law
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Every listed type exists today in its old namespace (re-measured in S1); the ten module roots exist on main (git ls-files); the R-C1 list is built from the measured edges
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>contracts rules and move law
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>compiled assembly -&gt; ContextContractsMembership and PackagedContexts -&gt; NamespaceMoveLaw and ModuleRules helper -&gt; NUnit test outcome through dotnet test and the architecture-rules probe
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>contracts rules and move law
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>No liveness claim: synchronous evaluation over a compiled assembly, nothing must eventually happen
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negates: moving a type keeps it under its module rules
+</code></pre>
+
+<pre><code>Every per-module rule keeps seeing a published type
+</code></pre>
+
+<pre><code>FrontDoor fields widen to Application|Contracts permanently
+</code></pre>
+
+<pre><code>A field silently stops matching a moved type
+</code></pre>
+
+<pre><code>Fields built at run time or held in properties are not read by the law
+</code></pre>
+
+<p>ContextContractsMembershipArchUnitTest</p>
+
+<h4>Y2</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negates: a text measure finds every edge
+</code></pre>
+
+<pre><code>Edges and the published set come from the IL only
+</code></pre>
+
+<pre><code>Design counts differ from S1 counts
+</code></pre>
+
+<pre><code>A text-only edge listed, or an IL edge missed by the list
+</code></pre>
+
+<pre><code>IL-invisible edges (event declarations, named attribute arguments)
+</code></pre>
+
+<p>IlDependencies</p>
+
+<h4>Y3</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negates: the earlier Stories left the counts as measured at 952040471
+</code></pre>
+
+<pre><code>The hypothesis threshold is fixed before measuring
+</code></pre>
+
+<pre><code>Counts change and are recorded
+</code></pre>
+
+<pre><code>The threshold moved after measuring
+</code></pre>
+
+<pre><code>None
+</code></pre>
+
+<p>ContextContractsMembershipArchUnitTest</p>
+
+<h4>Y4</h4>
+
+<p>Bypass</p>
+
+<pre><code>Code outside Modules (Services, Data, API, platform lane) and reflection or string type names
+</code></pre>
+
+<pre><code>Per-module inbound rules keep governing outsiders
+</code></pre>
+
+<pre><code>R-C1 does not see them
+</code></pre>
+
+<pre><code>Claiming R-C1 covers them
+</code></pre>
+
+<pre><code>Kernel width (S04b) and Services code (S05, S10) remain
+</code></pre>
+
+<p>Epic 6510</p>
+
+<h4>Y5</h4>
+
+<p>SinglePointOfFailure</p>
+
+<pre><code>IlDependencies is the one IL reader for every rule
+</code></pre>
+
+<pre><code>All rules read the same edge set
+</code></pre>
+
+<pre><code>A reader defect affects every rule equally
+</code></pre>
+
+<pre><code>A reader change that drops edges silently
+</code></pre>
+
+<pre><code>Each rule asserts its subject set is not empty and plants an offender
+</code></pre>
+
+<p>IlDependencies</p>
+
+<h4>Y6</h4>
+
+<p>Stressor</p>
+
+<pre><code>Second set, walkthrough not execution: a later Story adds a module folder without naming it; a Contracts interface signature drags an Application record; a nested type +Inner shares a short name; a widened FrontDoor field also matches another context Contracts
+</code></pre>
+
+<pre><code>R-C3 fails until named; R-C2 fails; top-level reduction; widening is per context so other contexts Contracts stay unmatched
+</code></pre>
+
+<pre><code>One more list edit per new context
+</code></pre>
+
+<pre><code>A green rule over a silently unmatched type
+</code></pre>
+
+<pre><code>None found by the walkthrough
+</code></pre>
+
+<p>ContextContractsArchUnitTest</p>
+
+<h3>Architectural tests</h3>
+
+<p>None.</p>
+
+<h3>Contract tests</h3>
 
 <p>None.</p>
 
 <h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Widen each field the law declares FrontDoor from Modules\.X\.Application to Modules\.X\.(Application|Contracts), same context only; no row, list entry or planted type changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Widen each field the law declares FrontDoor from Modules\.X\.Application to Modules\.X\.(Application|Contracts), same context only; no row, list entry or planted type changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Widen each field the law declares FrontDoor from Modules\.X\.Application to Modules\.X\.(Application|Contracts), same context only; no row, list entry or planted type changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Widen each field the law declares FrontDoor from Modules\.X\.Application to Modules\.X\.(Application|Contracts), same context only; no row, list entry or planted type changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Widen each field the law declares FrontDoor from Modules\.X\.Application to Modules\.X\.(Application|Contracts), same context only; no row, list entry or planted type changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Widen each field the law declares FrontDoor from Modules\.X\.Application to Modules\.X\.(Application|Contracts), same context only; no row, list entry or planted type changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Widen each field the law declares FrontDoor from Modules\.X\.Application to Modules\.X\.(Application|Contracts), same context only; no row, list entry or planted type changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Widen each field the law declares FrontDoor from Modules\.X\.Application to Modules\.X\.(Application|Contracts), same context only; no row, list entry or planted type changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Widen each field the law declares FrontDoor from Modules\.X\.Application to Modules\.X\.(Application|Contracts), same context only; no row, list entry or planted type changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Widen each field the law declares FrontDoor from Modules\.X\.Application to Modules\.X\.(Application|Contracts), same context only; no row, list entry or planted type changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsUnitTestPlacementTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Admit Contracts in the layer set of the placement rule (a Place field, widened by layer list, not narrowed); per-class rows unchanged.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Admit Contracts in the layer set of the placement rule (a Place field, widened by layer list, not narrowed); per-class rows unchanged.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupUnitTestPlacementTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Admit Contracts in the layer set of the placement rule (a Place field, widened by layer list, not narrowed); per-class rows unchanged.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Admit Contracts in the layer set of the placement rule (a Place field, widened by layer list, not narrowed); per-class rows unchanged.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Admit Contracts in the layer set of the placement rule (a Place field, widened by layer list, not narrowed); per-class rows unchanged.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsUnitTestPlacementTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Admit Contracts in the layer set of the placement rule (a Place field, widened by layer list, not narrowed); per-class rows unchanged.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementUnitTestsBesideTheModuleArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Admit Contracts in the layer set of the placement rule (a Place field, widened by layer list, not narrowed); per-class rows unchanged.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsUnitTestsBesideTheModuleArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Admit Contracts in the layer set of the placement rule (a Place field, widened by layer list, not narrowed); per-class rows unchanged.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ContextContractsMembershipArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+dotnet build Lighthouse.Backend
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembership.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsPatternRoles.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsStringsTheMoveRenames.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run ContextContractsMembershipArchUnitTest: (1) each ContextContractsMembership entry exists as a top-level type in its old or its new namespace; (2) the membership equals the D-2 closure computed from the production IL, both ways; (3) NamespaceMoveLaw with the contracts map and ContextContractsPatternRoles over every regex field of the test assembly; (4) the literal sweep with its fixed rename list, grouped alternations included; then the whole Architecture namespace
+</code></pre>
+
+<pre><code>RED today on (3): every FrontDoor field Modules\.X\.Application(\.|$) stops seeing X published types under Modules.X.Contracts. GREEN once those fields read Modules\.X\.(Application|Contracts); (1), (2), (4) and every existing Architecture test green before and after; the probe lists each entry with context, namespaces and admission, and each field with its role
+</code></pre>
+
+<pre><code>A listed seed that is a behaviour class, a closure member missing from the map, an undeclared field seeing a moving type, a FrontDoor field not widened, a Place field matching a new name, or a literal (flat or grouped) naming an old full name not on the rename list each fails naming the entry, field or file
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<pre><code>S1 RED is the move law, not a stub: before widening, the law over the contracts map names every FrontDoor field Modules\.X\.Application(\.|$) as StopsSeeingTheType for X published types; the crafter widens the fields to GREEN.
+</code></pre>
+
+<pre><code>Oracle-side files written with the oracle: ContextContractsMembership, ContextContractsPatternRoles, ContextContractsStringsTheMoveRenames and the NamespaceMoveLaw extension are authored by the acceptance designer before RED and frozen at approval; the S1 oracle and supports do not name ModuleRules.
+</code></pre>
+
+<pre><code>Membership and roles visible in probe output: one test case per membership entry (type, context, old and new namespace, Seed or Closure) and one per classified field (field, FrontDoor or Place), so architecture-rules lists them.
+</code></pre>
+
+<h5>Constraints</h5>
+
+<pre><code>Start-condition checks, the re-measured counts (edges, targets, published set, D-5 event owners, D-6 command list from the IL) and the DoR-3 threshold result are recorded as S1 craft commands with their output; the commit check for 6365 and 6468 finds no commit by --grep=&quot;story &lt;id&gt;&quot; (their commits use scope names), so the host decides the equivalent check.
+</code></pre>
+
+<h5>Reuse</h5>
+
+<p>AccessModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:36</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module rule and its FrontDoor field; extended in place by widening the field value; no second rule owner.
+</code></pre>
+
+<p>FlowMetricsInboundApplicationArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:21</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module rule and its FrontDoor field; extended in place by widening the field value; no second rule owner.
+</code></pre>
+
+<p>ForecastingModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:43</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module rule and its FrontDoor field; extended in place by widening the field value; no second rule owner.
+</code></pre>
+
+<p>LicensingModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:36</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module rule and its FrontDoor field; extended in place by widening the field value; no second rule owner.
+</code></pre>
+
+<p>PromisesModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:36</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module rule and its FrontDoor field; extended in place by widening the field value; no second rule owner.
+</code></pre>
+
+<p>RefinementModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs:41</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module rule and its FrontDoor field; extended in place by widening the field value; no second rule owner.
+</code></pre>
+
+<p>ReportsModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs:42</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module rule and its FrontDoor field; extended in place by widening the field value; no second rule owner.
+</code></pre>
+
+<p>TrackerIntegrationModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:29</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module rule and its FrontDoor field; extended in place by widening the field value; no second rule owner.
+</code></pre>
+
+<p>WorkItemsModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:35</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module rule and its FrontDoor field; extended in place by widening the field value; no second rule owner.
+</code></pre>
+
+<p>ConnectorsDeclareNoUnsupportedMembersArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs:17</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module rule and its FrontDoor field; extended in place by widening the field value; no second rule owner.
+</code></pre>
+
+<p>FlowMetricsUnitTestPlacementTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsUnitTestPlacementTest.cs:15</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module unit-test placement rule; extended in place by admitting Contracts in its layer set.
+</code></pre>
+
+<p>ForecastingUnitTestPlacementTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs:16</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module unit-test placement rule; extended in place by admitting Contracts in its layer set.
+</code></pre>
+
+<p>OrganisationSetupUnitTestPlacementTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupUnitTestPlacementTest.cs:10</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module unit-test placement rule; extended in place by admitting Contracts in its layer set.
+</code></pre>
+
+<p>PromisesUnitTestPlacementTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs:17</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module unit-test placement rule; extended in place by admitting Contracts in its layer set.
+</code></pre>
+
+<p>TrackerIntegrationUnitTestPlacementTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs:18</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module unit-test placement rule; extended in place by admitting Contracts in its layer set.
+</code></pre>
+
+<p>WorkItemsUnitTestPlacementTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsUnitTestPlacementTest.cs:17</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module unit-test placement rule; extended in place by admitting Contracts in its layer set.
+</code></pre>
+
+<p>RefinementUnitTestsBesideTheModuleArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementUnitTestsBesideTheModuleArchUnitTest.cs:17</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module unit-test placement rule; extended in place by admitting Contracts in its layer set.
+</code></pre>
+
+<p>ReportsUnitTestsBesideTheModuleArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsUnitTestsBesideTheModuleArchUnitTest.cs:13</p>
+
+<p>Extend</p>
+
+<pre><code>Owns this module unit-test placement rule; extended in place by admitting Contracts in its layer set.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>FrontDoor field values widen; verdicts unchanged.
+</code></pre>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>FrontDoor field values widen; verdicts unchanged.
+</code></pre>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>FrontDoor field values widen; verdicts unchanged.
+</code></pre>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>FrontDoor field values widen; verdicts unchanged.
+</code></pre>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>FrontDoor field values widen; verdicts unchanged.
+</code></pre>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>FrontDoor field values widen; verdicts unchanged.
+</code></pre>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>FrontDoor field values widen; verdicts unchanged.
+</code></pre>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>FrontDoor field values widen; verdicts unchanged.
+</code></pre>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>FrontDoor field values widen; verdicts unchanged.
+</code></pre>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>FrontDoor field values widen; verdicts unchanged.
+</code></pre>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsUnitTestPlacementTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Layer set admits Contracts; verdicts unchanged.
+</code></pre>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Layer set admits Contracts; verdicts unchanged.
+</code></pre>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupUnitTestPlacementTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Layer set admits Contracts; verdicts unchanged.
+</code></pre>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Layer set admits Contracts; verdicts unchanged.
+</code></pre>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Layer set admits Contracts; verdicts unchanged.
+</code></pre>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsUnitTestPlacementTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Layer set admits Contracts; verdicts unchanged.
+</code></pre>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementUnitTestsBesideTheModuleArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Layer set admits Contracts; verdicts unchanged.
+</code></pre>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsUnitTestsBesideTheModuleArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Layer set admits Contracts; verdicts unchanged.
+</code></pre>
+
+<p>architecture test consumer</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembershipArchUnitTest.cs:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Earlier move laws read every regex field; a widened FrontDoor value keeps their declared roles; confirmed by the whole Architecture run.
+</code></pre>
+
+<p>architecture test consumer</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Earlier move laws read every regex field; a widened FrontDoor value keeps their declared roles; confirmed by the whole Architecture run.
+</code></pre>
+
+<p>architecture test consumer</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembershipArchUnitTest.cs:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Earlier move laws read every regex field; a widened FrontDoor value keeps their declared roles; confirmed by the whole Architecture run.
+</code></pre>
+
+<p>architecture test consumer</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Earlier move laws read every regex field; a widened FrontDoor value keeps their declared roles; confirmed by the whole Architecture run.
+</code></pre>
+
+<p>architecture test consumer</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Earlier move laws read every regex field; a widened FrontDoor value keeps their declared roles; confirmed by the whole Architecture run.
+</code></pre>
+
+<p>architecture test support</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:105</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Extended by the acceptance designer with FrontDoor and the contracts map before RED; earlier maps keep their results.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>AccessModuleBoundariesArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>FlowMetricsInboundApplicationArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>ForecastingModuleBoundariesArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>LicensingModuleBoundariesArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>PromisesModuleBoundariesArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>RefinementModuleBoundariesArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>ReportsModuleBoundariesArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>TrackerIntegrationModuleBoundariesArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>WorkItemsModuleBoundariesArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs holds its rule test class plus planted fixture types in fixture namespaces, deliberately beside the rule that plants them; S1 changes only field values, so no type moves in this slice.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>FlowMetricsUnitTestPlacementTest.cs holds its placement test class and at most its own planted twins; S1 only admits a layer name, so no type moves in this slice.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>ForecastingUnitTestPlacementTest.cs holds its placement test class and at most its own planted twins; S1 only admits a layer name, so no type moves in this slice.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>OrganisationSetupUnitTestPlacementTest.cs holds its placement test class and at most its own planted twins; S1 only admits a layer name, so no type moves in this slice.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>PromisesUnitTestPlacementTest.cs holds its placement test class and at most its own planted twins; S1 only admits a layer name, so no type moves in this slice.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>TrackerIntegrationUnitTestPlacementTest.cs holds its placement test class and at most its own planted twins; S1 only admits a layer name, so no type moves in this slice.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>WorkItemsUnitTestPlacementTest.cs holds its placement test class and at most its own planted twins; S1 only admits a layer name, so no type moves in this slice.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>RefinementUnitTestsBesideTheModuleArchUnitTest.cs holds its placement test class and at most its own planted twins; S1 only admits a layer name, so no type moves in this slice.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>ReportsUnitTestsBesideTheModuleArchUnitTest.cs holds its placement test class and at most its own planted twins; S1 only admits a layer name, so no type moves in this slice.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T1</h6>
+
+<pre><code>Every rule pattern that sees a published type keeps its role when the type moves into its context Contracts; the published set equals the IL closure; no literal names a moving type by its old name
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ContextContractsMembershipArchUnitTest
+</code></pre>
+
+<h6>T2</h6>
+
+<pre><code>Every existing architecture rule keeps its verdict
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PackagedContexts.cs</p>
+
+<p>Create</p>
+
+<pre><code>R-C3 enumerator: every Lighthouse.Backend.Modules.&lt;X&gt; namespace root of the production IL, top-level, sorted.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ContextContractsArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+dotnet build Lighthouse.Backend
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run ContextContractsArchUnitTest over the production IL and planted Modules.&lt;X&gt;Fixtures types: R-C1 with CrossContextEdgesOutsideContracts, R-C2, R-C3 with the inline ten and PackagedContexts, plus one planted offender per rule and per list position; then the whole Architecture namespace
+</code></pre>
+
+<pre><code>RED today on R-C3: the enumerator returns nothing, so the ten contexts are named missing. GREEN once PackagedContexts reads the module roots from the IL; R-C1 (every measured edge listed) and R-C2 (empty) green on writing; each planted offender fails its rule naming source, target and layer or the context; every existing Architecture test stays green
+</code></pre>
+
+<pre><code>A planted type in one fixture context naming another fixture context Domain type, a planted Contracts type naming its own Application, a planted extra module root, a removed list entry, or a stale list entry each fails naming the offender; an enumerator that returns nothing or a fixed list fails R-C3
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<pre><code>R-C3 RED against an empty enumerator: the acceptance designer creates PackagedContexts.InTheAssembly as a declaration returning no contexts so the oracle compiles and R-C3 fails by assertion naming the ten missing contexts; the crafter makes it read the IL (design A2). R-C1 and R-C2 are green on writing through the ModuleRules helper the acceptance designer adds.
+</code></pre>
+
+<pre><code>R-C1 baseline is every measured edge: at S2 no Contracts exists, so CrossContextEdgesOutsideContracts lists every module-to-module edge in the IL by full names Source -&gt; Target with an owner comment; R-C2 baseline is empty.
+</code></pre>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>PackagedContexts</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PackagedContexts.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No enumerator of module roots exists; R-C3 needs its own enumerator beside the predicate.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>architecture test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PackagedContexts.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>New enumerator read only by R-C3.
+</code></pre>
+
+<p>architecture test support</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:15</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Additive helper ReachesOtherContextsOnlyThroughContracts written with the oracle; existing members and their callers unchanged.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>PackagedContexts.cs is a new file holding one type; nothing moves.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>ModuleRules.cs holds ModuleRules and its two verdict records InboundVerdict and OutboundVerdict and is extended additively by the acceptance designer, not by craft; splitting the verdict records would touch every approved rule oracle that names them and is outside this slice.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T3</h6>
+
+<pre><code>R-C1: a type in Modules.A reaches Modules.B (B not A) only through Modules.B.Contracts or a listed edge; R-C2: Contracts reach only kernel, BCL, Microsoft.Extensions abstractions and Contracts; R-C3: contexts read from the assembly equal the inline ten
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ContextContractsArchUnitTest
+</code></pre>
+
+<h6>T4</h6>
+
+<pre><code>Every existing architecture rule keeps its verdict
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+</code></pre>
+
+<h5>Contract tests</h5>
 
 <p>None.</p>
 
