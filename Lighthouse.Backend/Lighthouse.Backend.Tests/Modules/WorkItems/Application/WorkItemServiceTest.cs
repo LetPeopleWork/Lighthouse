@@ -3365,6 +3365,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             {
                 Id = idCounter++,
                 Name = "Release 1",
+                InfersDefaultFeatureSize = true,
             };
 
             portfolio.WorkItemTypes.Add("Feature");

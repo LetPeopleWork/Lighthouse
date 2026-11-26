@@ -35,11 +35,9 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
         private const string AnOverrideState = "Analysis in Progress";
 
         [Test]
-        [TestCase(Sizing.Untouched)]
-        [TestCase(Sizing.SwitchedOn)]
-        public async Task A_Feature_without_child_Work_Items_is_sized_by_the_default_while_default_sizing_is_on(Sizing sizing)
+        public async Task A_Feature_without_child_Work_Items_is_sized_by_the_default_while_default_sizing_is_on()
         {
-            var ocean = Ocean.WithDefaultFeatureSize(OceanDefaultFeatureSize).WithTwoTeams().DefaultSizing(sizing);
+            var ocean = Ocean.WithDefaultFeatureSize(OceanDefaultFeatureSize).WithTwoTeams().DefaultSizing(Sizing.SwitchedOn);
             ocean.HasAFeatureWithoutChildWorkItems();
 
             await ocean.IsRefreshed();
@@ -80,6 +78,33 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             await ocean.IsRefreshed();
 
             ocean.TheFeatureCarriesNoWorkForAnyTeam();
+        }
+
+        [Test]
+        [TestCase(0)]
+        [TestCase(TheEstimateTheTrackerHolds)]
+        public async Task A_Feature_without_child_Work_Items_counts_as_zero_in_a_new_Portfolio_whose_owner_never_touched_the_switch(int estimateTheTrackerHolds)
+        {
+            var ocean = Ocean.WithDefaultFeatureSize(OceanDefaultFeatureSize).WithTwoTeams().DefaultSizing(Sizing.Untouched);
+            ocean.HasAFeatureWithoutChildWorkItems(estimate: estimateTheTrackerHolds);
+
+            await ocean.IsRefreshed();
+
+            ocean.TheFeatureCarriesNoWorkForAnyTeam();
+        }
+
+        [Test]
+        public async Task A_Feature_without_child_Work_Items_gets_the_default_again_once_the_owner_of_a_new_Portfolio_switches_default_sizing_on()
+        {
+            var ocean = Ocean.WithDefaultFeatureSize(OceanDefaultFeatureSize).WithTwoTeams().DefaultSizing(Sizing.Untouched);
+            ocean.HasAFeatureWithoutChildWorkItems();
+            await ocean.IsRefreshed();
+            ocean.TheFeatureCarriesNoWorkForAnyTeam();
+
+            ocean.DefaultSizing(Sizing.SwitchedOn);
+            await ocean.IsRefreshed();
+
+            ocean.TheFeatureCarries(remaining: OceanDefaultFeatureSize, acrossTeams: 2, sizedByTheDefault: true);
         }
 
         [Test]

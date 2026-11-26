@@ -1,4 +1,7 @@
+using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models.Dependencies;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
@@ -169,6 +172,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         public async Task Asking_for_only_some_features_says_the_same_about_them_as_asking_for_all()
         {
             var platform = GivenAPortfolio("Platform");
+            GivenDefaultFeatureSizingIsOn(platform);
             await GivenARefreshedPortfolio(
                 platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
             GivenTheTeamBehindItHasNoMeasuredDelivery("F-1");
@@ -290,6 +294,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         public async Task Waiting_on_a_feature_no_one_can_forecast_says_so()
         {
             var platform = GivenAPortfolio("Platform");
+            GivenDefaultFeatureSizingIsOn(platform);
             await GivenARefreshedPortfolio(
                 platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
             GivenTheTeamBehindItHasNoMeasuredDelivery("F-1");
@@ -336,6 +341,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         public async Task A_refresh_that_finds_features_no_one_can_forecast_says_how_many_in_one_line()
         {
             var platform = GivenAPortfolio("Platform");
+            GivenDefaultFeatureSizingIsOn(platform);
             await GivenARefreshedPortfolio(
                 platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
             GivenTheTeamBehindItHasNoMeasuredDelivery("F-1");
@@ -390,6 +396,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
 
             ThenTheRowFor(rows, "F-3").WaitsOn("F-1");
+        }
+
+        private void GivenDefaultFeatureSizingIsOn(int portfolioId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            context.Portfolios
+                .Where(portfolio => portfolio.Id == portfolioId)
+                .ExecuteUpdate(setters => setters.SetProperty(portfolio => portfolio.InfersDefaultFeatureSize, true));
         }
     }
 }

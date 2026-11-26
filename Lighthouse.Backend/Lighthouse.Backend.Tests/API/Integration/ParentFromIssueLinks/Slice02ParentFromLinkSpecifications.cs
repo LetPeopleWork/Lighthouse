@@ -460,6 +460,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             {
                 thePortfolioBeingSized = JiraConnectorTestSetup.APortfolioOnJiraCloud();
                 thePortfolioBeingSized.DataRetrievalValue = TheQueryThatFindsThePortfoliosFeatures;
+                thePortfolioBeingSized.InfersDefaultFeatureSize = true;
             }
 
             return thePortfolioBeingSized;

@@ -152,6 +152,19 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task CreatePortfolio_MakesTheCreatorAnAdminOfTheNewPortfolio()
+        {
+            var newPortfolioSetting = new PortfolioSettingDto { Name = "New Portfolio", WorkTrackingSystemConnectionId = 101 };
+
+            await CreateSubject().CreatePortfolio(newPortfolioSetting);
+
+            rbacAdministrationServiceMock.Verify(
+                service => service.EnsureCreatorPortfolioAdminAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                Times.Once,
+                "Whoever creates a Portfolio must become its admin, or they lose access to what they just made.");
+        }
+
+        [Test]
         public async Task CreatePortfolio_BaselineShorterThan14Days_ReturnsBadRequest()
         {
             var newPortfolioSetting = new PortfolioSettingDto

@@ -235,6 +235,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
 
             var strategy = GivenAPortfolio("Northwind Strategy");
             var platform = GivenAPortfolio("Northwind Platform");
+            GivenDefaultFeatureSizingIsOn(platform);
             var payments = GivenAPortfolio("Northwind Payments");
             var archive = GivenAPortfolio("Northwind Archive");
             var mobile = GivenAPortfolio("Northwind Mobile");
@@ -279,6 +280,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
             context.SaveChanges();
 
             return team.Id;
+        }
+
+        private void GivenDefaultFeatureSizingIsOn(int portfolioId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            context.Portfolios
+                .Where(portfolio => portfolio.Id == portfolioId)
+                .ExecuteUpdate(setters => setters.SetProperty(portfolio => portfolio.InfersDefaultFeatureSize, true));
         }
 
         protected int GivenAPortfolio(string name)

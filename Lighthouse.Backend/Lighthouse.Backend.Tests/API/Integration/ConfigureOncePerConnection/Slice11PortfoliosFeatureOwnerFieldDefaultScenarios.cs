@@ -1,3 +1,7 @@
+using Lighthouse.Backend.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
 namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 {
     /// <summary>
@@ -13,6 +17,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     public class Slice11PortfoliosFeatureOwnerFieldDefaultScenarios : ConnectionDefaultsAcceptanceTest
     {
         private const string Settlements = "Settlements";
+
+        // A Feature without child Work Items carries work, and so an owner to show, only while default sizing is on.
+        [SetUp]
+        public void EveryPortfolioSizesFeaturesWithoutChildWorkItems()
+        {
+            using var scope = Factory.Services.CreateScope();
+            scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Portfolios
+                .ExecuteUpdate(setters => setters.SetProperty(portfolio => portfolio.InfersDefaultFeatureSize, true));
+        }
 
         [Test]
         public async Task A_following_Feature_is_owned_by_the_Team_the_default_field_names()
@@ -33,6 +46,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         {
             await GivenAConnectionOfEveryOtherTracker();
             await GivenAPortfolioOn(PaymentsCsv, Settlements);
+            EveryPortfolioSizesFeaturesWithoutChildWorkItems();
             GivenEveryFeatureNamesItsOwnerIn(ReleaseTrain, Ledger);
             await GivenEveryTeamAndPortfolioHasBeenUpdatedOnce();
 
