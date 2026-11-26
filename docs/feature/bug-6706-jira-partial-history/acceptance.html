@@ -298,6 +298,90 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Jira&#x27;s search answer holds every entry Jira counts for the item (Data Center and Cloud)
+</code></pre>
+
+<pre><code>The item is dated from the search answer (start 16 May 2025) and its whole-history route is never asked
+</code></pre>
+
+<pre><code>No extra calls to Jira for items that are already whole
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraPartialHistoryDatingTest.cs</p>
+
+<p>ItemWhoseSearchAnswerHoldsEveryEntryJiraCounts_IsDatedFromItWithoutAskingJiraAgain</p>
+
+<pre><code>A connector that re-reads every item&#x27;s whole history whether or not it is partial
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Jira&#x27;s search answer carries the item&#x27;s entries but no count of them (Data Center and Cloud)
+</code></pre>
+
+<pre><code>The item is dated from the entries it came with (start 16 May 2025) and its whole-history route is never asked
+</code></pre>
+
+<pre><code>No extra calls to Jira when nothing says the answer is partial
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraPartialHistoryDatingTest.cs</p>
+
+<p>ItemWhoseSearchAnswerCountsNoEntries_IsDatedFromItWithoutAskingJiraAgain</p>
+
+<pre><code>A connector that treats a missing count as partial and re-reads the item
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The search counted four entries, but when the whole history is read the item has changed: Jira counts five and holds four (Data Center and Cloud)
+</code></pre>
+
+<pre><code>The item stays marked as not holding its whole history
+</code></pre>
+
+<pre><code>An item that changed while being read is not reported as complete
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraPartialHistoryDatingTest.cs</p>
+
+<p>ItemThatChangedBeforeItsWholeHistoryWasRead_StaysMarkedAsNotHoldingItsWholeHistory</p>
+
+<pre><code>A connector that trusts the search answer&#x27;s count and ignores the count reported by the whole-history read
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

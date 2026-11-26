@@ -164,6 +164,102 @@ A connector that swallows the refusal and dates the item from the partial search
 
 None.
 
+##### Covers
+
+P1
+
+```text
+Jira's search answer holds every entry Jira counts for the item (Data Center and Cloud)
+```
+
+```text
+The item is dated from the search answer (start 16 May 2025) and its whole-history route is never asked
+```
+
+```text
+No extra calls to Jira for items that are already whole
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/TrackerIntegration\/Adapters\/Connectors\/Jira\/JiraPartialHistoryDatingTest\.cs
+
+ItemWhoseSearchAnswerHoldsEveryEntryJiraCounts\_IsDatedFromItWithoutAskingJiraAgain
+
+```text
+A connector that re-reads every item's whole history whether or not it is partial
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Jira's search answer carries the item's entries but no count of them (Data Center and Cloud)
+```
+
+```text
+The item is dated from the entries it came with (start 16 May 2025) and its whole-history route is never asked
+```
+
+```text
+No extra calls to Jira when nothing says the answer is partial
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/TrackerIntegration\/Adapters\/Connectors\/Jira\/JiraPartialHistoryDatingTest\.cs
+
+ItemWhoseSearchAnswerCountsNoEntries\_IsDatedFromItWithoutAskingJiraAgain
+
+```text
+A connector that treats a missing count as partial and re-reads the item
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+The search counted four entries, but when the whole history is read the item has changed: Jira counts five and holds four (Data Center and Cloud)
+```
+
+```text
+The item stays marked as not holding its whole history
+```
+
+```text
+An item that changed while being read is not reported as complete
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/TrackerIntegration\/Adapters\/Connectors\/Jira\/JiraPartialHistoryDatingTest\.cs
+
+ItemThatChangedBeforeItsWholeHistoryWasRead\_StaysMarkedAsNotHoldingItsWholeHistory
+
+```text
+A connector that trusts the search answer's count and ignores the count reported by the whole-history read
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

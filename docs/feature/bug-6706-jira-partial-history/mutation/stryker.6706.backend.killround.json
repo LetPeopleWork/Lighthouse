@@ -1,0 +1,17 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTest",
+    "test-case-filter": "FullyQualifiedName~JiraPartialHistoryDatingTest|FullyQualifiedName~JiraCancellationGranularityTest",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

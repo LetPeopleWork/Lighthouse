@@ -70,6 +70,51 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
                 + "history. A history still marked partial is never trusted as complete.");
         }
 
+        [TestCase(DataCenter, TestName = "DataCenter_ItemWhoseSearchAnswerHoldsEveryEntryJiraCounts_IsDatedFromItWithoutAskingJiraAgain")]
+        [TestCase(Cloud, TestName = "Cloud_ItemWhoseSearchAnswerHoldsEveryEntryJiraCounts_IsDatedFromItWithoutAskingJiraAgain")]
+        public async Task ItemWhoseSearchAnswerHoldsEveryEntryJiraCounts_IsDatedFromItWithoutAskingJiraAgain(string deployment)
+        {
+            var tracker = ATrackerHolding(deployment, ASuspendedItem(), entriesInTheSearchAnswer: 4, entriesInTheRereadHistory: 4);
+
+            var item = await TheOnlyItemReadFrom(tracker);
+
+            Assert.That((item.StartedDate, tracker.WholeHistoryRequests), Is.EqualTo((WorkBegan, 0)),
+                "The search answer already held all four entries, so the item is dated from it on 16 May 2025. "
+                + "Asking Jira for the whole history of an item that is already whole costs a call for nothing.");
+        }
+
+        [TestCase(DataCenter, TestName = "DataCenter_ItemWhoseSearchAnswerCountsNoEntries_IsDatedFromItWithoutAskingJiraAgain")]
+        [TestCase(Cloud, TestName = "Cloud_ItemWhoseSearchAnswerCountsNoEntries_IsDatedFromItWithoutAskingJiraAgain")]
+        public async Task ItemWhoseSearchAnswerCountsNoEntries_IsDatedFromItWithoutAskingJiraAgain(string deployment)
+        {
+            var tracker = new JiraTracker(deployment, ASuspendedItem(), entriesInTheSearchAnswer: 4, entriesInTheRereadHistory: 4)
+            {
+                SearchAnswerCountsNoTotal = true,
+            };
+
+            var item = await TheOnlyItemReadFrom(tracker);
+
+            Assert.That((item.StartedDate, tracker.WholeHistoryRequests), Is.EqualTo((WorkBegan, 0)),
+                "Jira gave no count of the item's entries, so there is nothing to say the answer is partial. The "
+                + "item is dated from the entries it came with and Jira is not asked for more.");
+        }
+
+        [TestCase(DataCenter, TestName = "DataCenter_ItemThatChangedBeforeItsWholeHistoryWasRead_StaysMarkedAsNotHoldingItsWholeHistory")]
+        [TestCase(Cloud, TestName = "Cloud_ItemThatChangedBeforeItsWholeHistoryWasRead_StaysMarkedAsNotHoldingItsWholeHistory")]
+        public async Task ItemThatChangedBeforeItsWholeHistoryWasRead_StaysMarkedAsNotHoldingItsWholeHistory(string deployment)
+        {
+            var tracker = new JiraTracker(deployment, ASuspendedItem(), entriesInTheSearchAnswer: 1, entriesInTheRereadHistory: 4)
+            {
+                TotalTheRereadReports = 5,
+            };
+
+            var item = await TheOnlyItemReadFrom(tracker);
+
+            Assert.That(item.TransitionsAreItsWholeHistory, Is.False,
+                "The search counted four entries, but the whole-history read counts five and holds four: the item "
+                + "changed in between. The newer count is the one to trust, so the item must stay marked as partial.");
+        }
+
         [TestCase(DataCenter, TestName = "DataCenter_ItemWhoseWholeHistoryReadIsRefused_FailsTheReadInsteadOfDatingFromThePartialAnswer")]
         [TestCase(Cloud, TestName = "Cloud_ItemWhoseWholeHistoryReadIsRefused_FailsTheReadInsteadOfDatingFromThePartialAnswer")]
         public void ItemWhoseWholeHistoryReadIsRefused_FailsTheReadInsteadOfDatingFromThePartialAnswer(string deployment)
@@ -160,6 +205,15 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
             HttpStatusCode? statusOfTheWholeHistoryRead = null)
             : HttpMessageHandler
         {
+            /// <summary>What the whole-history read reports as the total, when the item changed since the search.</summary>
+            public int? TotalTheRereadReports { get; init; }
+
+            /// <summary>Whether the search answer's changelog leaves out the total Jira counts.</summary>
+            public bool SearchAnswerCountsNoTotal { get; init; }
+
+            /// <summary>How often the item's whole history was asked for.</summary>
+            public int WholeHistoryRequests { get; private set; }
+
             protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
                 var path = request.RequestUri?.AbsolutePath ?? string.Empty;
@@ -168,6 +222,11 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
                 var isTheItemsChangelog = path.EndsWith($"/issue/{item.Key}/changelog", StringComparison.Ordinal);
                 var isTheItemWithItsChangelog = path.EndsWith($"/issue/{item.Key}", StringComparison.Ordinal)
                     && query.Contains("expand=changelog", StringComparison.Ordinal);
+
+                if (isTheItemsChangelog || isTheItemWithItsChangelog)
+                {
+                    WholeHistoryRequests++;
+                }
 
                 if (isTheItemsChangelog && deployment == DataCenter)
                 {
@@ -209,28 +268,31 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
 
                 if (isTheItemWithItsChangelog)
                 {
-                    return TheItemCarrying(entriesInTheRereadHistory);
+                    return TheItemCarrying(entriesInTheRereadHistory, TotalTheRereadReports ?? item.WholeHistory.Count);
                 }
 
                 if (path.Contains(JiraWireFormat.SearchEndpoint, StringComparison.Ordinal))
                 {
+                    var itemAsSearched = TheItemCarrying(entriesInTheSearchAnswer, SearchAnswerCountsNoTotal ? null : item.WholeHistory.Count);
+
                     return deployment == DataCenter
-                        ? $"{{\"startAt\":0,\"maxResults\":50,\"total\":1,\"issues\":[{TheItemCarrying(entriesInTheSearchAnswer)}]}}"
-                        : JiraWireFormat.OnePageOf([TheItemCarrying(entriesInTheSearchAnswer)]);
+                        ? $"{{\"startAt\":0,\"maxResults\":50,\"total\":1,\"issues\":[{itemAsSearched}]}}"
+                        : JiraWireFormat.OnePageOf([itemAsSearched]);
                 }
 
                 return "{}";
             }
 
-            private string TheItemCarrying(int latestEntries)
+            private string TheItemCarrying(int latestEntries, int? total)
             {
                 var entries = item.WholeHistory.TakeLast(latestEntries).ToList();
+                var totalCounted = total is { } counted ? ",\"total\":" + counted : string.Empty;
 
                 return "{\"key\":\"" + item.Key + "\",\"fields\":{\"summary\":\"" + item.Key + " summary\""
                     + ",\"issuetype\":{\"name\":\"Story\"},\"status\":{\"name\":\"" + item.Status + "\"}"
                     + ",\"created\":\"2025-05-01T08:00:00.000+0000\",\"updated\":\"2025-11-14T08:00:00.000+0000\""
                     + ",\"labels\":[],\"issuelinks\":[]}"
-                    + ",\"changelog\":{\"startAt\":0,\"maxResults\":" + entries.Count + ",\"total\":" + item.WholeHistory.Count
+                    + ",\"changelog\":{\"startAt\":0,\"maxResults\":" + entries.Count + totalCounted
                     + ",\"histories\":[" + string.Join(",", entries) + "]}}";
             }
 
@@ -244,7 +306,7 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
                 var entries = isTheFirstPage ? item.WholeHistory.TakeLast(entriesInTheRereadHistory).ToList() : [];
                 var holdsEveryEntry = entries.Count == item.WholeHistory.Count;
 
-                return "{\"startAt\":0,\"maxResults\":" + entries.Count + ",\"total\":" + item.WholeHistory.Count
+                return "{\"startAt\":0,\"maxResults\":" + entries.Count + ",\"total\":" + (TotalTheRereadReports ?? item.WholeHistory.Count)
                     + ",\"isLast\":" + (holdsEveryEntry || !isTheFirstPage ? "true" : "false")
                     + ",\"values\":[" + string.Join(",", entries) + "]}";
             }

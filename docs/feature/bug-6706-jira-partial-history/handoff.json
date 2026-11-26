@@ -70,12 +70,54 @@
 "expected": "F33",
 "stimulus": "F32",
 "user_result": "F34"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F47",
+"test": "ItemWhoseSearchAnswerHoldsEveryEntryJiraCounts_IsDatedFromItWithoutAskingJiraAgain",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraPartialHistoryDatingTest.cs"
+},
+"expected": "F45",
+"stimulus": "F44",
+"user_result": "F46"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F51",
+"test": "ItemWhoseSearchAnswerCountsNoEntries_IsDatedFromItWithoutAskingJiraAgain",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraPartialHistoryDatingTest.cs"
+},
+"expected": "F49",
+"stimulus": "F48",
+"user_result": "F50"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F54",
+"test": "ItemThatChangedBeforeItsWholeHistoryWasRead_StaysMarkedAsNotHoldingItsWholeHistory",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraPartialHistoryDatingTest.cs"
+},
+"expected": "F25",
+"stimulus": "F52",
+"user_result": "F53"
 }
 ]
 },
 "counters": {
 "E": 2,
-"F": 43,
+"F": 54,
 "P": 1,
 "S": 1
 },
@@ -213,7 +255,18 @@
 "F41": "Public read of workspace W with no PATH listed public/ and scratch/ as empty; no public document supplies the Jira partial-history behaviour for P1, E1 or E2 (read exit 0, zero entries).",
 "F42": "Probe of 'nwdes --help' was refused (ProbeRefused, no output from the candidate); the admitted console-script list holds 23 candidate commands and none is a Jira partial-history or Jira connector capture.",
 "F43": "Probe of 'lighthouse-jira-probe --help' was refused (ProbeRefused) with the same admitted list; the examiner cannot capture a team's Jira search answer, changelog.total or whole-history route (rest/api/2/issue/KEY?expand=changelog on Data Center; paged issue changelog on Cloud) from the public surface, and the packet supplies no fixture for either deployment.",
+"F44": "Jira's search answer holds every entry Jira counts for the item (Data Center and Cloud)",
+"F45": "The item is dated from the search answer (start 16 May 2025) and its whole-history route is never asked",
+"F46": "No extra calls to Jira for items that are already whole",
+"F47": "A connector that re-reads every item's whole history whether or not it is partial",
+"F48": "Jira's search answer carries the item's entries but no count of them (Data Center and Cloud)",
+"F49": "The item is dated from the entries it came with (start 16 May 2025) and its whole-history route is never asked",
 "F5": "The connector reads a team's items; Jira's search answer for an item in a Doing state holds only its latest history entries (a move within Doing), with changelog.total larger than the entries returned, and the item's full history (which holds the earlier move into Doing) is available from the deployment's own whole-history route: rest/api/2/issue/<KEY>?expand=changelog on Data Center, the paged issue changelog route on Cloud",
+"F50": "No extra calls to Jira when nothing says the answer is partial",
+"F51": "A connector that treats a missing count as partial and re-reads the item",
+"F52": "The search counted four entries, but when the whole history is read the item has changed: Jira counts five and holds four (Data Center and Cloud)",
+"F53": "An item that changed while being read is not reported as complete",
+"F54": "A connector that trusts the search answer's count and ignores the count reported by the whole-history read",
 "F6": "The item's start date is the date it first entered Doing in its whole history (16 May 2025 in the reported case), not empty; a finished item's start date likewise comes from its whole history rather than its closed date; when the whole-history read is itself still partial, the item stays marked as not holding its whole history",
 "F7": "The item has no start date (or a Done item's start equals its closed date) although its whole history holds the move into Doing; or a Data Center item is dated only from the truncated search answer; or a Cloud item with a truncated answer of 30 or fewer total entries is never re-read",
 "F8": "On Jira Data Center, an item whose search answer carries only part of its history shows the same date it would show with its whole history.",
