@@ -105,7 +105,7 @@ None.
 P1
 
 ```text
-The whole-history read of an item still holds fewer entries than Jira counts (Data Center and Cloud)
+The whole-history read of an item still holds fewer entries than Jira counts; on Cloud the page says more follow, on Data Center the issue's changelog total exceeds the entries it holds
 ```
 
 ```text
@@ -113,7 +113,7 @@ The item stays marked as not holding its whole history
 ```
 
 ```text
-A history that is still partial never replaces the stored transitions
+The item is reported as holding only part of its history, so a stored history is not replaced by it
 ```
 
 ##### Disposition
@@ -125,7 +125,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/TrackerIntegration\/Ad
 ItemWhoseWholeHistoryReadIsStillPartial\_StaysMarkedAsNotHoldingItsWholeHistory
 
 ```text
-A connector that marks every re-read item as holding its whole history; already satisfied today and preserved
+A connector that marks every re-read item as holding its whole history; already satisfied today and preserved. Which entries the item exposes is not pinned: replacing the stored history is decided downstream from the marker
 ```
 
 ###### Obligations

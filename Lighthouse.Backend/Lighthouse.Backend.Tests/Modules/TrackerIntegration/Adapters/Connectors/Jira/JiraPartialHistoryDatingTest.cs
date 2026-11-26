@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using System.Web;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -152,11 +153,11 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
 
                 return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    Content = new StringContent(BodyFor(path, isTheItemsChangelog, isTheItemWithItsChangelog), Encoding.UTF8, "application/json"),
+                    Content = new StringContent(BodyFor(path, query, isTheItemsChangelog, isTheItemWithItsChangelog), Encoding.UTF8, "application/json"),
                 });
             }
 
-            private string BodyFor(string path, bool isTheItemsChangelog, bool isTheItemWithItsChangelog)
+            private string BodyFor(string path, string query, bool isTheItemsChangelog, bool isTheItemWithItsChangelog)
             {
                 if (path.EndsWith(JiraWireFormat.ServerInfoEndpoint, StringComparison.Ordinal))
                 {
@@ -175,7 +176,7 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
 
                 if (isTheItemsChangelog)
                 {
-                    return ACloudChangelogPage();
+                    return ACloudChangelogPage(query);
                 }
 
                 if (isTheItemWithItsChangelog)
@@ -205,9 +206,20 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
                     + ",\"histories\":[" + string.Join(",", entries) + "]}}";
             }
 
-            private string ACloudChangelogPage()
-                => "{\"values\":[" + string.Join(",", item.WholeHistory.TakeLast(entriesInTheRereadHistory))
-                    + "],\"total\":" + item.WholeHistory.Count + ",\"isLast\":true}";
+            /// <summary>
+            /// The first page holds the entries asked for and says it is the last only when they are all of
+            /// them; any page after it is empty and last, so a read that goes on asking still ends.
+            /// </summary>
+            private string ACloudChangelogPage(string query)
+            {
+                var isTheFirstPage = HttpUtility.ParseQueryString(query)["startAt"] == "0";
+                var entries = isTheFirstPage ? item.WholeHistory.TakeLast(entriesInTheRereadHistory).ToList() : [];
+                var holdsEveryEntry = entries.Count == item.WholeHistory.Count;
+
+                return "{\"startAt\":0,\"maxResults\":" + entries.Count + ",\"total\":" + item.WholeHistory.Count
+                    + ",\"isLast\":" + (holdsEveryEntry || !isTheFirstPage ? "true" : "false")
+                    + ",\"values\":[" + string.Join(",", entries) + "]}";
+            }
         }
     }
 }

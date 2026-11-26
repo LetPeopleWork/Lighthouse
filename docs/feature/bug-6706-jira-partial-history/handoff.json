@@ -49,19 +49,19 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F27",
+"still_passes_if": "F30",
 "test": "ItemWhoseWholeHistoryReadIsStillPartial_StaysMarkedAsNotHoldingItsWholeHistory",
 "test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraPartialHistoryDatingTest.cs"
 },
 "expected": "F25",
-"stimulus": "F24",
-"user_result": "F26"
+"stimulus": "F28",
+"user_result": "F29"
 }
 ]
 },
 "counters": {
 "E": 2,
-"F": 27,
+"F": 30,
 "P": 1,
 "S": 1
 },
@@ -135,11 +135,11 @@
 "F21": "The item is marked as holding its whole history",
 "F22": "The item's stored transitions are replaced by the complete history",
 "F23": "A connector that dates the item correctly but leaves it marked as partial",
-"F24": "The whole-history read of an item still holds fewer entries than Jira counts (Data Center and Cloud)",
 "F25": "The item stays marked as not holding its whole history",
-"F26": "A history that is still partial never replaces the stored transitions",
-"F27": "A connector that marks every re-read item as holding its whole history; already satisfied today and preserved",
+"F28": "The whole-history read of an item still holds fewer entries than Jira counts; on Cloud the page says more follow, on Data Center the issue's changelog total exceeds the entries it holds",
+"F29": "The item is reported as holding only part of its history, so a stored history is not replaced by it",
 "F3": "A Jira item whose search answer holds only part of its history is dated from its whole history, on Data Center and on Cloud",
+"F30": "A connector that marks every re-read item as holding its whole history; already satisfied today and preserved. Which entries the item exposes is not pinned: replacing the stored history is decided downstream from the marker",
 "F4": "A Jira item whose search answer holds fewer changelog entries than its changelog total gets its start and closed dates from its whole history, on Data Center and on Cloud",
 "F5": "The connector reads a team's items; Jira's search answer for an item in a Doing state holds only its latest history entries (a move within Doing), with changelog.total larger than the entries returned, and the item's full history (which holds the earlier move into Doing) is available from the deployment's own whole-history route: rest/api/2/issue/<KEY>?expand=changelog on Data Center, the paged issue changelog route on Cloud",
 "F6": "The item's start date is the date it first entered Doing in its whole history (16 May 2025 in the reported case), not empty; a finished item's start date likewise comes from its whole history rather than its closed date; when the whole-history read is itself still partial, the item stays marked as not holding its whole history",
