@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.API.DTO
             Type = workItem.Type;
             State = stateAsOf?.State ?? workItem.State;
             StateCategory = stateAsOf?.StateCategory ?? workItem.StateCategory;
-            StartedDate = workItem.StartedDate;
+            StartedDate = StateCategory == StateCategories.Doing ? workItem.StartedDate ?? workItem.CreatedDate : workItem.StartedDate;
             ClosedDate = workItem.ClosedDate;
             CycleTime = workItem.CycleTime(clock.Zone);
             NamedCycleTimes = namedCycleTimes;
