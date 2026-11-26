@@ -106,6 +106,22 @@ namespace Lighthouse.Backend.Models
             return 0;
         }
 
+        /// <summary>
+        /// The instant an item is aged from: its start date, or its created date when it has none.
+        /// </summary>
+        private DateTime? AgingStart => StartedDate ?? CreatedDate;
+
+        /// <summary>
+        /// The start date to report for an item in the given state category. An item in progress
+        /// is aged from <see cref="AgingStart"/>; any other item reports only its own start date.
+        /// The category is a parameter because a historical view may place the item in a state
+        /// other than its current one.
+        /// </summary>
+        public DateTime? StartedDateFor(StateCategories stateCategory)
+        {
+            return stateCategory == StateCategories.Doing ? AgingStart : StartedDate;
+        }
+
         /// <param name="today">
         /// Bug #5567: the instance's calendar day, supplied by the caller; <paramref name="zone"/>
         /// reduces the stored start instant to the same calendar. The inclusive +1 is unchanged.
@@ -114,7 +130,7 @@ namespace Lighthouse.Backend.Models
         {
             if (StateCategory == StateCategories.Doing)
             {
-                var startDay = InstanceDayOrNull(StartedDate ?? CreatedDate, zone);
+                var startDay = InstanceDayOrNull(AgingStart, zone);
                 if (startDay <= today)
                 {
                     return GetDateDifference(startDay.Value, today);
@@ -145,7 +161,7 @@ namespace Lighthouse.Backend.Models
         /// </remarks>
         public int AgeOnDay(TimeZoneInfo zone, DateOnly day)
         {
-            var startDay = InstanceDayOrNull(StartedDate ?? CreatedDate, zone);
+            var startDay = InstanceDayOrNull(AgingStart, zone);
             if (startDay is null || startDay > day)
             {
                 return 0;
