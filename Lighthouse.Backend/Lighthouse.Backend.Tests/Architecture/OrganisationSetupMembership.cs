@@ -169,10 +169,10 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs"),
             .. Staying(
                 "the write-back round",
-                "the write-back round stays in the loose services until its own work item reshapes it",
-                "Services/Implementation/WriteBackRound.cs",
-                "Services/Implementation/WriteBackRoundContext.cs",
-                "Services/Implementation/WriteBackCollector.cs"),
+                "the write-back round lives in Forecasting and is not part of Organisation set-up",
+                "Modules/Forecasting/Application/WriteBack/WriteBackRound.cs",
+                "Modules/Forecasting/Application/WriteBack/WriteBackRoundContext.cs",
+                "Modules/Forecasting/Application/WriteBack/WriteBackCollector.cs"),
         ];
 
         public static IReadOnlyList<string> DomainCandidates { get; } = ["WeeklyRecurrence", "RecurringBlackoutRuleExtensions"];

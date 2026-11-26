@@ -102,7 +102,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         // The list only shrinks.
         private static readonly string[] OtherOutsideTypesReachingTheApplication =
         [
+            "Lighthouse.Backend.Platform.UpdateQueue.UpdateQueueService",
+            "Lighthouse.Backend.Platform.UpdateQueue.UpdateQueueService+HeldUpdate",
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.PortfolioUpdater",
+            "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.TeamUpdater",
+            "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateServiceBase`1",
         ];
 
         // The edges from Forecasting's Application into EF Core, the data layer, the API, its own Adapters or the licence.
@@ -110,6 +114,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string[] EdgesOfTheApplicationBelowItOrIntoTheLicence =
         [
             "Lighthouse.Backend.Modules.Forecasting.Application.ForecastFilterRuleService -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackTriggerService -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService",
         ];
 
         // The edges from Forecasting's Adapters into the update code the Team and Portfolio updaters use too. It stays

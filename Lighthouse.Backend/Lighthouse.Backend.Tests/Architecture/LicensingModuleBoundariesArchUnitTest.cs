@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.Reports.Application.ReportQueries",
             "Lighthouse.Backend.Platform.UsageData.UsageDataConsentService",
             "Lighthouse.Backend.Platform.UsageData.UsageDataInstanceProperties",
-            "Lighthouse.Backend.Services.Implementation.WriteBackTriggerService",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackTriggerService",
         ];
 
         // The outside types, besides the API, that reach Licensing's Http adapters. The list only shrinks.
@@ -139,20 +139,21 @@ namespace Lighthouse.Backend.Tests.Architecture
             [Neighbour.Forecasting] =
             [
                 "Lighthouse.Backend.Modules.Forecasting.Application.ForecastFilterRuleService -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService",
+                "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackTriggerService -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService",
             ],
         };
 
         // The write-back round has no namespace of its own, so its types are named one by one.
         private static readonly string[] TheWriteBackRound =
         [
-            "Lighthouse.Backend.Services.Implementation.WriteBackCollector",
-            "Lighthouse.Backend.Services.Implementation.WriteBackRound",
-            "Lighthouse.Backend.Services.Implementation.WriteBackRoundContext",
-            "Lighthouse.Backend.Services.Implementation.WriteBackService",
-            "Lighthouse.Backend.Services.Implementation.WriteBackTriggerService",
-            "Lighthouse.Backend.Services.Interfaces.IWriteBackCollector",
-            "Lighthouse.Backend.Services.Interfaces.IWriteBackService",
-            "Lighthouse.Backend.Services.Interfaces.IWriteBackTriggerService",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackCollector",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackRound",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackRoundContext",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackService",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackTriggerService",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.IWriteBackCollector",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.IWriteBackService",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.IWriteBackTriggerService",
         ];
 
         private static readonly string TheLayersBelowTheApplicationAndThePlatform =

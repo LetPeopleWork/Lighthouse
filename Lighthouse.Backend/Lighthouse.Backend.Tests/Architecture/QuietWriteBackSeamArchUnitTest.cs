@@ -2,6 +2,7 @@ using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Services.Implementation;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
+using Lighthouse.Backend.Modules.Forecasting.Application.WriteBack;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -16,8 +17,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void WriteBackTriggerService_DoesNotDependOnTheWriteBackService()
         {
-            Classes().That().HaveFullName("Lighthouse.Backend.Services.Implementation.WriteBackTriggerService")
-                .Should().NotDependOnAny(Types().That().HaveFullName("Lighthouse.Backend.Services.Interfaces.IWriteBackService"))
+            Classes().That().HaveFullName("Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackTriggerService")
+                .Should().NotDependOnAny(Types().That().HaveFullName("Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.IWriteBackService"))
                 .Because(
                     "ADR-144 D1: the trigger service is a resolver. It returns a plan and performs no I/O, so " +
                     "'did this write?' is answerable from the signature rather than by reading the body.")

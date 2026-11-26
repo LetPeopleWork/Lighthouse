@@ -105,7 +105,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.PortfolioUpdater",
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.TeamUpdater",
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateServiceBase`1",
-            "Lighthouse.Backend.Services.Implementation.WriteBackService",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackService",
         ];
 
         // The outside types, besides the composition root, that reach Tracker integration's Adapters. The list only shrinks.

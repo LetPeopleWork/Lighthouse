@@ -2,6 +2,7 @@ using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Services.Implementation;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Lighthouse.Backend.Modules.Forecasting.Application.WriteBack;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {

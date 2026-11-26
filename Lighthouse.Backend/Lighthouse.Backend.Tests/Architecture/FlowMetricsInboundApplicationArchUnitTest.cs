@@ -56,7 +56,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService",
             "Lighthouse.Backend.Platform.DatabaseManagement.DatabaseMaintenanceGate",
             "Lighthouse.Backend.Services.Implementation.FeatureListActiveWork",
-            "Lighthouse.Backend.Services.Implementation.WriteBackTriggerService",
         ];
 
         // A legal caller by namespace, the composition root with a hand-written nested type, a listed caller, and an

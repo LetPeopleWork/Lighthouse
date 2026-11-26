@@ -153,14 +153,14 @@ namespace Lighthouse.Backend.Tests.Architecture
         // The write-back round has no namespace of its own, so its types are named one by one.
         private static readonly string[] TheWriteBackRound =
         [
-            "Lighthouse.Backend.Services.Implementation.WriteBackCollector",
-            "Lighthouse.Backend.Services.Implementation.WriteBackRound",
-            "Lighthouse.Backend.Services.Implementation.WriteBackRoundContext",
-            "Lighthouse.Backend.Services.Implementation.WriteBackService",
-            "Lighthouse.Backend.Services.Implementation.WriteBackTriggerService",
-            "Lighthouse.Backend.Services.Interfaces.IWriteBackCollector",
-            "Lighthouse.Backend.Services.Interfaces.IWriteBackService",
-            "Lighthouse.Backend.Services.Interfaces.IWriteBackTriggerService",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackCollector",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackRound",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackRoundContext",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackService",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackTriggerService",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.IWriteBackCollector",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.IWriteBackService",
+            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.IWriteBackTriggerService",
         ];
 
         private static readonly string TheLayersBelowTheApplicationAndThePlatform =
@@ -362,7 +362,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .SetName("AnAccessTypeReachingAnotherModule_IsNamed");
             yield return new TestCaseData(typeof(AnAccessServiceTouchingTheUpdateCode), OutboundTarget.AnotherContext, "Lighthouse.Backend.Platform.UpdateQueue.UpdateKey")
                 .SetName("AnAccessTypeReachingTheUpdateCode_IsNamed");
-            yield return new TestCaseData(typeof(AnAccessServiceRunningTheWriteBackRound), OutboundTarget.AnotherContext, "Lighthouse.Backend.Services.Interfaces.IWriteBackTriggerService")
+            yield return new TestCaseData(typeof(AnAccessServiceRunningTheWriteBackRound), OutboundTarget.AnotherContext, "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.IWriteBackTriggerService")
                 .SetName("AnAccessTypeReachingTheWriteBackRound_IsNamed");
         }
 
@@ -592,7 +592,7 @@ namespace Lighthouse.Backend.Modules.AccessFixtures.BoundariesOutbound.TouchingT
 
 namespace Lighthouse.Backend.Modules.AccessFixtures.BoundariesOutbound.RunningTheWriteBackRound.Application
 {
-    internal sealed class AnAccessServiceRunningTheWriteBackRound(global::Lighthouse.Backend.Services.Interfaces.IWriteBackTriggerService trigger)
+    internal sealed class AnAccessServiceRunningTheWriteBackRound(global::Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.IWriteBackTriggerService trigger)
     {
         public int Describe() => trigger.GetHashCode();
     }

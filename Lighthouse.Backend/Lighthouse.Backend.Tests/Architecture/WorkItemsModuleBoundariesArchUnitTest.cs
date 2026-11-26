@@ -53,9 +53,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // The types still loose in Services.Implementation and Services.Interfaces that Organisation set-up's neighbours reach or must not reach.
         // They are matched by full name, nested types included, never as a namespace, so each rule sees exactly the types it saw before the move.
-        internal const string StrayLooseImplementation = @"^Lighthouse\.Backend\.Services\.Implementation\.(EstimateNormalizationResult|EstimateNormalizationBatchResult|EstimateNormalizer|FeatureListActiveWork|FeatureListOwners|FeatureListService|FeaturePositionMap|InProgressFeatureResolution|OrphanedFeatureCleanupService|WriteBackCollector|WriteBackRoundContext|WriteBackRound|WriteBackService|WriteBackTriggerService)(\+.*)?$";
+        internal const string StrayLooseImplementation = @"^(?:Lighthouse\.Backend\.Services\.Implementation\.(EstimateNormalizationResult|EstimateNormalizationBatchResult|EstimateNormalizer|FeatureListActiveWork|FeatureListOwners|FeatureListService|FeaturePositionMap|InProgressFeatureResolution|OrphanedFeatureCleanupService)|Lighthouse\.Backend\.Modules\.Forecasting\.Application\.WriteBack\.(WriteBackCollector|WriteBackRoundContext|WriteBackRound|WriteBackService|WriteBackTriggerService))(\+.*)?$";
 
-        internal const string StrayLooseInterfaces = @"^Lighthouse\.Backend\.Services\.Interfaces\.(IFeatureListService|FeatureListRead|TeamAtWork|IFeaturePositionMap|IOrphanedFeatureCleanupService|IWriteBackCollector|IWriteBackService|IWriteBackTriggerService)(\+.*)?$";
+        internal const string StrayLooseInterfaces = @"^(?:Lighthouse\.Backend\.Services\.Interfaces\.(IFeatureListService|FeatureListRead|TeamAtWork|IFeaturePositionMap|IOrphanedFeatureCleanupService)|Lighthouse\.Backend\.Modules\.Forecasting\.Application\.WriteBack\.(IWriteBackCollector|IWriteBackService|IWriteBackTriggerService))(\+.*)?$";
 
         internal static readonly string StrayLooseServices = $"(?:{StrayLooseImplementation})|(?:{StrayLooseInterfaces})";
 
@@ -612,7 +612,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(list, Does.Not.Contain(TeamDataService), "Flow metrics' inbound list still names TeamDataService. Why it matters: Work Items now only publishes that a Team was refreshed and Flow metrics reacts, so the entry would let the old command come back unseen. How to fix: delete the entry.");
-                Assert.That(list, Has.Length.EqualTo(4), $"Flow metrics' inbound list holds [{string.Join(", ", list)}]; expected the four outside callers that still reach Flow metrics' Application. Why it matters: the list is the ratchet on who calls Flow metrics. How to fix: the both-ways rule names each entry to add or delete.");
+                Assert.That(list, Has.Length.EqualTo(3), $"Flow metrics' inbound list holds [{string.Join(", ", list)}]; expected the three outside callers that still reach Flow metrics' Application. Why it matters: the list is the ratchet on who calls Flow metrics. How to fix: the both-ways rule names each entry to add or delete.");
             }
 
             var failure = Assert.Throws<AssertionException>(() => withTeamDataServiceBack.Check(), "Putting TeamDataService back on Flow metrics' inbound list passed. Why it matters: the list must match the code both ways, and TeamDataService no longer reaches Flow metrics. How to fix: compare the list with the code both ways.");

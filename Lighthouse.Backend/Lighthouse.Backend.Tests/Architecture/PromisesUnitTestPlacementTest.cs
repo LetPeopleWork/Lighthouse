@@ -67,17 +67,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ("Services/Interfaces/Repositories/IDeliveryMetricSnapshotRepository.cs", "platform persistence"),
             ("Services/Interfaces/Repositories/RecordableDeliveries.cs", "platform persistence"),
 
-            // The write-back round writes forecast dates and Team or Portfolio fields to a tracker; Forecasting triggers it,
-            // so it cannot live in Promises, and its own placement is still to be decided.
-            ("Services/Implementation/WriteBackCollector.cs", "write-back placement"),
-            ("Services/Implementation/WriteBackRound.cs", "write-back placement"),
-            ("Services/Implementation/WriteBackRoundContext.cs", "write-back placement"),
-            ("Services/Implementation/WriteBackService.cs", "write-back placement"),
-            ("Services/Implementation/WriteBackTriggerService.cs", "write-back placement"),
-            ("Services/Interfaces/IWriteBackCollector.cs", "write-back placement"),
-            ("Services/Interfaces/IWriteBackService.cs", "write-back placement"),
-            ("Services/Interfaces/IWriteBackTriggerService.cs", "write-back placement"),
-
             // Feature order and rank are Organisation set-up's rules, not a promise; they are placed with that context.
         ];
 
