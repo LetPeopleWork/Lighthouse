@@ -1,9 +1,266 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L8",
+"L8/F350"
+],
+"still_passes_if": "F448",
+"test": "A_signed_in_writer_adds_notes_and_the_report_lists_them_newest_first_with_the_day_written_and_their_name",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+},
+"expected": "F446",
+"stimulus": "F445",
+"user_result": "F447"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L8",
+"L8/F349"
+],
+"still_passes_if": "F452",
+"test": "A_note_written_with_sign_in_off_is_listed_with_its_text_and_day_and_no_author",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+},
+"expected": "F450",
+"stimulus": "F449",
+"user_result": "F451"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F456",
+"test": "A_note_without_text_is_not_saved_and_the_notes_stay_as_they_were",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+},
+"expected": "F454",
+"stimulus": "F453",
+"user_result": "F455"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F460",
+"test": "A_note_of_more_than_2000_characters_is_not_saved_for_that_reason_while_one_of_exactly_2000_between_blanks_is",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+},
+"expected": "F458",
+"stimulus": "F457",
+"user_result": "F459"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L8",
+"L8/F351"
+],
+"still_passes_if": "F464",
+"test": "A_note_is_refused_when_sign_in_is_on_and_nobody_can_be_named_and_the_notes_stay_as_they_were",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+},
+"expected": "F462",
+"stimulus": "F461",
+"user_result": "F463"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F468",
+"test": "A_report_the_owner_does_not_hold_has_no_notes_to_add_to_or_list_and_it_is_found_missing_before_anything_else_is_judged",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+},
+"expected": "F466",
+"stimulus": "F465",
+"user_result": "F467"
+},
+{
+"covers": [
+"P11"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F249"
+],
+"still_passes_if": "F472",
+"test": "Deleting_a_report_deletes_its_notes_and_leaves_the_notes_of_other_reports",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+},
+"expected": "F470",
+"stimulus": "F469",
+"user_result": "F471"
+},
+{
+"covers": [
+"P11"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F250"
+],
+"still_passes_if": "F476",
+"test": "Deleting_reports_in_bulk_deletes_the_notes_of_each_and_leaves_the_notes_of_a_report_not_deleted",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+},
+"expected": "F474",
+"stimulus": "F473",
+"user_result": "F475"
+},
+{
+"covers": [
+"P11"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F251"
+],
+"still_passes_if": "F480",
+"test": "Deleting_the_Team_that_owns_a_report_deletes_the_report_and_its_notes_and_leaves_another_Teams_notes",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+},
+"expected": "F478",
+"stimulus": "F477",
+"user_result": "F479"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1",
+"L1/F238"
+],
+"still_passes_if": "F484",
+"test": "L1_for_any_text_a_note_keeps_it_trimmed_when_it_has_1_to_2000_characters_and_is_refused_otherwise",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+},
+"expected": "F482",
+"stimulus": "F481",
+"user_result": "F483"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2",
+"L2/F244"
+],
+"still_passes_if": "F488",
+"test": "L2_for_any_sequence_of_adds_a_report_lists_exactly_its_own_accepted_notes_newest_first",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+},
+"expected": "F486",
+"stimulus": "F485",
+"user_result": "F487"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L11",
+"L11/F370",
+"L11/F371",
+"L11/F372",
+"L11/F373",
+"L11/F374"
+],
+"still_passes_if": "F492",
+"test": "Nobody_can_be_named_when_sign_in_is_misconfigured_or_blocked",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ReportNotesControllerCallerTest.cs"
+},
+"expected": "F490",
+"stimulus": "F489",
+"user_result": "F491"
+},
+{
+"covers": [
+"P11"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L9",
+"L9/F354",
+"L9/F355"
+],
+"still_passes_if": "F496",
+"test": "Deleting_a_report_deletes_its_notes_and_leaves_the_notes_of_other_reports",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Data/ReportNotesTableConstraintsTest.cs"
+},
+"expected": "F494",
+"stimulus": "F493",
+"user_result": "F495"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F500",
+"test": "saves what the writer typed as typed, shows the new note first and empties the field",
+"test_path": "Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.add.test.tsx"
+},
+"expected": "F498",
+"stimulus": "F497",
+"user_result": "F499"
+}
+]
+},
 "counters": {
 "B": 5,
 "D": 13,
 "E": 12,
-"F": 444,
+"F": 500,
 "K": 2,
 "L": 11,
 "N": 2,
@@ -1653,13 +1910,69 @@
 "F442": "TypesThatStay gains ReportNote (Models.Reports); MovingTypes gains IReportNoteCommands, IReportNoteQueries, IReportNoteStore, ReportNoteCommands, ReportNoteQueries with layer Application and ReportNoteCaller, ReportNoteRead with layer Domain; TypesThatStay also gains ReportNoteDto and ReportNoteRequest (the API types of the notes), in the skeleton commit",
 "F443": "TypesByLayer gains the new Application types ReportNoteCaller and ReportNoteRead go under the Domain key, the other new types under the Application key.",
 "F444": "CanModify decided by the note for the caller In Modules/Reports/Domain.",
+"F445": "A signed-in writer adds two notes to a Team report and to a Portfolio report, the second written late in the evening UTC, then the notes are listed",
+"F446": "The notes are listed newest first, the text without its outer blanks, the day written on the instance calendar (the 3rd for the late evening note) and the author name Ann",
+"F447": "The writer sees both notes, newest on top, with the day and their name",
+"F448": "A list that is ascending, uses the UTC day, keeps outer blanks or drops the name",
+"F449": "A note is added with sign-in off",
 "F45": "Notes are deleted together with their report.",
+"F450": "The note is listed with its text and day and no author name",
+"F451": "The note shows with its day and without a name",
+"F452": "A note that shows a name or a default author when nobody signed",
+"F453": "A note with empty text, only blanks, tabs and line breaks, or no text at all is added next to an existing note",
+"F454": "Refused with note-text-missing and the list is unchanged",
+"F455": "The writer is told the note needs text and nothing is saved",
+"F456": "A blank note that is saved, or a refusal that also drops the existing note",
+"F457": "A note of 2001 characters is added after one of exactly 2000 characters between blanks",
+"F458": "2000 kept, 2001 refused with note-text-too-long, list holds the one note",
+"F459": "The writer is told the note is too long and it is not saved",
 "F46": "Notes in print and PDF (maintainer, 2026-11-26: out for now). A reader of only the PDF sees no context.",
+"F460": "A bound counted before trimming, or a too-long refusal reported as missing text",
+"F461": "A note is added while sign-in is on and nobody can be named, then another with blank text in the same state",
+"F462": "Refused with note-author-unknown (judged before the text) and nothing is stored",
+"F463": "The writer cannot add a note that nobody can be named for",
+"F464": "A note stored unsigned while sign-in is on",
+"F465": "A note is added or listed through an owner that does not hold the report, even with an unknown caller and blank text",
+"F466": "NotFound for both and nothing stored on the real report",
+"F467": "A report that is not the owner's has no notes to add to or read",
+"F468": "A note landing on another owner's report, or a refusal reason instead of not found",
+"F469": "A report with two notes is deleted while another report keeps a note",
 "F47": "A separate event date on a note, or two kinds of note (maintainer, 2026-11-26: the day it was written is enough).",
+"F470": "Its notes cannot be read or added to; the other report keeps its note",
+"F471": "The notes of a deleted report are gone with it",
+"F472": "Notes that stay readable after the report is deleted",
+"F473": "Two reports with notes are removed together, a third keeps its note",
+"F474": "Both are removed and unreadable; the third lists its note",
+"F475": "Bulk removal removes the notes of every selected report",
+"F476": "A bulk removal that leaves the notes of the second report",
+"F477": "The Team owning a report with notes is deleted",
+"F478": "The report and its notes cannot be read; another Team keeps its notes",
+"F479": "Deleting a Team removes its reports notes",
 "F48": "A structured Team size value; how large the Team is goes in as note text.",
+"F480": "Notes left behind by an owner deletion",
+"F481": "Generated texts of 0 to 2200 characters with outer blanks, interior line breaks, and the boundary lengths are written as notes",
+"F482": "A note keeps the text without outer blanks when it has 1 to 2000 characters, else is refused with missing or too-long",
+"F483": "A note is kept trimmed or refused for its reason",
+"F484": "A bound applied before trimming or blanks kept",
+"F485": "Up to 12 adds per run, 100 runs, across two owners and two reports with tied instants and blank and foreign adds",
+"F486": "Each report lists exactly its own accepted notes ordered by instant then order of adding, newest first",
+"F487": "Each report shows only its own notes, newest first",
+"F488": "Ascending order, a tie ordered oldest first, or another report note listed",
+"F489": "The authentication mode and profile presence of every combination are mapped to a note caller",
 "F49": "Notes in the Lighthouse CLI and MCP report reads (maintainer, 2026-11-26: not now).",
+"F490": "Disabled is anonymous even with a profile; Enabled with a profile is signed with its id and name; Enabled without, Misconfigured and Blocked are unresolved",
+"F491": "A note is signed only when sign-in is on and the writer is known",
+"F492": "A disabled mode that signs with the profile, or a blocked mode that stays anonymous",
+"F493": "Notes rows are written in the real migrated schema: the table is read, a report is deleted, an author removed, 2001 characters inserted on PostgreSQL",
+"F494": "The table has the declared columns; deleting a report deletes its notes; removing the author clears only the link; 2000 characters kept and 2001 refused",
+"F495": "Notes live in their own table and go with their report",
+"F496": "A note table without a cascade, or without a bound on the text",
+"F497": "A writer opens the notes of a report: list, add, blank and too long refused, loading and failure look, and the notes above the numbers of the live report",
+"F498": "Notes newest first with day and author, added note on top and the field emptied, refusal copy shown, loading and failure look pinned, numbers still shown",
+"F499": "A writer reads and adds notes next to the numbers and is told what is wrong",
 "F5": "authentication is on, and a user has write access on the Team or Portfolio that owns a report",
 "F50": "Notes drawn as marks on the report charts.",
+"F500": "A trimmed text sent, a note below the numbers, or an empty area on failure",
 "F51": "Notes written by the system.",
 "F52": "The day a note was written is enough; there is one kind of note, with no separate event date (maintainer, 2026-11-26).",
 "F53": "Write access on the Team or Portfolio that owns the report is enough to add a note (maintainer, 2026-11-26).",

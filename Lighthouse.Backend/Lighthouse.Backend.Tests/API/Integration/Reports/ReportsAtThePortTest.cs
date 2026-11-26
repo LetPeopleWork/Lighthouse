@@ -1,3 +1,4 @@
+using Lighthouse.Backend.API.DTO.Reports;
 using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
@@ -9,6 +10,7 @@ using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Modules.Reports.Application.Metrics;
 using Lighthouse.Backend.Modules.Reports.Application;
+using Lighthouse.Backend.Modules.Reports.Domain;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Licensing.Application;
@@ -187,6 +189,74 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             return await scope.ServiceProvider.GetRequiredService<IReportCommands>().Create(owner, request);
         }
 
+        /// <summary>A report is made for the owner, as the route that creates one asks, and its id is returned.</summary>
+        protected async Task<int> AReportOf(ReportOwner owner)
+        {
+            var created = await CreateAReport(owner, new NewReport(
+                "then-and-now", "Started against finished", ["arrivals"], new NewThenAndNow(new DateOnly(2026, 7, 31), 30, 30)));
+            Assert.That(created.Status, Is.EqualTo(ReportOutcomeStatus.Done), $"the report was not created: {created.Code}");
+            return created.Value!.Id;
+        }
+
+        /// <summary>A note is added as the route that adds one asks, and the outcome is returned as it is: the note, no such report, or a refusal.</summary>
+        protected async Task<ReportOutcome<ReportNoteRead>> AddANote(ReportOwner owner, int reportId, ReportNoteCaller caller, string? text, DateTime writtenAt)
+        {
+            using var scope = harness.NewScope();
+            return await scope.ServiceProvider.GetRequiredService<IReportNoteCommands>().Add(owner, reportId, caller, text, writtenAt);
+        }
+
+        /// <summary>The notes of a report as the live report lists them, or the outcome that says why it cannot.</summary>
+        protected ReportOutcome<IReadOnlyList<ReportNoteRead>> ReadTheNotes(ReportOwner owner, int reportId)
+        {
+            using var scope = harness.NewScope();
+            return scope.ServiceProvider.GetRequiredService<IReportNoteQueries>().List(owner, reportId);
+        }
+
+        /// <summary>One note as a reader sees it: the text, the instance's day it was written and edited, and who wrote it.</summary>
+        protected sealed record ShownNote(string Text, DateOnly WrittenOn, DateOnly? EditedOn, string? Author);
+
+        /// <summary>The notes a report lists, as a reader sees them, newest first; the days are worked out as the notes route works them out.</summary>
+        protected IReadOnlyList<ShownNote> TheNotesListed(ReportOwner owner, int reportId)
+        {
+            var read = ReadTheNotes(owner, reportId);
+            Assert.That(read.Status, Is.EqualTo(ReportOutcomeStatus.Done), $"the notes could not be read: {read.Status} {read.Code}");
+            using var scope = harness.NewScope();
+            var clock = scope.ServiceProvider.GetRequiredService<ILighthouseClock>();
+            return [.. read.Value!.Select(note =>
+            {
+                var shown = ReportNoteDto.From(note, clock);
+                return new ShownNote(note.Text, shown.CreatedOn, shown.LastEditedOn, note.AuthorDisplayName);
+            })];
+        }
+
+        /// <summary>The report is deleted as the route that deletes one asks.</summary>
+        protected async Task<ReportOutcomeStatus> DeleteTheReport(ReportOwner owner, int reportId)
+        {
+            using var scope = harness.NewScope();
+            return await scope.ServiceProvider.GetRequiredService<IReportCommands>().Delete(owner, reportId);
+        }
+
+        /// <summary>The reports are deleted together, as the bulk removal asks, by somebody who may change every owner's reports.</summary>
+        protected async Task<IReadOnlyList<ReportRemovalOutcome>> RemoveTheReportsTogether(params int[] reportIds)
+        {
+            using var scope = harness.NewScope();
+            return await scope.ServiceProvider.GetRequiredService<IReportBulkRemover>().RemoveEach(reportIds, new EveryOwnerMayBeChanged());
+        }
+
+        /// <summary>The Team is deleted, as the Teams page deletes one.</summary>
+        protected void DeleteTheTeam(ReportOwner team)
+        {
+            using var scope = harness.NewScope();
+            var teams = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
+            teams.Remove(team.Id);
+            teams.Save().GetAwaiter().GetResult();
+        }
+
+        private sealed class EveryOwnerMayBeChanged : IReportOwnerWriteAccess
+        {
+            public Task<bool> MayWriteAsync(ReportOwner owner) => Task.FromResult(true);
+        }
+
         /// <summary>What every scenario of this base adds to the harness, read without building or resolving any of it.</summary>
         internal static IServiceCollection WhatItRegisters
         {
@@ -250,6 +320,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             services.AddScoped<IReportCommands, ReportCommands>();
             services.AddScoped<IReportBulkCommands, ReportBulkCommands>();
             services.AddScoped<IReportBulkRemover, ReportBulkRemover>();
+            services.AddScoped<IReportNoteStore>(provider => provider.GetRequiredService<ReportRepository>() as IReportNoteStore
+                ?? throw new InvalidOperationException("ReportRepository holds no report notes yet: it must implement IReportNoteStore."));
+            services.AddScoped<IReportNoteQueries, ReportNoteQueries>();
+            services.AddScoped<IReportNoteCommands, ReportNoteCommands>();
         }
 
         /// <summary>The metrics of a Team and of a Portfolio both read how often their numbers refresh when they are built.</summary>
