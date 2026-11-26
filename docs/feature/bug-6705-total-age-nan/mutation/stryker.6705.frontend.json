@@ -1,0 +1,21 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "configFile": "vitest.stryker.mutation.ts" },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "perTest",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["/dist", "/coverage", "/playwright-report", "/reports"],
+  "mutate": [
+    "src/components/Common/Charts/totalAgeOfStartedItems.ts:6-16",
+    "src/components/Common/Charts/TotalWorkItemAgeRunChart.tsx:50-65"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "jsonReporter": { "fileName": "reports/mutation/stryker-6705-frontend.json" },
+  "incrementalFile": "reports/mutation/stryker-incremental-6705.json",
+  "tempDirName": ".stryker-tmp-6705"
+}
