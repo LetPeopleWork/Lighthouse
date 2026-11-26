@@ -419,7 +419,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static OutboundVerdict ModuleIntoAnotherContextRule(ModuleDefinition module, string moduleNamespaces, IReadOnlyCollection<string> listed)
             => new(
                 IlDependencies.TypesIn(module, moduleNamespaces),
-                [.. IlDependencies.DependentsIn(module, moduleNamespaces, IsAnotherContext)
+                [.. IlDependencies.DependentsIn(module, moduleNamespaces, type => IsAnotherContext(type, ModuleRules.TheWriteBackRound))
                     .SelectMany(dependent => dependent.Targets.Select(reached => $"{dependent.TypeName} -> {reached}"))],
                 listed,
                 $"Types in namespaces matching \"{moduleNamespaces}\" should not depend on another context (Work Items, Forecasting, Flow metrics, " +
@@ -429,8 +429,9 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "needs as a value, or let the other context react to a domain event.",
                 moduleNamespaces);
 
-        private static bool IsAnotherContext(TypeReference type)
+        private static bool IsAnotherContext(TypeReference type, string roundPattern)
             => ModuleBoundaryChecks.IsATypeIn(type, TheOtherContexts)
+                || ModuleRules.IsARoundType(type, roundPattern)
                 || (type.DeclaringType is null && TheWriteBackRound.Contains(type.FullName, StringComparer.Ordinal));
 
         private static bool IsMatch(string typeName, string pattern) => Regex.IsMatch(typeName, pattern, RegexOptions.None, PatternTimeout);

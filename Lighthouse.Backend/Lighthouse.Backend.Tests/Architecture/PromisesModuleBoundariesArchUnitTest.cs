@@ -486,7 +486,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static OutboundVerdict ModuleUpstreamRule(ModuleDefinition module, string moduleNamespaces, IReadOnlyCollection<string> listed)
             => new(
                 IlDependencies.TypesIn(module, moduleNamespaces),
-                [.. IlDependencies.DependentsIn(module, moduleNamespaces, IsUpstreamCode)
+                [.. IlDependencies.DependentsIn(module, moduleNamespaces, type => IsUpstreamCode(type, ModuleRules.TheWriteBackRound))
                     .SelectMany(dependent => dependent.Targets.Select(reached => $"{dependent.TypeName} -> {reached}"))],
                 listed,
                 $"Types in namespaces matching \"{moduleNamespaces}\" should not depend on another module's adapters, the update code, the " +
@@ -496,8 +496,9 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "dependency around. Let the owning module do it and react to the domain event it publishes.",
                 moduleNamespaces);
 
-        private static bool IsUpstreamCode(TypeReference type)
+        private static bool IsUpstreamCode(TypeReference type, string roundPattern)
             => IsATypeIn(type, TheNamespacedUpstreamCode)
+                || ModuleRules.IsARoundType(type, roundPattern)
                 || (type.DeclaringType is null && TheWriteBackRound.Contains(type.FullName, StringComparer.Ordinal));
 
         // A generic parameter takes the namespace of the type that declares it; it is a placeholder, not a dependency.

@@ -409,7 +409,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static OutboundVerdict ModuleIntoAccessOrAnotherContextRule(ModuleDefinition module, string moduleNamespaces, IReadOnlyCollection<string> listed)
             => new(
                 IlDependencies.TypesIn(module, moduleNamespaces),
-                [.. IlDependencies.DependentsIn(module, moduleNamespaces, IsAccessOrAnotherContext)
+                [.. IlDependencies.DependentsIn(module, moduleNamespaces, type => IsAccessOrAnotherContext(type, ModuleRules.TheWriteBackRound))
                     .SelectMany(dependent => dependent.Targets.Select(reached => $"{dependent.TypeName} -> {reached}"))],
                 listed,
                 $"Types in namespaces matching \"{moduleNamespaces}\" should not depend on Access or on another context (Work Items, Forecasting, " +
@@ -419,8 +419,9 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "asks for it. Hand Licensing what it needs as a value, or let the other context react to a domain event.",
                 moduleNamespaces);
 
-        private static bool IsAccessOrAnotherContext(TypeReference type)
+        private static bool IsAccessOrAnotherContext(TypeReference type, string roundPattern)
             => ModuleBoundaryChecks.IsATypeIn(type, AccessAndTheOtherContexts)
+                || ModuleRules.IsARoundType(type, roundPattern)
                 || (type.DeclaringType is null && TheWriteBackRound.Contains(type.FullName, StringComparer.Ordinal));
 
         private static string[] TheEdgeListOf(Neighbour neighbour)

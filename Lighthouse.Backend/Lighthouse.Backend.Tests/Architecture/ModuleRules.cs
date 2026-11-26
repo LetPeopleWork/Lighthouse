@@ -36,7 +36,23 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public const string AnyNamespace = "^";
 
+        // The write-back round shares the loose Services namespaces with types that stay there, so until it has moved its old
+        // places are named type by type; its new place is a namespace of its own.
+        public const string TheWriteBackRound = @"^Lighthouse\.Backend\.Services\.Implementation\.(WriteBackCollector|WriteBackRound|WriteBackRoundContext|WriteBackService|WriteBackTriggerService)$|^Lighthouse\.Backend\.Services\.Interfaces\.(IWriteBackCollector|IWriteBackService|IWriteBackTriggerService)$|^Lighthouse\.Backend\.Modules\.Forecasting\.Application\.WriteBack\.";
+
         private static readonly TimeSpan PatternTimeout = TimeSpan.FromSeconds(1);
+
+        /// <summary>Whether the type, or the top-level type it is nested in, is a type of the round the pattern names by full name.</summary>
+        public static bool IsARoundType(TypeReference type, string roundPattern)
+        {
+            var topLevel = type;
+            while (topLevel.DeclaringType is not null)
+            {
+                topLevel = topLevel.DeclaringType;
+            }
+
+            return type is not GenericParameter && Regex.IsMatch(topLevel.FullName, roundPattern, RegexOptions.None, PatternTimeout);
+        }
 
         /// <summary>
         /// The types outside the module that reach its Domain are exactly the listed ones: a new one fails and is
