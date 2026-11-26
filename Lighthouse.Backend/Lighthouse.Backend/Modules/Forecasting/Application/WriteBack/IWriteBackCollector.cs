@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
 
-namespace Lighthouse.Backend.Services.Interfaces
+namespace Lighthouse.Backend.Modules.Forecasting.Application.WriteBack
 {
     /// <summary>
     /// Staging seam for write-back intents. Scoped: exactly one instance per update execution, and every

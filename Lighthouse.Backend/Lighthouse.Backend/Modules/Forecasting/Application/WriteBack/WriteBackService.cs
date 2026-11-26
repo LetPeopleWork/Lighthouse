@@ -6,7 +6,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Modules.Forecasting.Application.WriteBack
 {
     public class WriteBackService(
         IWorkTrackingConnectorFactory connectorFactory,

@@ -2,7 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Platform.UpdateQueue;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Modules.Forecasting.Application.WriteBack
 {
     /// <summary>
     /// Everything one refresh round has resolved to write back and to report, and how much of that round

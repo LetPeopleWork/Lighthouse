@@ -4,8 +4,9 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Lighthouse.Backend.Modules.Forecasting.Application.WriteBack;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application.WriteBack
 {
     /// <summary>
     /// DISTILL specifications for the staging seam itself (Epic 5500 slice 01, ADR-144 D-A7). These say

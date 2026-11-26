@@ -2,8 +2,9 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Modules.Forecasting.Application.WriteBack;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application.WriteBack
 {
     /// <summary>
     /// A refresh and the forecast it triggers are one round, so the operator reads one line about them:

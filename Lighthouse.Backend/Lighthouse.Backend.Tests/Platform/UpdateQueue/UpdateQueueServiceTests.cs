@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Lighthouse.Backend.Modules.Forecasting.Application.WriteBack;
 
 namespace Lighthouse.Backend.Tests.Platform.UpdateQueue
 {

@@ -2,7 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.WriteBack;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application.WriteBack
 {
     /// <summary>
     /// A percentile beyond the simulated horizon has no date anybody forecast, so write-back sends the

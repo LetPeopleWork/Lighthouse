@@ -25,6 +25,7 @@ using Serilog.Extensions.Logging;
 using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.Forecasting.Application.WriteBack;
 
 namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 {

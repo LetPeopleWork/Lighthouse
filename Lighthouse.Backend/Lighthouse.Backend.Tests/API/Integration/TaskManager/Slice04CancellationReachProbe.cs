@@ -7,6 +7,7 @@ using Moq;
 using NUnit.Framework;
 using System.Diagnostics;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.Forecasting.Application.WriteBack;
 
 namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 {

@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
 
-namespace Lighthouse.Backend.Services.Interfaces
+namespace Lighthouse.Backend.Modules.Forecasting.Application.WriteBack
 {
     public interface IWriteBackService
     {

@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
 
-namespace Lighthouse.Backend.Services.Interfaces
+namespace Lighthouse.Backend.Modules.Forecasting.Application.WriteBack
 {
     /// <summary>
     /// Resolves write-back intents from mappings and entities. A resolver, not a writer: it returns a

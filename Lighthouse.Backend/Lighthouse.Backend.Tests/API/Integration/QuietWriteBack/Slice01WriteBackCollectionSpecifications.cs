@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.Forecasting.Application.WriteBack;
 
 namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
 {

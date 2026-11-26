@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Modules.Forecasting.Application.WriteBack
 {
     /// <summary>
     /// The refresh round the code running right now belongs to, readable from anywhere inside an update

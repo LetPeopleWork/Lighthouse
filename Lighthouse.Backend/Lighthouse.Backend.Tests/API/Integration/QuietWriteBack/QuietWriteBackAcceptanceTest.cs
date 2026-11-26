@@ -196,7 +196,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
         /// <summary>
         /// A connection carrying the two mappings a Portfolio refresh resolves in its two separate
         /// passes: one non-forecast (the Features pass) and one forecast (the forecast pass). They target
-        /// different fields because <see cref="Lighthouse.Backend.Services.Implementation.WriteBackTriggerService"/>
+        /// different fields because <see cref="Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackTriggerService"/>
         /// filters the two passes on disjoint value sources - one mapping cannot be resolved by both.
         /// </summary>
         protected (int ConnectionId, int SizeFieldId, int ForecastFieldId) SeedPortfolioConnection(WorkTrackingSystems system = WorkTrackingSystems.Jira)

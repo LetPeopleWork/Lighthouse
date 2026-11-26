@@ -3,7 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.WriteBack;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application.WriteBack
 {
     /// <summary>
     /// Writing back when work on a Feature is expected to begin, so a roadmap bar gets both of its ends

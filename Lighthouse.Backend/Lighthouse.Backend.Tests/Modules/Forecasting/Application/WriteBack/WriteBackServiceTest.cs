@@ -6,8 +6,9 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.Forecasting.Application.WriteBack;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application.WriteBack
 {
     public class WriteBackServiceTest
     {
