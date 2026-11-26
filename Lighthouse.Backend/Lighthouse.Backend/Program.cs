@@ -1,5 +1,10 @@
 ﻿using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Modules.Access.Adapters.Http;
+using Lighthouse.Backend.Modules.Access;
+using Lighthouse.Backend.Modules.FlowMetrics;
+using Lighthouse.Backend.Modules.Forecasting;
+using Lighthouse.Backend.Modules.Licensing;
+using Lighthouse.Backend.Modules.Promises;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Background;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth;
@@ -12,7 +17,6 @@ using Lighthouse.Backend.Health;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.ConnectionHealth;
 using Lighthouse.Backend.Models.Encryption;
-using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.OptionalFeatures;
@@ -24,10 +28,8 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
-using Lighthouse.Backend.Modules.Forecasting.Adapters.Background;
 using Lighthouse.Backend.Modules.Forecasting.Application.Policies;
 using Lighthouse.Backend.Modules.Forecasting.Application;
-using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Modules.Reports.Domain;
 using Lighthouse.Backend.Modules.Reports.Application;
@@ -72,11 +74,8 @@ using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Standalone;
 using Lighthouse.Backend.API.Swagger;
 using Lighthouse.Backend.API.Filters;
-using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background;
-using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Modules.FlowMetrics.Application.Policies;
-using Lighthouse.Backend.Modules.Forecasting.Domain;
 using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
@@ -86,7 +85,6 @@ using Lighthouse.Backend.Modules.Promises.Application.Policies;
 using Lighthouse.Backend.Platform.Host;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections;
-using Lighthouse.Backend.Modules.Forecasting.Application.WriteBack;
 
 namespace Lighthouse.Backend
 {
@@ -286,7 +284,6 @@ namespace Lighthouse.Backend
         }
 
         private const string RedisIdentifier = "Redis";
-
 
         private static void ConfigureServices(WebApplicationBuilder builder, KeyStoreLocation keyStore)
         {
@@ -1365,11 +1362,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IFeatureStateTransitionRepository, FeatureStateTransitionRepository>();
             builder.Services.AddScoped<IWorkItemBlockedTransitionRepository, WorkItemBlockedTransitionRepository>();
             builder.Services.AddScoped<IFeatureBlockedTransitionRepository, FeatureBlockedTransitionRepository>();
-            builder.Services.AddScoped<IBlockedCountSnapshotRepository, BlockedCountSnapshotRepository>();
-            builder.Services.AddScoped<IPercentilesOverTimeSnapshotRepository, PercentilesOverTimeSnapshotRepository>();
-            builder.Services.AddScoped<IPercentileSnapshotWriter, PercentileSnapshotWriter>();
-            builder.Services.AddScoped<IProcessBehaviorSnapshotRepository, ProcessBehaviorSnapshotRepository>();
-            builder.Services.AddScoped<IProcessBehaviorSnapshotWriter, ProcessBehaviorSnapshotWriter>();
+            builder.Services.AddFlowMetrics();
             builder.Services.AddScoped<IRepository<WorkTrackingSystemConnection>, WorkTrackingSystemConnectionRepository>();
             builder.Services.AddScoped<IRepository<AppSetting>, AppSettingRepository>();
             builder.Services.AddScoped<IRepository<OptionalFeature>, OptionalFeatureRepository>();
@@ -1394,31 +1387,13 @@ namespace Lighthouse.Backend
 
             // Services
             builder.Services.AddScoped<IConfigFileUpdater, ConfigFileUpdater>();
-            builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
-            builder.Services.AddScoped<IEmbedSessionTokenService, EmbedSessionTokenService>();
+            builder.Services.AddAccess();
             builder.Services.AddScoped<IFileSystemService, FileSystemService>();
             builder.Services.AddScoped<IWorkTrackingSystemConnectionUsage, WorkTrackingSystemConnectionUsage>();
             builder.Services.AddScoped<IAppSettingService, AppSettingService>();
             builder.Services.AddScoped<ILighthouseReleaseService, LighthouseReleaseService>();
             builder.Services.AddScoped<IAssemblyService, AssemblyService>();
             builder.Services.AddSingleton<Lighthouse.Backend.Cache.Cache<string, object>>();
-            builder.Services.AddSingleton(ICycleTimeOutlierDefinition.Default);
-            builder.Services.AddScoped<ITeamMetricsService, TeamMetricsService>();
-            builder.Services.AddScoped<IPortfolioMetricsService, PortfolioMetricsService>();
-            // The shipped read is registered as itself and wrapped: the interface resolves to the
-            // wrapper, so opening a chart both answers from what is stored and mentions which days of
-            // the window were missing. Both controllers keep asking for the interface and are unaware.
-            builder.Services.AddScoped<PercentilesOverTimeSeriesQuery>();
-            builder.Services.AddScoped<IOverTimeGapReconciler, OverTimeGapReconciler>();
-            builder.Services.AddScoped<IPercentilesOverTimeSeriesQuery, GapAskingPercentilesOverTimeSeriesQuery>();
-
-            // Registered as itself as well as as the background job, because emptying the queue is
-            // something a caller can ask for at a moment of its choosing - which is the only way a
-            // test can observe this at all, since a test host runs no background work.
-            builder.Services.AddSingleton<OverTimeHistoryFiller>();
-            builder.Services.AddSingleton<IOverTimeHistoryFiller>(services => services.GetRequiredService<OverTimeHistoryFiller>());
-            builder.Services.AddSingleton<IOverTimeHistoryFillActivity>(services => services.GetRequiredService<OverTimeHistoryFiller>());
-            builder.Services.AddHostedService(services => services.GetRequiredService<OverTimeHistoryFiller>());
 
             // Outlives any one pass, so it is a singleton, and it forgets an owner the moment that
             // owner's items change - which is why it also stands as a handler for the two refresh
@@ -1428,10 +1403,6 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>>(services => services.GetRequiredService<ReconstructionMemo>());
             builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>>(services => services.GetRequiredService<ReconstructionMemo>());
 
-            builder.Services.AddScoped<ProcessBehaviorSeriesQuery>();
-            builder.Services.AddScoped<IProcessBehaviorSeriesQuery, GapAskingProcessBehaviorSeriesQuery>();
-            builder.Services.AddScoped<IForecastService, ForecastService>();
-            builder.Services.AddScoped<IForecastRealityCheckService, ForecastRealityCheckService>();
             builder.Services.AddScoped<Lighthouse.Backend.Modules.Refinement.Application.RefinementList>();
             builder.Services.AddScoped<Lighthouse.Backend.Modules.Refinement.Application.SleYardstickResolver>();
             builder.Services.AddScoped<Lighthouse.Backend.Modules.Refinement.Application.VoterIdentityResolver>();
@@ -1454,7 +1425,6 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures.IOptionalFeatureApplier, Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures.FeatureOrderingApplier>();
             builder.Services.AddScoped<Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures.OptionalFeatureApplierRegistry>();
             builder.Services.AddScoped<IFeatureRankingService, FeatureRankingService>();
-            builder.Services.AddScoped<IFeatureMoveAuthorization, FeatureMoveAuthorization>();
             builder.Services.AddScoped<FeatureDependencyRendering>();
             builder.Services.AddScoped<Lighthouse.Backend.API.FeatureListRows>();
             builder.Services.AddScoped<FeatureListActiveWork>();
@@ -1465,33 +1435,19 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ITerminologyService, TerminologyService>();
             builder.Services.AddScoped<IBlackoutPeriodService, BlackoutPeriodService>();
             builder.Services.AddScoped<IRecurringBlackoutRuleService, RecurringBlackoutRuleService>();
-            builder.Services.AddScoped<ILicenseService, LicenseService>();
+            builder.Services.AddLicensing();
             builder.Services.AddScoped<IRefreshLogService, RefreshLogService>();
             builder.Services.AddScoped<IConnectionSaveService, Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections.ConnectionSaveService>();
             builder.Services.AddScoped<Lighthouse.Backend.API.Helpers.OwnerSettingRefusals>();
-            builder.Services.AddScoped<ILicenseVerifier, LicenseVerifier>();
             builder.Services.AddScoped<IDemoDataService, DemoDataService>();
-            builder.Services.AddScoped<IDeliveryRuleService, DeliveryRuleService>();
-            builder.Services.AddScoped<IDeliverySourceResolver, DeliverySourceResolver>();
-            builder.Services.AddScoped<IDeliverySourceSyncService, DeliverySourceSyncService>();
-            builder.Services.AddScoped<IDeliveryForecastBlockRenderer, DeliveryForecastBlockRenderer>();
+            builder.Services.AddPromises();
             builder.Services.AddScoped<IDescriptionBlockMerger, DeliveryForecastBlockRenderer>();
-            builder.Services.AddScoped<IDeliveryForecastPublishingService, DeliveryForecastPublishingService>();
             builder.Services.AddScoped<IRuleEvaluator<WorkItem>, RuleEvaluator<WorkItem>>();
             builder.Services.AddScoped<IRuleFieldProvider<WorkItem>, WorkItemFieldProvider>();
-            builder.Services.AddScoped<ForecastFilterRuleService>();
-            builder.Services.AddScoped<IForecastFilterRuleService>(sp => sp.GetRequiredService<ForecastFilterRuleService>());
             builder.Services.AddScoped<IThroughputFilter>(sp => sp.GetRequiredService<ForecastFilterRuleService>());
-            builder.Services.AddScoped<ForecastingAnswersToFlowMetrics>();
             builder.Services.AddScoped<IForecastDataSufficiency>(sp => sp.GetRequiredService<ForecastingAnswersToFlowMetrics>());
             builder.Services.AddScoped<IHowManyForecaster>(sp => sp.GetRequiredService<ForecastingAnswersToFlowMetrics>());
             builder.Services.AddScoped<IBlockedItemService, BlockedItemService>();
-            builder.Services.AddScoped<IWriteBackService, WriteBackService>();
-            builder.Services.AddScoped<IWriteBackTriggerService, WriteBackTriggerService>();
-            // One instance for the whole application: it is how the update queue tells the collector in a
-            // scope which refresh round that scope is working for, and the queue itself lives that long.
-            builder.Services.AddSingleton<WriteBackRoundContext>();
-            builder.Services.AddScoped<IWriteBackCollector, WriteBackCollector>();
 
             builder.Services.AddScoped<IAzureDevOpsWorkTrackingConnector, AzureDevOpsWorkTrackingConnector>();
             builder.Services.AddScoped<IJiraWorkTrackingConnector, JiraWorkTrackingConnector>();
@@ -1506,15 +1462,13 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ISeeder, TerminologySeeder>();
             builder.Services.AddScoped<ISeeder, RefreshLogSeeder>();
             builder.Services.AddScoped<ISeeder, ApiKeyOwnerReconciliationSeeder>();
-            builder.Services.AddScoped<ISeeder, ForecastInputsForgottenAtStartSeeder>();
+            builder.Services.AddForecasting();
             builder.Services.AddScoped<ISeeder, CategoryListNormalisationSeeder>();
             builder.Services.AddScoped<ISeeder, EveryoneSignedInSeeder>();
 
             // Background Services
             builder.Services.AddHostedService<TeamUpdater>();
             builder.Services.AddSingleton<ITeamUpdater, TeamUpdater>();
-
-            builder.Services.AddSingleton<IForecastUpdater, ForecastUpdater>();
 
             builder.Services.AddHostedService<PortfolioUpdater>();
             builder.Services.AddSingleton<IPortfolioUpdater, PortfolioUpdater>();
@@ -1574,14 +1528,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IWorkTrackingAuthStrategyFactory, WorkTrackingAuthStrategyFactory>();
             builder.Services.AddSingleton<IGitHubService, GitHubService>();
             builder.Services.AddSingleton<IRandomNumberService, RandomNumberService>();
-            builder.Services.AddSingleton<IDrawStreamFactory, DrawStreamFactory>();
-            builder.Services.AddSingleton(ForecastSimulationLimits.Default);
-            builder.Services.AddSingleton<ForecastSimulation>();
 
-            // Built from the limits the container holds, so the lane has as many threads as a forecast may use runs at
-            // once. The container builds it, so it also disposes it, after the hosted services have stopped.
-            builder.Services.AddSingleton(services => new ForecastLane(services.GetRequiredService<ForecastSimulationLimits>())
-                .ReportingThreadsThatDidNotFinishTo(services.GetRequiredService<ILogger<ForecastLane>>()));
             builder.Services.AddSingleton<IPlatformService, PlatformService>();
             builder.Services.AddSingleton<IProcessService, ProcessService>();
             builder.Services.AddSingleton<ISystemInfoService, SystemInfoService>();
@@ -1634,7 +1581,6 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();
             builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, PortfolioFeaturesRefreshedMetricsInvalidationHandler>();
             builder.Services.AddScoped<IDomainEventHandler<BlackoutConfigurationChanged>, BlackoutConfigurationChangedMetricsInvalidationHandler>();
-            builder.Services.AddScoped<DeliveryMetricValuesProjector>();
             builder.Services.AddScoped<IDomainEventHandler<PortfolioForecastsUpdated>, DeliveryMetricSnapshotRecordingHandler>();
             builder.Services.AddScoped<IDomainEventHandler<PortfolioForecastsUpdated>, DeliveryForecastPublishingHandler>();
              builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, TeamDataRefreshedForecastTriggerHandler>();
@@ -1662,12 +1608,7 @@ namespace Lighthouse.Backend
             // Authentication
             builder.Services.Configure<AuthenticationConfiguration>(builder.Configuration.GetSection("Authentication"));
             builder.Services.Configure<AuthorizationConfiguration>(builder.Configuration.GetSection("Authorization"));
-            builder.Services.AddSingleton<IAuthConfigurationValidator, AuthConfigurationValidator>();
-            builder.Services.AddScoped<IAuthModeResolver, AuthModeResolver>();
-            builder.Services.AddScoped<ICurrentUserProfileService, CurrentUserProfileService>();
             builder.Services.AddScoped<IUserProfileLookup, UserProfileLookup>();
-            builder.Services.AddScoped<IRbacAdministrationService, RbacAdministrationService>();
-            builder.Services.AddScoped<IOidcGroupSnapshotWriter, OidcGroupSnapshotWriter>();
 
             // Database Management
             builder.Services.AddSingleton<DatabaseMaintenanceGate>();
