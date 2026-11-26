@@ -5,8 +5,20 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Lighthouse.Backend.Services.Implementation.Repositories
 {
-    public class ReportRepository(LighthouseAppContext context) : IReportReader, IReportWriter
+    public class ReportRepository(LighthouseAppContext context) : IReportReader, IReportWriter, IReportNoteStore
     {
+        bool IReportNoteStore.ReportExists(ReportOwner owner, int reportId)
+            => throw new NotImplementedException();
+
+        IReadOnlyList<ReportNote> IReportNoteStore.NotesNewestFirst(ReportOwner owner, int reportId)
+            => throw new NotImplementedException();
+
+        void IReportNoteStore.Add(ReportNote note)
+            => throw new NotImplementedException();
+
+        Task IReportNoteStore.Save()
+            => throw new NotImplementedException();
+
         public Report? GetForOwner(ReportOwner owner, int reportId)
             => OwnedBy(owner).AsNoTracking().SingleOrDefault(report => report.Id == reportId);
 
