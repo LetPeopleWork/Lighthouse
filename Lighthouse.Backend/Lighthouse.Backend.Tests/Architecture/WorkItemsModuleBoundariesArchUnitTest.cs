@@ -38,11 +38,11 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string WorkItemsDomain = @"^Lighthouse\.Backend\.Modules\.WorkItems\.Domain(\.|$)";
 
-        private const string WorkItemsApplication = @"^Lighthouse\.Backend\.Modules\.WorkItems\.Application(\.|$)";
+        private const string WorkItemsApplication = @"^Lighthouse\.Backend\.Modules\.WorkItems\.(Application|Contracts)(\.|$)";
 
         private const string WorkItemsPolicies = @"^Lighthouse\.Backend\.Modules\.WorkItems\.Application\.Policies(\.|$)";
 
-        private const string FlowMetricsApplication = @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.Application(\.|$)";
+        private const string FlowMetricsApplication = @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.(Application|Contracts)(\.|$)";
 
         // Promises' Application calls this module by right; its policies and its Domain do not, so they stay outside.
         private const string PromisesApplicationOutsideItsPolicies = @"^Lighthouse\.Backend\.Modules\.Promises\.Application(?!\.Policies(\.|$))(\.|$)";

@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class FlowMetricsInboundApplicationArchUnitTest
     {
-        private const string FlowMetricsApplication = @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.Application(\.|$)";
+        private const string FlowMetricsApplication = @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.(Application|Contracts)(\.|$)";
 
         private const string TheCompositionRoot = @"^Lighthouse\.Backend\.Program(\+|$)";
 

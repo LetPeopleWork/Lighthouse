@@ -46,11 +46,11 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string ForecastingDomain = @"^Lighthouse\.Backend\.Modules\.Forecasting\.Domain(\.|$)";
 
-        private const string ForecastingApplication = @"^Lighthouse\.Backend\.Modules\.Forecasting\.Application(\.|$)";
+        private const string ForecastingApplication = @"^Lighthouse\.Backend\.Modules\.Forecasting\.(Application|Contracts)(\.|$)";
 
         private const string ForecastingAdapters = @"^Lighthouse\.Backend\.Modules\.Forecasting\.Adapters(\.|$)";
 
-        private const string FlowMetricsApplication = @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.Application(\.|$)";
+        private const string FlowMetricsApplication = @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.(Application|Contracts)(\.|$)";
 
         private const string TheCompositionRootAndItsNestedTypes = @"^Lighthouse\.Backend\.Program(\+|$)";
 

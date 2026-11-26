@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string ListName = "Listed";
 
-        private const string ConnectorPort = @"^Lighthouse\.Backend\.Modules\.TrackerIntegration\.Application$";
+        private const string ConnectorPort = @"^Lighthouse\.Backend\.Modules\.TrackerIntegration\.(Application|Contracts)$";
 
         private const string AllOfTheBackend = @"^Lighthouse\.Backend(\.|$)";
 

@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string AccessDomain = @"^Lighthouse\.Backend\.Modules\.Access\.Domain(\.|$)";
 
-        private const string AccessApplication = @"^Lighthouse\.Backend\.Modules\.Access\.Application(\.|$)";
+        private const string AccessApplication = @"^Lighthouse\.Backend\.Modules\.Access\.(Application|Contracts)(\.|$)";
 
         private const string AccessAdaptersHttp = @"^Lighthouse\.Backend\.Modules\.Access\.Adapters\.Http(\.|$)";
 

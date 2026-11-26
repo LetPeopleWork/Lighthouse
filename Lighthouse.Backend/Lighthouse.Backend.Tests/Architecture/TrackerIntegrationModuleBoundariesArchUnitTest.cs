@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string TrackerIntegrationDomain = @"^Lighthouse\.Backend\.Modules\.TrackerIntegration\.Domain(\.|$)";
 
-        private const string TrackerIntegrationApplication = @"^Lighthouse\.Backend\.Modules\.TrackerIntegration\.Application(\.|$)";
+        private const string TrackerIntegrationApplication = @"^Lighthouse\.Backend\.Modules\.TrackerIntegration\.(Application|Contracts)(\.|$)";
 
         private const string TrackerIntegrationAdapters = @"^Lighthouse\.Backend\.Modules\.TrackerIntegration\.Adapters(\.|$)";
 

@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string LicensingAdaptersHttpNamespace = "Lighthouse.Backend.Modules.Licensing.Adapters.Http";
 
-        private const string LicensingApplication = @"^Lighthouse\.Backend\.Modules\.Licensing\.Application(\.|$)";
+        private const string LicensingApplication = @"^Lighthouse\.Backend\.Modules\.Licensing\.(Application|Contracts)(\.|$)";
 
         private const string LicensingAdaptersHttp = @"^Lighthouse\.Backend\.Modules\.Licensing\.Adapters\.Http(\.|$)";
 
