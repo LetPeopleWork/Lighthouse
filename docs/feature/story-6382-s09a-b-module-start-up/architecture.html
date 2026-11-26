@@ -184,7 +184,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h4>D5</h4>
 
-<pre><code>Composition-root rule, one oracle file per slice (nwdes approval freezes each slice bytes, so no slice edits an earlier one): S1 CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest lists FlowMetrics, Forecasting, Promises, Licensing, Access; S2 CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest lists WorkItems, TrackerIntegration, Refinement, Reports, OrganisationSetup; together they are the ten-context rule. Each asserts, per listed context: its &lt;X&gt;Module exists in Lighthouse.Backend.Modules.&lt;X&gt; with Add&lt;X&gt;; only Program names it; Program registers no type of that context, where registers means the type is a generic argument of a call to an IServiceCollection registration extension (Add*, TryAdd*, Configure*, AddHostedService) or of GetService/GetRequiredService, read from the IL of Program and its compiler-made nested types; allowed: the handler block entries and the order-kept registrations of that context, by full name, compared both ways. The call reading is a new support CompositionRootRegistrations written with the S1 oracle and only read afterwards. S3 ProgramNamesModulesOnlyArchUnitTest: every type of the ten contexts that Program names at all (IlDependencies.DependentsIn over Program) is a &lt;X&gt;Module, a handler of the block, an order-kept registration, or a measured host set-up type; RED until the strays move.
+<pre><code>Composition-root rule, one oracle file per slice (nwdes approval freezes each slice bytes, so no slice edits an earlier one): S1 CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest lists FlowMetrics, Forecasting, Promises, Licensing, Access; S2 CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest lists WorkItems, TrackerIntegration, Refinement, Reports, OrganisationSetup; together they are the ten-context rule. Each asserts, per listed context: its &lt;X&gt;Module exists in Lighthouse.Backend.Modules.&lt;X&gt; with Add&lt;X&gt;; only Program names it; Program registers no type of that context, where registers means the type is a generic argument of a call to an IServiceCollection registration extension (Add*, TryAdd*, Configure*, AddHostedService) or of GetService/GetRequiredService, read from the IL of Program and its compiler-made nested types; allowed, by full name and compared both ways, in four declared categories: (1) the handler block entries of that context; (2) the order-kept registrations of that context; (3) the host set-up lookups Program makes with GetRequiredService (Forecasting ForecastLane in PrintSystemInfo, Access IOidcGroupSnapshotWriter in the OIDC token-validated event), compared apart from registrations; (4) cross-context wiring kept in Program: the context types named by a registration statement that names types of two contexts. Measured at 1c51ec97e, the only such statements outside the handler block are Program.cs:1475 AddScoped&lt;IDescriptionBlockMerger, DeliveryForecastBlockRenderer&gt; (TrackerIntegration + Promises), :1481 AddScoped&lt;IThroughputFilter&gt;(sp =&gt; sp.GetRequiredService&lt;ForecastFilterRuleService&gt;()), :1483 IForecastDataSufficiency and :1484 IHowManyForecaster, both from ForecastingAnswersToFlowMetrics (FlowMetrics + Forecasting). S1 category 4 entries: FlowMetrics registered IThroughputFilter, IForecastDataSufficiency, IHowManyForecaster (FlowMetrics.Application); Forecasting looked up ForecastFilterRuleService, ForecastingAnswersToFlowMetrics (Forecasting.Application); Promises registered DeliveryForecastBlockRenderer (Promises.Application). S2 category 4 entry: TrackerIntegration registered IDescriptionBlockMerger (TrackerIntegration.Application). Method for S2 and any later context: before writing its list, list every registration statement of Program (statements joined across lines, handler block excluded) whose type names resolve to declarations under two different Modules/&lt;X&gt; folders, Contracts included; then confirm by a trial move whose Architecture run names no &lt;X&gt;Module in R-C1 or in another context&#x27;s boundary rule. The approved S1 oracle CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest lacks category 4: its revision by the acceptance designer, with a made-up cross-context line in CompositionRootFixtures that is reported once taken off the list, is the next step before S1 craft; the S2 oracle is written with all four categories. The call reading is a new support CompositionRootRegistrations written with the S1 oracle and only read afterwards. S3 ProgramNamesModulesOnlyArchUnitTest: every type of the ten contexts that Program names at all (IlDependencies.DependentsIn over Program) is a &lt;X&gt;Module, a handler of the block, an order-kept registration, or a measured host set-up type; RED until the strays move.
 </code></pre>
 
 <h4>D6</h4>
@@ -199,7 +199,12 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h4>D8</h4>
 
-<pre><code>Existing rules that list Program as an outsider: AccessModuleBoundariesArchUnitTest (HTTP adapters list), ForecastingModuleBoundariesArchUnitTest (domain list) and WorkItemsModuleBoundariesArchUnitTest (domain list) name Lighthouse.Backend.Program, compared both ways; when a move leaves that entry stale, the slice replaces that one entry by the exact &lt;X&gt;Module full name and nothing else (approved oracles of closed Stories, allowed as in feature A). Every other existing rule is run whole (the Architecture namespace) at each slice; an approved oracle of feature A is never edited.
+<pre><code>Existing rules that name the composition root for one context (measured by a reverted trial move of the five S1 contexts, 88 Architecture failures, every one resolved below or by keeping the cross-context lines in Program): a both-ways adapters rule switches its root from Lighthouse.Backend.Program to the exact &lt;X&gt;Module and its set-aside namespaces to the context&#x27;s namespaces below its root; an outside-types list whose Lighthouse.Backend.Program entry goes stale loses that entry, not replaced, because &lt;X&gt;Module is inside its context and reaching its own layers is legal by right; a reacher list inside one context gains the exact &lt;X&gt;Module full name; a file-path allow list gains the exact Modules/&lt;X&gt;/&lt;X&gt;Module.cs path beside Program.cs. AccessModuleBoundariesArchUnitTest&#x27;s Program entry was not stale in the trial (Program keeps the Access HTTP set-up types), so it stays unless the craft run names it. Every other existing rule is run whole (the Architecture namespace) at each slice; an approved oracle of this feature is never edited except by its acceptance designer&#x27;s revision.
+</code></pre>
+
+<h4>D9</h4>
+
+<pre><code>Own-context root (maintainer decision 2026-11-26): a context&#x27;s own &lt;X&gt;Module (Lighthouse.Backend.Modules.&lt;X&gt;.&lt;X&gt;Module) counts as the composition root, but only for the rules about its own context: adapters reached only by the composition root, only the composition root creates the forecast threads, and the membership lists, which gain the &lt;X&gt;Module entry. It is never a composition root for another context: a registration statement that names types of two contexts (one context&#x27;s type built from, or registered as, another context&#x27;s service) stays in Program as cross-context wiring, so no new cross-context edge appears and feature A&#x27;s 73-edge R-C1 list and its surface rows stay unchanged. Rule edits are the narrowest that express this: an exact &lt;X&gt;Module full name or file path, never a namespace-wide exemption, and no rule or list is loosened across contexts; each edit is proven by a reverted probe recorded as a craft command. The preservation pin StartUpRegistrationsPreservationTest.cs names types by today&#x27;s full names on purpose and is exempt, by its exact file name, from the old-name sweep of ContextContractsMembershipArchUnitTest; the exemption lands in the pin&#x27;s own first commit and leaves with the pin at S3. Feature A&#x27;s oracle files and the boundary and membership tests these edits touch are declared targets of the slice whose move makes them fail; ModuleRules.cs and ContextContractsArchUnitTest.cs need no edit, because every production call site passes the root and the set-aside namespaces as arguments and the cross-context lines stay in Program. Pattern used for both-ways adapter rules: composition root = the exact &lt;X&gt;Module full name, set-aside namespaces = the context&#x27;s namespaces below its root (^Lighthouse\.Backend\.Modules\.&lt;X&gt;\.), so &lt;X&gt;Module is the one outside reacher and Program reaching the adapters fails.
 </code></pre>
 
 <h3>Constraints</h3>
@@ -892,7 +897,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Extend</p>
 
-<pre><code>Only if its Lighthouse.Backend.Program entry goes stale: replaced by ForecastingModule, nothing else.
+<pre><code>TheForecastingAdapters rule: root becomes &quot;Lighthouse.Backend.Modules.Forecasting.ForecastingModule&quot;, set-aside namespaces ^Lighthouse\.Backend\.Modules\.Forecasting\.; the stale &quot;Lighthouse.Backend.Program&quot; entry of OutsideTypesReachingTheDomain is deleted, not replaced.
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs</p>
@@ -900,6 +905,55 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Extend</p>
 
 <pre><code>Only if its Lighthouse.Backend.Program entry goes stale: replaced by AccessModule, nothing else.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingMembership.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Gains two one-entry lists, AccessModuleRoot [&quot;AccessModule&quot;] and LicensingModuleRoot [&quot;LicensingModule&quot;]; the layer lists stay unchanged because AccessApplication and LicensingApplication feed TypesLiveInTheirLayer and the unit-test placement rules.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingMembershipArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>AccessLists gains AccessModuleRoot and LicensingLists gains LicensingModuleRoot, so AccessModule and LicensingModule are listed members; the fix hints name the new lists.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembership.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Moves gains &quot;PromisesModule&quot; (it lives in Modules/Promises).
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>The old-name sweep skips the preservation pin by its exact file name &quot;StartUpRegistrationsPreservationTest.cs&quot; (a one-entry exemption beside TheMeasurementFiles, a string because S3 deletes the class); written in the pin&#x27;s own first commit.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FastWithManyFeaturesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>The allowed set gains the path of Modules/Forecasting/ForecastingModule.cs, which now creates the forecast lane; Program.cs stays allowed for its PrintSystemInfo lookup.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Gains &quot;Lighthouse.Backend.Modules.Forecasting.ForecastingModule&quot;, which registers the round services.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>The production call passes compositionRoot &quot;Lighthouse.Backend.Modules.FlowMetrics.FlowMetricsModule&quot; and moduleNamespaces ^Lighthouse\.Backend\.Modules\.FlowMetrics\. instead of the defaults; the fixture rows are unchanged.
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesModulesOnlyThroughTheirModuleArchUnitTest.cs</p>
@@ -1024,6 +1078,69 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;TestCateg
 <pre><code>Existing approved rule of a closed Story; only its Lighthouse.Backend.Program entry is replaced by AccessModule, and only if the move leaves it stale.
 </code></pre>
 
+<p>AccessAndLicensingMembership</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingMembership.cs:21</p>
+
+<p>Extend</p>
+
+<pre><code>Existing rule or list owns this own-context fact; extended by one exact entry or argument, no new rule.
+</code></pre>
+
+<p>AccessLists</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingMembershipArchUnitTest.cs:73</p>
+
+<p>Extend</p>
+
+<pre><code>Existing rule or list owns this own-context fact; extended by one exact entry or argument, no new rule.
+</code></pre>
+
+<p>Moves</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembership.cs:11</p>
+
+<p>Extend</p>
+
+<pre><code>Existing rule or list owns this own-context fact; extended by one exact entry or argument, no new rule.
+</code></pre>
+
+<p>TheMeasurementFiles</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs:35</p>
+
+<p>Extend</p>
+
+<pre><code>Existing rule or list owns this own-context fact; extended by one exact entry or argument, no new rule.
+</code></pre>
+
+<p>Only_the_forecast_updater_and_the_composition_root_reach_the_forecast_threads</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FastWithManyFeaturesArchUnitTest.cs:71</p>
+
+<p>Extend</p>
+
+<pre><code>Existing rule or list owns this own-context fact; extended by one exact entry or argument, no new rule.
+</code></pre>
+
+<p>TheForecastingTypesReachingTheRound</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs:45</p>
+
+<p>Extend</p>
+
+<pre><code>Existing rule or list owns this own-context fact; extended by one exact entry or argument, no new rule.
+</code></pre>
+
+<p>TheModuleAdapters_AreReachedFromOutsideOnlyByTheCompositionRoot</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs:82</p>
+
+<p>Extend</p>
+
+<pre><code>Existing rule or list owns this own-context fact; extended by one exact entry or argument, no new rule.
+</code></pre>
+
 <h5>Impact</h5>
 
 <p>production</p>
@@ -1080,6 +1197,69 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;TestCateg
 <pre><code>New temporary pin, baseline captured on the pre-B1 revision.
 </code></pre>
 
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingMembership.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Own-context root: the narrowest edit that keeps the rule green after the five S1 contexts move; no list loosened.
+</code></pre>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingMembershipArchUnitTest.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Own-context root: the narrowest edit that keeps the rule green after the five S1 contexts move; no list loosened.
+</code></pre>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembership.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Own-context root: the narrowest edit that keeps the rule green after the five S1 contexts move; no list loosened.
+</code></pre>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Own-context root: the narrowest edit that keeps the rule green after the five S1 contexts move; no list loosened.
+</code></pre>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FastWithManyFeaturesArchUnitTest.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Own-context root: the narrowest edit that keeps the rule green after the five S1 contexts move; no list loosened.
+</code></pre>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Own-context root: the narrowest edit that keeps the rule green after the five S1 contexts move; no list loosened.
+</code></pre>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Own-context root: the narrowest edit that keeps the rule green after the five S1 contexts move; no list loosened.
+</code></pre>
+
 <h5>Agreement</h5>
 
 <p>None.</p>
@@ -1088,7 +1268,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;TestCateg
 
 <p>prefactoring</p>
 
-<pre><code>Per file: Program.cs holds one top-level type (Program), nothing to split; the five &lt;X&gt;Module.cs and StartUpRegistrationsPreservationTest.cs are new, one type each; ForecastingModuleBoundariesArchUnitTest.cs and AccessModuleBoundariesArchUnitTest.cs change one list entry at most, no move. The behaviour-free moves are the slice itself, guarded by the pin written first.
+<pre><code>Per file: Program.cs holds one type (Program); the five &lt;X&gt;Module.cs and StartUpRegistrationsPreservationTest.cs are new, one type each; AccessAndLicensingMembership.cs and PromisesMembership.cs hold one type each. AccessAndLicensingMembershipArchUnitTest.cs, ContextContractsMembershipArchUnitTest.cs, WriteBackRoundBoundariesArchUnitTest.cs, FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs, ForecastingModuleBoundariesArchUnitTest.cs and AccessModuleBoundariesArchUnitTest.cs hold their fixture class plus the made-up offenders the rule reads from the test assembly IL: not variants of one sum type, but no move is possible in this slice because the maintainer allows only the narrowest edit to these approved oracles of closed Stories and feature A, and a split would change their approved bytes. FastWithManyFeaturesArchUnitTest.cs holds one type.
 </code></pre>
 
 <h5>Boundaries</h5>
@@ -1208,7 +1388,49 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;TestCateg
 
 <p>Extend</p>
 
-<pre><code>Only if its Lighthouse.Backend.Program entry goes stale: replaced by WorkItemsModule, nothing else.
+<pre><code>If its &quot;Lighthouse.Backend.Program&quot; entry of OutsideTypesReachingTheDomain goes stale, it is deleted, not replaced; nothing else.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembership.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Moves gains &quot;TrackerIntegrationModule&quot;, if the S2 run names it unlisted.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Moves gains &quot;WorkItemsModule&quot;, if the S2 run names it unlisted.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembership.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Gains RefinementModule at the module root in the file&#x27;s existing shape, if the S2 run names it; a shape with no place for a root type returns to the architect.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Gains ReportsModule at the module root in the file&#x27;s existing shape, if the S2 run names it; a shape with no place for a root type returns to the architect.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Gains OrganisationSetupModule at the module root in the file&#x27;s existing shape, if the S2 run names it; a shape with no place for a root type returns to the architect.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>The production adapters rule takes root &quot;Lighthouse.Backend.Modules.TrackerIntegration.TrackerIntegrationModule&quot; and set-aside namespaces ^Lighthouse\.Backend\.Modules\.TrackerIntegration\. instead of ModuleRules.TheCompositionRoot; its OtherOutsideTypesReachingTheAdapters list is unchanged.
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest.cs</p>
@@ -1324,6 +1546,60 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;TestCateg
 <pre><code>Existing approved rule of a closed Story; only its Lighthouse.Backend.Program entry is replaced by WorkItemsModule, and only if the move leaves it stale.
 </code></pre>
 
+<p>Moves</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembership.cs:13</p>
+
+<p>Extend</p>
+
+<pre><code>Existing rule or list owns this own-context fact; extended by one exact entry or argument, no new rule.
+</code></pre>
+
+<p>Moves</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs:22</p>
+
+<p>Extend</p>
+
+<pre><code>Existing rule or list owns this own-context fact; extended by one exact entry or argument, no new rule.
+</code></pre>
+
+<p>MovingTypes</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembership.cs:69</p>
+
+<p>Extend</p>
+
+<pre><code>Existing rule or list owns this own-context fact; extended by one exact entry or argument, no new rule.
+</code></pre>
+
+<p>MovingTypes</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs:77</p>
+
+<p>Extend</p>
+
+<pre><code>Existing rule or list owns this own-context fact; extended by one exact entry or argument, no new rule.
+</code></pre>
+
+<p>MovingTypes</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs:59</p>
+
+<p>Extend</p>
+
+<pre><code>Existing rule or list owns this own-context fact; extended by one exact entry or argument, no new rule.
+</code></pre>
+
+<p>AdaptersInboundRule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:474</p>
+
+<p>Extend</p>
+
+<pre><code>Existing rule or list owns this own-context fact; extended by one exact entry or argument, no new rule.
+</code></pre>
+
 <h5>Impact</h5>
 
 <p>production</p>
@@ -1380,6 +1656,60 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;TestCateg
 <pre><code>Seam line only; the baseline bytes do not change.
 </code></pre>
 
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembership.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Own-context root for the S2 contexts, by the S1 treatment; edited only if the S2 Architecture run names the &lt;X&gt;Module or a stale Program entry.
+</code></pre>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Own-context root for the S2 contexts, by the S1 treatment; edited only if the S2 Architecture run names the &lt;X&gt;Module or a stale Program entry.
+</code></pre>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembership.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Own-context root for the S2 contexts, by the S1 treatment; edited only if the S2 Architecture run names the &lt;X&gt;Module or a stale Program entry.
+</code></pre>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Own-context root for the S2 contexts, by the S1 treatment; edited only if the S2 Architecture run names the &lt;X&gt;Module or a stale Program entry.
+</code></pre>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Own-context root for the S2 contexts, by the S1 treatment; edited only if the S2 Architecture run names the &lt;X&gt;Module or a stale Program entry.
+</code></pre>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Own-context root for the S2 contexts, by the S1 treatment; edited only if the S2 Architecture run names the &lt;X&gt;Module or a stale Program entry.
+</code></pre>
+
 <h5>Agreement</h5>
 
 <p>None.</p>
@@ -1388,7 +1718,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;TestCateg
 
 <p>prefactoring</p>
 
-<pre><code>Per file: Program.cs holds one type (Program); the five &lt;X&gt;Module.cs are new, one type each; StartUpRegistrationsPreservationTest.cs holds one test class plus its seam, one line changes; WorkItemsModuleBoundariesArchUnitTest.cs changes one list entry at most. No file holds several types to split.
+<pre><code>Per file: Program.cs holds one type (Program); the five &lt;X&gt;Module.cs are new, one type each; StartUpRegistrationsPreservationTest.cs holds one test class, one line changes; TrackerIntegrationMembership.cs holds one type; RefinementMembership.cs, ReportsMembership.cs and OrganisationSetupMembership.cs hold the membership class with the record and enum types its lists are made of, which change together; WorkItemsMembershipArchUnitTest.cs, TrackerIntegrationModuleBoundariesArchUnitTest.cs and WorkItemsModuleBoundariesArchUnitTest.cs hold their fixture class and the made-up offenders the rule reads from the IL; no move is possible in this slice because only the narrowest edit to these approved oracles of closed Stories is allowed.
 </code></pre>
 
 <h5>Boundaries</h5>
@@ -1476,6 +1806,13 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;TestCateg
 <pre><code>Deleted, in the same commit as its last green run on the S3 craft is recorded as a craft command.
 </code></pre>
 
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>The pin&#x27;s file-name exemption from the old-name sweep is removed in the commit that deletes the pin.
+</code></pre>
+
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProgramNamesModulesOnlyArchUnitTest.cs</p>
 
 <h4>Verification</h4>
@@ -1544,6 +1881,15 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;TestCateg
 <pre><code>Created by S2 of this feature, not yet on main; receives the Tracker integration strays behind a method Program calls at the same point.
 </code></pre>
 
+<p>TheMeasurementFiles</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs:35</p>
+
+<p>Extend</p>
+
+<pre><code>The sweep owns its exemptions; the temporary one leaves with the pin.
+</code></pre>
+
 <h5>Impact</h5>
 
 <p>architecture-tests</p>
@@ -1562,6 +1908,15 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;TestCateg
 <p>Changed</p>
 
 <pre><code>Gains the stray start check, same call point and timing.
+</code></pre>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Back to its feature A bytes for the file list; the sweep reads every test file again.
 </code></pre>
 
 <h5>Agreement</h5>
