@@ -127,7 +127,39 @@ Lighthouse\.Frontend\/src\/components\/Common\/Charts\/TotalWorkItemAgeRunChart\
 skips a work item with no start date and still totals the others
 
 ```text
-The chart totals every item but treats a missing start date as age zero in the total while still counting it in the item count
+The chart totals every item but treats a missing start date as age zero in the total while still counting it in the item count would fail: the count would read 3, not 2. Only a chart that left the item out of the total but kept it in the count is not caught beyond that count check
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+Total the age of the started items of a day that holds items with a null start date, items with an undefined start date, items with start dates, or no items with a start date
+```
+
+```text
+An item with a null or undefined start date is left out of both the total and the item count; the others are summed and counted; a day with no started item gives a total of 0 and a count of 0; no value is NaN
+```
+
+```text
+The day's total and item count in the chart cover only items that have a start date, and never read NaN
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/Charts\/totalAgeOfStartedItems\.test\.ts
+
+skips an item whose start date is null
+
+```text
+A function that skips only null but lets an undefined start date through, or returns NaN or an empty result instead of 0 over 0 for a day with no started item; the four tests in this file separate those
 ```
 
 ###### Obligations

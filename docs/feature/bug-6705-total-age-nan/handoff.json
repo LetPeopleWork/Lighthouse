@@ -51,19 +51,33 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F25",
+"still_passes_if": "F38",
 "test": "skips a work item with no start date and still totals the others",
 "test_path": "Lighthouse.Frontend/src/components/Common/Charts/TotalWorkItemAgeRunChart.test.tsx"
 },
 "expected": "F23",
 "stimulus": "F22",
 "user_result": "F24"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F42",
+"test": "skips an item whose start date is null",
+"test_path": "Lighthouse.Frontend/src/components/Common/Charts/totalAgeOfStartedItems.test.ts"
+},
+"expected": "F40",
+"stimulus": "F39",
+"user_result": "F41"
 }
 ]
 },
 "counters": {
 "E": 2,
-"F": 37,
+"F": 42,
 "P": 2,
 "S": 2
 },
@@ -154,7 +168,6 @@
 "F22": "Show the Total Work Item Age Over Time chart for two days whose in-progress items include one with no start date (empty on one day, missing on the other) and two with start dates",
 "F23": "Each day's total is the sum of the ages of the items with a start date (4 days and 6 days), the tooltip reads the same total with an item count of 2, and no value shows NaN",
 "F24": "The reader sees a drawn line with proper totals and item counts; the item without a start date is left out",
-"F25": "The chart totals every item but treats a missing start date as age zero in the total while still counting it in the item count",
 "F26": "Build the work item DTO for an item in progress that has no start date and a created date",
 "F27": "The DTO's start date equals the item's created date",
 "F28": "The chart receives a start date for every in-progress item, so no total turns into NaN",
@@ -168,7 +181,12 @@
 "F35": "The DTO has no start date",
 "F36": "An item that has not started is not shown as started",
 "F37": "A fallback to created date for a state category other than To Do and Doing, such as Done, is not observed",
+"F38": "The chart totals every item but treats a missing start date as age zero in the total while still counting it in the item count would fail: the count would read 3, not 2. Only a chart that left the item out of the total but kept it in the count is not caught beyond that count check",
+"F39": "Total the age of the started items of a day that holds items with a null start date, items with an undefined start date, items with start dates, or no items with a start date",
 "F4": "An in-progress item with no start date reaches the client with its created date as its start date",
+"F40": "An item with a null or undefined start date is left out of both the total and the item count; the others are summed and counted; a day with no started item gives a total of 0 and a count of 0; no value is NaN",
+"F41": "The day's total and item count in the chart cover only items that have a start date, and never read NaN",
+"F42": "A function that skips only null but lets an undefined start date through, or returns NaN or an empty result instead of 0 over 0 for a day with no started item; the four tests in this file separate those",
 "F5": "Build the work item DTO for an item in a Doing state whose StartedDate is null and whose CreatedDate is set",
 "F6": "The DTO's StartedDate equals the item's CreatedDate; a To Do item with no start date still has none, and an item with a start date keeps its own",
 "F7": "The DTO's StartedDate is null for the in-progress item, or a To Do item gains a start date"

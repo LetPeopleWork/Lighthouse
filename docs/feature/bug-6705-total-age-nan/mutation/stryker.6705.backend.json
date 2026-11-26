@@ -1,0 +1,18 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/API/DTO/WorkItemDto.cs",
+      "**/Models/WorkItemBase.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~WorkItemDtoTests|FullyQualifiedName~WorkItemBase|FullyQualifiedName~WorkItemAgeAsOfDateTest|FullyQualifiedName~InstanceDayAnchorEntityTest|FullyQualifiedName~InstanceDayItemBucketingTest|FullyQualifiedName~InstanceZoneDurationBoundaryTest)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
