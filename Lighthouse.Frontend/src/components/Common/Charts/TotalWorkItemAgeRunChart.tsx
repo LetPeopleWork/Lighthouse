@@ -6,11 +6,11 @@ import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
-import { calculateHistoricalAge } from "../../../utils/date/age";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import type { WorkItemsDialogOwnerKind } from "../WorkItemsDialog/workItemsDialogContexts";
 import BaseRunChart from "./BaseRunChart";
 import BlackoutOverlay from "./BlackoutOverlay";
+import { totalAgeOfStartedItems } from "./totalAgeOfStartedItems";
 
 interface TotalWorkItemAgeRunChartProps {
 	wipOverTimeData: RunChartData;
@@ -18,20 +18,6 @@ interface TotalWorkItemAgeRunChartProps {
 	title?: string;
 	ownerKind: WorkItemsDialogOwnerKind;
 }
-
-// An item without a start date has no age to add; counting it would turn the
-// whole day's total into NaN and the chart would draw nothing.
-const totalAgeOfStartedItems = (
-	items: IWorkItem[],
-	historicalDate: Date,
-): { totalAge: number; itemCount: number } => {
-	const startedItems = items.filter((item) => item.startedDate != null);
-	const totalAge = startedItems.reduce(
-		(sum, item) => sum + calculateHistoricalAge(item, historicalDate),
-		0,
-	);
-	return { totalAge, itemCount: startedItems.length };
-};
 
 const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
 	wipOverTimeData,
