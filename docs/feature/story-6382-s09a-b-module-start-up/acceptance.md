@@ -824,4 +824,40 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+architecture-rules CompositionRoot: 173/173 passed. For FlowMetrics, Forecasting, Licensing, Promises, Access: "Passed EachOfTheFiveContextsModules_IsStartedByTheCompositionRootAlone(<ctx>)" and "Passed TheCompositionRoot_RegistersNoTypeOfTheFiveContexts_ButTheirDomainEventHandlersAndWhatItLooksUpToSetTheHostUp(<ctx>)" for all five. ef-model-unchanged: "No changes have been made to the model since the last migration." for Sqlite and Postgres. No web host started.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+architecture-rules CompositionRoot: "Passed EachOfTheOtherFiveContextsModules_IsStartedByTheCompositionRootAlone(<ctx>)" seen for WorkItems, TrackerIntegration, Refinement, Reports; "Passed TheCompositionRoot_RegistersNoTypeOfTheOtherFiveContexts_ButItsHandlerBlockOrderKeptLinesHostSetUpAndCrossContextWiring(<ctx>)" for WorkItems, TrackerIntegration, Refinement, Reports, OrganisationSetup; "Passed TheOtherFiveContextsAndTheFiveOfTheFirstRule_AreTheTenPackagedContexts". Limit: I saw the last 40 lines only; an IsStarted line for OrganisationSetup was not in them (OrganisationSetup has no module-start line shown, only the registers-no-type and names-only lines). DomainEventHandlerOrderPin: 7/7 passed, e.g. "Passed HandlersOfATeamRefresh_UpdateTheTeamMetricsBeforeAnyOtherReaction". ef-model-unchanged unchanged for both providers.
+```
+
+```text
+architecture-rules IsStartedByTheCompositionRootAlone: 10/10 passed, including Passed EachOfTheOtherFiveContextsModules_IsStartedByTheCompositionRootAlone("OrganisationSetup") [2 s]; closes the gap noted in O2 (all ten contexts have a passing module-start line).
+```
+
+```text
+architecture-rules ProgramNamesModulesOnly: 70/70 passed; "Passed TheCompositionRoot_NamesOfEachContextOnlyItsModuleItsHandlersItsWiringItsHostLookupsAndItsHostSetUpTypes(<ctx>)" for all ten contexts, "Passed TheTenListedContexts_AreTheTenPackagedContexts", plus AnEntryTheCompositionRootMayName_IsNamedOnceItIsTakenOffItsList lines (no stale entries). backend-tests StartUpRegistrationsPreservationTest: empty output (no test found); control backend-tests DomainEventHandlerOrderPinTest printed 7/7 passed, so the probe works and the preservation test is absent. CompositionRoot 173 and OrderPin 7 still pass.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+architecture-rules ProgramNamesModulesOnly: 70/70 passed; "Passed TheCompositionRoot_NamesOfEachContextOnlyItsModuleItsHandlersItsWiringItsHostLookupsAndItsHostSetUpTypes(<ctx>)" for all ten contexts, "Passed TheTenListedContexts_AreTheTenPackagedContexts", plus AnEntryTheCompositionRootMayName_IsNamedOnceItIsTakenOffItsList lines (no stale entries). backend-tests StartUpRegistrationsPreservationTest: empty output (no test found); control backend-tests DomainEventHandlerOrderPinTest printed 7/7 passed, so the probe works and the preservation test is absent. CompositionRoot 173 and OrderPin 7 still pass.
+```

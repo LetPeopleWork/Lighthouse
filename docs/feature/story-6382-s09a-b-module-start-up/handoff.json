@@ -420,7 +420,7 @@
 "C": 1,
 "D": 9,
 "E": 3,
-"F": 318,
+"F": 322,
 "K": 4,
 "L": 4,
 "P": 3,
@@ -1596,6 +1596,28 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F319"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F320",
+"F321",
+"F322"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F322"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -1850,7 +1872,11 @@
 "F316": "The two sets are equal",
 "F317": "A new context cannot keep its start-up in the start-up file unseen",
 "F318": "A hand-kept list that drifts from the assembly",
+"F319": "architecture-rules CompositionRoot: 173/173 passed. For FlowMetrics, Forecasting, Licensing, Promises, Access: \"Passed EachOfTheFiveContextsModules_IsStartedByTheCompositionRootAlone(<ctx>)\" and \"Passed TheCompositionRoot_RegistersNoTypeOfTheFiveContexts_ButTheirDomainEventHandlersAndWhatItLooksUpToSetTheHostUp(<ctx>)\" for all five. ef-model-unchanged: \"No changes have been made to the model since the last migration.\" for Sqlite and Postgres. No web host started.",
 "F32": "Reads every type Program names, nested closures included; the S3 rule reads with it unchanged.",
+"F320": "architecture-rules CompositionRoot: \"Passed EachOfTheOtherFiveContextsModules_IsStartedByTheCompositionRootAlone(<ctx>)\" seen for WorkItems, TrackerIntegration, Refinement, Reports; \"Passed TheCompositionRoot_RegistersNoTypeOfTheOtherFiveContexts_ButItsHandlerBlockOrderKeptLinesHostSetUpAndCrossContextWiring(<ctx>)\" for WorkItems, TrackerIntegration, Refinement, Reports, OrganisationSetup; \"Passed TheOtherFiveContextsAndTheFiveOfTheFirstRule_AreTheTenPackagedContexts\". Limit: I saw the last 40 lines only; an IsStarted line for OrganisationSetup was not in them (OrganisationSetup has no module-start line shown, only the registers-no-type and names-only lines). DomainEventHandlerOrderPin: 7/7 passed, e.g. \"Passed HandlersOfATeamRefresh_UpdateTheTeamMetricsBeforeAnyOtherReaction\". ef-model-unchanged unchanged for both providers.",
+"F321": "architecture-rules IsStartedByTheCompositionRootAlone: 10/10 passed, including Passed EachOfTheOtherFiveContextsModules_IsStartedByTheCompositionRootAlone(\"OrganisationSetup\") [2 s]; closes the gap noted in O2 (all ten contexts have a passing module-start line).",
+"F322": "architecture-rules ProgramNamesModulesOnly: 70/70 passed; \"Passed TheCompositionRoot_NamesOfEachContextOnlyItsModuleItsHandlersItsWiringItsHostLookupsAndItsHostSetUpTypes(<ctx>)\" for all ten contexts, \"Passed TheTenListedContexts_AreTheTenPackagedContexts\", plus AnEntryTheCompositionRootMayName_IsNamedOnceItIsTakenOffItsList lines (no stale entries). backend-tests StartUpRegistrationsPreservationTest: empty output (no test found); control backend-tests DomainEventHandlerOrderPinTest printed 7/7 passed, so the probe works and the preservation test is absent. CompositionRoot 173 and OrderPin 7 still pass.",
 "F33": "The one name of the composition root, read by the three rules; not edited.",
 "F34": "The enumerator of the ten contexts (R-C3); the S3 rule checks its ten listed contexts equal it, so a new context cannot escape.",
 "F35": "IlDependencies reads which types a type names, not which types it passes to a registration call; the per-call reading the S1 and S2 rules need does not exist. Written with the S1 oracle as its support.",
