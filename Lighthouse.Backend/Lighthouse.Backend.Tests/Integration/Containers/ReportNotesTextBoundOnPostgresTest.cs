@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     [TestFixture]
     public class ReportNotesTextBoundOnPostgresTest : IntegrationFixture
     {
-        // SQLite keeps whatever length it is given, so the bound on the text column is observed on PostgreSQL.
         [Test]
         public async Task The_text_column_keeps_2000_characters_and_refuses_2001_on_PostgreSQL()
         {
@@ -26,17 +25,17 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             var postgresOptions = new DbContextOptionsBuilder<LighthouseAppContext>()
                 .UseNpgsql(await postgres.ConnectionStringToANewCreatedDatabaseAsync(), npgsql => npgsql.MigrationsAssembly("Lighthouse.Migrations.Postgres"))
                 .Options;
-            await using var context = Lighthouse.Backend.Tests.ReportNoteRows.CreateContext(postgresOptions);
+            await using var context = ReportNoteRows.CreateContext(postgresOptions);
             await context.Database.MigrateAsync();
-            var report = await Lighthouse.Backend.Tests.ReportNoteRows.SeedReport(context, (await Lighthouse.Backend.Tests.ReportNoteRows.SeedTeam(context)).Id);
+            var report = await ReportNoteRows.SeedReport(context, (await ReportNoteRows.SeedTeam(context)).Id);
 
-            await Lighthouse.Backend.Tests.ReportNoteRows.InsertNote(context, report, new string('x', ReportNote.LongestText), null);
-            var refused = await Assert.CatchAsync<DbException>(() => Lighthouse.Backend.Tests.ReportNoteRows.InsertNote(context, report, new string('x', ReportNote.LongestText + 1), null));
+            await ReportNoteRows.InsertNote(context, report, new string('x', ReportNote.LongestText), null);
+            var refused = await Assert.CatchAsync<DbException>(() => ReportNoteRows.InsertNote(context, report, new string('x', ReportNote.LongestText + 1), null));
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(refused?.Message, Does.Contain("too long"));
-                Assert.That(await Lighthouse.Backend.Tests.ReportNoteRows.NotesOf(context, report), Is.EqualTo(1));
+                Assert.That(await ReportNoteRows.NotesOf(context, report), Is.EqualTo(1));
             }
         }
     }

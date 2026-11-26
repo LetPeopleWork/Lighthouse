@@ -175,7 +175,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs</p>
 
 <p>A_signed_in_writer_adds_notes_and_the_report_lists_them_newest_first_with_the_day_written_and_their_name</p>
 
@@ -203,7 +203,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs</p>
 
 <p>A_note_written_with_sign_in_off_is_listed_with_its_text_and_day_and_no_author</p>
 
@@ -231,7 +231,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs</p>
 
 <p>A_note_without_text_is_not_saved_and_the_notes_stay_as_they_were</p>
 
@@ -258,7 +258,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs</p>
 
 <p>A_note_of_more_than_2000_characters_is_not_saved_for_that_reason_while_one_of_exactly_2000_between_blanks_is</p>
 
@@ -285,7 +285,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs</p>
 
 <p>A_note_is_refused_when_sign_in_is_on_and_nobody_can_be_named_and_the_notes_stay_as_they_were</p>
 
@@ -313,7 +313,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs</p>
 
 <p>A_report_the_owner_does_not_hold_has_no_notes_to_add_to_or_list_and_it_is_found_missing_before_anything_else_is_judged</p>
 
@@ -340,7 +340,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs</p>
 
 <p>Deleting_a_report_deletes_its_notes_and_leaves_the_notes_of_other_reports</p>
 
@@ -368,7 +368,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs</p>
 
 <p>Deleting_reports_in_bulk_deletes_the_notes_of_each_and_leaves_the_notes_of_a_report_not_deleted</p>
 
@@ -396,7 +396,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs</p>
 
 <p>Deleting_the_Team_that_owns_a_report_deletes_the_report_and_its_notes_and_leaves_another_Teams_notes</p>
 
@@ -424,7 +424,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs</p>
 
 <p>A_note_keeps_its_text_without_outer_blanks_when_it_has_1_to_2000_characters_and_is_refused_otherwise</p>
 
@@ -452,7 +452,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs</p>
 
 <p>A_report_lists_exactly_its_own_accepted_notes_newest_first_whatever_was_added_before</p>
 
@@ -581,13 +581,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P1</p>
 
-<pre><code>A reader of the live report opens a report that has one written note
+<pre><code>An editor of a report opens it while it has one written note
 </code></pre>
 
 <pre><code>The note text is listed in the notes area, which sits above the first panel of the numbers
 </code></pre>
 
-<pre><code>The reader sees the written note next to the numbers, above them
+<pre><code>The editor sees the written note above the numbers
 </code></pre>
 
 <h5>Disposition</h5>
@@ -596,13 +596,179 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.add.test.tsx</p>
 
-<p>shows a reader of the live report a written note above the first panel of the numbers</p>
+<p>shows an editor of the report a written note above the first panel of the numbers</p>
 
 <pre><code>A notes area placed below the numbers or showing no loaded note
 </code></pre>
 
 <h6>Obligations</h6>
 
+
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A reader with read access only opens a Team report and a Portfolio report that have notes
+</code></pre>
+
+<pre><code>The notes are listed newest first with day and author above the numbers, with no add field, no Add note button and no edit or delete control
+</code></pre>
+
+<pre><code>The reader sees the context the notes give and cannot change it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.reader.test.tsx</p>
+
+<p>lists the notes of a %s report above the numbers, newest first, with no way to add, change or delete one</p>
+
+<pre><code>The notes area shows for readers but with the add field still visible, or lists notes in oldest-first order
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A reader opens a report with no notes, a report whose notes cannot be loaded, and a report while the reader&#x27;s roles are still on their way
+</code></pre>
+
+<pre><code>No notes yet. with no field; Could not load the notes with a Retry that brings the notes, numbers still in view; no writing control before or after the roles arrive
+</code></pre>
+
+<pre><code>The reader always sees the notes area in its own state and never a writing control
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.reader.test.tsx</p>
+
+<p>says there are no notes yet to a reader of a report without notes, and still offers no field</p>
+
+<pre><code>A reader whose roles are loading briefly sees the add field, or a failed load shows an empty area
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>The print page of a report that has notes is opened
+</code></pre>
+
+<pre><code>No note text appears in the printed page and the notes are never requested
+</code></pre>
+
+<pre><code>Print and PDF show the numbers without the notes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.reader.test.tsx</p>
+
+<p>carries none of the notes the report has, and never asks for them</p>
+
+<pre><code>Notes read and hidden by styling only, or rendered in the frame host rather than the print page
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>The modules the print pages and the export frame import are followed through
+</code></pre>
+
+<pre><code>None is the notes component, the notes hook or the note model
+</code></pre>
+
+<pre><code>Print and PDF cannot show notes because nothing that draws them is in the print bundle
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrint.enforcement.test.ts</p>
+
+<p>never reaches %s</p>
+
+<pre><code>A note component imported by the print page but unused at runtime is not caught beyond the three named files
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A writer opens a report with notes
+</code></pre>
+
+<pre><code>The notes are listed and the add field is present
+</code></pre>
+
+<pre><code>A writer can add a note
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.add.test.tsx</p>
+
+<p>saves what the writer typed as typed, shows the new note first and empties the field</p>
+
+<pre><code>The field shows to everyone, since the reader cases pin its absence elsewhere
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A caller with read access only reads, adds, changes and deletes a note of a Team or Portfolio report by direct request
+</code></pre>
+
+<pre><code>The read answers 200 with the note; the add answers 403 and the note is unchanged; change and delete do not succeed and the note is unchanged
+</code></pre>
+
+<pre><code>A direct write by a reader is refused and nothing changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Reports/ReportNotesWireContractTest.cs</p>
+
+<p>A_caller_with_read_access_only_is_refused_a_new_note</p>
+
+<pre><code>Change and delete answer any refusal such as 405 rather than 403, because those routes do not exist yet
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
 
 <h2>Expectations</h2>
 

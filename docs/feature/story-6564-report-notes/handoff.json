@@ -13,7 +13,7 @@
 ],
 "still_passes_if": "F448",
 "test": "A_signed_in_writer_adds_notes_and_the_report_lists_them_newest_first_with_the_day_written_and_their_name",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs"
 },
 "expected": "F446",
 "stimulus": "F445",
@@ -31,7 +31,7 @@
 ],
 "still_passes_if": "F452",
 "test": "A_note_written_with_sign_in_off_is_listed_with_its_text_and_day_and_no_author",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs"
 },
 "expected": "F450",
 "stimulus": "F449",
@@ -48,7 +48,7 @@
 ],
 "still_passes_if": "F456",
 "test": "A_note_without_text_is_not_saved_and_the_notes_stay_as_they_were",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs"
 },
 "expected": "F454",
 "stimulus": "F453",
@@ -65,7 +65,7 @@
 ],
 "still_passes_if": "F460",
 "test": "A_note_of_more_than_2000_characters_is_not_saved_for_that_reason_while_one_of_exactly_2000_between_blanks_is",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs"
 },
 "expected": "F458",
 "stimulus": "F457",
@@ -83,7 +83,7 @@
 ],
 "still_passes_if": "F464",
 "test": "A_note_is_refused_when_sign_in_is_on_and_nobody_can_be_named_and_the_notes_stay_as_they_were",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs"
 },
 "expected": "F462",
 "stimulus": "F461",
@@ -100,7 +100,7 @@
 ],
 "still_passes_if": "F468",
 "test": "A_report_the_owner_does_not_hold_has_no_notes_to_add_to_or_list_and_it_is_found_missing_before_anything_else_is_judged",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs"
 },
 "expected": "F466",
 "stimulus": "F465",
@@ -118,7 +118,7 @@
 ],
 "still_passes_if": "F472",
 "test": "Deleting_a_report_deletes_its_notes_and_leaves_the_notes_of_other_reports",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs"
 },
 "expected": "F470",
 "stimulus": "F469",
@@ -136,7 +136,7 @@
 ],
 "still_passes_if": "F476",
 "test": "Deleting_reports_in_bulk_deletes_the_notes_of_each_and_leaves_the_notes_of_a_report_not_deleted",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs"
 },
 "expected": "F474",
 "stimulus": "F473",
@@ -154,7 +154,7 @@
 ],
 "still_passes_if": "F480",
 "test": "Deleting_the_Team_that_owns_a_report_deletes_the_report_and_its_notes_and_leaves_another_Teams_notes",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs"
 },
 "expected": "F478",
 "stimulus": "F477",
@@ -172,7 +172,7 @@
 ],
 "still_passes_if": "F484",
 "test": "A_note_keeps_its_text_without_outer_blanks_when_it_has_1_to_2000_characters_and_is_refused_otherwise",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs"
 },
 "expected": "F482",
 "stimulus": "F481",
@@ -190,7 +190,7 @@
 ],
 "still_passes_if": "F488",
 "test": "A_report_lists_exactly_its_own_accepted_notes_newest_first_whatever_was_added_before",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportNoteScenarios.cs"
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs"
 },
 "expected": "F486",
 "stimulus": "F485",
@@ -280,12 +280,114 @@
 "L2"
 ],
 "still_passes_if": "F508",
-"test": "shows a reader of the live report a written note above the first panel of the numbers",
+"test": "shows an editor of the report a written note above the first panel of the numbers",
 "test_path": "Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.add.test.tsx"
 },
 "expected": "F506",
-"stimulus": "F505",
-"user_result": "F507"
+"stimulus": "F547",
+"user_result": "F548"
+}
+],
+"S2": [
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F272"
+],
+"still_passes_if": "F516",
+"test": "lists the notes of a %s report above the numbers, newest first, with no way to add, change or delete one",
+"test_path": "Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.reader.test.tsx"
+},
+"expected": "F514",
+"stimulus": "F513",
+"user_result": "F515"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F273",
+"L5/F274"
+],
+"still_passes_if": "F520",
+"test": "says there are no notes yet to a reader of a report without notes, and still offers no field",
+"test_path": "Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.reader.test.tsx"
+},
+"expected": "F518",
+"stimulus": "F517",
+"user_result": "F519"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F269"
+],
+"still_passes_if": "F524",
+"test": "carries none of the notes the report has, and never asks for them",
+"test_path": "Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.reader.test.tsx"
+},
+"expected": "F522",
+"stimulus": "F521",
+"user_result": "F523"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F268"
+],
+"still_passes_if": "F528",
+"test": "never reaches %s",
+"test_path": "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrint.enforcement.test.ts"
+},
+"expected": "F526",
+"stimulus": "F525",
+"user_result": "F527"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F271"
+],
+"still_passes_if": "F532",
+"test": "saves what the writer typed as typed, shows the new note first and empties the field",
+"test_path": "Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.add.test.tsx"
+},
+"expected": "F530",
+"stimulus": "F529",
+"user_result": "F531"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F536",
+"test": "A_caller_with_read_access_only_is_refused_a_new_note",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Reports/ReportNotesWireContractTest.cs"
+},
+"expected": "F534",
+"stimulus": "F533",
+"user_result": "F535"
 }
 ]
 },
@@ -293,7 +395,7 @@
 "B": 5,
 "D": 13,
 "E": 12,
-"F": 512,
+"F": 548,
 "K": 2,
 "L": 11,
 "N": 2,
@@ -465,7 +567,7 @@
 "consumer": "ReportService note methods and ReportNoteSchema",
 "contract": "Report note wire",
 "id": "T3",
-"obligation": "F194",
+"obligation": "F538",
 "observation": "F195",
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Reports/ReportNotesWireContractTest.cs",
 "producer": "TeamReportNotesController and PortfolioReportNotesController"
@@ -506,7 +608,7 @@
 },
 {
 "id": "D9",
-"text": "F100"
+"text": "F537"
 },
 {
 "id": "D10",
@@ -780,7 +882,7 @@
 },
 "slices": {
 "S1": {
-"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs",
 "prefactoring": {
 "existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs",
 "move": "F426",
@@ -879,7 +981,7 @@
 },
 {
 "evidence": [
-"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs"
 ],
 "id": "L3",
 "kind": "Invariant",
@@ -898,7 +1000,7 @@
 },
 {
 "evidence": [
-"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice11AddReportNoteScenarios.cs"
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs"
 ],
 "id": "L8",
 "kind": "Invariant",
@@ -1146,7 +1248,7 @@
 }
 ],
 "verification": [
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Slice11AddReportNoteScenarios",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportNoteScenarios",
 "pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportNotes.add.test.tsx",
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsModuleBoundariesArchUnitTest",
 "pwsh Lighthouse.Backend/Test-Fast.ps1",
@@ -1158,7 +1260,7 @@
 "S2": {
 "oracle": "Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.reader.test.tsx",
 "public_oracle": {
-"expected": "F256",
+"expected": "F540",
 "falsifier": "F257",
 "promises": [
 "P5",
@@ -1189,10 +1291,10 @@
 "kind": "Invariant",
 "layer": "Application",
 "owner": "print enforcement test",
-"statement": "F267",
+"statement": "F541",
 "treatment": {
 "cases": [
-"F268",
+"F542",
 "F269"
 ],
 "kind": "Finite",
@@ -1273,7 +1375,7 @@
 {
 "change": "Extend",
 "path": "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrint.enforcement.test.ts",
-"reason": "F358"
+"reason": "F539"
 },
 {
 "change": "Extend",
@@ -1288,7 +1390,7 @@
 ]
 },
 "S3": {
-"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice13ChangeOrDeleteReportNoteScenarios.cs",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs",
 "prefactoring": {
 "existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryNoteAuthorshipTest.cs",
 "move": "F295",
@@ -1298,8 +1400,8 @@
 ]
 },
 "public_oracle": {
-"expected": "F293",
-"falsifier": "F294",
+"expected": "F545",
+"falsifier": "F546",
 "promises": [
 "P7",
 "P8",
@@ -1307,7 +1409,7 @@
 "P10",
 "P12"
 ],
-"stimulus": "F292"
+"stimulus": "F544"
 },
 "records": {
 "boundaries": {
@@ -1350,7 +1452,7 @@
 },
 {
 "evidence": [
-"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice13ChangeOrDeleteReportNoteScenarios.cs"
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs"
 ],
 "id": "L7",
 "kind": "Invariant",
@@ -1371,7 +1473,7 @@
 },
 {
 "evidence": [
-"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice13ChangeOrDeleteReportNoteScenarios.cs"
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs"
 ],
 "id": "L10",
 "kind": "Invariant",
@@ -1422,7 +1524,8 @@
 "supports": [
 "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs",
 "Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.change.test.tsx",
-"Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts"
+"Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Reports/ReportNotesWireContractTest.cs"
 ],
 "targets": [
 {
@@ -1514,13 +1617,19 @@
 "change": "Create",
 "path": "Lighthouse.Frontend/src/pages/Common/Reports/ReportNotes.change.test.tsx",
 "reason": "F380"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Reports/ReportNotesWireContractTest.cs",
+"reason": "F543"
 }
 ],
 "verification": [
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Slice13ChangeOrDeleteReportNoteScenarios",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportNoteChangeScenarios",
 "pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportNotes.change.test.tsx",
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DeliveryNote",
-"quint verify docs/feature/story-6564-report-notes/design/reportNoteModifyRule.qnt --main=reportNoteModifyRuleTwoUsers --init=init --step=step --invariant=signedStaysItsAuthors --max-steps=8"
+"quint verify docs/feature/story-6564-report-notes/design/reportNoteModifyRule.qnt --main=reportNoteModifyRuleTwoUsers --init=init --step=step --invariant=signedStaysItsAuthors --max-steps=8",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportNotesWireContractTest"
 ]
 }
 }
@@ -1628,7 +1737,6 @@
 "facts": {
 "F1": "Idea: similar to deliveries, I'd like to bea ble to add notes to reports. if auth is on, we should identify who wrote it. Notes should be visible in the \"live report\" in lighthouse, i think (for nwo) we keep them out of the print to pdf",
 "F10": "a user adds a note to a report",
-"F100": "Frontend. A Reports-owned component ReportNotes in pages/Common/Reports is rendered by ReportView beside ReportPanels, never inside ReportPanels or anything the print bundle imports, so print and PDF stay free of notes by construction; the print enforcement test gets a never-reaches rule. It is not extracted from DeliveryNotesPanel (FE2 will move that file); layout and copy are reused by value. Notes are read with a keyed TanStack query keyed by owner and report id, writes invalidate it. The add control shows when useMayEditReports(owner).isEditor; the change and delete controls show per note from canModify. The exact placement is decided at the UI sketch at the start of DELIVER.",
 "F101": "Loading look and failure look of the notes area. Loading: the notes area is wrapped in WidgetBody with status from queryStatusOf, so it shows a lone spinner with the message Loading notes when it has nothing yet and dims the earlier list under a small spinner when it refetches; never an empty area that reads as no notes. Failure: WidgetBody shows the could-not-load message Could not load the notes with a retry, and the add control stays hidden while the list is unknown, so a note is never added blind. The report itself keeps its own status; a notes failure does not hide the numbers. A save in flight disables the Save control; a failed save keeps the typed text and shows the refusal under the field. The acceptance designer pins both states, and E2E waits for data-widget-status ready.",
 "F104": "Cross-layer algebra. Domain (ReportNote, NoteSignature): states Unsigned(text, createdAt) and Signed(profileId, name, text, createdAt), optionally edited; operations Write, Revise, MayBeChangedBy; observations text, days, author name, canModify; equality by those observations. Application: ReportNoteCommands and ReportNoteQueries answer ReportOutcome Done, NotFound or Refused(code), never null for a domain outcome. Adapter: ReportRepository and the two controllers translate DbUpdateConcurrencyException to NotFound, outcomes to 200, 201, 204, 400, 403, 404, and the route guard refuses a caller without read or write access before any use case runs. Infrastructure: table ReportNotes with cascade to Reports and SetNull to UserProfiles; a failed save leaves prior notes intact.",
 "F105": "Authority bounds carried: note text is plain text rendered as characters with line breaks kept; no markup is interpreted. Authority names no length bound; the design adds 2000 characters after trim as a labelled deviation. Authority names no bound on the number of notes; none is added. A text empty or only blanks is refused and nothing is saved (P4). The author name is the name when the note was written. The day shown is the instance-zone day of the instant. Newest first means ordered by CreatedAt then Id, both descending.",
@@ -1713,7 +1821,6 @@
 "F19": "the user sees the notes, with no control to add, change or delete a note, and a direct request to add, change or delete one is refused",
 "F190": "A silent truncation",
 "F193": "Every note route action declares its access (RbacGuard or CheckedInHandler)",
-"F194": "The real note routes answer the real client schema and refuse a reader on write: GET lists for a reader, POST PUT DELETE are 403 for a reader, and a refusal carries its code",
 "F195": "A reader gets the list with canModify false and no write succeeds; a writer's POST is read back through the same schema",
 "F2": "A person reading a report in Lighthouse sees the notes written on it (what happened, how large the Team is), with who wrote them when authentication is on, so the numbers are not misread without their context.",
 "F20": "Print and PDF leave the notes out",
@@ -1758,7 +1865,6 @@
 "F253": "Mounts the notes area for every reader of the report",
 "F254": "Shows the add control only when the viewer may edit reports and a read-only list otherwise, with its own empty line",
 "F255": "Render ReportView for a Team and for a Portfolio report that has notes as a reader with read access only; send POST, PUT and DELETE on the note routes as that reader; render the print page of the same report",
-"F256": "The notes are listed with no add, change or delete control; the three requests answer 403; the print page and the print import closure show and reach no note",
 "F257": "An add field shown to a reader, a write request that succeeds, or note text in the printed page",
 "F258": "ReportView.tsx holds one component; ReportNotes.tsx is created in S1 with one component; nothing moves",
 "F259": "The print never-reaches law is the slice law and is carried by the print enforcement test named in the slice law; the shared architectural tests cover the access declaration of the routes",
@@ -1770,8 +1876,6 @@
 "F264": "What a reader without write access sees under a report with notes, and what a printed report shows",
 "F265": "A reader whose roles are still loading from a reader without write access: both see no control",
 "F266": "Two renders agree when they list the same notes in the same order and show the same set of controls",
-"F267": "For every viewer role and every report type, the print and PDF bundle imports nothing from the notes component, hook or schema",
-"F268": "whatThePrintPagesReach contains none of ReportNotes.tsx, useReportNotes.ts and models/Reports/ReportNote.ts",
 "F269": "ReportPrintPage render of a report that has notes shows none of their text",
 "F27": "the live report shows the new text, marked as edited with the day of the edit",
 "F270": "For every viewer, the add control is present iff the viewer may edit reports on the owner and the notes are known",
@@ -1797,9 +1901,6 @@
 "F29": "the user deletes the note",
 "F290": "updateNote and deleteNote",
 "F291": "Edit and delete controls per note from canModify and the editor gate, with the edited marker",
-"F292": "A signed author calls Edit and Delete on their note; another writer calls them on it; any writer calls them on a note written with no profile; with authentication off a writer calls them on a signed note; each is followed by IReportNoteQueries.List and the UI render of the list",
-"F293": "The author's edit shows the new text marked as edited with the day and the delete removes the note; the other writer is refused note-not-yours with the note unchanged and canModify false; the unsigned note is changed or deleted by any writer; the signed note stays refused with authentication off",
-"F294": "A signed note changed by a non-author, an unsigned note refused to a writer, or a canModify that disagrees with the refusal",
 "F295": "Move DeliveryNoteRequest out of DeliveryNotesController.cs into its own file DeliveryNoteRequest.cs (split-now, a separate commit before the behaviour change), then extract DeliveryNotesController.MayModify unchanged into the kernel value NoteSignature, which makes the report note rule a second asker of one decision",
 "F296": "Delivery note behaviour: a signed note only by its author, an unsigned note by any writer, whatever the authentication setting; same routes and same DTO",
 "F297": "No new dependency or boundary law is reached beyond the shared Reports module rules; NoteSignature sits in the Models kernel and reaches nothing",
@@ -1856,7 +1957,6 @@
 "F355": "2001 characters refused",
 "F356": "Finite domain: the two boundary lengths of a single bound, run as native examples",
 "F357": "Wire contract in namespace Lighthouse.Backend.Tests.Contracts.Reports, deriving WireContractTest, as TestHostUseGuardTest requires of a host-started test",
-"F358": "The never-reaches list gains pages/Common/Reports/ReportNotes.tsx, pages/Common/Reports/useReportNotes.ts and models/Reports/ReportNote.ts",
 "F359": "Reads for a reader as for a writer",
 "F360": "With authentication on and no resolvable profile, change and delete are refused with note-author-unknown and the note is unchanged, whatever the note's signer",
 "F361": "Unresolved edit of a signed note",
@@ -2004,17 +2104,51 @@
 "F502": "No shrinking: the test project has no property library. Seeded generation with the seed printed on failure, fixed boundary cases in must-include, replay by seed",
 "F503": "The controller maps the sign-in mode and the resolved profile to the caller and takes no other input: Disabled to Anonymous; Enabled with a resolved profile to Signed; Enabled with no profile, Misconfigured and Blocked to Unresolved. CallerOf has no RBAC parameter, so the RBAC switch cannot change the result",
 "F504": "Enabled with profile",
-"F505": "A reader of the live report opens a report that has one written note",
 "F506": "The note text is listed in the notes area, which sits above the first panel of the numbers",
-"F507": "The reader sees the written note next to the numbers, above them",
 "F508": "A notes area placed below the numbers or showing no loaded note",
 "F509": "2000 and then 2001 characters are inserted straight into the text column on PostgreSQL",
 "F51": "Notes written by the system.",
 "F510": "2000 characters are kept and 2001 are refused by the database as too long",
 "F511": "A note over the limit cannot be stored even by another writer",
 "F512": "A text column without the 2000 bound",
+"F513": "A reader with read access only opens a Team report and a Portfolio report that have notes",
+"F514": "The notes are listed newest first with day and author above the numbers, with no add field, no Add note button and no edit or delete control",
+"F515": "The reader sees the context the notes give and cannot change it",
+"F516": "The notes area shows for readers but with the add field still visible, or lists notes in oldest-first order",
+"F517": "A reader opens a report with no notes, a report whose notes cannot be loaded, and a report while the reader's roles are still on their way",
+"F518": "No notes yet. with no field; Could not load the notes with a Retry that brings the notes, numbers still in view; no writing control before or after the roles arrive",
+"F519": "The reader always sees the notes area in its own state and never a writing control",
 "F52": "The day a note was written is enough; there is one kind of note, with no separate event date (maintainer, 2026-11-26).",
+"F520": "A reader whose roles are loading briefly sees the add field, or a failed load shows an empty area",
+"F521": "The print page of a report that has notes is opened",
+"F522": "No note text appears in the printed page and the notes are never requested",
+"F523": "Print and PDF show the numbers without the notes",
+"F524": "Notes read and hidden by styling only, or rendered in the frame host rather than the print page",
+"F525": "The modules the print pages and the export frame import are followed through",
+"F526": "None is the notes component, the notes hook or the note model",
+"F527": "Print and PDF cannot show notes because nothing that draws them is in the print bundle",
+"F528": "A note component imported by the print page but unused at runtime is not caught beyond the three named files",
+"F529": "A writer opens a report with notes",
 "F53": "Write access on the Team or Portfolio that owns the report is enough to add a note (maintainer, 2026-11-26).",
+"F530": "The notes are listed and the add field is present",
+"F531": "A writer can add a note",
+"F532": "The field shows to everyone, since the reader cases pin its absence elsewhere",
+"F533": "A caller with read access only reads, adds, changes and deletes a note of a Team or Portfolio report by direct request",
+"F534": "The read answers 200 with the note; the add answers 403 and the note is unchanged; change and delete do not succeed and the note is unchanged",
+"F535": "A direct write by a reader is refused and nothing changes",
+"F536": "Change and delete answer any refusal such as 405 rather than 403, because those routes do not exist yet",
+"F537": "Frontend. A Reports-owned component ReportNotes in pages/Common/Reports is rendered by ReportView beside ReportPanels, never inside ReportPanels or anything the print bundle imports, so print and PDF stay free of notes by construction; the print enforcement test gets a never-reaches rule for ReportNotes.tsx and useReportNotes.ts only (models/Reports/ReportNote.ts is a shared data type that print already reaches through the shared service interface and renders nothing). It is not extracted from DeliveryNotesPanel (FE2 will move that file); layout and copy are reused by value. Notes are read with a keyed TanStack query keyed by owner and report id, writes invalidate it. The add control shows when useMayEditReports(owner).isEditor; the change and delete controls show per note from canModify. The exact placement is decided at the UI sketch at the start of DELIVER.",
+"F538": "The real note routes answer the real client schema and refuse a reader on write: GET lists for a reader, a reader's POST is 403, a reader's PUT and DELETE are not a success and leave the note unchanged (405 until S3 adds them, 403 after), and a refusal carries its code",
+"F539": "The never-reaches list gains pages/Common/Reports/ReportNotes.tsx and pages/Common/Reports/useReportNotes.ts. The model is a shared data type that print already reaches through the shared service interface and it renders nothing; what must never reach print is the component and the hook that fetch and render notes.",
+"F540": "The notes are listed with no add, change or delete control; the POST answers 403 and a PUT and a DELETE are not a success and leave the note unchanged (they answer 405 until S3 adds those routes); the print page and the print import closure show and reach no note",
+"F541": "For every viewer role and every report type, the print and PDF bundle imports nothing from the notes component or hook",
+"F542": "whatThePrintPagesReach contains none of ReportNotes.tsx and useReportNotes.ts",
+"F543": "Adds the S3 rows: a reader's PUT and DELETE are refused 403 and the note is unchanged",
+"F544": "A signed author calls Edit and Delete on their note; another writer calls them on it; any writer calls them on a note written with no profile; with authentication off a writer calls them on a signed note; each is followed by IReportNoteQueries.List and the UI render of the list; a reader without write access sends PUT and DELETE on a note to the real routes",
+"F545": "The author's edit shows the new text marked as edited with the day and the delete removes the note; the other writer is refused note-not-yours with the note unchanged and canModify false; the unsigned note is changed or deleted by any writer; the signed note stays refused with authentication off; the reader's PUT and DELETE answer 403 and the note is unchanged (asserted in the S3 rows of the wire contract test)",
+"F546": "A signed note changed by a non-author, an unsigned note refused to a writer, or a canModify that disagrees with the refusal, or a reader's PUT or DELETE that is not refused",
+"F547": "An editor of a report opens it while it has one written note",
+"F548": "The editor sees the written note above the numbers",
 "F55": "Notes are deleted when their report is deleted (maintainer, 2026-11-26).",
 "F56": "Notes stay out of print and PDF for now (maintainer, 2026-11-26).",
 "F57": "Notes are not added to the CLI and MCP report reads now (maintainer, 2026-11-26).",

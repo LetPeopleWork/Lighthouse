@@ -59,7 +59,7 @@ Wire shape. Separate routes api/latest/teams/{teamId}/reports/{reportId}/notes a
 #### D9
 
 ```text
-Frontend. A Reports-owned component ReportNotes in pages/Common/Reports is rendered by ReportView beside ReportPanels, never inside ReportPanels or anything the print bundle imports, so print and PDF stay free of notes by construction; the print enforcement test gets a never-reaches rule. It is not extracted from DeliveryNotesPanel (FE2 will move that file); layout and copy are reused by value. Notes are read with a keyed TanStack query keyed by owner and report id, writes invalidate it. The add control shows when useMayEditReports(owner).isEditor; the change and delete controls show per note from canModify. The exact placement is decided at the UI sketch at the start of DELIVER.
+Frontend. A Reports-owned component ReportNotes in pages/Common/Reports is rendered by ReportView beside ReportPanels, never inside ReportPanels or anything the print bundle imports, so print and PDF stay free of notes by construction; the print enforcement test gets a never-reaches rule for ReportNotes.tsx and useReportNotes.ts only (models/Reports/ReportNote.ts is a shared data type that print already reaches through the shared service interface and renders nothing). It is not extracted from DeliveryNotesPanel (FE2 will move that file); layout and copy are reused by value. Notes are read with a keyed TanStack query keyed by owner and report id, writes invalidate it. The add control shows when useMayEditReports(owner).isEditor; the change and delete controls show per note from canModify. The exact placement is decided at the UI sketch at the start of DELIVER.
 ```
 
 #### D10
@@ -877,7 +877,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 #### T3
 
 ```text
-The real note routes answer the real client schema and refuse a reader on write: GET lists for a reader, POST PUT DELETE are 403 for a reader, and a refusal carries its code
+The real note routes answer the real client schema and refuse a reader on write: GET lists for a reader, a reader's POST is 403, a reader's PUT and DELETE are not a success and leave the note unchanged (405 until S3 adds them, 403 after), and a refusal carries its code
 ```
 
 Report note wire
@@ -1134,12 +1134,12 @@ Create
 Component test of the writer path: add, list newest first, blank refused, loading and failure look
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice11AddReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteScenarios\.cs
 
 #### Verification
 
 ```text
-dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Slice11AddReportNoteScenarios
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportNoteScenarios
 pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportNotes.add.test.tsx
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsModuleBoundariesArchUnitTest
 pwsh Lighthouse.Backend/Test-Fast.ps1
@@ -1473,7 +1473,7 @@ Finite domain: the listed cases are every member of the case table, run as nativ
 
 ###### Evidence
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice11AddReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteScenarios\.cs
 
 ###### L8
 
@@ -1511,7 +1511,7 @@ Finite domain: the three caller variants are every member of the closed choice t
 
 ###### Evidence
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice11AddReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteScenarios\.cs
 
 ###### L9
 
@@ -1658,7 +1658,7 @@ Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/print\/reportPrint\.enforceme
 Extend
 
 ```text
-The never-reaches list gains pages/Common/Reports/ReportNotes.tsx, pages/Common/Reports/useReportNotes.ts and models/Reports/ReportNote.ts
+The never-reaches list gains pages/Common/Reports/ReportNotes.tsx and pages/Common/Reports/useReportNotes.ts. The model is a shared data type that print already reaches through the shared service interface and it renders nothing; what must never reach print is the component and the hook that fetch and render notes.
 ```
 
 Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/useReportNotes\.ts
@@ -1696,7 +1696,7 @@ Render ReportView for a Team and for a Portfolio report that has notes as a read
 ```
 
 ```text
-The notes are listed with no add, change or delete control; the three requests answer 403; the print page and the print import closure show and reach no note
+The notes are listed with no add, change or delete control; the POST answers 403 and a PUT and a DELETE are not a success and leave the note unchanged (they answer 405 until S3 adds those routes); the print page and the print import closure show and reach no note
 ```
 
 ```text
@@ -1816,7 +1816,7 @@ None.
 ###### L4
 
 ```text
-For every viewer role and every report type, the print and PDF bundle imports nothing from the notes component, hook or schema
+For every viewer role and every report type, the print and PDF bundle imports nothing from the notes component or hook
 ```
 
 Invariant
@@ -1832,7 +1832,7 @@ Finite
 ###### Cases
 
 ```text
-whatThePrintPagesReach contains none of ReportNotes.tsx, useReportNotes.ts and models/Reports/ReportNote.ts
+whatThePrintPagesReach contains none of ReportNotes.tsx and useReportNotes.ts
 ```
 
 ```text
@@ -2069,15 +2069,24 @@ Create
 Component test of change and delete controls per note from canModify, with the edited marker
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice13ChangeOrDeleteReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Reports\/ReportNotesWireContractTest\.cs
+
+Extend
+
+```text
+Adds the S3 rows: a reader's PUT and DELETE are refused 403 and the note is unchanged
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteChangeScenarios\.cs
 
 #### Verification
 
 ```text
-dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Slice13ChangeOrDeleteReportNoteScenarios
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportNoteChangeScenarios
 pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportNotes.change.test.tsx
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DeliveryNote
 quint verify docs/feature/story-6564-report-notes/design/reportNoteModifyRule.qnt --main=reportNoteModifyRuleTwoUsers --init=init --step=step --invariant=signedStaysItsAuthors --max-steps=8
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportNotesWireContractTest
 ```
 
 #### Supports
@@ -2088,6 +2097,8 @@ Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportNotes\.change\.test\.ts
 
 Lighthouse\.Frontend\/src\/tests\/MockApiServiceProvider\.ts
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Reports\/ReportNotesWireContractTest\.cs
+
 None.
 
 None.
@@ -2095,15 +2106,15 @@ None.
 #### Public oracle
 
 ```text
-A signed author calls Edit and Delete on their note; another writer calls them on it; any writer calls them on a note written with no profile; with authentication off a writer calls them on a signed note; each is followed by IReportNoteQueries.List and the UI render of the list
+A signed author calls Edit and Delete on their note; another writer calls them on it; any writer calls them on a note written with no profile; with authentication off a writer calls them on a signed note; each is followed by IReportNoteQueries.List and the UI render of the list; a reader without write access sends PUT and DELETE on a note to the real routes
 ```
 
 ```text
-The author's edit shows the new text marked as edited with the day and the delete removes the note; the other writer is refused note-not-yours with the note unchanged and canModify false; the unsigned note is changed or deleted by any writer; the signed note stays refused with authentication off
+The author's edit shows the new text marked as edited with the day and the delete removes the note; the other writer is refused note-not-yours with the note unchanged and canModify false; the unsigned note is changed or deleted by any writer; the signed note stays refused with authentication off; the reader's PUT and DELETE answer 403 and the note is unchanged (asserted in the S3 rows of the wire contract test)
 ```
 
 ```text
-A signed note changed by a non-author, an unsigned note refused to a writer, or a canModify that disagrees with the refusal
+A signed note changed by a non-author, an unsigned note refused to a writer, or a canModify that disagrees with the refusal, or a reader's PUT or DELETE that is not refused
 ```
 
 ##### Promises
@@ -2332,7 +2343,7 @@ Finite domain: the listed cases are every member of the case table, run as nativ
 
 ###### Evidence
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice13ChangeOrDeleteReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteChangeScenarios\.cs
 
 ###### L10
 
@@ -2366,7 +2377,7 @@ Finite domain: one variant of the closed caller choice crossed with the two verb
 
 ###### Evidence
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice13ChangeOrDeleteReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteChangeScenarios\.cs
 
 ##### Refuted
 

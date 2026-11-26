@@ -253,8 +253,6 @@ describe("The notes area while its notes are on the way or cannot be read", () =
 	});
 });
 
-// The byline ("<day> · <author>", the day alone when unsigned) is built inside the component and the design declares no
-// function for it, so it is asserted on the one rendered list above rather than on a function this test would have to invent.
 describe("The notes in the live report", () => {
 	beforeEach(() => {
 		reportUsage.mockClear();
@@ -281,7 +279,7 @@ describe("The notes in the live report", () => {
 		expect(firstPanel).toBeVisible();
 	});
 
-	it("shows a reader of the live report a written note above the first panel of the numbers", async () => {
+	it("shows an editor of the report a written note above the first panel of the numbers", async () => {
 		const reportService = aReportService({
 			getNotes: vi.fn().mockResolvedValue([NEWER]),
 		});

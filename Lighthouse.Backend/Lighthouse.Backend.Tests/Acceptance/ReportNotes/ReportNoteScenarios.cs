@@ -1,7 +1,8 @@
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Modules.Reports.Domain;
+using Lighthouse.Backend.Tests.API.Integration.Reports;
 
-namespace Lighthouse.Backend.Tests.API.Integration.Reports
+namespace Lighthouse.Backend.Tests.Acceptance.ReportNotes
 {
     /// <summary>
     /// A writer adds a note to a report and the report lists it, newest first, with the day it was written on the
@@ -232,7 +233,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        /// <summary>Law L1: for any raw text a note keeps it trimmed when its trimmed length is 1 to 2000 and is refused otherwise.</summary>
+        /// <summary>For any text, a note keeps it without its outer blanks when that leaves 1 to 2000 characters, and is refused otherwise.</summary>
         [Test]
         public void A_note_keeps_its_text_without_outer_blanks_when_it_has_1_to_2000_characters_and_is_refused_otherwise()
         {
@@ -253,7 +254,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        /// <summary>Law L2: after any sequence of adds, a report lists exactly its accepted notes, newest first by the instant written then by order of adding, and no note of another report or owner.</summary>
+        /// <summary>After any sequence of adds, a report lists exactly its accepted notes, newest first by the instant written then by order of adding, and no note of another report or owner.</summary>
         [Test]
         public async Task A_report_lists_exactly_its_own_accepted_notes_newest_first_whatever_was_added_before()
         {

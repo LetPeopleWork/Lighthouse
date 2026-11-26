@@ -24,7 +24,7 @@ The writer sees both notes, newest on top, with the day and their name
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteScenarios\.cs
 
 A\_signed\_in\_writer\_adds\_notes\_and\_the\_report\_lists\_them\_newest\_first\_with\_the\_day\_written\_and\_their\_name
 
@@ -56,7 +56,7 @@ The note shows with its day and without a name
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteScenarios\.cs
 
 A\_note\_written\_with\_sign\_in\_off\_is\_listed\_with\_its\_text\_and\_day\_and\_no\_author
 
@@ -88,7 +88,7 @@ The writer is told the note needs text and nothing is saved
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteScenarios\.cs
 
 A\_note\_without\_text\_is\_not\_saved\_and\_the\_notes\_stay\_as\_they\_were
 
@@ -119,7 +119,7 @@ The writer is told the note is too long and it is not saved
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteScenarios\.cs
 
 A\_note\_of\_more\_than\_2000\_characters\_is\_not\_saved\_for\_that\_reason\_while\_one\_of\_exactly\_2000\_between\_blanks\_is
 
@@ -150,7 +150,7 @@ The writer cannot add a note that nobody can be named for
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteScenarios\.cs
 
 A\_note\_is\_refused\_when\_sign\_in\_is\_on\_and\_nobody\_can\_be\_named\_and\_the\_notes\_stay\_as\_they\_were
 
@@ -182,7 +182,7 @@ A report that is not the owner's has no notes to add to or read
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteScenarios\.cs
 
 A\_report\_the\_owner\_does\_not\_hold\_has\_no\_notes\_to\_add\_to\_or\_list\_and\_it\_is\_found\_missing\_before\_anything\_else\_is\_judged
 
@@ -213,7 +213,7 @@ The notes of a deleted report are gone with it
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteScenarios\.cs
 
 Deleting\_a\_report\_deletes\_its\_notes\_and\_leaves\_the\_notes\_of\_other\_reports
 
@@ -245,7 +245,7 @@ Bulk removal removes the notes of every selected report
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteScenarios\.cs
 
 Deleting\_reports\_in\_bulk\_deletes\_the\_notes\_of\_each\_and\_leaves\_the\_notes\_of\_a\_report\_not\_deleted
 
@@ -277,7 +277,7 @@ Deleting a Team removes its reports notes
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteScenarios\.cs
 
 Deleting\_the\_Team\_that\_owns\_a\_report\_deletes\_the\_report\_and\_its\_notes\_and\_leaves\_another\_Teams\_notes
 
@@ -309,7 +309,7 @@ A note is kept trimmed or refused for its reason
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteScenarios\.cs
 
 A\_note\_keeps\_its\_text\_without\_outer\_blanks\_when\_it\_has\_1\_to\_2000\_characters\_and\_is\_refused\_otherwise
 
@@ -341,7 +341,7 @@ Each report shows only its own notes, newest first
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportNoteScenarios\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/ReportNotes\/ReportNoteScenarios\.cs
 
 A\_report\_lists\_exactly\_its\_own\_accepted\_notes\_newest\_first\_whatever\_was\_added\_before
 
@@ -488,7 +488,7 @@ A text column without the 2000 bound
 P1
 
 ```text
-A reader of the live report opens a report that has one written note
+An editor of a report opens it while it has one written note
 ```
 
 ```text
@@ -496,7 +496,7 @@ The note text is listed in the notes area, which sits above the first panel of t
 ```
 
 ```text
-The reader sees the written note next to the numbers, above them
+The editor sees the written note above the numbers
 ```
 
 ##### Disposition
@@ -505,7 +505,7 @@ Tested
 
 Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportNotes\.add\.test\.tsx
 
-shows a reader of the live report a written note above the first panel of the numbers
+shows an editor of the report a written note above the first panel of the numbers
 
 ```text
 A notes area placed below the numbers or showing no loaded note
@@ -513,6 +513,196 @@ A notes area placed below the numbers or showing no loaded note
 
 ###### Obligations
 
+
+### S2
+
+##### Covers
+
+P5
+
+```text
+A reader with read access only opens a Team report and a Portfolio report that have notes
+```
+
+```text
+The notes are listed newest first with day and author above the numbers, with no add field, no Add note button and no edit or delete control
+```
+
+```text
+The reader sees the context the notes give and cannot change it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportNotes\.reader\.test\.tsx
+
+lists the notes of a \%s report above the numbers\, newest first\, with no way to add\, change or delete one
+
+```text
+The notes area shows for readers but with the add field still visible, or lists notes in oldest-first order
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+A reader opens a report with no notes, a report whose notes cannot be loaded, and a report while the reader's roles are still on their way
+```
+
+```text
+No notes yet. with no field; Could not load the notes with a Retry that brings the notes, numbers still in view; no writing control before or after the roles arrive
+```
+
+```text
+The reader always sees the notes area in its own state and never a writing control
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportNotes\.reader\.test\.tsx
+
+says there are no notes yet to a reader of a report without notes\, and still offers no field
+
+```text
+A reader whose roles are loading briefly sees the add field, or a failed load shows an empty area
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P6
+
+```text
+The print page of a report that has notes is opened
+```
+
+```text
+No note text appears in the printed page and the notes are never requested
+```
+
+```text
+Print and PDF show the numbers without the notes
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportNotes\.reader\.test\.tsx
+
+carries none of the notes the report has\, and never asks for them
+
+```text
+Notes read and hidden by styling only, or rendered in the frame host rather than the print page
+```
+
+###### Obligations
+
+
+##### Covers
+
+P6
+
+```text
+The modules the print pages and the export frame import are followed through
+```
+
+```text
+None is the notes component, the notes hook or the note model
+```
+
+```text
+Print and PDF cannot show notes because nothing that draws them is in the print bundle
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/print\/reportPrint\.enforcement\.test\.ts
+
+never reaches \%s
+
+```text
+A note component imported by the print page but unused at runtime is not caught beyond the three named files
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+A writer opens a report with notes
+```
+
+```text
+The notes are listed and the add field is present
+```
+
+```text
+A writer can add a note
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportNotes\.add\.test\.tsx
+
+saves what the writer typed as typed\, shows the new note first and empties the field
+
+```text
+The field shows to everyone, since the reader cases pin its absence elsewhere
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+A caller with read access only reads, adds, changes and deletes a note of a Team or Portfolio report by direct request
+```
+
+```text
+The read answers 200 with the note; the add answers 403 and the note is unchanged; change and delete do not succeed and the note is unchanged
+```
+
+```text
+A direct write by a reader is refused and nothing changes
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Reports\/ReportNotesWireContractTest\.cs
+
+A\_caller\_with\_read\_access\_only\_is\_refused\_a\_new\_note
+
+```text
+Change and delete answer any refusal such as 405 rather than 403, because those routes do not exist yet
+```
+
+###### Obligations
+
+None.
 
 ## Expectations
 
