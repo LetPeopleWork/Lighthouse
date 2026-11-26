@@ -1,0 +1,77 @@
+{
+"counters": {
+"F": 10,
+"P": 2,
+"S": 2
+},
+"facts": {
+"F1": "Story 6382 S09a feature A, rules first: measure the published set of every context from the compiled code (ContextContractsMembership), classify every rule pattern FrontDoor or Place and widen FrontDoor patterns to Application|Contracts, then add the contracts-only rule (R-C1..R-C3) with its complete measured baseline, before any type moves.",
+"F10": "Any new cross-context edge outside what a context publishes is refused from now on.",
+"F2": "Before any context publishes a Contracts namespace, the rules already know what each context publishes and refuse any new cross-context edge outside it, so features B to D move types under a rule that bites.",
+"F3": "Every context's published set is measured from the compiled code and every rule pattern is classified FrontDoor or Place, with front doors widened to Application|Contracts, and no rule verdict changes.",
+"F4": "The contracts-only rule (R-C1 to R-C3) exists, lists every measured cross-context edge, and catches a planted offender per rule and per list position.",
+"F5": "The Architecture test files of this feature: ContextContractsMembership and its test, the namespace-move law contracts map, ContextContractsArchUnitTest, and the widened FrontDoor patterns.",
+"F6": "Any production move (feature C and D), module start-up (feature B), domain events (D1), the forecast refresh-log reaction (D2), and any behaviour, schema, route or DTO change.",
+"F7": "A reviewer reading the architecture-rules output sees each context's published set listed from the compiled code (type, context, old and new namespace, seed or closure), every rule pattern classed FrontDoor or Place, and the front-door patterns widened to Application|Contracts. The namespace-move law over the contracts map is RED before the widening and GREEN after, every existing rule keeps its verdict, and the start-condition checks for the four earlier Stories and the re-measured counts are recorded.",
+"F8": "Later features move types into Contracts under rules that already know what each context publishes.",
+"F9": "A reviewer sees the contracts rule fail on a planted cross-context type outside a context's published set, once per rule R-C1, R-C2, R-C3 and once per list position. R-C3 (ten contexts) is observed RED against an enumerator that returns nothing, then GREEN when it reads the assembly. R-C1 lists every measured cross-context edge, and R-C2 is empty."
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+}
+],
+"scope_in": [
+"F5"
+],
+"scope_out": [
+"F6"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F7",
+"promises": [
+"P1"
+],
+"work": {
+"size": "M",
+"value": "F8"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F9",
+"promises": [
+"P2"
+],
+"work": {
+"size": "M",
+"value": "F10"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6382-s09a-a-rules-first",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "L",
+"value": "F2"
+}
+}
