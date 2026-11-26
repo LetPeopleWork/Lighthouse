@@ -62,6 +62,26 @@ Recommendation: no improvement item before this Story. The two DESIGN rules abov
 | Context map (ADR-270) | Touches **Reports** only. It reads the author's display name from **Access** (user profile); that edge exists already (Reports depends on RBAC). New glossary term in Reports: **Report note**, a short, dated, attributed text a person writes on one report to give its numbers context. Domain events: none published and none consumed. Notes go with their report inside the Reports context. ADR-270 gets the glossary term and the Reports row's aggregate list ("Reports and their notes …") in this feature. |
 | UI surface (ADR-271) | The report view, opened from the **Reports** tab of the Team or Portfolio page (ADR-271: Reports, every level). Already in its target surface; nothing moves. The print bundle (`pages/Common/Reports/print/`) stays as it is. |
 
+## DEVOPS (2026-11-26, AFK)
+
+**Platform risk:** none material. One additive table (`ReportNotes`, a cascade foreign key to `Reports`, a set-null
+foreign key to the author profile), generated with `CreateMigration` for every provider. It is expand-only, with no
+new service, configuration, secret, job or external call. The usual gates (the filtered `dotnet test`, `pnpm test`,
+`pnpm build`, `dotnet build`) and the existing migration tests cover it.
+
+**Usage-data event:** `ReportNoteAdded = 30`, appended to `UsageDataEventName`. It is **name-only** and carries no
+property: not which report or report type, not which Team or Portfolio, not the text or its length, not who wrote it.
+- **What it answers:** whether anyone uses report notes at all, the outcome the job asks about. Counting notes per
+  report type would add nothing while Then & Now is the only type. A note's length or count is a number we do not send.
+- **When it is sent:** by the browser, after the server has accepted a new note, through the existing usage-data
+  service (`services/Api/UsageDataService.ts`), the way *A report was deleted* is sent from `useReportDeletion.tsx`.
+  A refused note, a change and a deletion are not reported.
+- **Emitted by S1**, the slice that makes notes usable. S1 also adds the row to `docs/settings/usagedata.md` ("A note
+  was added to a report | Somebody added a note to a report and your server accepted it. **Changing or deleting a
+  note, or a note your server refused, is never reported** | Nothing. **Not which report, not its Team or
+  Portfolio, not the note's text or length, not who wrote it**").
+- **Host default, AFK:** the maintainer may want to revisit the choice of name-only.
+
 ## Open, for DESIGN
 
 - Maximum length of a note (Delivery notes have none).

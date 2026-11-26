@@ -1,0 +1,18 @@
+quint 0.33.1; bounded checking only (simulation and bounded verify), not a proof. Run from a copy outside the repo.
+$ quint typecheck reportNoteModifyRule.qnt
+exit=0
+
+$ quint run reportNoteModifyRule.qnt --main=reportNoteModifyRuleTwoUsers --init=init --step=step --invariant=signedStaysItsAuthors --max-samples=2000 --max-steps=12
+exit=0
+[ok] No violation found (77ms at 25974 traces/second).
+
+$ quint verify reportNoteModifyRule.qnt --main=reportNoteModifyRuleTwoUsers --init=init --step=step --invariant=signedStaysItsAuthors --max-steps=8
+exit=0
+As of 2022/09/29 (release 21.7) makeExtensionsImmutable should not be called from protobuf gencode. If you are seeing this message, your gencode is vulnerable to a denial of service attack. You should regenerate your code using protobuf 25.6 or later. Use the latest version that meets your needs. However, if you understand the risks and wish to continue with vulnerable gencode, you can set the system property `-Dcom.google.protobuf.use_unsafe_pre22_gencode` on the command line to silence this warning. You also can set `-Dcom.google.protobuf.error_on_unsafe_pre22_gencode` to throw an error instead. See security vulnerability: https://github.com/protocolbuffers/protobuf/security/advisories/GHSA-h4h5-3hr4-j3g2
+The outcome is: NoError                                           I@17:18:04.029
+[ok] No violation found (17907ms).
+
+$ quint run reportNoteModifyRule.mutantAlwaysMay.qnt --main=reportNoteModifyRuleTwoUsers --init=init --step=step --invariant=signedStaysItsAuthors --max-samples=2000 --max-steps=12
+exit=1
+error: Invariant violated
+
