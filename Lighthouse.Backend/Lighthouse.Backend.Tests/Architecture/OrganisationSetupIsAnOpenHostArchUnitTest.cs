@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static string TheLooseServices => "Lighthouse.Backend.Services.Implementation";
 
-        private static string TheEvents => "Lighthouse.Backend.Models.Events";
+        private static string TheEvents => "Lighthouse.Backend.Modules.OrganisationSetup.Contracts";
 
         private static string MadeUpTrackerIntegration => @"^Lighthouse\.Backend\.Modules\.OrganisationSetupFixtures\.OpenHost\.TrackerIntegration(\.|$)";
 
@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         // The Team controller still publishes that a Team was deleted itself. The list only shrinks.
         private static readonly string[] SetUpEventsConstructedOutsideSetUpsApplication =
         [
-            "Lighthouse.Backend.API.TeamController -> Lighthouse.Backend.Models.Events.TeamDeleted",
+            "Lighthouse.Backend.API.TeamController -> Lighthouse.Backend.Modules.OrganisationSetup.Contracts.TeamDeleted",
         ];
 
         private static string TheCadenceEdgeIntoTheSettings =>
@@ -366,6 +366,6 @@ namespace Lighthouse.Backend.Modules.OrganisationSetupFixtures.OpenHost.Api
 {
     internal static class ABlackoutController
     {
-        public static global::Lighthouse.Backend.Models.Events.IDomainEvent Publish() => new global::Lighthouse.Backend.Models.Events.BlackoutConfigurationChanged();
+        public static global::Lighthouse.Backend.Models.Events.IDomainEvent Publish() => new global::Lighthouse.Backend.Modules.OrganisationSetup.Contracts.BlackoutConfigurationChanged();
     }
 }

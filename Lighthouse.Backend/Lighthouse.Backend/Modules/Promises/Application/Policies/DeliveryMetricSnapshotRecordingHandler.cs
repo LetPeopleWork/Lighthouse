@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Modules.Forecasting.Contracts;
 using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Modules.Promises.Application;

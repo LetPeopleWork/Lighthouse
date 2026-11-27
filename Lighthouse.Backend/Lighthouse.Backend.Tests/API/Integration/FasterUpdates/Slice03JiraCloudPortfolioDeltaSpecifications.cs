@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Modules.Forecasting.Contracts;
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using NUnit.Framework;
 using Serilog.Events;
 

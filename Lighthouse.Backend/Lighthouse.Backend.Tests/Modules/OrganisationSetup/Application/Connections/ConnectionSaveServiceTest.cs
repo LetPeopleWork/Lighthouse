@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Linq.Expressions;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;

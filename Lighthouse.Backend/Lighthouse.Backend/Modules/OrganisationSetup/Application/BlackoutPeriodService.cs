@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
-using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;

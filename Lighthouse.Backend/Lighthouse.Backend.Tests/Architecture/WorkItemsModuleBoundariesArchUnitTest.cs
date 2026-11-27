@@ -657,9 +657,9 @@ namespace Lighthouse.Backend.Modules.WorkItemsFixtures.Boundaries.Application
 
 namespace Lighthouse.Backend.Modules.WorkItemsFixtures.Boundaries.Application.Policies
 {
-    internal sealed class AHandlerInThePolicies : global::Lighthouse.Backend.Platform.DomainEvents.IDomainEventHandler<global::Lighthouse.Backend.Models.Events.TeamDataRefreshed>
+    internal sealed class AHandlerInThePolicies : global::Lighthouse.Backend.Platform.DomainEvents.IDomainEventHandler<global::Lighthouse.Backend.Modules.WorkItems.Contracts.TeamDataRefreshed>
     {
-        public Task HandleAsync(global::Lighthouse.Backend.Models.Events.TeamDataRefreshed domainEvent, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task HandleAsync(global::Lighthouse.Backend.Modules.WorkItems.Contracts.TeamDataRefreshed domainEvent, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     internal static class ANonHandlerInThePolicies

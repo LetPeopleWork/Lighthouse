@@ -77,6 +77,19 @@ namespace Lighthouse.Backend.Tests.Architecture
             Of("WorkItems", HandlerCategory, "Application.Policies.TeamDeletedRefreshLogCleanupHandler"),
             Of("WorkItems", HandlerCategory, "Application.Policies.WorkItemBlockedTransitionCaptureHandler"),
             Of("WorkItems", HandlerCategory, "Application.Policies.WorkItemBlockedTransitionCloseHandler"),
+            Of("Forecasting", HandlerCategory, "Contracts.PortfolioForecastsUpdated"),
+            Of("OrganisationSetup", HandlerCategory, "Contracts.BlackoutConfigurationChanged"),
+            Of("OrganisationSetup", HandlerCategory, "Contracts.ConnectionFetchShapeChanged"),
+            Of("OrganisationSetup", HandlerCategory, "Contracts.FeatureOrderingPolicyChanged"),
+            Of("OrganisationSetup", HandlerCategory, "Contracts.FeatureRankChanged"),
+            Of("OrganisationSetup", HandlerCategory, "Contracts.PortfolioDeleted"),
+            Of("OrganisationSetup", HandlerCategory, "Contracts.TeamDeleted"),
+            Of("WorkItems", HandlerCategory, "Contracts.FeatureBlocked"),
+            Of("WorkItems", HandlerCategory, "Contracts.FeatureUnblocked"),
+            Of("WorkItems", HandlerCategory, "Contracts.PortfolioFeaturesRefreshed"),
+            Of("WorkItems", HandlerCategory, "Contracts.TeamDataRefreshed"),
+            Of("WorkItems", HandlerCategory, "Contracts.WorkItemBlocked"),
+            Of("WorkItems", HandlerCategory, "Contracts.WorkItemUnblocked"),
         ];
 
         // A statement that builds one context's service from another context's type, or registers it as the other context's

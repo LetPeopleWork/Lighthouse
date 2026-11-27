@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Modules.WorkItems.Application.Policies;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Tests.Services.Implementation;

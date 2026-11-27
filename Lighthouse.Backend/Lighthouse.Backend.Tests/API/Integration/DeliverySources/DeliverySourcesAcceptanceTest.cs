@@ -5,7 +5,6 @@ using System.Text.Json.Serialization;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background;
 using Lighthouse.Backend.Modules.Licensing.Application;

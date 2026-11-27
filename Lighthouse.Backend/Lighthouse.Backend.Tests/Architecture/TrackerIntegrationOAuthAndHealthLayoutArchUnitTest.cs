@@ -85,7 +85,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string[] ModelsTypesThatStay =
         [
             "OAuthCompleteResult",
-            "ConnectionFetchShapeChanged",
             "WriteBackAppliesTo",
             "WriteBackTargetValueType",
             "WriteBackFieldUpdate",

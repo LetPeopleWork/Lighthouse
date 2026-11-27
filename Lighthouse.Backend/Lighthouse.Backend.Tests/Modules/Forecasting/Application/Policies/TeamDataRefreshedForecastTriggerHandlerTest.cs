@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Modules.Forecasting.Application.Policies;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;

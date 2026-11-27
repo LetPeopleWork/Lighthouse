@@ -1,6 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
 using System.Globalization;
-using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;

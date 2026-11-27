@@ -113,7 +113,7 @@ namespace Lighthouse.Backend.Modules.WorkItemsFixtures.MetricsCommand.Applicatio
         public static async Task Refresh(global::Lighthouse.Backend.Models.Team team, global::Lighthouse.Backend.Platform.DomainEvents.IDomainEventDispatcher dispatcher)
         {
             await Task.Yield();
-            await dispatcher.PublishAsync(new global::Lighthouse.Backend.Models.Events.TeamDataRefreshed(team.Id));
+            await dispatcher.PublishAsync(new global::Lighthouse.Backend.Modules.WorkItems.Contracts.TeamDataRefreshed(team.Id));
         }
     }
 }

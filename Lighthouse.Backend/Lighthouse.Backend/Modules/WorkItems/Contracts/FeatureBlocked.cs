@@ -1,4 +1,6 @@
-namespace Lighthouse.Backend.Models.Events
+using Lighthouse.Backend.Models.Events;
+
+namespace Lighthouse.Backend.Modules.WorkItems.Contracts
 {
     // Distinct from WorkItemBlocked by ADR-104 §2: a generalised event would route feature ids into
     // WorkItemBlockedTransitionCaptureHandler (which writes WorkItemId unconditionally), reproducing the

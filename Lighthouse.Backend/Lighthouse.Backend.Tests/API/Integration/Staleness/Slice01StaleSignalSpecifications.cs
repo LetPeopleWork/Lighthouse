@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestDoubles;

@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Modules.Forecasting.Contracts;
 
 namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
 {

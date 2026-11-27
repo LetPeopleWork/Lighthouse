@@ -1,6 +1,5 @@
 ﻿using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence;
 using Lighthouse.Backend.Modules.FlowMetrics.Application.Policies;
 using Lighthouse.Backend.Modules.FlowMetrics.Contracts;

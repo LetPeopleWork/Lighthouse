@@ -1,4 +1,6 @@
-namespace Lighthouse.Backend.Models.Events
+using Lighthouse.Backend.Models.Events;
+
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Contracts
 {
     /// <summary>
     /// A Feature holds a new place, so every forecast drawing from the order is stale (ADR-133). Carries

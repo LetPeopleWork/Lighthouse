@@ -1,7 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Encryption;
-using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Modules.Forecasting.Contracts;
 using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;

@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application

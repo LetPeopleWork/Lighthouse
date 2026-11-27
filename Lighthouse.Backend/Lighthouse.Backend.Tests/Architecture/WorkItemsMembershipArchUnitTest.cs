@@ -35,6 +35,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             "TeamDeletedRefreshLogCleanupHandler", "ConnectionFetchShapeChangedUpdateTriggerHandler",
             "PortfolioDeletedOrphanedFeatureCleanupHandler",
             "RefreshLogService", "IRefreshLogService",
+            "WorkItemTransitioned", "WorkItemBlocked", "WorkItemUnblocked", "WorkItemBecameStale",
+            "FeatureBlocked", "FeatureUnblocked", "TeamDataRefreshed", "PortfolioFeaturesRefreshed",
         ];
 
         private static readonly Dictionary<string, string> Stays = new(StringComparer.Ordinal)
