@@ -385,3 +385,13 @@ export const enterNumber = async (field: HTMLElement, days: number) => {
 
 export const theMetricBox = async (name: string) =>
 	within(await theWizard()).findByRole("checkbox", { name });
+
+/** The notes area of a report, opened: it starts closed, so a test that reads or writes notes opens it first. */
+export const openTheNotesArea = async (): Promise<HTMLElement> => {
+	const area = await screen.findByTestId("report-notes");
+	const toggle = within(area).getByTestId("report-notes-toggle");
+	if (toggle.getAttribute("aria-expanded") !== "true") {
+		await userEvent.click(toggle);
+	}
+	return area;
+};

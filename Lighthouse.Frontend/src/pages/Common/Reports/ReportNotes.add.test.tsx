@@ -1,4 +1,10 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IReportNote } from "../../../models/Reports/ReportNote";
@@ -9,6 +15,7 @@ import {
 	defaultTerms,
 	ENGAGEMENT_START_ID,
 	LIGHTSPEED,
+	openTheNotesArea,
 	renderWithReports,
 	thePanel,
 } from "../../../tests/ReportsTestKit";
@@ -100,9 +107,9 @@ const openTheNotes = (
 	return reportService;
 };
 
-const theNotesArea = async () => screen.findByTestId("report-notes");
 const theNotes = () => screen.queryAllByTestId("report-note");
 const theField = () => screen.getByTestId("report-note-input");
+const theHeading = () => screen.getByTestId("report-notes-toggle");
 const theSaveButton = () => screen.getByTestId("save-report-note-button");
 
 const typeIntoTheField = async (text: string) => {
@@ -125,11 +132,11 @@ describe("The notes of a report", () => {
 	it("lists the notes newest first, each with the day it was written and its author, and shows a note nobody signed with the day alone", async () => {
 		openTheNotes();
 
-		const area = await theNotesArea();
+		const area = await openTheNotesArea();
 		await waitFor(() => expect(theNotes()).toHaveLength(2));
 		const [first, second] = theNotes();
 		expect(
-			within(area).getByRole("heading", { name: /^Notes$/ }),
+			within(area).getByRole("heading", { name: /^Notes \(2\)$/ }),
 		).toBeInTheDocument();
 		expect(first).toHaveTextContent("Team grew to 9");
 		expect(first).toHaveTextContent("2026-10-03 · Ann");
@@ -138,23 +145,47 @@ describe("The notes of a report", () => {
 		expect(second.textContent).not.toContain("·");
 	});
 
-	it("says there are no notes yet when the report has none, and still offers the writer a field", async () => {
+	it("starts closed and shows how many notes the report has, and opens when the user asks", async () => {
+		openTheNotes();
+
+		const toggle = await screen.findByTestId("report-notes-toggle");
+		await waitFor(() => expect(toggle).toHaveTextContent(/^Notes \(2\)$/));
+		expect(toggle).toHaveAttribute("aria-expanded", "false");
+		expect(theField()).not.toBeVisible();
+
+		await userEvent.click(toggle);
+
+		expect(toggle).toHaveAttribute("aria-expanded", "true");
+		expect(theField()).toBeVisible();
+	});
+
+	it("shows a count of none on a closed notes area of a report without notes", async () => {
 		openTheNotes(aServerHolding([]));
 
-		await screen.findByText("No notes yet.");
+		const toggle = await screen.findByTestId("report-notes-toggle");
+		await waitFor(() => expect(toggle).toHaveTextContent(/^Notes \(0\)$/));
+		expect(toggle).toHaveAttribute("aria-expanded", "false");
+	});
 
+	it("says there are no notes yet when the report has none, and still offers the writer a field", async () => {
+		openTheNotes(aServerHolding([]));
+		await openTheNotesArea();
+
+		expect(await screen.findByText("No notes yet.")).toBeVisible();
 		expect(theNotes()).toHaveLength(0);
-		expect(theField()).toBeInTheDocument();
+		expect(theField()).toBeVisible();
 	});
 
 	it("saves what the writer typed as typed, shows the new note first and empties the field", async () => {
 		const reportService = openTheNotes();
+		await openTheNotesArea();
 		await waitFor(() => expect(theNotes()).toHaveLength(2));
 
 		await typeIntoTheField("  Team grew to 12  ");
 		await saveWhatWasTyped();
 
 		await waitFor(() => expect(theNotes()).toHaveLength(3));
+		expect(theHeading()).toHaveTextContent(/^Notes \(3\)$/);
 		expect(reportService.addNote).toHaveBeenCalledWith(
 			LIGHTSPEED,
 			A_REPORT,
@@ -176,6 +207,7 @@ describe("The notes of a report", () => {
 		"does not save a note with %s in it and tells the writer it needs some text",
 		async (_what, typed) => {
 			const reportService = openTheNotes();
+			await openTheNotesArea();
 			vi.mocked(reportService.addNote).mockRejectedValue(
 				aRefusal(400, "note-text-missing"),
 			);
@@ -192,6 +224,7 @@ describe("The notes of a report", () => {
 
 	it("does not save a note over 2000 characters and tells the writer the limit", async () => {
 		const reportService = openTheNotes();
+		await openTheNotesArea();
 		vi.mocked(reportService.addNote).mockRejectedValue(
 			aRefusal(400, "note-text-too-long"),
 		);
@@ -221,15 +254,41 @@ describe("The notes area while its notes are on the way or cannot be read", () =
 
 		openTheNotes(reportService);
 
-		const area = await theNotesArea();
+		const area = await openTheNotesArea();
 		expect(within(area).getByText(LOADING_NOTES)).toBeInTheDocument();
 		expect(within(area).getByRole("progressbar")).toBeInTheDocument();
 		expect(screen.queryByText("No notes yet.")).toBeNull();
+		expect(theHeading()).toHaveTextContent(/^Notes$/);
 
 		answer.resolve([NEWER]);
 
 		await waitFor(() => expect(theNotes()).toHaveLength(1));
 		expect(screen.queryByText(LOADING_NOTES)).toBeNull();
+		expect(theHeading()).toHaveTextContent(/^Notes \(1\)$/);
+	});
+
+	it("shows no count while the notes are fetched again, so an old count never passes for the current one", async () => {
+		const again = deferred<IReportNote[]>();
+		const getNotes = vi
+			.fn()
+			.mockResolvedValueOnce([NEWER, OLDER])
+			.mockReturnValue(again.promise);
+		const { queryClient } = renderWithReports(
+			<ReportNotes owner={LIGHTSPEED} reportId={A_REPORT} mayWrite />,
+			{ reportService: aReportService({ getNotes }) },
+		);
+		await waitFor(() =>
+			expect(theHeading()).toHaveTextContent(/^Notes \(2\)$/),
+		);
+
+		const fetchedAgain = queryClient.invalidateQueries();
+
+		await waitFor(() => expect(theHeading()).toHaveTextContent(/^Notes$/));
+		again.resolve([NEWER]);
+		await act(() => fetchedAgain);
+		await waitFor(() =>
+			expect(theHeading()).toHaveTextContent(/^Notes \(1\)$/),
+		);
 	});
 
 	it("says the notes could not be loaded with a Retry and no field to write in, and shows them once Retry works", async () => {
@@ -240,16 +299,18 @@ describe("The notes area while its notes are on the way or cannot be read", () =
 
 		openTheNotes(aReportService({ getNotes }));
 
-		const area = await theNotesArea();
+		const area = await openTheNotesArea();
 		expect(await within(area).findByText(COULD_NOT_LOAD_NOTES)).toBeVisible();
 		expect(screen.queryByTestId("report-note-input")).toBeNull();
 		expect(screen.queryByText("No notes yet.")).toBeNull();
+		expect(theHeading()).toHaveTextContent(/^Notes$/);
 
 		await userEvent.click(within(area).getByRole("button", { name: "Retry" }));
 
 		await waitFor(() => expect(theNotes()).toHaveLength(1));
 		expect(screen.queryByText(COULD_NOT_LOAD_NOTES)).toBeNull();
-		expect(theField()).toBeInTheDocument();
+		expect(theField()).toBeVisible();
+		expect(theHeading()).toHaveTextContent(/^Notes \(1\)$/);
 	});
 });
 
@@ -268,7 +329,7 @@ describe("The notes in the live report", () => {
 			viewer: "admin",
 		});
 
-		const area = await theNotesArea();
+		const area = await openTheNotesArea();
 		const firstPanel = await thePanel("Cycle Time");
 
 		expect(
@@ -288,7 +349,7 @@ describe("The notes in the live report", () => {
 			viewer: "admin",
 		});
 
-		const area = await theNotesArea();
+		const area = await openTheNotesArea();
 		const firstPanel = await thePanel("Cycle Time");
 
 		expect(await within(area).findByText("Team grew to 9")).toBeVisible();

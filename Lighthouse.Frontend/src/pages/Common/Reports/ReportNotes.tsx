@@ -1,4 +1,13 @@
-import { Button, Paper, Stack, TextField, Typography } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import {
+	Accordion,
+	AccordionDetails,
+	AccordionSummary,
+	Button,
+	Stack,
+	TextField,
+	Typography,
+} from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useContext, useState } from "react";
@@ -68,12 +77,27 @@ const ReportNotes: React.FC<
 		}
 	};
 
+	const heading =
+		status === "ready" && listed !== undefined
+			? `Notes (${listed.length})`
+			: "Notes";
+
 	return (
-		<Paper variant="outlined" sx={{ p: 2 }} data-testid="report-notes">
-			<Stack spacing={1.5}>
-				<Typography variant="h6" component="h2">
-					Notes
+		<Accordion
+			variant="outlined"
+			disableGutters
+			data-testid="report-notes"
+			slotProps={{ heading: { component: "h2" } }}
+		>
+			<AccordionSummary
+				expandIcon={<ExpandMoreIcon />}
+				data-testid="report-notes-toggle"
+			>
+				<Typography variant="h6" component="span">
+					{heading}
 				</Typography>
+			</AccordionSummary>
+			<AccordionDetails>
 				<WidgetBody
 					widgetKey="report-notes"
 					status={status}
@@ -127,8 +151,8 @@ const ReportNotes: React.FC<
 						</Stack>
 					)}
 				</WidgetBody>
-			</Stack>
-		</Paper>
+			</AccordionDetails>
+		</Accordion>
 	);
 };
 

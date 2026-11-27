@@ -8,6 +8,7 @@ import {
 	defaultTerms,
 	ENGAGEMENT_START_ID,
 	LIGHTSPEED,
+	openTheNotesArea,
 	renderWithReports,
 } from "../../../tests/ReportsTestKit";
 import ReportNotes from "./ReportNotes";
@@ -129,6 +130,7 @@ describe("Changing and deleting the notes of a report", () => {
 
 	it("offers Edit and Delete on the notes the user may change and on no other", async () => {
 		openTheNotes();
+		await openTheNotesArea();
 
 		await waitFor(() => expect(theNotes()).toHaveLength(2));
 
@@ -140,6 +142,7 @@ describe("Changing and deleting the notes of a report", () => {
 
 	it("offers no Edit or Delete to a user who may not write on the report, even on a note marked as changeable", async () => {
 		openTheNotes(aServerHolding([MINE, SOMEBODY_ELSES]), false);
+		await openTheNotesArea();
 
 		await waitFor(() => expect(theNotes()).toHaveLength(2));
 
@@ -149,6 +152,7 @@ describe("Changing and deleting the notes of a report", () => {
 
 	it("saves the new text, shows the note marked as edited with the day and keeps it in its place", async () => {
 		const reportService = openTheNotes();
+		await openTheNotesArea();
 		await waitFor(() => expect(theNotes()).toHaveLength(2));
 
 		const field = await startEditing("Team grew to 9");
@@ -175,6 +179,7 @@ describe("Changing and deleting the notes of a report", () => {
 
 	it("leaves the note as it was when the user cancels an edit", async () => {
 		const reportService = openTheNotes();
+		await openTheNotesArea();
 		await waitFor(() => expect(theNotes()).toHaveLength(2));
 
 		const field = await startEditing("Team grew to 9");
@@ -190,6 +195,7 @@ describe("Changing and deleting the notes of a report", () => {
 
 	it("says why a note with no text is not saved, keeps the field with what was typed and keeps the note as it was", async () => {
 		const reportService = openTheNotes();
+		await openTheNotesArea();
 		vi.mocked(reportService.updateNote).mockRejectedValue(
 			aRefusal(400, "note-text-missing"),
 		);
@@ -206,11 +212,15 @@ describe("Changing and deleting the notes of a report", () => {
 
 	it("deletes the note the user chose and lists the others", async () => {
 		const reportService = openTheNotes();
+		await openTheNotesArea();
 		await waitFor(() => expect(theNotes()).toHaveLength(2));
 
 		await deleteTheNoteShowing("Team grew to 9");
 
 		await waitFor(() => expect(theNotes()).toHaveLength(1));
+		expect(screen.getByTestId("report-notes-toggle")).toHaveTextContent(
+			/^Notes \(1\)$/,
+		);
 		expect(reportService.deleteNote).toHaveBeenCalledWith(
 			LIGHTSPEED,
 			A_REPORT,
@@ -221,6 +231,7 @@ describe("Changing and deleting the notes of a report", () => {
 
 	it("keeps a note that could not be deleted in the list with its controls", async () => {
 		const reportService = openTheNotes();
+		await openTheNotesArea();
 		vi.mocked(reportService.deleteNote).mockRejectedValue(
 			aRefusal(403, "note-not-yours"),
 		);

@@ -26,6 +26,7 @@ import {
 	defaultTerms,
 	ENGAGEMENT_START_ID,
 	LIGHTSPEED,
+	openTheNotesArea,
 	renderWithReports,
 	summaryFor,
 	thePanel,
@@ -117,7 +118,6 @@ const openTheReportBeforeTheRolesArrive = (owner: IReportOwner) => {
 	return { rolesArrive: () => roles.resolve(summaryFor("reader", owner)) };
 };
 
-const theNotesArea = async () => screen.findByTestId("report-notes");
 const theNotes = () => screen.queryAllByTestId("report-note");
 const theNoteTexts = () => theNotes().map((note) => note.textContent);
 const theControlsIn = (area: HTMLElement) =>
@@ -145,7 +145,7 @@ describe("The notes of a report for someone who may only read it", () => {
 		async (_kind, owner) => {
 			openTheReportAs("reader", owner);
 
-			const area = await theNotesArea();
+			const area = await openTheNotesArea();
 			const firstPanel = await thePanel("Cycle Time");
 
 			await waitFor(() => expect(theNotes()).toHaveLength(2));
@@ -166,7 +166,7 @@ describe("The notes of a report for someone who may only read it", () => {
 	it("says there are no notes yet to a reader of a report without notes, and still offers no field", async () => {
 		openTheReportAs("reader", LIGHTSPEED, aReportHoldingNotes([]));
 
-		const area = await theNotesArea();
+		const area = await openTheNotesArea();
 
 		expect(await within(area).findByText("No notes yet.")).toBeVisible();
 		noWritingControlIsShown();
@@ -179,9 +179,12 @@ describe("The notes of a report for someone who may only read it", () => {
 			.mockResolvedValue([NEWER]);
 		openTheReportAs("reader", LIGHTSPEED, aReportService({ getNotes }));
 
-		const area = await theNotesArea();
+		const area = await openTheNotesArea();
 		expect(await within(area).findByText(COULD_NOT_LOAD_NOTES)).toBeVisible();
 		expect(await thePanel("Cycle Time")).toBeVisible();
+		expect(within(area).getByTestId("report-notes-toggle")).toHaveTextContent(
+			/^Notes$/,
+		);
 		noWritingControlIsShown();
 
 		await userEvent.click(within(area).getByRole("button", { name: "Retry" }));
@@ -194,7 +197,7 @@ describe("The notes of a report for someone who may only read it", () => {
 	it("shows the same notes in the same order with the same controls while the reader's roles are on their way and after they arrive as a reader's", async () => {
 		const { rolesArrive } = openTheReportBeforeTheRolesArrive(LIGHTSPEED);
 		await waitFor(() => expect(theNotes()).toHaveLength(2));
-		const area = await theNotesArea();
+		const area = await openTheNotesArea();
 		const before = { texts: theNoteTexts(), controls: theControlsIn(area) };
 
 		await act(async () => rolesArrive());
