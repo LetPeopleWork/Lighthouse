@@ -266,6 +266,44 @@ The status indicator applies to the **Default** selection. Under a named Cycle T
 | 🟡 Observe | The percentage of items within the SLE is below the target by up to 20 percentage points. |
 | 🟢 Sustain | The percentage of items within the SLE meets or exceeds the configured target percentile. Consider tightening the target. |
 
+# Within SLE
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | Cycle Time |
+| **Affected by Filtering** | Yes |
+
+This widget answers one question: *did we keep our [Service Level Expectation](../teams/edit.html#service-level-expectation) in this range?* It takes the Work Items closed in the selected date range and shows how many of them finished within the SLE's days.
+
+![Within SLE](../assets/features/metrics/withinSle.png)
+
+Read it from the top:
+
+- **The share** — here *59.4 % (19 / 32)*: 19 of the 32 Work Items closed in the range took the SLE's days or less.
+- **The sentence** — *of Work Items closed within 7 days or less* tells you which number of days the share is measured against.
+- **The target** — *Target 85 %* is the percentage your SLE promises. **Higher is better**: a share at or above the target means the SLE holds.
+
+The trend indicator in the widget header compares the share with the period of the same length right before the selected range, so you see whether you are getting better or worse at keeping the promise.
+
+Use the **View Data** button to see the Work Items behind the share, with the day each closed and its Cycle Time, longest first. The late ones, at the top, are the Work Items to talk about.
+
+## Too few to judge, and no SLE
+
+- **Fewer than 5 closed Work Items:** the widget shows the count and *too few to judge* instead of a share. A share of 2 out of 3 says very little, so the widget gives no verdict and no status colour.
+- **No SLE set:** the widget says so and shows the status **Act**, because there is nothing to keep. Define the SLE in the settings of the Team or Portfolio.
+
+## Status Indicator
+
+The status follows the same rule as [Cycle Time Percentiles](#cycle-time-percentiles).
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No SLE is configured, *or* the share within the SLE is more than 20 percentage points below the target. |
+| 🟡 Observe | The share is below the target by up to 20 percentage points. |
+| 🟢 Sustain | The share meets or exceeds the target. Consider tightening the target. |
+
+Over a longer view of the same question, see [Within SLE Over Time](predictability.html#within-sle-over-time).
+
 # Work Item Age Percentiles
 
 |--------------|-------------------------|

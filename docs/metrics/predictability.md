@@ -109,6 +109,38 @@ The demo data ships with a backdated history, so its charts are populated as soo
 ## Status Indicator
 This widget has no status indicator. It shows a direction of travel rather than a value that is healthy or unhealthy on its own — read it alongside [Cycle Time Percentiles](flow-overview.html#cycle-time-percentiles) and [Work Item Age Percentiles](flow-overview.html#work-item-age-percentiles), which do carry one.
 
+# Within SLE Over Time
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | Cycle Time |
+| **Affected by Filtering** | Yes — the chart plots the days inside the selected range, and the same range is the stretch whose missing days get [filled in](#filling-in-past-days). |
+
+The [Within SLE](flow-overview.html#within-sle) widget tells you how you did in the selected range. This chart tells you how that share developed: Lighthouse records it once per day, so you can see whether you are getting better at keeping your [Service Level Expectation](../teams/edit.html#service-level-expectation), or slipping.
+
+![Within SLE Over Time](../assets/features/metrics/withinSleOverTime.png)
+
+How to read it:
+
+- **The line** is the share of closed Work Items that finished within the SLE. **Higher is better.** The axis always runs from 0 to 100 %, so a small wobble looks small.
+- **The stepped line** is the target, the percentage your SLE promises. It is the one that was in force on each day, so when you change the SLE the line steps to the new level and the days before it stay as they were.
+- **The toggle** picks the trailing window each day looks back over: the last **30**, **60** or **90 days**. The 30-day line reacts quickly to a change, the 90-day line smooths it out.
+
+A line above the stepped target means the SLE held on those days; below it, the SLE did not.
+
+## Gaps
+
+A day with fewer than 5 closed Work Items in its window, or with no record at all, draws **no point**. The line breaks there instead of dropping to zero, because a share over two Work Items is not worth drawing. If no SLE is set, the chart says so instead of drawing a line.
+
+## Filled-in days
+
+Lighthouse works out the days it missed from the Work Items it stores, in the same way as for [Percentiles Over Time](#filling-in-past-days), and it is free. These days are drawn with an **open marker** (○), and the chart carries the note *○ filled in from history (measured against today's SLE)*.
+
+The note matters: a recorded day stores the SLE that was in force that day, but a past day that is filled in afterwards has no such record, so it is measured against **today's SLE**. If your SLE changed since, a filled-in day may read differently from what Lighthouse would have recorded then.
+
+## Status Indicator
+This chart has no status indicator. It shows a direction of travel; read it alongside the [Within SLE](flow-overview.html#within-sle) widget, which carries one.
+
 # PBC Over Time
 
 |--------------|-------------------------|

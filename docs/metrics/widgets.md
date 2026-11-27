@@ -19,9 +19,9 @@ Widgets are grouped into four categories, each built around a different question
 
 | Category | Question it answers | Widgets |
 |---|---|---|
-| [**Flow Overview**](./flow-overview.html) | How is my system doing at a glance? | WIP Overview, Blocked Overview, Stale Items Overview, Features Worked On Overview (Teams only), Total Work Item Age, Flow Efficiency, Predictability Score, Cycle Time Percentiles, Work Item Age Percentiles, Total Throughput, Total Arrivals, Feature Size Percentiles |
+| [**Flow Overview**](./flow-overview.html) | How is my system doing at a glance? | WIP Overview, Blocked Overview, Stale Items Overview, Features Worked On Overview (Teams only), Total Work Item Age, Flow Efficiency, Predictability Score, Cycle Time Percentiles, Within SLE, Work Item Age Percentiles, Total Throughput, Total Arrivals, Feature Size Percentiles |
 | [**Flow Metrics**](./flow-metrics.html) | What do detailed flow trends look like? | Cycle Time Scatterplot, Work Item Aging Chart, Throughput Run Chart, WIP Over Time, Total Work Item Age Over Time, Arrivals Run Chart, Simplified CFD, Load Balance Matrix, Cumulative Time per State, Blocked Over Time |
-| [**Predictability**](./predictability.html) | Can we trust our forecasts? | Predictability Score Details, Percentiles Over Time, PBC Over Time, Process Behaviour Charts (Throughput, Cycle Time, WIP, Total Work Item Age, Feature Size), Arrivals Process Behaviour Chart |
+| [**Predictability**](./predictability.html) | Can we trust our forecasts? | Predictability Score Details, Percentiles Over Time, Within SLE Over Time, PBC Over Time, Process Behaviour Charts (Throughput, Cycle Time, WIP, Total Work Item Age, Feature Size), Arrivals Process Behaviour Chart |
 | [**Portfolio & Features**](./portfolio-features.html) | How do features flow through the system? | Work Distribution, Feature Size, Estimation vs. Cycle Time |
 
 {: .note}
@@ -83,7 +83,7 @@ Flow Overview widgets display trend indicators comparing the current date range 
 | Method | Widgets | How it works |
 |---|---|---|
 | **Snapshot compare** | WIP Overview, Features Worked On (Teams), Total Work Item Age | Compares the snapshot value at the end date against the snapshot value at the start date. |
-| **Previous period** | Total Throughput, Total Arrivals, Predictability Score, Cycle Time Percentiles, Work Item Age Percentiles, Feature Size Percentiles, Blocked Overview | Compares the aggregate for the selected date range against the same-length window immediately preceding the start date. |
+| **Previous period** | Total Throughput, Total Arrivals, Predictability Score, Cycle Time Percentiles, Within SLE, Work Item Age Percentiles, Feature Size Percentiles, Blocked Overview | Compares the aggregate for the selected date range against the same-length window immediately preceding the start date. |
 
 Blocked Overview compares the current blocked count against the blocked-count snapshot on the day before the selected range starts. Because blocked-count history is recorded going forward, a freshly-recording instance may have no snapshot on that boundary day yet; the trend then treats the baseline as **zero**, so a day-one instance reads "+N since we started recording" rather than a dash that looks like breakage. The comparison always names the boundary day it stands for, so an assumed baseline is never dressed up as a measured one. The neutral `—` is reserved for the one case where nothing can honestly be compared: the history holds no record at or before the selected end date at all, meaning recording began after the range you are looking at.
 
