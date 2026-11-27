@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string DependenciesApplicationNamespace = "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies";
 
-        private static string ContractsNamespace => typeof(IBlockedItemService).Namespace!;
+        private static string ContractsNamespace => ContextContractsMembership.ContractsOf("WorkItems");
 
         private const string WorkItemsApplication = @"^Lighthouse\.Backend\.Modules\.WorkItems\.Application(\.|$)";
 

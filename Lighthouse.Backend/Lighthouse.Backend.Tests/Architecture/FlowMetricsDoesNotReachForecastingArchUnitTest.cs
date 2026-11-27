@@ -16,10 +16,10 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// <summary>
     /// Flow metrics asks Forecasting three questions: which of a Team's work items count for its throughput, whether
     /// the throughput is enough to forecast with, and how many items fit in a number of days. It asks them through three
-    /// ports of its own, in its Application, and Forecasting answers them, so Forecasting can build on Flow metrics
+    /// ports of its own, in its Contracts, and Forecasting answers them, so Forecasting can build on Flow metrics
     /// without Flow metrics depending on Forecasting in return. Read from the compiled production assembly: no type of
     /// the Flow metrics module reaches a Forecasting type, with no list of allowed edges, and each of the three ports is
-    /// an interface in Flow metrics' Application that a Forecasting type implements. The second rule also proves the
+    /// an interface in Flow metrics' Contracts that a Forecasting type implements. The second rule also proves the
     /// first looked at the real Forecasting: a Forecasting pattern that matched nothing would leave the ports unanswered.
     /// The same two rules run on made-up modules: a metrics type that holds, calls or resolves a Forecasting type fails
     /// and is named with what it reaches; a port declared in Forecasting, or one only Flow metrics answers, fails and is
@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly Lazy<ModuleDefinition> TestModule = new(() => IlDependencies.ReadModule(typeof(FlowMetricsDoesNotReachForecastingArchUnitTest).Assembly));
 
-        private static TheModules TheRealModules => new(ModuleRules.FlowMetricsModule, ModuleBoundariesArchUnitTest.ForecastingPattern, typeof(global::Lighthouse.Backend.Modules.FlowMetrics.Contracts.ITeamMetricsService).Namespace!);
+        private static TheModules TheRealModules => new(ModuleRules.FlowMetricsModule, ModuleBoundariesArchUnitTest.ForecastingPattern, ContextContractsMembership.ContractsOf("FlowMetrics"));
 
         [OneTimeTearDown]
         public void DisposeModules()
@@ -107,7 +107,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             ThenThePortRuleFailsNaming(
                 ports,
-                $"{modules.FlowMetricsApplication}.{HowManyForecaster} is not an interface there; a type of that name lives at {typeof(IHowManyForecaster).FullName}");
+                $"{modules.FlowMetricsPorts}.{HowManyForecaster} is not an interface there; a type of that name lives at {typeof(IHowManyForecaster).FullName}");
         }
 
         [Test]
@@ -119,7 +119,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             ThenThePortRuleFailsNaming(
                 ports,
-                $"{modules.FlowMetricsApplication}.{DataSufficiency} is answered by no type in namespaces matching \"{modules.Forecasting}\"; it is implemented by {typeof(ASufficiencyRuleCopiedIntoMetrics).FullName}");
+                $"{modules.FlowMetricsPorts}.{DataSufficiency} is answered by no type in namespaces matching \"{modules.Forecasting}\"; it is implemented by {typeof(ASufficiencyRuleCopiedIntoMetrics).FullName}");
         }
 
         private static IEnumerable<TestCaseData> MetricsTypesReachingForecasting()
@@ -145,24 +145,24 @@ namespace Lighthouse.Backend.Tests.Architecture
                 $"Types in namespaces matching \"{modules.FlowMetrics}\" should depend on no type in namespaces matching \"{modules.Forecasting}\", " +
                 "because Forecasting builds on Flow metrics' answers, and one edge back from Flow metrics makes the two modules one " +
                 "cycle that cannot change, be tested or move apart. Ask Forecasting through a port Flow metrics owns in its " +
-                $"Application ({string.Join(", ", TheQuestionsFlowMetricsAsks)}), name only Models types in it, let Forecasting " +
+                $"Contracts ({string.Join(", ", TheQuestionsFlowMetricsAsks)}), name only Models types in it, let Forecasting " +
                 "implement it and the composition root register it; there is no list of allowed edges.");
 
         /// <summary>
-        /// Each question is an interface in Flow metrics' Application, and at least one Forecasting type implements it.
+        /// Each question is an interface in Flow metrics' Contracts, and at least one Forecasting type implements it.
         /// </summary>
         private static PortVerdict TheQuestionsAreFlowMetricsPortsThatForecastingAnswers(ModuleDefinition module, TheModules modules, IReadOnlyCollection<string> ports)
             => new(
                 [.. ports.SelectMany(port => ProblemsOfThePort(module, modules, port))],
-                $"Each question Flow metrics asks Forecasting should be an interface in namespace \"{modules.FlowMetricsApplication}\" that a type " +
+                $"Each question Flow metrics asks Forecasting should be an interface in namespace \"{modules.FlowMetricsPorts}\" that a type " +
                 $"in namespaces matching \"{modules.Forecasting}\" implements, because Flow metrics owns the question in its own words and " +
                 "Forecasting only answers it. A port declared in Forecasting makes Flow metrics depend on Forecasting again, and a port " +
                 "no Forecasting type answers means the answer was copied into Flow metrics or never wired. Declare the interface in Flow " +
-                "metrics' Application, and let the Forecasting type that owns the rule implement it.");
+                "metrics' Contracts, and let the Forecasting type that owns the rule implement it.");
 
         private static IEnumerable<string> ProblemsOfThePort(ModuleDefinition module, TheModules modules, string port)
         {
-            var fullName = $"{modules.FlowMetricsApplication}.{port}";
+            var fullName = $"{modules.FlowMetricsPorts}.{port}";
             var declared = module.GetType(fullName);
 
             if (declared is null || !declared.IsInterface)
@@ -268,7 +268,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 $"The failure must say \"{problem}\", so the reader knows which port to move or which Forecasting type must answer it.");
         }
 
-        private sealed record TheModules(string FlowMetrics, string Forecasting, string FlowMetricsApplication);
+        private sealed record TheModules(string FlowMetrics, string Forecasting, string FlowMetricsPorts);
 
         private sealed record PortVerdict(IReadOnlyList<string> Problems, string Rule)
         {

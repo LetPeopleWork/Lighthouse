@@ -154,7 +154,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 $"Types in namespaces matching \"{modules.TrackerIntegration}\" should depend on no type in namespaces matching \"{modules.Promises}\", " +
                 "because Promises publishes the Delivery forecast through Tracker integration's connectors, and one edge back from " +
                 "Tracker integration makes the two modules one cycle that cannot change, be tested or move apart. Let the connector " +
-                "take a port Tracker integration owns in its Application (the description block merger), let the Promises type " +
+                "take a port Tracker integration owns in its Contracts (the description block merger), let the Promises type " +
                 "that owns the rule implement it and the composition root register it; there is no list of allowed edges.");
 
         /// <summary>

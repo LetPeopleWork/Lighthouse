@@ -211,7 +211,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheFlowMetricsPublishedTypes_LiveInTheModuleContracts_AndNoneIsLeftUnderServices()
         {
-            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, typeof(ITeamMetricsService).Namespace!, PublishedTypes).Check();
+            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ContextContractsMembership.ContractsOf("FlowMetrics"), PublishedTypes).Check();
         }
 
         [Test]

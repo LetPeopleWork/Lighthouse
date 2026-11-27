@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "RuleEvaluator`1", "WorkItemFieldProvider", "FeatureFieldProvider",
                 "ParentPlacementReport", "RecordPlacement", "RefreshLogService",
             ],
-            [typeof(IBlockedItemService).Namespace!] =
+            [ContextContractsMembership.ContractsOf("WorkItems")] =
             [
                 "IBlockedItemService", "IRuleEvaluator`1", "IRuleFieldProvider`1", "IRefreshLogService", "IWhatTheForecastWaitsFor",
             ],

@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string WhereTheTypesLivedBefore = @"^Lighthouse\.Backend\.(Services|Factories)(\.|$)";
 
-        private static string ContractsNamespace => typeof(IWorkTrackingConnector).Namespace!;
+        private static string ContractsNamespace => ContextContractsMembership.ContractsOf("TrackerIntegration");
 
         private static string WhereTheContractsTypesLivedBefore => $"^({Regex.Escape(ApplicationNamespace)}|{Regex.Escape(typeof(CsvWorkTrackingConnector).Namespace!)})$";
 

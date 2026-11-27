@@ -272,7 +272,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "it gives an answer, and nothing else can change that answer. A Domain type that reaches the module's " +
                 "Application or Adapters, Services, the data layer, EF Core or Microsoft.Extensions could read a database, a " +
                 "setting or a logger while it calculates, and could no longer be tested by handing it values. What it needs " +
-                "from there belongs in the Models, or the caller should hand it in as a value.")
+                "from there belongs in the Models or in the module's own Contracts, or the caller should hand it in as a value.")
             {
                 MissingSubjects = examined.Count == 0 ? [$"The Domain, any type in a namespace matching \"{domain}\","] : [],
             };
