@@ -77,6 +77,7 @@ feature_context:
   - epic-6577-system-wide-access
   - story-6564-report-notes
   - api-shape-evaluation
+  - story-6563-sle-attainment
 
 jobs:
   - id: job-rbac-bootstrap
@@ -9120,3 +9121,58 @@ jobs:
       habit: Writing the DTO, the zod schema, the TS service method and the client method by hand.
     opportunity_score: {importance: 5, current_satisfaction: 2, gap: 3, rationale: "Desk estimate for the job as a whole on this file's 1-5 scale; the outcome-level scores (1-10 scale) are in job-analysis.md, where OUT-2 drift (14) and OUT-1 copies (13) are the under-served outcomes."}
     related: [job-dev-test-feedback-velocity]
+  - id: job-flow-coach-see-whether-we-keep-our-sle
+    title: See whether we keep the SLE we published, and whether that is getting better or worse
+    persona: "flow-coach (also delivery-lead-rte)"
+    feature_context: story-6563-sle-attainment
+    ado: "Story #6563 Make the SLE easier to find and compare with actual performance (no parent Epic)"
+    created: 2026-11-27
+    note: >
+      NEW in DISCOVER of story-6563-sle-attainment. Evidence is one customer workshop on 2026-11-06 (Part 2,
+      36:48-42:30, recording on Proton Drive, Resources/2026/11; the transcript has a gap from 39:46 to 40:35 on
+      this topic, not yet checked against the recording), one informant from the customer, with the maintainer
+      agreeing ("where is it actually? We should have that somewhere"), relayed in the ADO item.
+      Observations: (O1) the informant looked for the SLE on the Flow Metrics tab and did not see it until they
+      found the chart toggle; (O2) they read the SLE as a goal and want it next to actual performance, for
+      example 72.7% of items within 10 days against a target of 70%; (O3) "tracking this over time is key";
+      (O4) wording such as "or less" helps people new to flow.
+      Verified in the code on 2026-11-27: (V1) the comparison O2 asks for is already computed -
+      ragRulesTimeAndAge.ts calculateSLEStats - but a reader sees it only in the status-indicator tooltip of the
+      Cycle Time Percentiles widget ("72.7% of Work Items are within the SLE target of 70% @ 10 days"); no
+      widget shows it as a number. (V2) Nothing shows it over time; Percentiles Over Time (Epic #5427, closed)
+      plots the percentiles from a daily snapshot, not the share within the SLE. (V3) O1 is partly resolved
+      after the workshop: since 2026-11-14 (9c8eccf2c, in v26.11.15.4) the SLE line on the Cycle Time
+      Scatterplot is drawn by default; on the Work Item Aging chart it still depends on the toggle. (V4) O4 is
+      mostly met already: the header Quick Setting and the chart labels say "days or less" since 2025-05;
+      the status-indicator tooltips say "@ 10 days" without it.
+      Inference: the gap is not the SLE itself but the comparison with what happened - present only as a
+      tooltip and only for the selected range - and its trend. Counter-evidence considered: (C1) Story #2343
+      "SLE Trend?" was removed from the backlog on 2025-05-17 with no reason recorded, so an earlier look at the
+      trend did not go ahead; nothing says it was rejected on evidence. (C2) one organisation, one informant;
+      no severity, frequency or workaround measured. (C3) part of O1 is already fixed (V3), so findability alone
+      would not justify a feature. (C4) job-flow-coach-act-before-sle-breach is a different question (will an
+      item in progress break the promise, before it does); this job is the after-the-fact hit rate, the input
+      that job calls "a retro input, not a standup one".
+      Decision: VALIDATED at low-to-medium confidence. The cost of being wrong is small because the number
+      exists (V1) and an over-time series can follow the Percentiles Over Time pattern (V2). Riskiest open
+      assumption: that readers use the trend, not only today's number - for DEVOPS to answer with a usage-data
+      event. Open for DIVERGE: where the comparison lives (a widget of its own, a value on the Cycle Time
+      Percentiles widget, the header), and how "over time" is computed (rolling window per day, or per closed
+      period). Scores are desk estimates.
+    job_story: >
+      When I review my team's or portfolio's flow, in a retro or in front of a stakeholder,
+      I want to see how many closed Work Items finished within the SLE we published, against its target, and how
+      that share has moved over time,
+      so I can say whether we keep our promise and whether a change made it better, instead of pointing at a line
+      on a chart.
+    dimensions:
+      functional: Read the share of closed Work Items within the SLE next to its target, for example 72.7% within 10 days or less against 70%, and follow that share over time; for Teams and Portfolios.
+      emotional: From "we set an SLE, but I cannot tell if we meet it" to confident about how well we keep it.
+      social: Be the coach who shows "we kept our SLE in five of the last six weeks", not the one who has to find the line and count dots.
+    forces:
+      push: The comparison exists only as a tooltip on a status indicator, for one range; a workshop customer looked for the SLE and did not find it (O1, O2).
+      pull: Lighthouse already computes the share (V1) and already draws percentiles over time (V2).
+      anxiety: "Will a small number of closed items make the share jump around? Will 72.7% against 70% read as a pass or a fail to people new to flow?"
+      habit: Counting dots under the SLE line on the scatterplot, or hovering the status indicator (inference).
+    opportunity_score: {importance: 3, current_satisfaction: 2, gap: 2, rationale: "Desk estimate; one informant, one workshop; the number exists but is hard to find and has no trend."}
+    related: [job-flow-coach-act-before-sle-breach, job-flow-coach-see-predictability-trend, job-flow-coach-show-whether-flow-changed]
