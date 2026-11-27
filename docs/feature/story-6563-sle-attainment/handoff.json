@@ -931,7 +931,7 @@
 "C": 2,
 "D": 25,
 "E": 15,
-"F": 752,
+"F": 764,
 "K": 26,
 "L": 7,
 "N": 4,
@@ -3368,6 +3368,137 @@
 }
 }
 },
+"examination": {
+"E1": {
+"class": "observation_gap",
+"observations": [
+"F763"
+],
+"verdict": "unmet",
+"waiver": {
+"by": "F753",
+"coverage": "F756",
+"reason": "F755",
+"waived_at": "F754"
+}
+},
+"E10": {
+"observations": [
+"F763",
+"F764"
+],
+"verdict": "met"
+},
+"E11": {
+"observations": [
+"F763",
+"F764"
+],
+"verdict": "met"
+},
+"E12": {
+"class": "observation_gap",
+"observations": [
+"F764"
+],
+"verdict": "unmet",
+"waiver": {
+"by": "F753",
+"coverage": "F759",
+"reason": "F755",
+"waived_at": "F757"
+}
+},
+"E13": {
+"class": "observation_gap",
+"observations": [
+"F763"
+],
+"verdict": "unmet",
+"waiver": {
+"by": "F753",
+"coverage": "F760",
+"reason": "F755",
+"waived_at": "F757"
+}
+},
+"E14": {
+"observations": [
+"F764"
+],
+"verdict": "met"
+},
+"E15": {
+"class": "observation_gap",
+"observations": [
+"F763"
+],
+"verdict": "unmet",
+"waiver": {
+"by": "F753",
+"coverage": "F762",
+"reason": "F755",
+"waived_at": "F761"
+}
+},
+"E2": {
+"class": "observation_gap",
+"observations": [
+"F763"
+],
+"verdict": "unmet",
+"waiver": {
+"by": "F753",
+"coverage": "F758",
+"reason": "F755",
+"waived_at": "F757"
+}
+},
+"E3": {
+"observations": [
+"F763"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F763",
+"F764"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F763"
+],
+"verdict": "met"
+},
+"E6": {
+"observations": [
+"F763"
+],
+"verdict": "met"
+},
+"E7": {
+"observations": [
+"F763",
+"F764"
+],
+"verdict": "met"
+},
+"E8": {
+"observations": [
+"F764"
+],
+"verdict": "met"
+},
+"E9": {
+"observations": [
+"F764"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -3491,7 +3622,39 @@
 ],
 "text": "F472"
 }
-]
+],
+"waivers": {
+"E1": {
+"by": "F753",
+"coverage": "F756",
+"reason": "F755",
+"waived_at": "F754"
+},
+"E12": {
+"by": "F753",
+"coverage": "F759",
+"reason": "F755",
+"waived_at": "F757"
+},
+"E13": {
+"by": "F753",
+"coverage": "F760",
+"reason": "F755",
+"waived_at": "F757"
+},
+"E15": {
+"by": "F753",
+"coverage": "F762",
+"reason": "F755",
+"waived_at": "F761"
+},
+"E2": {
+"by": "F753",
+"coverage": "F758",
+"reason": "F755",
+"waived_at": "F757"
+}
+}
 },
 "facts": {
 "F1": "[the customer] could not find where the SLE is shown. [the informant] looked on the Flow Metrics tab and did not see it until he found the toggle. Benjamin agreed: \"where is it actually? We should have that somewhere.\"\n\nThe SLE is a goal, so the point is to see it next to how the Team actually performs, for example 72.7% of items within 10 days against a target of 70%.\n\nRaised by [the customer]\n\n- Make the SLE more prominent instead of hiding it behind chart toggles and a small header indicator.\n- See how actual performance against the SLE develops over time. [the informant]: tracking this over time is key.\n- Use wording like \"or less\" so it is clear to people new to flow.\n\nDetails to be worked out when we start on it.\n\n(ADO Story #6563 description; customer and informant names replaced because customer identifiers are not committed. Maintainer's scope choice after DIVERGE, 2026-11-27: \"Mix + daily record\" - one new dedicated SLE widget in the overview, plus the SLE over time in Predictability as a persisted daily record.)",
@@ -4181,7 +4344,19 @@
 "F750": "Both periods are 80 % within, so the header trend reads flat with a change of 0.0 pts. This passes on arrival because production already answers it; the crafter shows it can fail with a deliberate break that maps an equal share to up",
 "F751": "When the share has not moved, the header says it is flat rather than suggesting a rise or a fall",
 "F752": "a change smaller than half a tenth of a point read as flat (rounding to one decimal makes it flat by design)",
+"F753": "Benjamin Huser-Berta (maintainer), 2026-11-27",
+"F754": "2026-11-27T17:34:20Z",
+"F755": "No admitted examine probe renders the UI: the probes read test names and pass counts only. The maintainer chose to waive this row as an observation gap and will check it by hand in the running app before closing Story 6563.",
+"F756": "Widget tests pin the text, its order and the share format; the visual size of the number against the sentence is checked in the maintainer's manual test.",
+"F757": "2026-11-27T17:34:21Z",
+"F758": "The status rule and the status word are pinned at the widget and rule level; the rendered colour is checked in the maintainer's manual test.",
+"F759": "The widget's free availability is pinned for Team and Portfolio; the chart without a Premium licence is checked in the maintainer's manual test.",
 "F76": "When the reader selects View Data in the widget's header",
+"F760": "The usage report on View Data open is pinned; the dialog's content, order and colouring are checked in the maintainer's manual test.",
+"F761": "2026-11-27T17:34:22Z",
+"F762": "Which days are filled in and the note's presence are pinned on the line builder and in one render; the open versus filled marker look and the note text on screen are checked in the maintainer's manual test.",
+"F763": "frontend-tests Sle,Predictab: 18 files 171 passed. Verdict tests: Sustain+trend; exactly 5 closed judged; Observe 60 vs 70 and 50 vs 70 (exactly 20 below); Act 49.9 vs 70; no SLE says none set+Act+no change; 3 and 4 closed too few to judge, no status, no change. Header trend vs preceding period. Loading/could-not-load Team and Portfolio. Over-time chart: per-day target line, no point for too-few/unrecorded, no-SLE message, Percentiles Over Time sentence when nothing recorded, 30 first then switched horizon never showing old answer. withinSleLines.filledIn marks filled-in drawn days only. No test name seen for rendered colour, large font, open vs filled marker styling, note about today SLE, View Data dialog contents/order, chart without licence; no test comparing Cycle Time Percentiles status.",
+"F764": "backend-tests WithinSle: 62/62 passed. Exactly SLE days is within (Team,Portfolio); fewer than five too few; header trend up/down/flat/none; widget without Premium licence Team and Portfolio; no SLE widget judges nothing; recorded day keeps share and target after SLE change (Team,Portfolio); filler fills past days against todays SLE marked filled-in, recorded day kept; nothing filled without SLE; range before anything recorded answers no day; only days inside range answered; windows 30/60/90; no-SLE chart told no SLE set. No backend test for chart without licence or last-sync edge by name.",
 "F77": "Then the closed-items dialog of Cycle Time Percentiles opens with those Work Items, each with its close day and Cycle Time coloured against the SLE, longest first.",
 "F78": "Days the stored history does not reach",
 "F79": "Given a range that reaches before the first Work Item the Team or Portfolio finished, or after its last successful sync",

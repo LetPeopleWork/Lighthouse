@@ -2025,7 +2025,95 @@ None.
 
 ### Waivers
 
-None.
+#### E1
+
+```text
+Benjamin Huser-Berta (maintainer), 2026-11-27
+```
+
+```text
+2026-11-27T17:34:20Z
+```
+
+```text
+No admitted examine probe renders the UI: the probes read test names and pass counts only. The maintainer chose to waive this row as an observation gap and will check it by hand in the running app before closing Story 6563.
+```
+
+```text
+Widget tests pin the text, its order and the share format; the visual size of the number against the sentence is checked in the maintainer's manual test.
+```
+
+#### E2
+
+```text
+Benjamin Huser-Berta (maintainer), 2026-11-27
+```
+
+```text
+2026-11-27T17:34:21Z
+```
+
+```text
+No admitted examine probe renders the UI: the probes read test names and pass counts only. The maintainer chose to waive this row as an observation gap and will check it by hand in the running app before closing Story 6563.
+```
+
+```text
+The status rule and the status word are pinned at the widget and rule level; the rendered colour is checked in the maintainer's manual test.
+```
+
+#### E12
+
+```text
+Benjamin Huser-Berta (maintainer), 2026-11-27
+```
+
+```text
+2026-11-27T17:34:21Z
+```
+
+```text
+No admitted examine probe renders the UI: the probes read test names and pass counts only. The maintainer chose to waive this row as an observation gap and will check it by hand in the running app before closing Story 6563.
+```
+
+```text
+The widget's free availability is pinned for Team and Portfolio; the chart without a Premium licence is checked in the maintainer's manual test.
+```
+
+#### E13
+
+```text
+Benjamin Huser-Berta (maintainer), 2026-11-27
+```
+
+```text
+2026-11-27T17:34:21Z
+```
+
+```text
+No admitted examine probe renders the UI: the probes read test names and pass counts only. The maintainer chose to waive this row as an observation gap and will check it by hand in the running app before closing Story 6563.
+```
+
+```text
+The usage report on View Data open is pinned; the dialog's content, order and colouring are checked in the maintainer's manual test.
+```
+
+#### E15
+
+```text
+Benjamin Huser-Berta (maintainer), 2026-11-27
+```
+
+```text
+2026-11-27T17:34:22Z
+```
+
+```text
+No admitted examine probe renders the UI: the probes read test names and pass counts only. The maintainer chose to waive this row as an observation gap and will check it by hand in the running app before closing Story 6563.
+```
+
+```text
+Which days are filled in and the note's presence are pinned on the line builder and in one render; the open versus filled marker look and the note text on screen are checked in the maintainer's manual test.
+```
 
 ## Charter
 
@@ -2033,4 +2121,268 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+unmet
+
+#### Observations
+
+```text
+frontend-tests Sle,Predictab: 18 files 171 passed. Verdict tests: Sustain+trend; exactly 5 closed judged; Observe 60 vs 70 and 50 vs 70 (exactly 20 below); Act 49.9 vs 70; no SLE says none set+Act+no change; 3 and 4 closed too few to judge, no status, no change. Header trend vs preceding period. Loading/could-not-load Team and Portfolio. Over-time chart: per-day target line, no point for too-few/unrecorded, no-SLE message, Percentiles Over Time sentence when nothing recorded, 30 first then switched horizon never showing old answer. withinSleLines.filledIn marks filled-in drawn days only. No test name seen for rendered colour, large font, open vs filled marker styling, note about today SLE, View Data dialog contents/order, chart without licence; no test comparing Cycle Time Percentiles status.
+```
+
+observation_gap
+
+#### Waiver
+
+```text
+Benjamin Huser-Berta (maintainer), 2026-11-27
+```
+
+```text
+2026-11-27T17:34:20Z
+```
+
+```text
+No admitted examine probe renders the UI: the probes read test names and pass counts only. The maintainer chose to waive this row as an observation gap and will check it by hand in the running app before closing Story 6563.
+```
+
+```text
+Widget tests pin the text, its order and the share format; the visual size of the number against the sentence is checked in the maintainer's manual test.
+```
+
+### E2
+
+unmet
+
+#### Observations
+
+```text
+frontend-tests Sle,Predictab: 18 files 171 passed. Verdict tests: Sustain+trend; exactly 5 closed judged; Observe 60 vs 70 and 50 vs 70 (exactly 20 below); Act 49.9 vs 70; no SLE says none set+Act+no change; 3 and 4 closed too few to judge, no status, no change. Header trend vs preceding period. Loading/could-not-load Team and Portfolio. Over-time chart: per-day target line, no point for too-few/unrecorded, no-SLE message, Percentiles Over Time sentence when nothing recorded, 30 first then switched horizon never showing old answer. withinSleLines.filledIn marks filled-in drawn days only. No test name seen for rendered colour, large font, open vs filled marker styling, note about today SLE, View Data dialog contents/order, chart without licence; no test comparing Cycle Time Percentiles status.
+```
+
+observation_gap
+
+#### Waiver
+
+```text
+Benjamin Huser-Berta (maintainer), 2026-11-27
+```
+
+```text
+2026-11-27T17:34:21Z
+```
+
+```text
+No admitted examine probe renders the UI: the probes read test names and pass counts only. The maintainer chose to waive this row as an observation gap and will check it by hand in the running app before closing Story 6563.
+```
+
+```text
+The status rule and the status word are pinned at the widget and rule level; the rendered colour is checked in the maintainer's manual test.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+frontend-tests Sle,Predictab: 18 files 171 passed. Verdict tests: Sustain+trend; exactly 5 closed judged; Observe 60 vs 70 and 50 vs 70 (exactly 20 below); Act 49.9 vs 70; no SLE says none set+Act+no change; 3 and 4 closed too few to judge, no status, no change. Header trend vs preceding period. Loading/could-not-load Team and Portfolio. Over-time chart: per-day target line, no point for too-few/unrecorded, no-SLE message, Percentiles Over Time sentence when nothing recorded, 30 first then switched horizon never showing old answer. withinSleLines.filledIn marks filled-in drawn days only. No test name seen for rendered colour, large font, open vs filled marker styling, note about today SLE, View Data dialog contents/order, chart without licence; no test comparing Cycle Time Percentiles status.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+frontend-tests Sle,Predictab: 18 files 171 passed. Verdict tests: Sustain+trend; exactly 5 closed judged; Observe 60 vs 70 and 50 vs 70 (exactly 20 below); Act 49.9 vs 70; no SLE says none set+Act+no change; 3 and 4 closed too few to judge, no status, no change. Header trend vs preceding period. Loading/could-not-load Team and Portfolio. Over-time chart: per-day target line, no point for too-few/unrecorded, no-SLE message, Percentiles Over Time sentence when nothing recorded, 30 first then switched horizon never showing old answer. withinSleLines.filledIn marks filled-in drawn days only. No test name seen for rendered colour, large font, open vs filled marker styling, note about today SLE, View Data dialog contents/order, chart without licence; no test comparing Cycle Time Percentiles status.
+```
+
+```text
+backend-tests WithinSle: 62/62 passed. Exactly SLE days is within (Team,Portfolio); fewer than five too few; header trend up/down/flat/none; widget without Premium licence Team and Portfolio; no SLE widget judges nothing; recorded day keeps share and target after SLE change (Team,Portfolio); filler fills past days against todays SLE marked filled-in, recorded day kept; nothing filled without SLE; range before anything recorded answers no day; only days inside range answered; windows 30/60/90; no-SLE chart told no SLE set. No backend test for chart without licence or last-sync edge by name.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+frontend-tests Sle,Predictab: 18 files 171 passed. Verdict tests: Sustain+trend; exactly 5 closed judged; Observe 60 vs 70 and 50 vs 70 (exactly 20 below); Act 49.9 vs 70; no SLE says none set+Act+no change; 3 and 4 closed too few to judge, no status, no change. Header trend vs preceding period. Loading/could-not-load Team and Portfolio. Over-time chart: per-day target line, no point for too-few/unrecorded, no-SLE message, Percentiles Over Time sentence when nothing recorded, 30 first then switched horizon never showing old answer. withinSleLines.filledIn marks filled-in drawn days only. No test name seen for rendered colour, large font, open vs filled marker styling, note about today SLE, View Data dialog contents/order, chart without licence; no test comparing Cycle Time Percentiles status.
+```
+
+### E6
+
+met
+
+#### Observations
+
+```text
+frontend-tests Sle,Predictab: 18 files 171 passed. Verdict tests: Sustain+trend; exactly 5 closed judged; Observe 60 vs 70 and 50 vs 70 (exactly 20 below); Act 49.9 vs 70; no SLE says none set+Act+no change; 3 and 4 closed too few to judge, no status, no change. Header trend vs preceding period. Loading/could-not-load Team and Portfolio. Over-time chart: per-day target line, no point for too-few/unrecorded, no-SLE message, Percentiles Over Time sentence when nothing recorded, 30 first then switched horizon never showing old answer. withinSleLines.filledIn marks filled-in drawn days only. No test name seen for rendered colour, large font, open vs filled marker styling, note about today SLE, View Data dialog contents/order, chart without licence; no test comparing Cycle Time Percentiles status.
+```
+
+### E7
+
+met
+
+#### Observations
+
+```text
+frontend-tests Sle,Predictab: 18 files 171 passed. Verdict tests: Sustain+trend; exactly 5 closed judged; Observe 60 vs 70 and 50 vs 70 (exactly 20 below); Act 49.9 vs 70; no SLE says none set+Act+no change; 3 and 4 closed too few to judge, no status, no change. Header trend vs preceding period. Loading/could-not-load Team and Portfolio. Over-time chart: per-day target line, no point for too-few/unrecorded, no-SLE message, Percentiles Over Time sentence when nothing recorded, 30 first then switched horizon never showing old answer. withinSleLines.filledIn marks filled-in drawn days only. No test name seen for rendered colour, large font, open vs filled marker styling, note about today SLE, View Data dialog contents/order, chart without licence; no test comparing Cycle Time Percentiles status.
+```
+
+```text
+backend-tests WithinSle: 62/62 passed. Exactly SLE days is within (Team,Portfolio); fewer than five too few; header trend up/down/flat/none; widget without Premium licence Team and Portfolio; no SLE widget judges nothing; recorded day keeps share and target after SLE change (Team,Portfolio); filler fills past days against todays SLE marked filled-in, recorded day kept; nothing filled without SLE; range before anything recorded answers no day; only days inside range answered; windows 30/60/90; no-SLE chart told no SLE set. No backend test for chart without licence or last-sync edge by name.
+```
+
+### E8
+
+met
+
+#### Observations
+
+```text
+backend-tests WithinSle: 62/62 passed. Exactly SLE days is within (Team,Portfolio); fewer than five too few; header trend up/down/flat/none; widget without Premium licence Team and Portfolio; no SLE widget judges nothing; recorded day keeps share and target after SLE change (Team,Portfolio); filler fills past days against todays SLE marked filled-in, recorded day kept; nothing filled without SLE; range before anything recorded answers no day; only days inside range answered; windows 30/60/90; no-SLE chart told no SLE set. No backend test for chart without licence or last-sync edge by name.
+```
+
+### E9
+
+met
+
+#### Observations
+
+```text
+backend-tests WithinSle: 62/62 passed. Exactly SLE days is within (Team,Portfolio); fewer than five too few; header trend up/down/flat/none; widget without Premium licence Team and Portfolio; no SLE widget judges nothing; recorded day keeps share and target after SLE change (Team,Portfolio); filler fills past days against todays SLE marked filled-in, recorded day kept; nothing filled without SLE; range before anything recorded answers no day; only days inside range answered; windows 30/60/90; no-SLE chart told no SLE set. No backend test for chart without licence or last-sync edge by name.
+```
+
+### E10
+
+met
+
+#### Observations
+
+```text
+frontend-tests Sle,Predictab: 18 files 171 passed. Verdict tests: Sustain+trend; exactly 5 closed judged; Observe 60 vs 70 and 50 vs 70 (exactly 20 below); Act 49.9 vs 70; no SLE says none set+Act+no change; 3 and 4 closed too few to judge, no status, no change. Header trend vs preceding period. Loading/could-not-load Team and Portfolio. Over-time chart: per-day target line, no point for too-few/unrecorded, no-SLE message, Percentiles Over Time sentence when nothing recorded, 30 first then switched horizon never showing old answer. withinSleLines.filledIn marks filled-in drawn days only. No test name seen for rendered colour, large font, open vs filled marker styling, note about today SLE, View Data dialog contents/order, chart without licence; no test comparing Cycle Time Percentiles status.
+```
+
+```text
+backend-tests WithinSle: 62/62 passed. Exactly SLE days is within (Team,Portfolio); fewer than five too few; header trend up/down/flat/none; widget without Premium licence Team and Portfolio; no SLE widget judges nothing; recorded day keeps share and target after SLE change (Team,Portfolio); filler fills past days against todays SLE marked filled-in, recorded day kept; nothing filled without SLE; range before anything recorded answers no day; only days inside range answered; windows 30/60/90; no-SLE chart told no SLE set. No backend test for chart without licence or last-sync edge by name.
+```
+
+### E11
+
+met
+
+#### Observations
+
+```text
+frontend-tests Sle,Predictab: 18 files 171 passed. Verdict tests: Sustain+trend; exactly 5 closed judged; Observe 60 vs 70 and 50 vs 70 (exactly 20 below); Act 49.9 vs 70; no SLE says none set+Act+no change; 3 and 4 closed too few to judge, no status, no change. Header trend vs preceding period. Loading/could-not-load Team and Portfolio. Over-time chart: per-day target line, no point for too-few/unrecorded, no-SLE message, Percentiles Over Time sentence when nothing recorded, 30 first then switched horizon never showing old answer. withinSleLines.filledIn marks filled-in drawn days only. No test name seen for rendered colour, large font, open vs filled marker styling, note about today SLE, View Data dialog contents/order, chart without licence; no test comparing Cycle Time Percentiles status.
+```
+
+```text
+backend-tests WithinSle: 62/62 passed. Exactly SLE days is within (Team,Portfolio); fewer than five too few; header trend up/down/flat/none; widget without Premium licence Team and Portfolio; no SLE widget judges nothing; recorded day keeps share and target after SLE change (Team,Portfolio); filler fills past days against todays SLE marked filled-in, recorded day kept; nothing filled without SLE; range before anything recorded answers no day; only days inside range answered; windows 30/60/90; no-SLE chart told no SLE set. No backend test for chart without licence or last-sync edge by name.
+```
+
+### E12
+
+unmet
+
+#### Observations
+
+```text
+backend-tests WithinSle: 62/62 passed. Exactly SLE days is within (Team,Portfolio); fewer than five too few; header trend up/down/flat/none; widget without Premium licence Team and Portfolio; no SLE widget judges nothing; recorded day keeps share and target after SLE change (Team,Portfolio); filler fills past days against todays SLE marked filled-in, recorded day kept; nothing filled without SLE; range before anything recorded answers no day; only days inside range answered; windows 30/60/90; no-SLE chart told no SLE set. No backend test for chart without licence or last-sync edge by name.
+```
+
+observation_gap
+
+#### Waiver
+
+```text
+Benjamin Huser-Berta (maintainer), 2026-11-27
+```
+
+```text
+2026-11-27T17:34:21Z
+```
+
+```text
+No admitted examine probe renders the UI: the probes read test names and pass counts only. The maintainer chose to waive this row as an observation gap and will check it by hand in the running app before closing Story 6563.
+```
+
+```text
+The widget's free availability is pinned for Team and Portfolio; the chart without a Premium licence is checked in the maintainer's manual test.
+```
+
+### E13
+
+unmet
+
+#### Observations
+
+```text
+frontend-tests Sle,Predictab: 18 files 171 passed. Verdict tests: Sustain+trend; exactly 5 closed judged; Observe 60 vs 70 and 50 vs 70 (exactly 20 below); Act 49.9 vs 70; no SLE says none set+Act+no change; 3 and 4 closed too few to judge, no status, no change. Header trend vs preceding period. Loading/could-not-load Team and Portfolio. Over-time chart: per-day target line, no point for too-few/unrecorded, no-SLE message, Percentiles Over Time sentence when nothing recorded, 30 first then switched horizon never showing old answer. withinSleLines.filledIn marks filled-in drawn days only. No test name seen for rendered colour, large font, open vs filled marker styling, note about today SLE, View Data dialog contents/order, chart without licence; no test comparing Cycle Time Percentiles status.
+```
+
+observation_gap
+
+#### Waiver
+
+```text
+Benjamin Huser-Berta (maintainer), 2026-11-27
+```
+
+```text
+2026-11-27T17:34:21Z
+```
+
+```text
+No admitted examine probe renders the UI: the probes read test names and pass counts only. The maintainer chose to waive this row as an observation gap and will check it by hand in the running app before closing Story 6563.
+```
+
+```text
+The usage report on View Data open is pinned; the dialog's content, order and colouring are checked in the maintainer's manual test.
+```
+
+### E14
+
+met
+
+#### Observations
+
+```text
+backend-tests WithinSle: 62/62 passed. Exactly SLE days is within (Team,Portfolio); fewer than five too few; header trend up/down/flat/none; widget without Premium licence Team and Portfolio; no SLE widget judges nothing; recorded day keeps share and target after SLE change (Team,Portfolio); filler fills past days against todays SLE marked filled-in, recorded day kept; nothing filled without SLE; range before anything recorded answers no day; only days inside range answered; windows 30/60/90; no-SLE chart told no SLE set. No backend test for chart without licence or last-sync edge by name.
+```
+
+### E15
+
+unmet
+
+#### Observations
+
+```text
+frontend-tests Sle,Predictab: 18 files 171 passed. Verdict tests: Sustain+trend; exactly 5 closed judged; Observe 60 vs 70 and 50 vs 70 (exactly 20 below); Act 49.9 vs 70; no SLE says none set+Act+no change; 3 and 4 closed too few to judge, no status, no change. Header trend vs preceding period. Loading/could-not-load Team and Portfolio. Over-time chart: per-day target line, no point for too-few/unrecorded, no-SLE message, Percentiles Over Time sentence when nothing recorded, 30 first then switched horizon never showing old answer. withinSleLines.filledIn marks filled-in drawn days only. No test name seen for rendered colour, large font, open vs filled marker styling, note about today SLE, View Data dialog contents/order, chart without licence; no test comparing Cycle Time Percentiles status.
+```
+
+observation_gap
+
+#### Waiver
+
+```text
+Benjamin Huser-Berta (maintainer), 2026-11-27
+```
+
+```text
+2026-11-27T17:34:22Z
+```
+
+```text
+No admitted examine probe renders the UI: the probes read test names and pass counts only. The maintainer chose to waive this row as an observation gap and will check it by hand in the running app before closing Story 6563.
+```
+
+```text
+Which days are filled in and the note's presence are pinned on the line builder and in one render; the open versus filled marker look and the note text on screen are checked in the maintainer's manual test.
+```
