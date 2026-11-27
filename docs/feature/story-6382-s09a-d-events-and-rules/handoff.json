@@ -334,6 +334,24 @@
 "expected": "F330",
 "stimulus": "F329",
 "user_result": "F331"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F160",
+"L5/F159"
+],
+"still_passes_if": "F336",
+"test": "AMadeUpListOfLegalEdgesNamingAnEdgeBehindTheTargetsContracts_IsNamedWithItsListItsEntryAndTheContractsRuleAsOwner",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EachCrossContextEdgeHasOneOwningRuleArchUnitTest.cs"
+},
+"expected": "F334",
+"stimulus": "F333",
+"user_result": "F335"
 }
 ]
 },
@@ -342,7 +360,7 @@
 "C": 1,
 "D": 8,
 "E": 4,
-"F": 332,
+"F": 336,
 "K": 7,
 "L": 6,
 "P": 3,
@@ -3722,6 +3740,10 @@
 "F330": "No list names an edge into set-up, Refinement's included",
 "F331": "Edges into set-up are owned by the contracts rule alone",
 "F332": "a list that keeps only Domain edges into set-up",
+"F333": "A made-up list of legal edges names an edge from Work Items into set-up's Application and an edge into set-up's Contracts",
+"F334": "Only the edge behind the Contracts is named, with its list, the entry and the contracts rule as owner; the real list of legal edges targets only Contracts",
+"F335": "A list left out of the one-owner check cannot hide a second owner",
+"F336": "a left-out list that is only checked for existence",
 "F34": "which type wrote the row; that is observed separately on the IL (ForecastUpdater names no IRefreshLogService)",
 "F35": "Architecture test verdict: exit code and the failure message naming WHAT (source, target, list), WHY and HOW",
 "F36": "code reached only by reflection or by string (no IL edge)",

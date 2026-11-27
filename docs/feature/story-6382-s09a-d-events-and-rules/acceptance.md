@@ -604,6 +604,38 @@ a list that keeps only Domain edges into set-up
 ###### Obligations
 
 
+##### Covers
+
+P3
+
+```text
+A made-up list of legal edges names an edge from Work Items into set-up's Application and an edge into set-up's Contracts
+```
+
+```text
+Only the edge behind the Contracts is named, with its list, the entry and the contracts rule as owner; the real list of legal edges targets only Contracts
+```
+
+```text
+A list left out of the one-owner check cannot hide a second owner
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/EachCrossContextEdgeHasOneOwningRuleArchUnitTest\.cs
+
+AMadeUpListOfLegalEdgesNamingAnEdgeBehindTheTargetsContracts\_IsNamedWithItsListItsEntryAndTheContractsRuleAsOwner
+
+```text
+a left-out list that is only checked for existence
+```
+
+###### Obligations
+
+
+
 ## Expectations
 
 ### Rows

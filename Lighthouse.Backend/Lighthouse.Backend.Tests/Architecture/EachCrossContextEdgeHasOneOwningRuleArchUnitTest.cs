@@ -24,10 +24,18 @@ namespace Lighthouse.Backend.Tests.Architecture
             return PackagedContexts.InTheAssembly(production);
         });
 
-        private static readonly (Type Owner, string Member)[] ListsLeftOutByName =
+        // The contracts rule's own list is the owner and holds edges outside Contracts. The list of edges that became legal
+        // records compiled edges, so every entry of it must target the Contracts of its context.
+        private static readonly (Type Owner, string Member, bool EveryEntryTargetsContracts)[] ListsLeftOutByName =
         [
-            (typeof(ContextContractsArchUnitTest), "CrossContextEdgesOutsideContracts"),
-            (typeof(OrganisationSetupIsAnOpenHostArchUnitTest), "WorkItemsEdgesIntoSetUpThatBecomeLegal"),
+            (typeof(ContextContractsArchUnitTest), "CrossContextEdgesOutsideContracts", false),
+            (typeof(OrganisationSetupIsAnOpenHostArchUnitTest), "WorkItemsEdgesIntoSetUpThatBecomeLegal", true),
+        ];
+
+        private static readonly string[] AMadeUpListOfLegalEdges =
+        [
+            "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Modules.OrganisationSetup.Application.AnyService",
+            "Lighthouse.Backend.Modules.WorkItems.Application.RefreshLogService -> Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService",
         ];
 
         private static readonly string[] AMadeUpList =
@@ -43,9 +51,21 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var lists = GivenTheListsOfTheArchitectureTests();
 
-            var named = WhenTheEdgesBetweenContextsAreTaken(lists.Where(list => !IsLeftOutByName(list)));
+            var named = WhenTheEdgesBetweenContextsAreTaken(lists.Where(list => !IsLeftOutByName(list)))
+                .Concat(WhenTheEdgesBehindTheTargetsContractsAreTaken(lists.Where(IsLeftOutToTargetOnlyContracts)))
+                .ToList();
 
             ThenNoListNamesAnEdgeBetweenContexts(lists, named);
+        }
+
+        [Test]
+        public void AMadeUpListOfLegalEdgesNamingAnEdgeBehindTheTargetsContracts_IsNamedWithItsListItsEntryAndTheContractsRuleAsOwner()
+        {
+            var madeUp = new List<ListedEdges> { new(typeof(EachCrossContextEdgeHasOneOwningRuleArchUnitTest), nameof(AMadeUpListOfLegalEdges), AMadeUpListOfLegalEdges) };
+
+            var named = WhenTheEdgesBehindTheTargetsContractsAreTaken(madeUp);
+
+            ThenOnlyTheEdgeBehindContractsIsNamedWithItsOwner(named);
         }
 
         [Test]
@@ -133,6 +153,25 @@ namespace Lighthouse.Backend.Tests.Architecture
             return contexts.Contains(root, StringComparer.Ordinal) ? root : null;
         }
 
+        private static bool IsLeftOutToTargetOnlyContracts(ListedEdges list)
+            => ListsLeftOutByName.Any(left => left.Owner == list.Owner && left.Member == list.Member && left.EveryEntryTargetsContracts);
+
+        private static List<NamedEdge> WhenTheEdgesBehindTheTargetsContractsAreTaken(IEnumerable<ListedEdges> lists)
+        {
+            var contexts = PackagedContextsOfTheCode.Value;
+
+            return [.. lists.SelectMany(list => list.Entries
+                .Where(entry => IsBetweenTwoDifferentContexts(entry, contexts) && !TargetsTheContractsOfItsContext(entry, contexts))
+                .Select(entry => new NamedEdge(list, entry)))];
+        }
+
+        private static bool TargetsTheContractsOfItsContext(string entry, IReadOnlyList<string> contexts)
+        {
+            var target = entry.Split(TheEdgeSeparator)[1];
+
+            return target.StartsWith($"{ContextContractsMembership.ContractsOf(ContextOf(target, contexts)!)}.", StringComparison.Ordinal);
+        }
+
         private static List<(string Owner, string Member, bool Found, bool NamesAnEdgeBetweenContexts)> WhenTheListsLeftOutAreLookedUp(List<ListedEdges> lists)
         {
             var contexts = PackagedContextsOfTheCode.Value;
@@ -168,6 +207,18 @@ namespace Lighthouse.Backend.Tests.Architecture
                     $"The check named [{string.Join(" | ", named.Select(edge => edge.Entry))}] in a made-up list. Expected exactly the edge from Refinement into Access, and not the edge inside one context, the edge from the API, nor the edge between made-up fixture roots. Why it matters: a check that names a legal edge makes the lists grow, and one that misses an edge lets a second owner appear unseen. How to fix: name an entry only when its source and target are in two different packaged contexts.");
                 var wording = named.Count == 1 ? TheWordingOf(named[0]) : string.Empty;
                 Assert.That(wording, Does.Contain(nameof(AMadeUpList)).And.Contain(AMadeUpList[0]).And.Contain("contracts rule"),
+                    $"The wording for the made-up edge reads: {wording}. Expected it to name the list, the entry and the contracts rule as owner. Why it matters: a reader of a failing run must know which list to edit and who owns the edge. How to fix: name the list, the entry and the owner in the failure text.");
+            }
+        }
+
+        private static void ThenOnlyTheEdgeBehindContractsIsNamedWithItsOwner(List<NamedEdge> named)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(named.Select(edge => edge.Entry), Is.EqualTo(new[] { AMadeUpListOfLegalEdges[0] }),
+                    $"The check named [{string.Join(" | ", named.Select(edge => edge.Entry))}] in a made-up list of legal edges. Expected exactly the edge into set-up's Application, and not the edge into set-up's Contracts. Why it matters: a list left out of the one-owner check may hold only edges into a Contracts, or it hides a second owner. How to fix: name an entry of such a list when its target is not in the Contracts of its context.");
+                var wording = named.Count == 1 ? TheWordingOf(named[0]) : string.Empty;
+                Assert.That(wording, Does.Contain(nameof(AMadeUpListOfLegalEdges)).And.Contain(AMadeUpListOfLegalEdges[0]).And.Contain("contracts rule"),
                     $"The wording for the made-up edge reads: {wording}. Expected it to name the list, the entry and the contracts rule as owner. Why it matters: a reader of a failing run must know which list to edit and who owns the edge. How to fix: name the list, the entry and the owner in the failure text.");
             }
         }

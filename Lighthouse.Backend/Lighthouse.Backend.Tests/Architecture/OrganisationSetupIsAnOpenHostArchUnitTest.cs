@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
     /// Organisation set-up is an open host. Work Items, Flow metrics, Forecasting, Promises, Refinement and Reports build on
-    /// it, so they reach its Application and Domain by right: none of their outbound rules reads those namespaces as
+    /// it, so they reach its Contracts by right: none of their outbound rules reads that namespace as
     /// foreign, and none of their outbound lists names an edge into set-up. Each of those rules still reads a foreign
     /// namespace that is not set-up, so the allowance is set-up's and nobody else's. Tracker integration does not build on
     /// set-up: its rule still reads set-up as another context, and its list names no edge into set-up, so a made-up
@@ -128,7 +128,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [TestCaseSource(nameof(DownstreamOutboundTargets))]
-        public void ADownstreamModulesOutboundRule_DoesNotReadSetUpsApplicationOrDomainAsForeign(Type ruleClass, string module, string rule)
+        public void ADownstreamModulesOutboundRule_DoesNotReadSetUpsContractsAsForeign(Type ruleClass, string module, string rule)
         {
             var target = GivenTheTargetThatTheRuleReads(ruleClass, rule);
 
