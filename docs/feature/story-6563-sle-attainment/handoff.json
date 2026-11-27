@@ -141,6 +141,127 @@
 "stimulus": "F527",
 "user_result": "F529"
 }
+],
+"S6": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F535",
+"test": "the Within SLE widget's verdict",
+"test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.verdicts.test.tsx"
+},
+"expected": "F533",
+"stimulus": "F532",
+"user_result": "F534"
+},
+{
+"covers": [
+"P12"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F539",
+"test": "says Sustain and shows the change against the preceding period when the share is at or above the target",
+"test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.verdicts.test.tsx"
+},
+"expected": "F537",
+"stimulus": "F536",
+"user_result": "F538"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T4"
+],
+"still_passes_if": "F543",
+"test": "says Sustain and shows the change against the preceding period when the share is at or above the target",
+"test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.verdicts.test.tsx"
+},
+"expected": "F541",
+"stimulus": "F540",
+"user_result": "F542"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F547",
+"test": "WithinSleInfoVerdictsAtTheServicePortTest",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoVerdictsAtTheServicePortTest.cs"
+},
+"expected": "F545",
+"stimulus": "F544",
+"user_result": "F546"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F551",
+"test": "reads that no SLE is set, says Act and shows no change",
+"test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.verdicts.test.tsx"
+},
+"expected": "F549",
+"stimulus": "F548",
+"user_result": "F550"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F555",
+"test": "says how many closed and that this is too few to judge, with no status and no change",
+"test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.verdicts.test.tsx"
+},
+"expected": "F553",
+"stimulus": "F552",
+"user_result": "F554"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5"
+],
+"still_passes_if": "F559",
+"test": "the Within SLE widget's usage report",
+"test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.verdicts.test.tsx"
+},
+"expected": "F557",
+"stimulus": "F556",
+"user_result": "F558"
+}
 ]
 },
 "counters": {
@@ -148,7 +269,7 @@
 "C": 2,
 "D": 25,
 "E": 15,
-"F": 531,
+"F": 559,
 "K": 26,
 "L": 7,
 "N": 4,
@@ -2985,8 +3106,36 @@
 "F53": "Q6: both the widget and the chart appear for Teams and Portfolios.",
 "F530": "Amendment after the S5 slice review (host, 2026-11-27): the withinSle widget's fetch requirement is [withinSleInfo] only, as the approved S5 loading oracle requires (the frame is ready once the share is answered). View Data's closed-items list reads cycleTimeData, which the Cycle Time Percentiles widget beside it already fetches on the same Flow Overview; until it arrives the list is empty, never stale. Supersedes the earlier requirement [withinSleInfo, cycleTimeData].",
 "F531": "Amendment after the S5 slice review (host, 2026-11-27): the WithinSleListOpened usage event emitted since S5 gets its executable checks in S6's oracle (the widget's remaining behaviour): the frontend reports it once per View Data open on the withinSle widget and never on render; a backend event-name test pins the value 31, like OutlierListOpened's.",
+"F532": "Render the Flow Overview answering 72.7 percent (Sustain), 60 and 50 percent (Observe) and 49.9 percent (Act) against a target of 70",
+"F533": "The widget header carries the matching status word and the Cycle Time Percentiles status stays the unchanged existing rule",
+"F534": "The status word the reader sees follows the percentiles rule",
+"F535": "A neutral status for every measured share, or a status word that disagrees with the share",
+"F536": "Render the widget for a measured share of 72.7, 60 and 49.9 percent",
+"F537": "The header status word and its green, amber or red state agree; the colours themselves are not pinned",
+"F538": "The status word always comes with the colour state of the share",
+"F539": "The colour state shown without the status word",
 "F54": "Q7: the widget reuses the Cycle Time Percentiles status rule (Sustain at or above target, Observe up to 20 points below, Act beyond or no SLE); Cycle Time Percentiles keeps its own status.",
+"F540": "Render the widget with a server comparison of up, and with one of none",
+"F541": "The header trend indicator appears for up and is absent for none; the body holds no change of its own",
+"F542": "The reader sees the change against the preceding period in the header",
+"F543": "A header trend shown for none",
+"F544": "Ask the widget for November when October held five closed (three within 10 days, two on the period edges) plus two within-SLE items just before it, then variants with a fallen share, a too-few period on either side, and no SLE",
+"F545": "Direction up with +12.7 pts, down with -27.3 pts, and none with no change text when either period is too few or no SLE is set",
+"F546": "The header trend compares with the preceding period of the same length, and nothing when unjudged",
+"F547": "A previous period one day too long or short, or a comparison between unjudged periods",
+"F548": "Render the widget with no SLE set",
+"F549": "The widget reads No SLE set, the status is Act, no trend",
 "F55": "Q8: free, no Premium gate.",
+"F550": "The reader is told no SLE is set and sees Act",
+"F551": "Act missing, or an empty body",
+"F552": "Render the widget with 3 closed Work Items and an SLE set; compute the rule for too few",
+"F553": "Body reads 3 Work Items closed — too few to judge (needs at least 5); no status; no trend",
+"F554": "The reader gets a count and no pass or fail",
+"F555": "A status or a trend shown for too few",
+"F556": "Open View Data on the withinSle widget; render without opening; read the event name's number",
+"F557": "WithinSleListOpened is reported once per open and never on render; the event name keeps value 31 and carries only its name",
+"F558": "Opening the closed Work Items list counts as one engaged use, rendering counts nothing",
+"F559": "Reported on render, twice per open, or renumbered",
 "F56": "Q9: the tooltip wording and the Aging chart line default are out of this Story.",
 "F57": "Q10: with no SLE set the widget says so and its status is Act.",
 "F58": "Q11: Lighthouse-Clients follow in a later Story.",

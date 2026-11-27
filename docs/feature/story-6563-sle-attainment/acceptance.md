@@ -292,6 +292,225 @@ an empty frame passes only if status and message are not read; both are
 
 None.
 
+### S6
+
+##### Covers
+
+P2
+
+```text
+Render the Flow Overview answering 72.7 percent (Sustain), 60 and 50 percent (Observe) and 49.9 percent (Act) against a target of 70
+```
+
+```text
+The widget header carries the matching status word and the Cycle Time Percentiles status stays the unchanged existing rule
+```
+
+```text
+The status word the reader sees follows the percentiles rule
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/WithinSleWidget\.verdicts\.test\.tsx
+
+the Within SLE widget\'s verdict
+
+```text
+A neutral status for every measured share, or a status word that disagrees with the share
+```
+
+###### Obligations
+
+
+##### Covers
+
+P12
+
+```text
+Render the widget for a measured share of 72.7, 60 and 49.9 percent
+```
+
+```text
+The header status word and its green, amber or red state agree; the colours themselves are not pinned
+```
+
+```text
+The status word always comes with the colour state of the share
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/WithinSleWidget\.verdicts\.test\.tsx
+
+says Sustain and shows the change against the preceding period when the share is at or above the target
+
+```text
+The colour state shown without the status word
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Render the widget with a server comparison of up, and with one of none
+```
+
+```text
+The header trend indicator appears for up and is absent for none; the body holds no change of its own
+```
+
+```text
+The reader sees the change against the preceding period in the header
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/WithinSleWidget\.verdicts\.test\.tsx
+
+says Sustain and shows the change against the preceding period when the share is at or above the target
+
+```text
+A header trend shown for none
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Ask the widget for November when October held five closed (three within 10 days, two on the period edges) plus two within-SLE items just before it, then variants with a fallen share, a too-few period on either side, and no SLE
+```
+
+```text
+Direction up with +12.7 pts, down with -27.3 pts, and none with no change text when either period is too few or no SLE is set
+```
+
+```text
+The header trend compares with the preceding period of the same length, and nothing when unjudged
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/WithinSle\/WithinSleInfoVerdictsAtTheServicePortTest\.cs
+
+WithinSleInfoVerdictsAtTheServicePortTest
+
+```text
+A previous period one day too long or short, or a comparison between unjudged periods
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Render the widget with no SLE set
+```
+
+```text
+The widget reads No SLE set, the status is Act, no trend
+```
+
+```text
+The reader is told no SLE is set and sees Act
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/WithinSleWidget\.verdicts\.test\.tsx
+
+reads that no SLE is set\, says Act and shows no change
+
+```text
+Act missing, or an empty body
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+Render the widget with 3 closed Work Items and an SLE set; compute the rule for too few
+```
+
+```text
+Body reads 3 Work Items closed — too few to judge (needs at least 5); no status; no trend
+```
+
+```text
+The reader gets a count and no pass or fail
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/WithinSleWidget\.verdicts\.test\.tsx
+
+says how many closed and that this is too few to judge\, with no status and no change
+
+```text
+A status or a trend shown for too few
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Open View Data on the withinSle widget; render without opening; read the event name's number
+```
+
+```text
+WithinSleListOpened is reported once per open and never on render; the event name keeps value 31 and carries only its name
+```
+
+```text
+Opening the closed Work Items list counts as one engaged use, rendering counts nothing
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/WithinSleWidget\.verdicts\.test\.tsx
+
+the Within SLE widget\'s usage report
+
+```text
+Reported on render, twice per open, or renumbered
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

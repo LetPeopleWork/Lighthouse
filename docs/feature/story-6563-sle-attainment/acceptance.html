@@ -410,6 +410,197 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S6</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Render the Flow Overview answering 72.7 percent (Sustain), 60 and 50 percent (Observe) and 49.9 percent (Act) against a target of 70
+</code></pre>
+
+<pre><code>The widget header carries the matching status word and the Cycle Time Percentiles status stays the unchanged existing rule
+</code></pre>
+
+<pre><code>The status word the reader sees follows the percentiles rule
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.verdicts.test.tsx</p>
+
+<p>the Within SLE widget&#x27;s verdict</p>
+
+<pre><code>A neutral status for every measured share, or a status word that disagrees with the share
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P12</p>
+
+<pre><code>Render the widget for a measured share of 72.7, 60 and 49.9 percent
+</code></pre>
+
+<pre><code>The header status word and its green, amber or red state agree; the colours themselves are not pinned
+</code></pre>
+
+<pre><code>The status word always comes with the colour state of the share
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.verdicts.test.tsx</p>
+
+<p>says Sustain and shows the change against the preceding period when the share is at or above the target</p>
+
+<pre><code>The colour state shown without the status word
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Render the widget with a server comparison of up, and with one of none
+</code></pre>
+
+<pre><code>The header trend indicator appears for up and is absent for none; the body holds no change of its own
+</code></pre>
+
+<pre><code>The reader sees the change against the preceding period in the header
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.verdicts.test.tsx</p>
+
+<p>says Sustain and shows the change against the preceding period when the share is at or above the target</p>
+
+<pre><code>A header trend shown for none
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Ask the widget for November when October held five closed (three within 10 days, two on the period edges) plus two within-SLE items just before it, then variants with a fallen share, a too-few period on either side, and no SLE
+</code></pre>
+
+<pre><code>Direction up with +12.7 pts, down with -27.3 pts, and none with no change text when either period is too few or no SLE is set
+</code></pre>
+
+<pre><code>The header trend compares with the preceding period of the same length, and nothing when unjudged
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoVerdictsAtTheServicePortTest.cs</p>
+
+<p>WithinSleInfoVerdictsAtTheServicePortTest</p>
+
+<pre><code>A previous period one day too long or short, or a comparison between unjudged periods
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Render the widget with no SLE set
+</code></pre>
+
+<pre><code>The widget reads No SLE set, the status is Act, no trend
+</code></pre>
+
+<pre><code>The reader is told no SLE is set and sees Act
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.verdicts.test.tsx</p>
+
+<p>reads that no SLE is set, says Act and shows no change</p>
+
+<pre><code>Act missing, or an empty body
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>Render the widget with 3 closed Work Items and an SLE set; compute the rule for too few
+</code></pre>
+
+<pre><code>Body reads 3 Work Items closed — too few to judge (needs at least 5); no status; no trend
+</code></pre>
+
+<pre><code>The reader gets a count and no pass or fail
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.verdicts.test.tsx</p>
+
+<p>says how many closed and that this is too few to judge, with no status and no change</p>
+
+<pre><code>A status or a trend shown for too few
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Open View Data on the withinSle widget; render without opening; read the event name&#x27;s number
+</code></pre>
+
+<pre><code>WithinSleListOpened is reported once per open and never on render; the event name keeps value 31 and carries only its name
+</code></pre>
+
+<pre><code>Opening the closed Work Items list counts as one engaged use, rendering counts nothing
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.verdicts.test.tsx</p>
+
+<p>the Within SLE widget&#x27;s usage report</p>
+
+<pre><code>Reported on render, twice per open, or renumbered
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

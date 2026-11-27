@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { IWithinSleInfo } from "../../../models/Metrics/WithinSleInfo";
 import {
 	computeCumulativeStateTimeRag,
 	computeCycleTimePercentilesRag,
@@ -6,6 +7,7 @@ import {
 	computeSleRiskRag,
 	computeTotalWorkItemAgeOverTimeRag,
 	computeTotalWorkItemAgeRag,
+	computeWithinSleRag,
 	computeWorkItemAgeChartRag,
 	computeWorkItemAgePercentilesRag,
 } from "./ragRulesTimeAndAge";
@@ -1010,5 +1012,71 @@ describe("what the time and age rules say, and where they change", () => {
 				),
 			).toEqual({ ragStatus: "red", tipText: nothingToShow });
 		});
+	});
+});
+
+describe("computeWithinSleRag", () => {
+	const noChange = { direction: "none", metricLabel: "Within SLE" } as const;
+	const measured = (
+		sharePercent: number,
+		slePercentile: number,
+	): IWithinSleInfo => ({
+		verdict: "Measured",
+		closedCount: 11,
+		withinCount: 8,
+		slePercentile,
+		sleDays: 10,
+		sharePercent,
+		comparison: noChange,
+	});
+
+	it.each([
+		{ share: 72.7, target: 70, status: "green" },
+		{ share: 70, target: 70, status: "green" },
+		{ share: 69.9, target: 70, status: "amber" },
+		{ share: 60, target: 70, status: "amber" },
+		{ share: 50, target: 70, status: "amber" },
+		{ share: 49.9, target: 70, status: "red" },
+		{ share: 0, target: 70, status: "red" },
+		{ share: 65, target: 85, status: "amber" },
+		{ share: 64.9, target: 85, status: "red" },
+	])(
+		"is $status for a share of $share % against a target of $target %",
+		({ share, target, status }) => {
+			const result = computeWithinSleRag(measured(share, target), terms);
+
+			expect(result.ragStatus).toBe(status);
+		},
+	);
+
+	it("is Act with no SLE set, and prompts to define one", () => {
+		const result = computeWithinSleRag(
+			{
+				verdict: "NoSle",
+				closedCount: 11,
+				withinCount: 0,
+				comparison: noChange,
+			},
+			terms,
+		);
+
+		expect(result.ragStatus).toBe("red");
+		expect(result.tipText).toMatch(/Define an? SLE/);
+	});
+
+	it("gives no status below five closed Work Items", () => {
+		const result = computeWithinSleRag(
+			{
+				verdict: "TooFew",
+				closedCount: 3,
+				withinCount: 0,
+				slePercentile: 70,
+				sleDays: 10,
+				comparison: noChange,
+			},
+			terms,
+		);
+
+		expect(result.ragStatus).toBe("none");
 	});
 });
