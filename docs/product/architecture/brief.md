@@ -11011,10 +11011,10 @@ Epic #6474, DESIGN 2026-11-02, Hera (PROPOSE). Context: Organisation set-up (cha
   `ForecastInputFingerprint` (Forecasting).
 - Ids (ADR-273): numbers per level, today's Team and Portfolio numbers kept; stored kind discriminators read as the
   level key, never rewritten.
-- Item types (ADR-274): owned by the level, each type on exactly one level (the Feature level wins at migration);
-  a unit narrows, in the level's spelling; what it reads is subset ∩ level types; removing a type narrows the named
-  units in the same transaction. OUT-1 has two named exceptions: respelled units refetch once, Teams that lose a
-  type to the Feature level are listed.
+- Item types (ADR-274): mapped by the connection onto the levels; a type may sit on several levels of one connection,
+  with a warning, and the unit's query tells the items apart; a unit narrows, in the mapping's spelling; what it reads
+  is subset ∩ its connection's types for its level; removing a type narrows the named units in the same transaction.
+  OUT-1 has one named exception: respelled units refetch once.
 - Events: `UnitCreated`, `UnitDeleted` (replaces `TeamDeleted`), `LevelRenamed`, `LevelItemTypesChanged`,
   `LevelSwitchedOff`/`On`. Refresh events keep their names in this Epic.
 - ES/CQRS: not warranted.

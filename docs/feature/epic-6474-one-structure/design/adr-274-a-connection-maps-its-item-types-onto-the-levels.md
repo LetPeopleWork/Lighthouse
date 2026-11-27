@@ -2,7 +2,8 @@
 
 **Status**: Proposed (Epic #6474 DESIGN, 2026-11-02; maintainer decisions MD3, MD4, MD6 applied). **Revised
 2026-11-06** with the maintainer's vision: the types moved from the level to the connection. This replaces the
-earlier "item types belong to the level". Promoted to `docs/product/architecture/` with slice 04.
+earlier "item types belong to the level". **Revised 2026-11-27**: a type may sit on several levels of one connection,
+with a warning (rules 2 and 10, first consequence). Promoted to `docs/product/architecture/` with slice 04.
 **Context map**: Organisation set-up (owner), Work Items (reacts), Tracker integration (receives each unit's types
 with the fetch, unchanged). Related: ADR-241, ADR-270 Decisions 2 and 4, ADR-271 Decision 4, ADR-273, 6455 DISCUSS
 D10, D12 and D22–D34, 6474 M1–M4, M6, M11, VR1–VR19.
@@ -33,9 +34,13 @@ a Portfolio counts Epic as its Feature type.
    because Mapping describes how the organisation works and Translation stays in Tracker integration (ADR-270). It
    lists, per level, the item types of that connection: non-empty trimmed names. A list may be empty (Linear,
    ServiceNow by choice). A `Level` holds no types.
-2. **Within one connection, each type belongs to exactly one level, ignoring case.** Adding a type that another level
-   holds on this connection is refused, naming that level. Moving a type is a remove plus an add, so the units that tick it
-   lose the tick and must tick it again (M2); the removal confirmation says so. Across connections there is no rule: Jira's Epic and Azure DevOps' Epic may sit on different levels.
+2. **A type may sit on several levels of one connection, with a warning.** Within one level a type appears once,
+   ignoring case. Adding a type that another level holds on this connection is accepted, and Lighthouse warns next to
+   the type on each level it sits on: this is not intended use and usually points at a problem in the tracker's
+   configuration. The warning never blocks a save. Which items a unit reads is decided by its subset and its query, as
+   today (for example a title filter that keeps "[SUPER]" Epics off the Feature level). Moving a type is a remove plus
+   an add, so the units that tick it lose the tick and must tick it again (M2); the removal confirmation says so.
+   Across connections there is no rule and no warning.
 3. **A type on no level is ignored.**
 4. **A unit's subset is a list of the types its connection maps to its level, stored in the mapping's spelling.** Empty
    is legal. An API write sending a case variant is accepted and stored in the mapping's spelling. A name that is not
@@ -62,9 +67,8 @@ a Portfolio counts Epic as its Feature type.
    leaves no types sets the needs-item-types mark (MD7, AM1) as any other save does.
 10. **Migration, per connection.**
     - The Feature level first: the union of the types of all Portfolios on this connection, deduplicated ignoring case.
-    - Then the leaf: the union of the types of all Teams on this connection, deduplicated the same way, minus every
-      type already on this connection's Feature level, ignoring case. **The Feature level wins** (MD6), but only
-      against units on the same connection.
+    - Then the leaf: the union of the types of all Teams on this connection, deduplicated the same way. A type that
+      both levels read today lands on both, with the rule 2 warning; no level wins and no unit loses a type.
     - Spelling of a case-collapsed type: the one most units on that level and connection use; on a tie, the spelling
       of the unit with the lowest number. Order on the level: first appearance by unit number.
     - Each unit's subset is its old list in the mapping's spelling (MD4), minus any type its level does not list there.
@@ -72,7 +76,8 @@ a Portfolio counts Epic as its Feature type.
       already holds on that connection, or nothing on a connector that does not use types.
     - No unit gets a type ticked that it did not read.
     - Nothing else is restructured (D10): Change as a Feature type stays.
-    - The migration records each (Team, type lost to the Feature level) pair, so that the upgrade can name them.
+    - The migration records each type it put on both levels of a connection, so that the upgrade notice can name it
+      with the warning.
 11. **A unit's To Do, Doing and Done states stay its own** (D13). A default per connection and level is a later step
     that only adds to this.
 12. **The mapping is the home for what else depends on connection and level, later.** Parent sources, dependency
@@ -90,14 +95,14 @@ a Portfolio counts Epic as its Feature type.
 
 ## Consequences
 
-- "No numbers change on upgrade" (OUT-1) holds with two named exceptions:
-  1. **Respelled units** refetch in full once, because their fingerprint changes. Identical items and numbers are
-     expected and checked.
-  2. **Teams that lose a type to the Feature level on their own connection** stop reading it. Their item counts,
-     throughput and forecasts may change. The upgrade notice names them, the release note states the rule, and slice
-     01's harness reports them separately instead of failing. This group is smaller than in the earlier version: a
-     Jira Team reading Epic no longer loses it to an Azure DevOps Portfolio reading Epic.
-- A Team can be left with an empty subset by the second exception. MD7 flags it and pauses its refresh.
+- "No numbers change on upgrade" (OUT-1) holds with one named exception: **respelled units** refetch in full once,
+  because their fingerprint changes. Identical items and numbers are expected and checked. No Team loses a type at
+  upgrade (the 2026-11-06 version had a second exception for that).
+- An item's level cannot be read from its type alone; it comes from the unit whose query read it. #6455 and the chain
+  check (#6560) build on that, and the one-owning-unit-per-level rule (2026-11-24) must catch an item read by units on
+  two levels.
+- A Team can still be left with an empty subset by a type removal or a connection change. MD7 flags it and pauses its
+  refresh.
 - Two-tracker installs need no special handling: each connection migrates on its own.
 - The old type lists stay in their columns (expand-only), so what a Team lost can be read back.
 - The 400 for a type not mapped is a breaking change for Lighthouse-Clients (major version, slice 14).
@@ -120,10 +125,12 @@ a Portfolio counts Epic as its Feature type.
   the organisation works (ADR-270 "Mapping is not Translation"). Only its key is a connection.
 - **A unit keeps its own spelling.** Rejected by the maintainer (MD4): one refetch per respelled unit is accepted in
   return for one spelling everywhere.
-- **The same type allowed on several levels of one connection.** Rejected by the maintainer (MD6): a type means one
-  level's item.
-- **The leaf level wins a contested type.** Not chosen: the maintainer picked the Feature level. The leaf winning
-  would take Features away from Portfolios, and with them Deliveries and Feature forecasts.
+- **Each type on exactly one level of a connection** (MD6, VR3; this ADR until 2026-11-27). Replaced: it cannot express
+  a tracker that uses one type on two levels, told apart by the title ("[SUPER] Epic" above the Features, community
+  feedback on the mockups), and it made Teams lose types at upgrade.
+- **A title marker per mapping entry** ("Epic + [SUPER]" on a higher level). Not chosen: a new concept, and renaming an
+  item would move it to another level. Can come with #6455 if the query is not enough.
+- **The Feature level or the leaf wins a contested type.** Falls away with rule 2.
 - **Subset as references to mapped-type ids.** Rejected for now: a join for every fetch, for no rule a list of names
   in the mapping's spelling cannot express.
 - **Prune removed types from units later, through an event.** Rejected: for a moment the units would still show the

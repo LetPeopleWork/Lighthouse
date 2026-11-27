@@ -1999,3 +1999,141 @@ Once Teams and Portfolios are units, the connector port should stop telling Port
 fetch the items for a unit more generically (e.g. "the work items for this unit"). Story #6376 (S06) keeps one
 incremental-sync capability rather than one per level so that this step only removes per-level members. Not built
 by S06; a candidate for slice 04 or 12 here, or a follow-up Story.
+
+### Maintainer decision, 2026-11-27: a type may sit on several levels of one connection, with a warning
+
+**The case.** A community reply to the mockups (the "[SUPER] Epic" point, 2026-11-08): their Jira uses the type Epic
+on two levels. The large ones carry "[SUPER]" in the title and sit above the Features. VR3 (one level per type per
+connection) cannot express it.
+
+**Decision.** VR3 and MD6 are dropped. A connection's mapping lists the types a level may use, and one type may be
+on several levels of the same connection. Which items a unit reads stays decided by its type subset **and its
+query**, as today (for example `summary !~ "SUPER"` on the Feature-level units).
+
+**With a warning.** A type on two levels of one connection is allowed, but it is not how Lighthouse is meant to be
+used and usually points at a problem in the tracker's configuration (a missing type). Lighthouse says so wherever the
+overlap shows: on Organization → Connection mapping, next to the type on each level it sits on, and in the upgrade
+notice for installs that have the overlap today. The warning never blocks a save.
+
+**What changes in this Epic** (to apply in the slice walk-through at the start of DELIVER):
+
+- **OUT-1 exception (ii) goes.** No Team loses a type at upgrade, so no Team's numbers change for this reason. OUT-1
+  keeps only exception (i), the respelled units.
+- **Slice 02 (migration, ADR-274 rule 10):** the Feature level no longer wins. Each level gets the union of its own
+  units' types on that connection; a type both levels read today lands on both, with the warning.
+- **Slice 01:** the harness no longer reports "Teams that lost a type" separately.
+- **Slice 05b (upgrade notice):** names the types that sit on two levels, with the warning, instead of Teams that lost
+  a type.
+- **Slices 08 and 09:** adding a type another level holds on this connection is accepted with the warning, not refused.
+  Removing and moving a type are unchanged (M2, M3).
+- **MD7 / DQ6:** an empty subset no longer arises from this cause. It still arises from a removal or a connection
+  change, so the mark stays.
+- **ADR-274:** rule 2, rule 10's "the Feature level wins" and the first consequence change. Revised in the draft on
+  this date.
+
+**What it costs later (#6455, #6560).** An item's level can no longer be read from its type alone. It comes from the
+unit whose query read it. The 2026-11-24 rule (an item belongs to exactly one owning unit of its level) must also catch
+an item that units on two levels both read, and the chain check reports a type on two levels as a finding. A title
+marker per mapping entry ("Epic + [SUPER]") was weighed and not chosen: a new concept, and renaming an item would move
+it to another level. It can come with #6455 if the query turns out not to be enough.
+
+### Slice walk-through at the start of DELIVER (maintainer, 2026-11-27)
+
+Held early, in an nw-buddy session, while the prerequisites are still running. Each decision below is recorded as the
+maintainer made it; a later slice re-sketches only what stays open.
+
+**Slice 16 (Story #6627), one refresh setting.**
+
+- The value after upgrade is the smaller of the two sums Interval + Refresh After (today 60 + 180 = 240), so the
+  oldest data never gets older than before. The draft sketch showing 180 changes to the migrated value.
+- Start Delay moves to appsettings only. It is tuning for whoever runs the server; no System screen shows it.
+
+**Slice 05, levels shown in Organization.**
+
+- The Organization tab "Terminology" is renamed **"Structure & terms"**: levels and terms go in the same direction,
+  so they share a tab. The Levels box sits above the existing Terminology box.
+- The box reads "Your organization has two levels." and nothing about levels above coming later.
+- Rows show level, unit (singular · plural), item (singular · plural) and the line "Where the work is done" or
+  "Groups the level below". No types column, no Edit. Loading: the box dims under a small spinner, no names.
+  Failure: "Could not load the levels." with Try again.
+- 05 and 06 stay two slices. The level words show in the box and in the Terminology list between the two pushes.
+
+**Slice 05b, upgrade notice.** One box "After the upgrade" on Structure & terms, above Levels, System Admins only,
+with two kinds of line, each naming the connection:
+
+- *Needs a type*: "{unit} ({connection}) reads no {work item} types and is not refreshed until one is ticked." with
+  a button to its settings. These lines leave by themselves once a type is ticked; they cannot be dismissed.
+- *Type on two levels*: "On {connection}, Epic is a {work item} type and a {feature} type. {Teams} and {Portfolios}
+  read it as before. Lighthouse is not meant to be used this way: it often means a type is missing in your
+  tracker." Dismiss hides these lines for all admins. The lasting warning next to the type comes with slice 08.
+- No lines: no box. Loading: no box until loaded. Failure: one line "Could not load the upgrade notes." with Try again.
+
+**Slice 06, rename a level.** An Edit button per level opens a "Rename level N" dialog with the unit and the item,
+each singular and plural; one save per level (one `LevelRenamed` each), and #6455's "Add level" can reuse the dialog.
+An empty field disables Save ("Needs a name"); a failed save keeps the dialog open with "Could not save. Try again."
+
+- **Licence: renaming levels stays Premium, like the rest of Terminology. This reverses M7 (and D16).** Only System
+  Admins rename. On the free tier the Edit button is disabled with the Premium explanation, as the Terminology list
+  does today. The AC "Level names: System Admin on any licence" and domain example 3 change accordingly.
+
+**Slice 15, Teams only: remove the level, no switch.** This replaces M13's on/off switch.
+
+- Level 2's row gets a Remove button (System Admin, any licence). While the level holds Portfolios it is disabled:
+  "Delete the {n} {Portfolios} first to remove this level." When empty, a confirmation "Remove the {Portfolio}
+  level? Lighthouse then shows {Teams} only." After removal the box shows level 1 and "+ Add a level above {Teams}",
+  free, which brings back today's two levels. First-run "Teams only" (slice 11) means no level 2.
+- Why: a hidden level needed a state everywhere (empty `/portfolios`, the `level-switched-off` 404, paused
+  refreshes, hidden Portfolios counting towards the free tier, the warning on an off level). The "retire but keep
+  out of sight" case came from the persona, not from a customer. Removing fits #6455, where adding and removing
+  levels is the normal verb.
+- Falls away: A-D17's hidden-level API (404 `level-switched-off`, 409 on create), MD5 for hidden units, ADR-274
+  rule 14 (an off level's greyed row on Connection mapping), the slice 15 UAT about moving Epic off the off level.
+- Changes: the DEVOPS event `LevelSwitchedOff` (23, name-only) becomes `LevelRemoved`, emitted on removal; recheck
+  at DEVOPS whether "Add a level above" needs its own event. DESIGN decides whether a re-added level 2 gets the
+  seeded names or the last names it had.
+- The numbers DEVOPS reserved (`LevelRenamed` = 22, `LevelSwitchedOff` = 23) are taken: `ReportBulkCreationStarted`
+  and `ReportBulkRemovalStarted` hold 22 and 23 in `UsageDataEventName.cs`. Each slice takes the next free integer when
+  it emits its event.
+
+**Slice 08, Connection mapping.** Agreed as sketched: Organization gets a "Connection mapping" tab after "Structure &
+terms", with one sub-tab per connection named by its address; per level a row of type chips with "+ Add type". Add
+says "{n} {Teams} on this connection could read it. None reads it until it is ticked." Removing a chip names the units
+that stop reading it and adds "To move it to another level, {Teams} must tick it again there." A type on both levels
+carries ⚠ on each chip and one line under the rows: "{type} is on both levels. Lighthouse is not meant to be used this
+way: it often means a type is missing in your tracker. Each {Team}'s and {Portfolio}'s query decides which {type}s it
+reads." Linear: "Linear does not use types; nothing to map." Loading: a lone spinner in the tab. Failure: "Could not load
+the mapping." with Try again, never an empty mapping. System Admins only, any licence.
+
+- **"Copy mapping from…" becomes its own slice 08b**, right after 08, so 08 stays near a day. It needs an ADO Story
+  when the slices are synced.
+
+**Slice 09, a unit picks from its connection's types.** Agreed as sketched: checkboxes of what the connection maps to the
+unit's level ("From the {Team} level on this connection"), ⚠ on a type that is on both levels, Load from board naming
+what is not mapped ("Sub-task is not mapped on this connection. A System Admin can add it in Organization."), the three
+connection-change cases (nothing changes / dropped types named / "Pick at least one type." with Save disabled), the
+connection field picked and hidden when only one exists, Linear's "Item types are not used by Linear", loading as
+read-only chips with a spinner, failure "Could not load the types. Your selection is kept."
+
+- **M4 stands**: no Add in unit forms, for anyone, System Admins included. Re-asked and kept on 2026-11-27.
+
+**Slice 11, set-up shows the two levels.** Agreed as sketched. The stepper shows "{Teams} work on {Work Items}, which roll
+up into {Features} of {Portfolios}." and "Rename in Organization" **only for System Admins with Premium** (renaming
+stays Premium, see slice 06). It also asks "Do you also group {Teams} into {Portfolios}?" with "Yes, {Teams} and
+{Portfolios}" or "{Teams} only — you can add the level above later in Organization." Teams only removes level 2, leaves
+out the Portfolio step and shortens the sentence to "{Teams} work on {Work Items}." The choice shows only while no
+Portfolio exists. Levels not loadable: the steps show without sentence and choice.
+
+- **The first-run "Teams only" choice moves from slice 15 into slice 11**, and 11 is delivered after 15. Slice 15 keeps
+  the Organization part (Remove, Add a level above).
+
+**Slice 14, clients read the levels.** Agreed: `levels list` returns names, the leaf/above line and whether level 2
+exists; a new `connections mapping <id>` command and MCP tool list the types per level with ⚠ for a type on both levels;
+a unit update naming an unmapped type surfaces the 400 ("Spike is not mapped to the Team level on {connection}.") with
+a non-zero exit. Major version. The breaking-change note lists the 400, `PUT /terminology` refusing the eight level keys
+(names go through `PUT /levels/{id}/names`, Premium) and the refused Portfolio create while level 2 is removed; the
+hidden-level codes of A-D17 are gone.
+
+**Slice list after the walk-through (18):** 01 · 02 · 03 · 04 · 07 · 10 · 12 · 16 · 13 · 05 · 05b · 06 · 15 · 08 · 08b ·
+09 · 11 · 14. New: 08b (Copy mapping from…). Moved: the first-run "Teams only" from 15 to 11, so 11 follows 15. Still
+open for the start of DELIVER: slice 13's free-tier messages (copy only, already decided in MA5) and the slice files'
+own text, which this block overrides until DELIVER rewrites them.

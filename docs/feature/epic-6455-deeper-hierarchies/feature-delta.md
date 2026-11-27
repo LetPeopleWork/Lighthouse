@@ -577,7 +577,9 @@ after the connection (`letpeoplework.atlassian.net`), so two Jira connections ar
 its own panel, which only loads if such a connection exists. Credentials and health stay in System.
 
 **D24. A type sits on one level per connection.** Jira's Epic and Azure DevOps' Epic may sit on different levels. A type
-on no level is ignored. Narrows MD6 of #6474.
+on no level is ignored. Narrows MD6 of #6474. **Superseded 2026-11-27** (#6474 delta, "a type may sit on several levels
+of one connection, with a warning"): within one connection a type may sit on several levels; the unit's query tells
+the items apart, and an item's level comes from the unit that read it.
 
 **D25. Parent sources, dependencies and shared defaults are keyed by connection and level.** Adding a level adds a row per
 connection, with its own parent setting. Replaces the 2026-11-02 "future direction" note above and answers ADR-270's

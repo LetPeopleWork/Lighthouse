@@ -775,7 +775,7 @@ feature work, not packaging, unless a packaging Story needs one to remove a ratc
   | Bucket | Settings | Note |
   |---|---|---|
   | **Org-wide, fixed** (one per installation) | Terminology; hierarchy levels and their names; blackout periods; Feature ordering policy; refresh cadence | Calendar, cadence and priority rules for the whole organisation |
-  | **Connection mapping, unit narrows** | Work Item types; Feature types | Keyed by connection and level. A type sits on one level per connection; a unit unticks, never adds (ADR-274) |
+  | **Connection mapping, unit narrows** | Work Item types; Feature types | Keyed by connection and level. A type may sit on several levels of one connection, with a warning; a unit unticks, never adds (ADR-274) |
   | **Connection default, local override** | Parent sources; dependency field; estimation; Closed Items Cutoff; blocked rules; staleness threshold; SLE; default Feature size | The dominant pattern, keyed by connection and level. Lighthouse already has it at the connection (a Team follows the connection's default or owns its value, ADR-241). Revised 2026-11-06: anything the units on a connection and level share can default there. The earlier target, an organisation-wide default, comes only if someone asks for it |
   | **Local only** | Feature WIP; throughput window; a unit's To Do, Doing and Done states (a connection default may come later) | Forecasting's view of the leaf unit as a capacity. Interesting to *see* across units; set locally |
 
