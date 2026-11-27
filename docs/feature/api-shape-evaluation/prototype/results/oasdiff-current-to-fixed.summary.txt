@@ -1,0 +1,74 @@
+3879 changes: 1275 error, 2604 warning, 0 info
+(full output was 1.2 MB; counts per rule, then the first 60 lines)
+   1329 warning	[response-optional-property-removed]
+   1275 warning	[request-property-removed]
+    539 error	[response-property-type-changed]
+    408 error	[response-property-became-nullable]
+    162 error	[request-body-all-of-added]
+    108 error	[request-body-type-changed]
+     21 error	[request-parameter-enum-value-removed]
+     12 error	[request-property-became-required]
+     12 error	[request-property-became-not-nullable]
+      9 error	[response-required-property-removed]
+      4 error	[request-parameter-default-value-added]
+3879 changes: 1275 error, 2604 warning, 0 info
+error	[request-body-all-of-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/fixed-annotations.json	
+	in API POST /api/oauth/{providerKey}/connect
+		added '#/components/schemas/OAuthConnectRequest' to the request body 'allOf' list
+
+error	[request-body-all-of-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/fixed-annotations.json	
+	in API POST /api/oauth/{providerKey}/connect
+		added '#/components/schemas/OAuthConnectRequest' to the request body 'allOf' list
+
+error	[request-body-all-of-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/fixed-annotations.json	
+	in API POST /api/oauth/{providerKey}/connect
+		added '#/components/schemas/OAuthConnectRequest' to the request body 'allOf' list
+
+error	[request-body-type-changed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/fixed-annotations.json	
+	in API POST /api/oauth/{providerKey}/connect
+		the request's body type/format changed from 'object'/'' to ''/''
+
+error	[request-body-type-changed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/fixed-annotations.json	
+	in API POST /api/oauth/{providerKey}/connect
+		the request's body type/format changed from 'object'/'' to ''/''
+
+error	[request-body-all-of-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/fixed-annotations.json	
+	in API POST /api/oauth/{providerKey}/disconnect
+		added '#/components/schemas/OAuthDisconnectRequest' to the request body 'allOf' list
+
+error	[request-body-all-of-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/fixed-annotations.json	
+	in API POST /api/oauth/{providerKey}/disconnect
+		added '#/components/schemas/OAuthDisconnectRequest' to the request body 'allOf' list
+
+error	[request-body-all-of-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/fixed-annotations.json	
+	in API POST /api/oauth/{providerKey}/disconnect
+		added '#/components/schemas/OAuthDisconnectRequest' to the request body 'allOf' list
+
+error	[request-body-type-changed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/fixed-annotations.json	
+	in API POST /api/oauth/{providerKey}/disconnect
+		the request's body type/format changed from 'object'/'' to ''/''
+
+error	[request-body-type-changed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/fixed-annotations.json	
+	in API POST /api/oauth/{providerKey}/disconnect
+		the request's body type/format changed from 'object'/'' to ''/''
+
+error	[response-property-type-changed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/fixed-annotations.json	
+	in API GET /api/v1/AppSettings/FeatureOrdering
+		the 'policy' response's property type/format changed from 'string'/'' to ''/'' for status '200'
+
+error	[request-body-all-of-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/fixed-annotations.json	
+	in API PUT /api/v1/AppSettings/FeatureOrdering
+		added '#/components/schemas/FeatureOrderingDto' to the request body 'allOf' list
+
+error	[request-body-all-of-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/fixed-annotations.json	
+	in API PUT /api/v1/AppSettings/FeatureOrdering
+		added '#/components/schemas/FeatureOrderingDto' to the request body 'allOf' list
+
+error	[request-body-all-of-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/fixed-annotations.json	
+	in API PUT /api/v1/AppSettings/FeatureOrdering
+		added '#/components/schemas/FeatureOrderingDto' to the request body 'allOf' list
+
+error	[request-body-type-changed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/fixed-annotations.json	
+	in API PUT /api/v1/AppSettings/FeatureOrdering
+		the request's body type/format changed from 'object'/'' to ''/''
+oasdiff exit code: 1

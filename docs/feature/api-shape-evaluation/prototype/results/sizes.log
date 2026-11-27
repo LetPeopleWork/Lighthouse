@@ -1,0 +1,6 @@
+zod: 49 files, 7975 lines, 285683 bytes
+model: 382 files, 6178 lines, 156274 bytes
+client: 49 files, 7116 lines, 201420 bytes
+msw mocks: 5510 lines, 1091856 bytes
+team-metrics zod: 1026 lines; deliveries zod: 209 lines
+team-metrics zod minified: 28545 bytes, gzip: 3105 bytes

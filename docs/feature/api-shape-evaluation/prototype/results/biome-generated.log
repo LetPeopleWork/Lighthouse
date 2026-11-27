@@ -1,0 +1,29 @@
+== zod: format
+Checked 49 files in 20ms. No fixes applied.
+Found 49 errors.
+== zod: lint
+Checked 49 files in 2s. No fixes applied.
+== model: format
+Checked 382 files in 32ms. No fixes applied.
+Found 382 errors.
+== model: lint
+Checked 382 files in 1313ms. No fixes applied.
+== client: format
+Checked 4 files in 109ms. No fixes applied.
+Found 4 errors.
+== client: lint
+Checked 4 files in 3s. No fixes applied.
+Found 74 errors.
+Found 162 infos.
+== lint rules, whole folder
+    162 lint/style/useTemplate
+     37 lint/style/noNestedTernary
+     37 lint/style/noNegationElse
+      3 lint/suspicious/useAwait
+== after biome check --write (what prebuild does), remaining
+Checked 436 files in 13s. Fixed 435 files.
+Found 40 errors.
+Found 162 infos.
+    162 lint/style/useTemplate
+     37 lint/style/noNestedTernary
+      3 lint/suspicious/useAwait

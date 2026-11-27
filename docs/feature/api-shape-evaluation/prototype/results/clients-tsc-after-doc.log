@@ -1,0 +1,20 @@
+packages/mcp-stdio/src/localServer.ts(184,5): error TS2322: Type '() => LighthouseClient' is not assignable to type '() => McpRuntimeClient'.
+  Type 'LighthouseClient' is not assignable to type 'McpRuntimeClient'.
+    Type 'LighthouseClient' is not assignable to type '{ readonly checkConnectivity: () => Promise<{ readonly category: "concurrency-conflict" | "dependency-failure" | "misconfigured" | "success" | "unauthorized" | "unexpected" | "unreachable"; readonly reason?: string | undefined; }>; ... 48 more ...; readonly runBacktest: (teamId: number, payload: { ...; }) => Promise...'.
+      The types returned by 'listDeliveries(...)' are incompatible between these types.
+        Type 'Promise<LighthouseApiResult<PortfolioDeliveriesDto>>' is not assignable to type 'Promise<{ readonly ok: true; readonly value: readonly unknown[]; } | { readonly ok: false; readonly error: { readonly category: string; readonly reason: string; }; }>'.
+          Type 'LighthouseApiResult<PortfolioDeliveriesDto>' is not assignable to type '{ readonly ok: true; readonly value: readonly unknown[]; } | { readonly ok: false; readonly error: { readonly category: string; readonly reason: string; }; }'.
+            Type '{ readonly ok: true; readonly value: PortfolioDeliveriesDto; }' is not assignable to type '{ readonly ok: true; readonly value: readonly unknown[]; } | { readonly ok: false; readonly error: { readonly category: string; readonly reason: string; }; }'.
+              Type '{ readonly ok: true; readonly value: PortfolioDeliveriesDto; }' is not assignable to type '{ readonly ok: true; readonly value: readonly unknown[]; }'.
+                Types of property 'value' are incompatible.
+                  Type 'PortfolioDeliveriesDto' is missing the following properties from type 'readonly unknown[]': length, concat, join, slice, and 20 more.
+packages/mcp-http/src/bin.ts(487,11): error TS2322: Type 'LighthouseClient' is not assignable to type 'McpRuntimeClient'.
+  Type 'LighthouseClient' is not assignable to type '{ readonly checkConnectivity: () => Promise<{ readonly category: "concurrency-conflict" | "dependency-failure" | "misconfigured" | "success" | "unauthorized" | "unexpected" | "unreachable"; readonly reason?: string | undefined; }>; ... 48 more ...; readonly runBacktest: (teamId: number, payload: { ...; }) => Promise...'.
+    The types returned by 'listDeliveries(...)' are incompatible between these types.
+      Type 'Promise<LighthouseApiResult<PortfolioDeliveriesDto>>' is not assignable to type 'Promise<{ readonly ok: true; readonly value: readonly unknown[]; } | { readonly ok: false; readonly error: { readonly category: string; readonly reason: string; }; }>'.
+        Type 'LighthouseApiResult<PortfolioDeliveriesDto>' is not assignable to type '{ readonly ok: true; readonly value: readonly unknown[]; } | { readonly ok: false; readonly error: { readonly category: string; readonly reason: string; }; }'.
+          Type '{ readonly ok: true; readonly value: PortfolioDeliveriesDto; }' is not assignable to type '{ readonly ok: true; readonly value: readonly unknown[]; } | { readonly ok: false; readonly error: { readonly category: string; readonly reason: string; }; }'.
+            Type '{ readonly ok: true; readonly value: PortfolioDeliveriesDto; }' is not assignable to type '{ readonly ok: true; readonly value: readonly unknown[]; }'.
+              Types of property 'value' are incompatible.
+                Type 'PortfolioDeliveriesDto' is missing the following properties from type 'readonly unknown[]': length, concat, join, slice, and 20 more.
+typecheck exit 2

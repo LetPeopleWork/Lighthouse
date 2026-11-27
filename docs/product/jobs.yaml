@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-11-26
+updated: 2026-11-27
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -76,6 +76,7 @@ feature_context:
   - story-6501-ordered-parent-fields
   - epic-6577-system-wide-access
   - story-6564-report-notes
+  - api-shape-evaluation
 
 jobs:
   - id: job-rbac-bootstrap
@@ -9082,3 +9083,40 @@ jobs:
       habit: Explaining the context aloud in the review, or typing it onto the slide next to a screenshot (hypothesis).
     opportunity_score: {importance: 3, current_satisfaction: 1, gap: 2, rationale: "Desk estimate; two informants, one workshop; nothing in a report carries context today."}
     related: [job-lead-annotate-what-happened-to-a-delivery, job-share-numbers-outside-lighthouse, job-flow-coach-show-whether-flow-changed]
+
+  - id: job-dev-change-api-contract-once
+    title: Change the API contract once and have every consumer typed and checked
+    persona: lighthouse-developer
+    feature_context: api-shape-evaluation
+    ado: "ADR-288; follow-up Epic to be created by the maintainer"
+    created: 2026-11-27
+    note: >
+      NEW in DIVERGE of api-shape-evaluation. The request was "switch to graphql ... instead of bare API calls"; a speed
+      spike (2026-11-27) showed calls are not what makes pages slow (uncompressed JavaScript is; cheap fixes split out
+      as Story #6712), and the requester named the remaining driver "easier development". Evidence: one field travels
+      through up to four hand-written copies (C# DTO, zod schema, TS type, the clients' hand type); Bug #6254, a /v1
+      reshape that reached the CLI and MCP unnoticed. Developers: one maintainer plus AI agents. Scores are desk estimates.
+      2026-11-27 - DIVERGE of api-shape-evaluation: six mechanisms, all passed DVF. Recommended: keep REST and generate
+      the frontend's and the clients' types, zod schemas and test mocks from the OpenAPI document the backend already
+      publishes, with a committed document and a CI diff as the drift check (3.75), subject to a prototype on Team ›
+      Metrics and the clients' Delivery list. Dissent: keep the bare API calls and continue the zod roadmap (3.45).
+      Third: one read endpoint per page (3.20). GraphQL with module-contributed schema scored 2.60 (most concepts,
+      largest migration). Two review rounds; round 2 conditionally approved, its five minor findings fixed. See docs/feature/api-shape-evaluation/diverge/.
+      Outcome statements: Minimize the number of places a developer writes the same response shape by hand when a field is added. Minimize the likelihood that a server contract change reaches the CLI, the MCP server or the frontend undetected. Minimize the time it takes to bring a new screen's data from a backend service to a rendered component. Minimize the number of new concepts a developer or an AI agent must hold to change the contract. Minimize the time it takes to build test doubles that match the current contract for a consumer test. Minimize the number of client version-gate entries a contract change requires.
+      2026-11-27 - Prototype (docs/feature/api-shape-evaluation/prototype/findings.md) confirmed both preconditions;
+      decided in ADR-288: keep REST, the OpenAPI document is the contract the frontend and the clients generate from.
+    job_story: >
+      When I add or change a field, a screen or a client command that crosses the API,
+      I want the change to reach the frontend and the CLI/MCP clients typed and checked from one place,
+      so I can ship it in one step without writing the same shape by hand several times and without a consumer breaking silently.
+    dimensions:
+      functional: Change the contract in one place; every consumer gets matching types; a breaking change fails the build or CI.
+      emotional: From "did I update every copy, and will the CLI break on an old server?" to confidence that a broken contract fails the build, not a user.
+      social: Users who script against the API and contributors see a documented, stable contract.
+    forces:
+      push: Hand-written copies per field in backend, frontend and clients; Bug #6254 degraded the CLI and MCP silently.
+      pull: The backend already publishes an OpenAPI document; generators and GraphQL codegen promise one source of types.
+      anxiety: "Will a new tool or transport add more concepts than it removes, for a team of one plus agents?"
+      habit: Writing the DTO, the zod schema, the TS service method and the client method by hand.
+    opportunity_score: {importance: 5, current_satisfaction: 2, gap: 3, rationale: "Desk estimate for the job as a whole on this file's 1-5 scale; the outcome-level scores (1-10 scale) are in job-analysis.md, where OUT-2 drift (14) and OUT-1 copies (13) are the under-served outcomes."}
+    related: [job-dev-test-feedback-velocity]

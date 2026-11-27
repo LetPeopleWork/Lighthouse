@@ -1,0 +1,20 @@
+src/generated-prototype/PrototypeMetricsService.ts(16,3): error TS2322: Type '{ total?: number | undefined; dailyAverage?: number | undefined; comparison?: { direction?: string | null | undefined; metricLabel?: string | null | undefined; currentLabel?: string | null | undefined; ... 4 more ...; detailRows?: { ...; }[] | ... 1 more ... | undefined; } | undefined; }' is not assignable to type 'IThroughputInfo'.
+  Types of property 'total' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+src/generated-prototype/PrototypeMetricsService.ts(31,3): error TS2322: Type '{ percentile?: number | undefined; value?: number | undefined; }[]' is not assignable to type '{ percentile: number; value: number; }[]'.
+  Type '{ percentile?: number | undefined; value?: number | undefined; }' is not assignable to type '{ percentile: number; value: number; }'.
+    Types of property 'percentile' are incompatible.
+      Type 'number | undefined' is not assignable to type 'number'.
+        Type 'undefined' is not assignable to type 'number'.
+src/generated-prototype/PrototypeMetricsService.ts(46,3): error TS2322: Type '{ recordedAt?: string | null | undefined; blockedCount?: number | undefined; }[]' is not assignable to type '{ recordedAt: string; blockedCount: number; }[]'.
+  Type '{ recordedAt?: string | null | undefined; blockedCount?: number | undefined; }' is not assignable to type '{ recordedAt: string; blockedCount: number; }'.
+    Types of property 'recordedAt' are incompatible.
+      Type 'string | null | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/generated-prototype/client/deliveries/deliveries.msw.ts(9,8): error TS2307: Cannot find module '@faker-js/faker' or its corresponding type declarations.
+src/generated-prototype/client/deliveries/deliveries.msw.ts(14,8): error TS2307: Cannot find module 'msw' or its corresponding type declarations.
+src/generated-prototype/client/deliveries/deliveries.msw.ts(18,8): error TS2307: Cannot find module 'msw' or its corresponding type declarations.
+src/generated-prototype/client/team-metrics/team-metrics.msw.ts(9,8): error TS2307: Cannot find module '@faker-js/faker' or its corresponding type declarations.
+src/generated-prototype/client/team-metrics/team-metrics.msw.ts(14,8): error TS2307: Cannot find module 'msw' or its corresponding type declarations.
+src/generated-prototype/client/team-metrics/team-metrics.msw.ts(18,8): error TS2307: Cannot find module 'msw' or its corresponding type declarations.

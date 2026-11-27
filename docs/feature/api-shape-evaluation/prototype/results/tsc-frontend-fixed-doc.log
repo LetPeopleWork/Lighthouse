@@ -1,0 +1,7 @@
+src/generated-prototype/PrototypeMetricsService.ts(17,3): error TS2322: Type '{ total: number; dailyAverage: number; comparison: { direction: string; metricLabel: string; currentLabel: string | null; currentValue: string | null; previousLabel: string | null; previousValue: string | null; percentageDelta: string | null; detailRows: { ...; }[] | null; }; }' is not assignable to type 'IThroughputInfo'.
+  The types of 'comparison.direction' are incompatible between these types.
+    Type 'string' is not assignable to type 'TrendDirection'.
+src/generated-prototype/PrototypeMetricsService.ts(44,4): error TS2322: Type '{ metricLabel: string; currentLabel: string | null; currentValue: string | null; previousLabel: string | null; previousValue: string | null; percentageDelta: string | null; detailRows: { ...; }[] | null; direction: TrendDirection; }' is not assignable to type 'IInfoWidgetComparison'.
+  Types of property 'currentLabel' are incompatible.
+    Type 'string | null' is not assignable to type 'string | undefined'.
+      Type 'null' is not assignable to type 'string | undefined'.

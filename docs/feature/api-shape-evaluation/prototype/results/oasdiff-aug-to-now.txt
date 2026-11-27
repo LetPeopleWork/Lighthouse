@@ -1,0 +1,820 @@
+169 changes: 4 error, 165 warning, 0 info
+error	[api-path-removed-without-deprecation] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/bug6254-after.json	
+	in API GET /api/oauth/health
+		api path removed without deprecation
+
+error	[response-body-type-changed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/Forecast/update-portfolios-for-team/{teamId}
+		the response's body type/format changed from 'boolean'/'' to 'integer'/'int32' for status '200'
+
+error	[response-body-type-changed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/Forecast/update-portfolios-for-team/{teamId}
+		the response's body type/format changed from 'boolean'/'' to 'integer'/'int32' for status '200'
+
+error	[response-body-type-changed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/Forecast/update-portfolios-for-team/{teamId}
+		the response's body type/format changed from 'boolean'/'' to 'integer'/'int32' for status '200'
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Deliveries/portfolio/{portfolioId}
+		added the new 'SourceBound' enum value to the 'active/items/selectionMode' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Deliveries/portfolio/{portfolioId}
+		added the new 'SourceBound' enum value to the 'active/items/selectionMode' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Deliveries/portfolio/{portfolioId}
+		added the new 'SourceBound' enum value to the 'active/items/selectionMode' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Deliveries/portfolio/{portfolioId}
+		added the new 'SourceBound' enum value to the 'archived/items/selectionMode' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Deliveries/portfolio/{portfolioId}
+		added the new 'SourceBound' enum value to the 'archived/items/selectionMode' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Deliveries/portfolio/{portfolioId}
+		added the new 'SourceBound' enum value to the 'archived/items/selectionMode' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Deliveries/{deliveryId}/metrics-history
+		removed the optional property 'points/items/forecastHowMany' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Deliveries/{deliveryId}/metrics-history
+		removed the optional property 'points/items/forecastHowMany' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Deliveries/{deliveryId}/metrics-history
+		removed the optional property 'points/items/forecastHowMany' from the response with the '200' status
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Features
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Features
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Features
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Features/ids
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Features/ids
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Features/ids
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Features/references
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Features/references
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/Features/references
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/SystemInfo/refreshlog
+		added the new 'Forecast' enum value to the '/items/type' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/SystemInfo/refreshlog
+		added the new 'Forecast' enum value to the '/items/type' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/SystemInfo/refreshlog
+		added the new 'Forecast' enum value to the '/items/type' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile50' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile50' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile50' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile70' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile70' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile70' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile85' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile85' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile85' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile95' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile95' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile95' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections
+		added the new 'SleRisk' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections
+		added the new 'SleRisk' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections
+		added the new 'SleRisk' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile50' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile50' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile50' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile70' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile70' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile70' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile85' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile85' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile85' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile95' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile95' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/WorkTrackingSystemConnections
+		added the new 'ForecastedStartPercentile95' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/WorkTrackingSystemConnections
+		added the new 'SleRisk' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/WorkTrackingSystemConnections
+		added the new 'SleRisk' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/WorkTrackingSystemConnections
+		added the new 'SleRisk' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections/supported
+		added the new 'ForecastedStartPercentile50' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections/supported
+		added the new 'ForecastedStartPercentile50' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections/supported
+		added the new 'ForecastedStartPercentile50' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections/supported
+		added the new 'ForecastedStartPercentile70' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections/supported
+		added the new 'ForecastedStartPercentile70' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections/supported
+		added the new 'ForecastedStartPercentile70' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections/supported
+		added the new 'ForecastedStartPercentile85' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections/supported
+		added the new 'ForecastedStartPercentile85' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections/supported
+		added the new 'ForecastedStartPercentile85' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections/supported
+		added the new 'ForecastedStartPercentile95' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections/supported
+		added the new 'ForecastedStartPercentile95' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections/supported
+		added the new 'ForecastedStartPercentile95' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections/supported
+		added the new 'SleRisk' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections/supported
+		added the new 'SleRisk' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/WorkTrackingSystemConnections/supported
+		added the new 'SleRisk' enum value to the '/items/writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/apikeys
+		added the new 'AllUnits' enum value to the '/items/scopes/items/scopeType' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/apikeys
+		added the new 'AllUnits' enum value to the '/items/scopes/items/scopeType' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/apikeys
+		added the new 'AllUnits' enum value to the '/items/scopes/items/scopeType' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/apikeys
+		added the new 'UnitAdmin' enum value to the '/items/scopes/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/apikeys
+		added the new 'UnitAdmin' enum value to the '/items/scopes/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/apikeys
+		added the new 'UnitAdmin' enum value to the '/items/scopes/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/group-mappings
+		added the new 'AllUnits' enum value to the '/items/scopeType' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/group-mappings
+		added the new 'AllUnits' enum value to the '/items/scopeType' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/group-mappings
+		added the new 'AllUnits' enum value to the '/items/scopeType' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/group-mappings
+		added the new 'UnitAdmin' enum value to the '/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/group-mappings
+		added the new 'UnitAdmin' enum value to the '/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/group-mappings
+		added the new 'UnitAdmin' enum value to the '/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/portfolios/{portfolioId}/group-mappings
+		added the new 'AllUnits' enum value to the '/items/scopeType' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/portfolios/{portfolioId}/group-mappings
+		added the new 'AllUnits' enum value to the '/items/scopeType' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/portfolios/{portfolioId}/group-mappings
+		added the new 'AllUnits' enum value to the '/items/scopeType' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/portfolios/{portfolioId}/group-mappings
+		added the new 'UnitAdmin' enum value to the '/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/portfolios/{portfolioId}/group-mappings
+		added the new 'UnitAdmin' enum value to the '/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/portfolios/{portfolioId}/group-mappings
+		added the new 'UnitAdmin' enum value to the '/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/portfolios/{portfolioId}/members
+		added the new 'UnitAdmin' enum value to the '/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/portfolios/{portfolioId}/members
+		added the new 'UnitAdmin' enum value to the '/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/portfolios/{portfolioId}/members
+		added the new 'UnitAdmin' enum value to the '/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/teams/{teamId}/group-mappings
+		added the new 'AllUnits' enum value to the '/items/scopeType' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/teams/{teamId}/group-mappings
+		added the new 'AllUnits' enum value to the '/items/scopeType' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/teams/{teamId}/group-mappings
+		added the new 'AllUnits' enum value to the '/items/scopeType' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/teams/{teamId}/group-mappings
+		added the new 'UnitAdmin' enum value to the '/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/teams/{teamId}/group-mappings
+		added the new 'UnitAdmin' enum value to the '/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/teams/{teamId}/group-mappings
+		added the new 'UnitAdmin' enum value to the '/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/teams/{teamId}/members
+		added the new 'UnitAdmin' enum value to the '/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/teams/{teamId}/members
+		added the new 'UnitAdmin' enum value to the '/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/authorization/teams/{teamId}/members
+		added the new 'UnitAdmin' enum value to the '/items/role' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/portfolios/{portfolioId}/delivery-rules/validate
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/portfolios/{portfolioId}/delivery-rules/validate
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/portfolios/{portfolioId}/delivery-rules/validate
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/portfolios/{portfolioId}/delivery-rules/validate
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '400'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/portfolios/{portfolioId}/delivery-rules/validate
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '400'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API POST /api/v1/portfolios/{portfolioId}/delivery-rules/validate
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '400'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/allFeaturesForSizeChart
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/allFeaturesForSizeChart
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/allFeaturesForSizeChart
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/arrivals
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/arrivals
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/arrivals
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/cycleTimeData
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/cycleTimeData
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/cycleTimeData
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/started
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/started
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/started
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/throughput
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/throughput
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/throughput
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/wip
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/wip
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/wip
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/wipOverTime
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/wipOverTime
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/portfolios/{portfolioId}/metrics/wipOverTime
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/teams/{teamId}/metrics/arrivals
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/teams/{teamId}/metrics/arrivals
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/teams/{teamId}/metrics/arrivals
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/teams/{teamId}/metrics/featuresInProgress
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/teams/{teamId}/metrics/featuresInProgress
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/teams/{teamId}/metrics/featuresInProgress
+		added the new 'NotLicensed' enum value to the '/items/dependsOn/items/notHonouredReason' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/teams/{teamId}/metrics/throughput
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/teams/{teamId}/metrics/throughput
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/teams/{teamId}/metrics/throughput
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/teams/{teamId}/metrics/wipOverTime
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/teams/{teamId}/metrics/wipOverTime
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-optional-property-removed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/teams/{teamId}/metrics/wipOverTime
+		removed the optional property 'daysWithThroughput' from the response with the '200' status
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile50' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile50' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile50' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile70' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile70' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile70' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile85' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile85' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile85' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile95' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile95' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile95' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'SleRisk' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'SleRisk' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API GET /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'SleRisk' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API PUT /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile50' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API PUT /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile50' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API PUT /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile50' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API PUT /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile70' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API PUT /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile70' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API PUT /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile70' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API PUT /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile85' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API PUT /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile85' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API PUT /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile85' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API PUT /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile95' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API PUT /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile95' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API PUT /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'ForecastedStartPercentile95' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API PUT /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'SleRisk' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API PUT /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'SleRisk' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+warning	[response-property-enum-value-added] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/current.json	
+	in API PUT /api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId}
+		added the new 'SleRisk' enum value to the 'writeBackMappingDefinitions/items/valueSource' response property for the response status '200'
+		Adding new enum values to response could be unexpected for clients, use x-extensible-enum instead.
+
+
+oasdiff exit code: 1

@@ -1,0 +1,15 @@
+3 changes: 3 error, 0 warning, 0 info
+error	[response-body-type-changed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/bug6254-after.json	
+	in API GET /api/v1/Deliveries/portfolio/{portfolioId}
+		the response's body type/format changed from 'array'/'' to 'object'/'' for status '200'
+
+error	[response-body-type-changed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/bug6254-after.json	
+	in API GET /api/v1/Deliveries/portfolio/{portfolioId}
+		the response's body type/format changed from 'array'/'' to 'object'/'' for status '200'
+
+error	[response-body-type-changed] at /storage/repos/Lighthouse/.claude/worktrees/glowing-crafting-globe/docs/feature/api-shape-evaluation/prototype/openapi/bug6254-after.json	
+	in API GET /api/v1/Deliveries/portfolio/{portfolioId}
+		the response's body type/format changed from 'array'/'' to 'object'/'' for status '200'
+
+
+oasdiff exit code: 1
