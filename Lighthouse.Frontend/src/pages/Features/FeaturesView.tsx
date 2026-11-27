@@ -8,6 +8,7 @@ import {
 	createForecastsColumn,
 	createNameColumn,
 	createStateColumn,
+	projectNamesText,
 } from "../../components/Common/FeatureListDataGrid/columns";
 import FeatureListDataGrid from "../../components/Common/FeatureListDataGrid/FeatureListDataGrid";
 import type { IFeature } from "../../models/Feature";
@@ -46,9 +47,8 @@ const FeaturesView: React.FC = () => {
 				headerName: portfoliosTerm,
 				width: 250,
 				sortable: false,
-				renderCell: ({ row }) => (
-					<span>{row.projects.map((project) => project.name).join(", ")}</span>
-				),
+				valueFormatter: (_value, row) => projectNamesText(row),
+				renderCell: ({ row }) => <span>{projectNamesText(row)}</span>,
 			},
 			createForecastedStartColumn(),
 			createForecastsColumn(),

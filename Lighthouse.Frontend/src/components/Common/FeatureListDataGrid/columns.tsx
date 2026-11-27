@@ -46,6 +46,7 @@ export const createNameColumn = <
 	hideable: false,
 	width: 300,
 	flex: 1,
+	valueFormatter: (_value, row) => getWorkItemName(row.name, row.referenceId),
 	renderCell: ({ row }) => (
 		<FeatureName
 			name={getWorkItemName(row.name, row.referenceId)}
@@ -53,6 +54,10 @@ export const createNameColumn = <
 		/>
 	),
 });
+
+/** The Portfolio names a Feature is shown under, as the Projects column lists them. */
+export const projectNamesText = (feature: Pick<IFeature, "projects">): string =>
+	feature.projects.map((project) => project.name).join(", ");
 
 // Named for what it answers rather than for what it is. "Forecasts" said nothing about which end of a
 // Feature it meant, which only became a question once a second forecast column sat next to it.

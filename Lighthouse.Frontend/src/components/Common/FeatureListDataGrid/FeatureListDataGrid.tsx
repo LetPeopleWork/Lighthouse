@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
-import { useContext, useMemo, useState } from "react";
+import { useContext, useMemo, useRef, useState } from "react";
 import { useFeatureOrdering } from "../../../hooks/useFeatureOrdering";
 import { useHideCompletedFeatures } from "../../../hooks/useHideCompletedFeatures";
 import type { IFeature } from "../../../models/Feature";
@@ -16,6 +16,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { WidgetBody } from "../../../pages/Common/MetricsView/WidgetShell";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import DataGridBase from "../DataGrid/DataGridBase";
 import {
 	createActiveWorkColumn,
@@ -55,6 +56,15 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 
 	// "Up" has no predictable meaning in a list a column is sorting, so the grid has to know.
 	const [isSortActive, setIsSortActive] = useState(false);
+
+	// A visit reports its first search once. The latch is spent only when the use was recorded, so an
+	// answer that has not arrived yet does not use up the one report.
+	const reportUsage = useUsageDataReporter();
+	const searchReported = useRef(false);
+	const reportSearchOnce = (text: string) => {
+		if (searchReported.current || text.trim() === "") return;
+		searchReported.current = reportUsage({ name: "FeatureListSearched" });
+	};
 
 	const { hideCompleted, handleToggleChange } = useHideCompletedFeatures(
 		hideCompletedStorageKey,
@@ -141,6 +151,10 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 			exportFileName={exportFileName}
 			exportTable={exportTable}
 			onSortModelChange={(model) => setIsSortActive(model.length > 0)}
+			search={{
+				placeholder: `Search ${featuresTerm}`,
+				onTextChange: reportSearchOnce,
+			}}
 		/>
 	);
 

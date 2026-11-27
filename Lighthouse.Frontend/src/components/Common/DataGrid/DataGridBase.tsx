@@ -39,12 +39,14 @@ import {
 	type OverflowEdges,
 	useHorizontalOverflow,
 } from "./horizontalOverflow";
+import { quickSearchValues, withShownTextQuickFilter } from "./quickSearch";
 import { PAGE_SIZE, RowRangeFooter } from "./RowRangeFooter";
 import TruncatedCell from "./TruncatedCell";
 import type {
 	ColumnVisibilityModel,
 	DataGridBaseProps,
 	DataGridColumn,
+	GridSearch,
 	RowPicking,
 } from "./types";
 
@@ -187,12 +189,12 @@ function toGridColumn<T extends GridValidRowModel>(
 	const fitted = fitColumn(column, storedWidth);
 	const render = cellRendererOf(column);
 
-	return {
+	return withShownTextQuickFilter({
 		...rest,
 		...fitted,
 		resizable: fitted.resizable ?? rest.resizable,
 		...(render === undefined ? {} : { renderCell: render }),
-	} as GridColDef<T>;
+	} as GridColDef<T>);
 }
 
 type GridApiRef = ReturnType<typeof useGridApiRef>;
@@ -293,6 +295,28 @@ function currentColumnOrder<T extends GridValidRowModel>(
 		console.warn("Failed to getVisibleColumns as fallback", error);
 		return columns.map((c) => c.field);
 	}
+}
+
+/** Narrows the rows by the typed text and tells the list's owner about each change; without a search there is nothing to hold. */
+function useSearchText(apiRef: GridApiRef, search: GridSearch | undefined) {
+	const [text, setText] = useState("");
+	const hasSearch = search !== undefined;
+	const onTextChange = search?.onTextChange;
+
+	useEffect(() => {
+		if (!hasSearch) return;
+		apiRef.current?.setQuickFilterValues(quickSearchValues(text));
+	}, [apiRef, hasSearch, text]);
+
+	const change = useCallback(
+		(next: string) => {
+			setText(next);
+			onTextChange?.(next);
+		},
+		[onTextChange],
+	);
+
+	return { text, change };
 }
 
 const RESIZE_SAVE_DELAY_MS = 250;
@@ -485,6 +509,7 @@ function DataGridBase<T extends GridValidRowModel>({
 	getRowSpacing,
 	defaultColumnVisibilityModel,
 	checkboxSelection,
+	search,
 }: Readonly<DataGridBaseProps<T>>): React.ReactElement {
 	// Check license status for premium features
 	const { licenseStatus } = useLicenseRestrictions();
@@ -564,6 +589,7 @@ function DataGridBase<T extends GridValidRowModel>({
 	);
 
 	useMovingOffAPageThatIsGone(apiRef);
+	const searchText = useSearchText(apiRef, search);
 	useTableOrderReader(apiRef, checkboxSelection?.tableOrder);
 
 	const gridColumns = useMemo(
@@ -630,6 +656,13 @@ function DataGridBase<T extends GridValidRowModel>({
 					onOpenColumnOrder={() => setIsColumnOrderDialogOpen(true)}
 					allowColumnReorder={allowColumnReorder}
 					customActions={toolbarActions}
+					search={
+						search && {
+							placeholder: search.placeholder,
+							text: searchText.text,
+							onTextChange: searchText.change,
+						}
+					}
 				/>
 				<ColumnOrderDialog
 					open={isColumnOrderDialogOpen}

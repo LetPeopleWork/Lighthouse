@@ -9,6 +9,7 @@ import type React from "react";
 import { useCallback, useState } from "react";
 import { formatLocalDate } from "../../../utils/date/localDate";
 import { PREMIUM_UPGRADE_TOOLTIP } from "../../../utils/premiumUpgradeTooltip";
+import GridSearchBox from "./GridSearchBox";
 import type { DataGridExportTable, DataGridToolbarProps } from "./types";
 
 const generateFileName = (exportFileName?: string): string => {
@@ -181,6 +182,7 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 	onOpenColumnOrder,
 	allowColumnReorder = false,
 	customActions,
+	search,
 }) => {
 	const apiRef = useGridApiContext();
 
@@ -212,6 +214,7 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 				borderColor: "divider",
 			}}
 		>
+			{search && <GridSearchBox {...search} />}
 			{enableExport && (
 				<>
 					<Tooltip title={copyTooltip}>

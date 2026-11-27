@@ -55,6 +55,7 @@ export const UsageDataEventName = {
 	ReportNoteAdded: "ReportNoteAdded",
 	WithinSleListOpened: "WithinSleListOpened",
 	WithinSleHorizonSwitched: "WithinSleHorizonSwitched",
+	FeatureListSearched: "FeatureListSearched",
 } as const;
 
 export type UsageDataEventName =

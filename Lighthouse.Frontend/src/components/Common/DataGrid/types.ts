@@ -92,6 +92,23 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	defaultColumnVisibilityModel?: ColumnVisibilityModel;
 	/** Puts a checkbox on every row and one over the header; without it the grid offers none. */
 	checkboxSelection?: RowPicking;
+	/** Gives the grid a search box above its rows that narrows them by the text its columns show. Without it the grid has no box. */
+	search?: GridSearch;
+}
+
+/** What a list says about its search box. */
+export interface GridSearch {
+	/** What the box asks for, and its accessible name. */
+	placeholder: string;
+	/** Told the whole text after every change, the empty text once the box is cleared. */
+	onTextChange?: (text: string) => void;
+}
+
+/** The box as the toolbar draws it, with the text it holds. */
+export interface GridSearchBoxProps {
+	placeholder: string;
+	text: string;
+	onTextChange: (text: string) => void;
 }
 
 /** Which rows are picked is held by the caller, so it can act on them and decide when the picks are cleared. */
@@ -151,4 +168,6 @@ export interface DataGridToolbarProps {
 	allowColumnReorder?: boolean;
 	/** Custom actions to display in the toolbar */
 	customActions?: React.ReactNode;
+	/** The search box, drawn at the left before the icons; none when not given */
+	search?: GridSearchBoxProps;
 }

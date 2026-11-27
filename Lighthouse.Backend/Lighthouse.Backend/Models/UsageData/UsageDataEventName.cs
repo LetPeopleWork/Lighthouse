@@ -131,5 +131,11 @@ namespace Lighthouse.Backend.Models.UsageData
         /// Predictability. It carries nothing: not which Team or Portfolio, not the share, not the window chosen.
         /// </summary>
         WithinSleHorizonSwitched = 32,
+
+        /// <summary>
+        /// Somebody typed into the search box above a Feature list, once per visit to that page. It carries nothing:
+        /// not which list, not which Team or Portfolio, not the text or its length, not how many Features matched.
+        /// </summary>
+        FeatureListSearched = 33,
     }
 }
