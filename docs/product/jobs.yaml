@@ -9159,6 +9159,18 @@ jobs:
       event. Open for DIVERGE: where the comparison lives (a widget of its own, a value on the Cycle Time
       Percentiles widget, the header), and how "over time" is computed (rolling window per day, or per closed
       period). Scores are desk estimates.
+      2026-11-27 - DIVERGE of story-6563-sle-attainment (two review rounds; the second round's open findings were
+      fixed by the diverger and re-checked by the host, no third round): six mechanisms, all six survived, plus the
+      maintainer's own mix scored as two package rows. Ranking: the share as visible text in the Cycle Time
+      Percentiles widget with its count and target, "or less" in the tooltips and the SLE line on the Work Item
+      Aging chart without a toggle (4.35, recommended); a dedicated SLE widget on the Flow Overview (3.80, dissent,
+      the maintainer's "gut feeling"); the share per closed week or month as columns (3.75); an SLE panel in a
+      Then & Now report (3.50); the mix of the widget and the columns in Predictability (3.45); a persisted daily
+      record (3.00); readouts in the Quick Settings header (3.00, the maintainer called a configurable info bar
+      "too much for now"); the mix with the daily record (2.70). The weights favour few new concepts, so the scores
+      do not settle scope: the maintainer chooses at DISCUSS. Reports do not reuse dashboard widgets today; the
+      maintainer plans flow metric reports. The SLE is held as two current values, so any over-time view measures
+      past days against today's SLE. Job wording unchanged. See docs/feature/story-6563-sle-attainment/diverge/.
     job_story: >
       When I review my team's or portfolio's flow, in a retro or in front of a stakeholder,
       I want to see how many closed Work Items finished within the SLE we published, against its target, and how

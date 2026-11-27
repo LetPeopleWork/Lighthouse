@@ -1,0 +1,158 @@
+review_result:
+  round: "2 of 2 (final)"
+  verdict: NEEDS_REVISION
+  approval_status: rejected_pending_revisions
+  artifact_path: "docs/feature/story-6563-sle-attainment/diverge/"
+  reviewer: "nw-diverger-reviewer (Prism)"
+  supersedes: "round 1 review.yaml"
+  coverage: >-
+    Re-read fresh (ctx_read fresh=true): request.md (full), recommendation.md (full), taste-evaluation.md (full, lines 1-261),
+    options-raw.md (full), job-analysis.md (lines 20-40 and 70-85; section 1 and 3-5 not re-read this round),
+    competitive-research.md (lines 30-45; the product table not re-read this round). jobs.yaml 9087-9140 read (the entry
+    incl. job_story 9125-9130 and dimensions). Cited paths exist: docs/metrics/flow-metrics.md, docs/reports/thenandnow.md,
+    docs/feature/rbac-enhancements/feature-delta.md (Q12), docs/metrics/predictability.md, SleQuickSetting.tsx,
+    SystemWipQuickSetting.tsx. Web sources not re-fetched (no web tools). Customer or informant names: none in the artifacts.
+  recomputed:
+    top_three: "option 1 0.30x4.00+1.00+0.80+0.60+0.75 = 4.35; option 2 1.20+0.60+0.80+0.60+0.60 = 3.80; option 4 1.10+0.80+0.80+0.60+0.45 = 3.75 (all correct)"
+    package_columns: "1.20+0.60+0.60+0.60+0.45 = 3.45 (correct; DVF D5 F3 V4 = 12/3 = 4.00)"
+    package_daily: "1.00+0.40+0.40+0.45+0.45 = 2.70 (correct; DVF D5 F2 V3 = 10/3 = 3.33)"
+    other_rows: "option 3 3.00, option 5 2.65 (correct)"
+    margins: "1 vs 2 0.55; 2 vs 4 0.05; 4 vs PC 0.30; PC vs 3 0.45 (correct); PC is 0.90 under 1 and 0.35 under 2 (correct)"
+    sensitivity_recomputed: "all 7 rows x 7 columns recomputed; every entry correct to rounding (DVF50 PC 3.61, PD 2.88; D1->2 4.25; D3,4->5 opt4 3.85, opt3 3.10; D2,5->5 3.90 and 2.85; both packages to 4: PC 3.35, PD 2.60; V2,3+packages to 5: 3.90, 3.20, 3.55, 2.90; combined row: 4.25, 4.02, 3.77, 3.73, 3.33, 3.21, 2.56)"
+    rank_claims: "PC 4th in seven rows and 3rd in the combined row (correct); PD 6th in every row (correct); option 5 last or next to last in every row (correct); option 1 leads every row (correct)"
+    head_distribution: "unchanged, 0.488 for options 1, 2, 5; package excluded (see section below)"
+    pairwise_15: "unchanged; table recomputed as a 15-pair list for the six curated options only; package excluded as a composite (criteria: only generated options are tested)"
+  dimensions:
+    jtbd_rigor: PASSED
+    research_quality: PASSED
+    option_diversity: PASSED
+    taste_application: FAILED
+    recommendation_coherence: FAILED
+  finding_status_round1:
+    F1_head_clustering: "FIXED (0.488 under 0.5; residual note N4)"
+    F2_evaluation_in_options_raw: "FIXED (moved to taste-evaluation.md section 0; header corrected)"
+    F3_coined_handle_in_decision_and_headings: "PARTLY FIXED. Decision statement and dissent heading clean. Rule 5 residue remains: see O1"
+    F4_share_term_marking: "FIXED (marked at first mention in decision and requester section; existing names unmarked)"
+    F5_dissent_is_runner_up: "FIXED (dissent is option 2, 3.80, margin 0.55; option 4 is a separate scope alternative)"
+    F6_unscored_package_recommended: "FIXED (single option recommended; over-time and the mix are named scope choices; both packages now scored)"
+    F7_nothing_new_is_built: "FIXED"
+    F8_hire_when: "FIXED (now 'Use when')"
+    F9_option1_T2_rationale: "FIXED (T2 4, total 4.35 consistent)"
+    F10_constraint_b_tabs: "PARTLY FIXED. Placement stated for all options; option 3 passes (b) on Predictability without saying why that tab is the page the reader opens. See N2"
+    F11_loading_failure_looks: "FIXED (stated per option and per package)"
+    F12_constraint_sources: "FIXED for (b) and (c). New issue on (b) wording: see N2"
+    F13_four_read: "FIXED (three read)"
+    F14_jira_quote_source: "FIXED (page read at the cited URL; search summary marked)"
+    F15_proven: "FIXED"
+    F16_standard: "FIXED"
+    F17_maintainer_first_name_in_request_md: "OPEN, minor. Host choice; no criterion 5 breach"
+  open_findings:
+    - id: O1
+      dimension: recommendation_coherence
+      severity: major
+      location: "recommendation.md 'Scope alternative' bold label '**A daily record of the share [new], 3.00.**'; 'For the requester' > Scope choices, 'A real trend: a column for each closed week or month'"
+      issue: >-
+        Rule 5 residue of F3. The coined handle 'A daily record of the share' (options-raw.md option 3 heading) is cited as a bold
+        label in the body. 'A column for each closed week or month' (options-raw.md option 4 heading, identical wording) is
+        used as a label in the requester section. Criterion 5.3: any handle cited as a label is a FAIL signal.
+      fix: >-
+        Write both by mechanism: 'a persisted record kept each day, with a line per day' and 'a column for each closed week
+        or month' becomes 'the share per closed week or month, one column each, with its count and the target'. Score values unchanged.
+    - id: O2
+      dimension: taste_application
+      severity: major
+      location: "taste-evaluation.md section 2, constraint (b) text ('without set-up') and option 6 elimination row"
+      issue: >-
+        '(b) without set-up' is not in the requester's block. The source line cites the first bullet ('instead of hiding it behind
+        chart toggles'), which does not say it. Option 6 (largest stated mass, 0.244) is eliminated on this added wording. Option 3
+        passes (b) on the Predictability tab without saying why that tab is the page the reader opens. Application is not shown to
+        be symmetric.
+      fix: >-
+        Either record 'without set-up' as a host-set constraint with its reason, or drop the words. Then state one page rule
+        (for example 'a tab the reader opens for metrics by default') and apply it to all six, including option 3 and both packages.
+    - id: O3
+      dimension: recommendation_coherence
+      severity: major
+      location: "recommendation.md 'For the requester' > Parked by you; Dissent ('It is your first gut feeling')"
+      issue: >-
+        'Parked' is a host term. No requester-verbatim block says 'park'. Attributing it to the requester ('Parked by you') breaks
+        rule 6. 'your first gut feeling' is not a rule 1 span ('first' is not in the block; the block says 'my gut feeling was').
+      fix: >-
+        Replace 'Parked by you' with a quoted span: 'You said the freely configurable bar is "too much for now".' Use
+        'your gut feeling' (span 'gut feeling') or quote 'my gut feeling was'.
+    - id: N1
+      dimension: recommendation_coherence
+      severity: minor
+      location: "recommendation.md 'The maintainer's mix, scored' and section 'Scope choices', closing sentence"
+      issue: >-
+        'The mix leads only if a constraint ... is added. Then it is the second choice behind the columns alone.' A mix that is
+        second under the only constraint that could lift it does not lead under any case tested. The sentence contradicts itself.
+      fix: "Write: 'The mix does not lead under any case tested. Under the series constraint it is second, behind the columns alone.'"
+    - id: N2
+      dimension: option_diversity
+      severity: minor
+      location: "taste-evaluation.md section 0, pair 2-6 (mechanism 'Y')"
+      issue: >-
+        Option 2 (change against the preceding period) and option 6 (share in the Then window beside the Now window) both compare two
+        windows. The pair is marked Y on mechanism without argument; the difference is the container. The pair still passes on
+        assumption and cost.
+      fix: "State the shared two-window computation in the pair note. Keep the pass on assumption and cost."
+    - id: N3
+      dimension: taste_application
+      severity: minor
+      location: "taste-evaluation.md section 5, rows 'Desirability of options 2 and 5 raised to 5' and 'Viability of options 2 and 3 ...'"
+      issue: >-
+        Text claims options 2 and 4 stay within 0.13 in every row. Two rows give 0.15 (3.90 vs 3.75). The claim is false in those rows.
+      fix: "Change the text to 0.15, or to 'within 0.15 in every row'."
+    - id: N4
+      dimension: option_diversity
+      severity: minor
+      location: "taste-evaluation.md section 0, head-clustering read"
+      issue: "'raising any of the three raw values by 0.05 puts the group over 0.5': the group reaches exactly 0.50, it does not pass it."
+      fix: "Write 'reaches 0.50'."
+    - id: N5
+      dimension: jtbd_rigor
+      severity: minor
+      location: "job-analysis.md section 2 (Functional)"
+      issue: >-
+        The registered job_story (jobs.yaml 9125-9130) adds 'whether a change made it better, instead of pointing at a line on a chart'.
+        job-analysis section 2 omits both. The registered job and the analysis differ.
+      fix: "Align job-analysis section 2 with the registered job_story, or record the wording change."
+    - id: N6
+      dimension: jtbd_rigor
+      severity: minor
+      location: "job-analysis.md section 7 (new signal)"
+      issue: >-
+        Records only the first 'so no new widget' signal. The later blocks (gut-feeling mix, parked direction, reports plan) are not recorded there.
+      fix: "Add the later requester-verbatim signals to section 7, or point to the recommendation section that records them."
+    - id: N7
+      dimension: recommendation_coherence
+      severity: minor
+      location: "recommendation.md 'For the requester' > Scope choices for you, item 'Your mix: ...'"
+      issue: >-
+        The requester's mix is quoted as 'mix' (span present). Its description is a host paraphrase presented as the requester's option.
+        Rule 2 asks the name to be the quoted span in the option heading; the taste table does this. The requester section does not quote it.
+      fix: "Quote the span: 'Your mix (\"one new dedicated SLE widget in the overview, perhaps SLE over time in predictability\")'."
+    - id: N8
+      dimension: taste_application
+      severity: minor
+      location: "taste-evaluation.md section 3b, package D = 5"
+      issue: >-
+        Packages score D 5 ('serves all three requests'), above both of their parts (D 4 each). The reason is stated but no rubric rule supports
+        a composite above its best part. It is a judgement that the sensitivity rows only partly cover.
+      fix: "State the rule for composite desirability, or score D 4 and show the effect (both packages still rank below option 1 and option 2)."
+    - id: N9
+      dimension: taste_application
+      severity: minor
+      location: "taste-evaluation.md section 3, option 5 T1 rationale ('the other readouts the maintainer's etc. implies')"
+      issue: "The T1 reason argues from future readouts that are not part of this option. Score-from-scope, not from the mechanism scored."
+      fix: "Restate T1 for the SLE-only readout as scored, and mention future readouts only as a note."
+  blocking_issues:
+    - "O1 (recommendation_coherence, major): handle labels remain in recommendation.md body and requester section (rule 5)."
+    - "O3 (recommendation_coherence, major): 'Parked by you' attributes a host term to the requester (rule 6)."
+    - "O2 (taste_application, major): option 6 eliminated on '(b) without set-up', a wording the requester did not state; symmetric page rule not shown."
+  recommendations:
+    - "The three majors are wording and sourcing fixes; the scores do not change. Recomputed ranks hold after any of them."
+    - "After O2 is settled, re-run the elimination and confirm option 6 still falls out on a stated rule. If it stays out, record the reason in section 2."
+    - "Residual minors N1 to N9 are optional for approval but should be fixed in the same revision."
+    - "Round 2 of 2 is the last review round. If O1 to O3 are fixed and re-checked by the host, the verdict moves to APPROVED on the host's re-check, not on a third review."
