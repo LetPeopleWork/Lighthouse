@@ -189,6 +189,13 @@ CI runs are watched by invoking `/clean-ci` and following its Step 3 (rounds of
 `.claude/scripts/ci-poll-round.sh`). Check every running job on each heartbeat as well. When a cron fires
 for a window that is already settled, ignore it.
 
+**Watching is never the work.** A CI watch, or a wait for a long local job, runs *beside* the next real
+step, never instead of it. When the poll round is started, start the next ready step in the same turn
+(the next slice, the next gate, the feature's mutation run, the next feature of the chain) and come back
+to the watch when its round ends. Only a step that depends on the watched result waits for it, for
+example a push that needs the previous run green, or a fix that needs the failure log. A turn whose only
+action is to re-arm a poll round, while ready work exists, is a stall.
+
 ## When to stop — and then really stop
 
 Stop only when continuing would mean guessing something that is the maintainer's to decide:
