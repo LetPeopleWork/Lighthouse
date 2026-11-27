@@ -700,19 +700,30 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         protected IReadOnlyList<string> TheLogEntriesAboutChangedDefaults()
             => [.. whatWasLogged.At(LogEventLevel.Information).Skip(logLinesBeforeTheSave).Where(line => line.Contains(" default ", StringComparison.Ordinal) && line.StartsWith("Connection \"", StringComparison.Ordinal))];
 
-        /// <summary>The Teams and Portfolios the Task Manager lists, once the save has had time to queue them.</summary>
+        /// <summary>
+        /// The Teams and Portfolios the save queued: each one the Task Manager listed at some point, or that has
+        /// already finished. The Task Manager only shows what is still waiting or running, so on a fast machine an
+        /// update can be gone before the first look; the refresh history still shows it ran.
+        /// </summary>
         protected async Task<IReadOnlyList<string>> WhatTheTaskManagerListsSoonAfterTheSave(int expected)
         {
             var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
-            var listed = await TheTeamsAndPortfoliosInTheTaskManager();
+            var queued = await TheTeamsAndPortfoliosQueuedSinceTheSave([]);
 
-            while (listed.Count < expected && DateTime.UtcNow < deadline)
+            while (queued.Count < expected && DateTime.UtcNow < deadline)
             {
                 await Task.Delay(50);
-                listed = await TheTeamsAndPortfoliosInTheTaskManager();
+                queued = await TheTeamsAndPortfoliosQueuedSinceTheSave(queued);
             }
 
-            return listed;
+            return queued;
+        }
+
+        private async Task<List<string>> TheTeamsAndPortfoliosQueuedSinceTheSave(IReadOnlyList<string> seenSoFar)
+        {
+            var listedNow = await TheTeamsAndPortfoliosInTheTaskManager();
+            var alreadyRan = (await TheRefreshHistorySinceTheSave()).Select(entry => entry.EntityName);
+            return [.. seenSoFar.Concat(listedNow).Concat(alreadyRan).Distinct(StringComparer.Ordinal)];
         }
 
         /// <summary>Each update run since the save, as "name Mode", once the queue has gone quiet.</summary>
