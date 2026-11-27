@@ -79,6 +79,7 @@ export function applicabilityFor(
 		totalWorkItemAgeInfo: true,
 		predictabilityScoreInfo: true,
 		cycleTimePercentilesInfo: true,
+		withinSleInfo: true,
 		blockedCountHistory: true,
 		pbcCore: true,
 		pbcCharts: true,

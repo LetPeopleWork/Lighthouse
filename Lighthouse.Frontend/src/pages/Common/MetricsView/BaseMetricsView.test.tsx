@@ -6588,6 +6588,7 @@ describe("BaseMetricsView component", () => {
 					"totalThroughput",
 					"totalWorkItemAge",
 					"wipOverview",
+					"withinSle",
 					"workItemAgePercentiles",
 				],
 				viewData: [
@@ -6600,6 +6601,7 @@ describe("BaseMetricsView component", () => {
 					"totalThroughput",
 					"totalWorkItemAge",
 					"wipOverview",
+					"withinSle",
 					"workItemAgePercentiles",
 				],
 			},
@@ -6658,6 +6660,7 @@ describe("BaseMetricsView component", () => {
 					"totalThroughput",
 					"totalWorkItemAge",
 					"wipOverview",
+					"withinSle",
 					"workItemAgePercentiles",
 				],
 				viewData: [
@@ -6669,6 +6672,7 @@ describe("BaseMetricsView component", () => {
 					"totalThroughput",
 					"totalWorkItemAge",
 					"wipOverview",
+					"withinSle",
 					"workItemAgePercentiles",
 				],
 			},

@@ -70,6 +70,7 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 		{ widgetKey: "totalWorkItemAge", size: "small" },
 		{ widgetKey: "flowEfficiency", size: "small" },
 		{ widgetKey: "predictabilityScore", size: "small" },
+		{ widgetKey: "withinSle", size: "small" },
 		{ widgetKey: "percentiles", size: "small" },
 		{ widgetKey: "workItemAgePercentiles", size: "small" },
 		{ widgetKey: "totalThroughput", size: "small" },
@@ -122,6 +123,7 @@ const trendPolicies: Record<string, TrendPolicy> = {
 	totalThroughput: "previous-period",
 	totalArrivals: "previous-period",
 	percentiles: "previous-period",
+	withinSle: "none",
 	workItemAgePercentiles: "previous-period",
 	featureSizePercentiles: "previous-period",
 	cycleScatter: "none",
@@ -237,6 +239,9 @@ const widgetFetchRequirements: Record<string, readonly MetricsFetchKey[]> = {
 		"cycleTimeData",
 		"cycleTimePercentilesInfo",
 	],
+	// The share comes from the server. The closed items behind View Data are fetched for the
+	// Cycle Time Percentiles widget beside it, so the frame waits for the share alone.
+	withinSle: ["withinSleInfo"],
 	// RAG reads agingItems, derived from inProgressItems
 	workItemAgePercentiles: ["workItemAgePercentiles", "inProgressItems"],
 	// RAG reads startedTotal/closedTotal, sourced from throughput and arrivals

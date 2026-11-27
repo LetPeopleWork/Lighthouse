@@ -1501,8 +1501,9 @@ describe("useMetricsData", () => {
 				countServiceCalls(mockBlackoutPeriodService);
 			// The WIP card says how many of its items are at risk, and a Team's Flow Overview shows
 			// Feature Size Percentiles, which asks for the Team's Feature sizes, its size percentiles
-			// and its percentiles info. The number only moves for a reason stated here.
-			expect(total).toBe(23);
+			// and its percentiles info, and the Within SLE share is one more read. The number only
+			// moves for a reason stated here.
+			expect(total).toBe(24);
 		});
 
 		/**

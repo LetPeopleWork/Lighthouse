@@ -2,17 +2,13 @@ using Lighthouse.Backend.Models;
 
 namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
 {
-#pragma warning disable S3453 // Skeleton: Of will build instances through this private constructor once it is filled in.
-    public sealed class ServiceLevelExpectation
-#pragma warning restore S3453
+    public sealed class ServiceLevelExpectation : IEquatable<ServiceLevelExpectation>
     {
-#pragma warning disable S1144 // Skeleton: used by Of once it is filled in.
         private ServiceLevelExpectation(int percentile, int days)
         {
             Percentile = percentile;
             Days = days;
         }
-#pragma warning restore S1144
 
         public int Percentile { get; }
 
@@ -20,12 +16,32 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
 
         public static ServiceLevelExpectation? Of(int percentile, int days)
         {
-            throw new NotImplementedException("The Service Level Expectation value is not built yet.");
+            if (percentile is < 1 or > 100 || days < 1)
+            {
+                return null;
+            }
+
+            return new ServiceLevelExpectation(percentile, days);
         }
 
         public static ServiceLevelExpectation? For(WorkTrackingSystemOptionsOwner owner)
         {
-            throw new NotImplementedException("The Service Level Expectation of an owner is not read yet.");
+            return Of(owner.ServiceLevelExpectationProbability, owner.ServiceLevelExpectationRange);
+        }
+
+        public bool Equals(ServiceLevelExpectation? other)
+        {
+            return other is not null && other.Percentile == Percentile && other.Days == Days;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as ServiceLevelExpectation);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Percentile, Days);
         }
     }
 }

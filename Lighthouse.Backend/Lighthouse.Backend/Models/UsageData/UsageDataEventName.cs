@@ -119,5 +119,11 @@ namespace Lighthouse.Backend.Models.UsageData
         /// which Team or Portfolio, not the text or its length, not who wrote it.
         /// </summary>
         ReportNoteAdded = 30,
+
+        /// <summary>
+        /// Somebody opened the list of closed Work Items behind the Within SLE widget on a Team's or a Portfolio's
+        /// Flow Overview. It carries nothing: not which Team or Portfolio, not the share, not how many items.
+        /// </summary>
+        WithinSleListOpened = 31,
     }
 }

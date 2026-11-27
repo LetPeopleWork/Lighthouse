@@ -33,6 +33,11 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 			act: "No System WIP Limit is configured, or current WIP exceeds the limit.",
 		},
 	},
+	withinSle: {
+		description:
+			"The share of Work Items closed in the selected range that finished within the SLE days or less, with the count behind it and the target percentage. Higher is better: a share at or above the target means the SLE holds.",
+		learnMoreUrl: `${FLOW_OVERVIEW}#within-sle`,
+	},
 	sleRisk: {
 		description:
 			"How many items in progress are at risk of missing the SLE. An item counts as at risk when the team's own history says it is 70% or more likely to take longer than the target.",

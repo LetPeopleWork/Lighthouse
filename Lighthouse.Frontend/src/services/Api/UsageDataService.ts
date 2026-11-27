@@ -53,6 +53,7 @@ export const UsageDataEventName = {
 	OutlierHandlingSwitchedOff: "OutlierHandlingSwitchedOff",
 	DefaultFeatureSizingSwitchedOff: "DefaultFeatureSizingSwitchedOff",
 	ReportNoteAdded: "ReportNoteAdded",
+	WithinSleListOpened: "WithinSleListOpened",
 } as const;
 
 export type UsageDataEventName =

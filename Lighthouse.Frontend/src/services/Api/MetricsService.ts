@@ -47,6 +47,9 @@ import type { IPerStatePercentileValues } from "../../models/PerStatePercentileV
 import type { IWorkItem } from "../../models/WorkItem";
 import { formatLocalDate } from "../../utils/date/localDate";
 import { BaseApiService } from "./BaseApiService";
+import type { IFeatureSizeMetricsService } from "./FeatureSizeMetricsService";
+
+export type { IFeatureSizeMetricsService };
 
 export interface IMetricsService<T extends IWorkItem | IFeature> {
 	getThroughput(
@@ -279,30 +282,6 @@ function buildPercentilesOverTimeQuery(
 	}
 
 	return `horizon=${selection}`;
-}
-
-/**
- * Feature sizes, for any owner that has them. A Team counts only its own Work Items in each
- * Feature, so it answers with the same shapes as a Portfolio but different sizes.
- */
-export interface IFeatureSizeMetricsService {
-	getSizePercentiles(
-		id: number,
-		startDate: Date,
-		endDate: Date,
-	): Promise<IPercentileValue[]>;
-
-	getAllFeaturesForSizeChart(
-		id: number,
-		startDate: Date,
-		endDate: Date,
-	): Promise<IFeature[]>;
-
-	getFeatureSizePercentilesInfo(
-		id: number,
-		startDate: Date,
-		endDate: Date,
-	): Promise<IFeatureSizePercentilesInfo>;
 }
 
 export interface ITeamMetricsService
@@ -834,11 +813,16 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 	}
 
 	getWithinSleInfo(
-		_id: number,
-		_startDate: Date,
-		_endDate: Date,
+		id: number,
+		startDate: Date,
+		endDate: Date,
 	): Promise<IWithinSleInfo> {
-		return Promise.reject(new Error("getWithinSleInfo is not built yet."));
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<IWithinSleInfo>(
+				`/${this.api}/${id}/metrics/withinSleInfo?${this.getDateFormatString(startDate, endDate)}`,
+			);
+			return response.data;
+		});
 	}
 
 	getBlockedCountHistory(

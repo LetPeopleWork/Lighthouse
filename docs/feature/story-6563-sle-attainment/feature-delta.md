@@ -214,3 +214,14 @@ existing failure containment, and nothing new is configured or called outside. U
 autonomously; recorded as shared design decisions): `WithinSleListOpened = 31` (S5, View Data opened on the widget)
 and `WithinSleHorizonSwitched = 32` (S7, the horizon switched on the chart, which tests DISCOVER's riskiest assumption
 that readers use the trend). Each carries nothing; rendering emits nothing.
+
+## DELIVER log (AFK)
+
+- S5 craft (host decision, 2026-11-27): the existing guard "every Flow Overview widget has a status" needs a footer
+  for `withinSle` in S5, while the status rule belongs to S6. S5 registers a neutral, no-verdict status; S6 replaces
+  it with the percentiles rule. No user sees S5 alone (nothing is pushed between slices).
+- S5 craft: the widget's fetch requirement is `withinSleInfo` only (the approved loading oracle answers only that
+  call); View Data's closed-items list uses `cycleTimeData`, which Cycle Time Percentiles beside it already fetches.
+- S5 craft: the T3 probe (dropping the trend policy) did not fail `categoryMetadata.test.ts`; that test does not pin
+  every widget's trend policy. S6's oracle, which pins the previous-period trend, is to close it.
+- Docs: the ⓘ Learn More anchor `#within-sle` on the flow-overview page is written at finalize.

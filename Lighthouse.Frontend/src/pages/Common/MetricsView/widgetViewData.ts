@@ -205,6 +205,12 @@ export function buildViewData(
 					...closedItems,
 					sle: inputs.serviceLevelExpectation?.value,
 				},
+		withinSle: {
+			title: `Closed ${terms.workItems}`,
+			items: inputs.cycleTimeData,
+			...closedItems,
+			sle: inputs.serviceLevelExpectation?.value,
+		},
 		totalWorkItemAge: inFlight,
 		workItemAgePercentiles: inFlight,
 		// Every item in flight with its risk, not only the ones at risk — a coach opening this is

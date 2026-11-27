@@ -1,11 +1,54 @@
+import { Card, CardContent, Typography, useTheme } from "@mui/material";
+import type React from "react";
 import type { IWithinSleInfo } from "../../../models/Metrics/WithinSleInfo";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 
 interface WithinSleWidgetProps {
-	info: IWithinSleInfo;
+	readonly info: IWithinSleInfo;
 }
 
-const WithinSleWidget = (_props: WithinSleWidgetProps): never => {
-	throw new Error("The Within SLE widget is not built yet.");
+const WithinSleWidget: React.FC<WithinSleWidgetProps> = ({ info }) => {
+	const theme = useTheme();
+	const { getTerm } = useTerminology();
+	const workItems = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+
+	return (
+		<Card sx={{ borderRadius: 2, height: "100%", width: "100%" }}>
+			<CardContent
+				sx={{
+					display: "flex",
+					flexDirection: "column",
+					alignItems: "center",
+					justifyContent: "center",
+					height: "100%",
+					p: 2,
+				}}
+			>
+				<Typography variant="h6" gutterBottom sx={{ textAlign: "center" }}>
+					Within {getTerm(TERMINOLOGY_KEYS.SLE)}
+				</Typography>
+
+				{info.verdict === "Measured" && (
+					<>
+						<Typography
+							variant="h4"
+							data-testid="within-sle-share"
+							sx={{ color: theme.palette.primary.main, fontWeight: "bold" }}
+						>
+							{`${info.sharePercent} % (${info.withinCount} / ${info.closedCount})`}
+						</Typography>
+						<Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+							{`of ${workItems} closed within ${info.sleDays} days or less`}
+						</Typography>
+						<Typography variant="body2" color="text.secondary">
+							{`Target ${info.slePercentile} %`}
+						</Typography>
+					</>
+				)}
+			</CardContent>
+		</Card>
+	);
 };
 
 export default WithinSleWidget;

@@ -15,7 +15,9 @@ import type {
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
+import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import { sleRiskAtRiskSummary } from "../../../utils/charts/sleRisk";
 import { formatLocalDate } from "../../../utils/date/localDate";
 import { computeBlockedTrend } from "./blockedTrend";
@@ -50,7 +52,7 @@ import { useDateRange } from "./useDateRange";
 import { useNamedPercentilesScope } from "./useNamedPercentilesScope";
 import { useShowTips } from "./useShowTips";
 import { useStateDrillDown } from "./useStateDrillDown";
-import WidgetShell from "./WidgetShell";
+import WidgetShell, { type ViewDataPayload } from "./WidgetShell";
 import { buildWidgetFooters, computeMaxBlockedAgeDays } from "./widgetFooters";
 import { getWidgetInfo, type WidgetInfoOwner } from "./widgetInfoMetadata";
 import { buildWidgetNodes } from "./widgetNodes";
@@ -185,6 +187,7 @@ export const BaseMetricsView = <
 		totalWorkItemAgeInfo,
 		predictabilityScoreInfo,
 		cycleTimePercentilesInfo,
+		withinSleInfo,
 		cumulativeStateTime,
 		cumulativeStateTimeForSelection,
 		cumulativeStateTimeForScope,
@@ -278,6 +281,7 @@ export const BaseMetricsView = <
 	);
 
 	const { getTerm } = useTerminology();
+	const reportUsage = useUsageDataReporter();
 	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
 	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
@@ -459,6 +463,7 @@ export const BaseMetricsView = <
 		flowEfficiencyInfo,
 		sleRiskAtRisk,
 		sleRiskValues,
+		withinSleInfo,
 	});
 
 	const widgetFooters = buildWidgetFooters({
@@ -561,7 +566,7 @@ export const BaseMetricsView = <
 		flowEfficiencyInfo,
 	});
 
-	const widgetViewData = buildViewData({
+	const builtViewData = buildViewData({
 		title,
 		endDate,
 		ownerKind: ownerType,
@@ -596,6 +601,16 @@ export const BaseMetricsView = <
 			sle: ragTerms.sle,
 		},
 	});
+
+	const withinSleList = builtViewData.withinSle;
+	const widgetViewData: Record<string, ViewDataPayload | undefined> = {
+		...builtViewData,
+		withinSle: withinSleList && {
+			...withinSleList,
+			onOpened: () =>
+				reportUsage({ name: UsageDataEventName.WithinSleListOpened }),
+		},
+	};
 
 	const widgetTrends: Record<string, TrendPayload | undefined> = {
 		totalThroughput: throughputInfo

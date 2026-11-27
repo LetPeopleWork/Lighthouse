@@ -47,6 +47,7 @@ import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCyc
 import type { ProcessBehaviourChartData } from "../../../models/Metrics/ProcessBehaviourChartData";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { ISleRisk } from "../../../models/Metrics/SleRisk";
+import type { IWithinSleInfo } from "../../../models/Metrics/WithinSleInfo";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IPerStatePercentileValues } from "../../../models/PerStatePercentileValues";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -69,6 +70,7 @@ import ThroughputRunChartCard from "./ThroughputRunChartCard";
 import TotalArrivalsWidget from "./TotalArrivalsWidget";
 import TotalThroughputWidget from "./TotalThroughputWidget";
 import WipOverviewWidget from "./WipOverviewWidget";
+import WithinSleWidget from "./WithinSleWidget";
 
 function buildPbcNode(
 	data: ProcessBehaviourChartData | null,
@@ -298,6 +300,7 @@ export function buildWidgetNodes(ctx: {
 	flowEfficiencyInfo: IFlowEfficiencyInfo | null;
 	sleRiskAtRisk: SleRiskAtRiskSummary | undefined;
 	sleRiskValues: ISleRisk[];
+	withinSleInfo: IWithinSleInfo | null;
 }): Record<string, ReactNode | null> {
 	const filteredViewOwner: MetricsOwnerRequest = {
 		ownerType: ctx.ownerType,
@@ -314,6 +317,9 @@ export function buildWidgetNodes(ctx: {
 			/>
 		),
 		sleRisk: <SleRiskWidget atRisk={ctx.sleRiskAtRisk} />,
+		withinSle: ctx.withinSleInfo ? (
+			<WithinSleWidget info={ctx.withinSleInfo} />
+		) : null,
 		blockedOverview: (
 			<BlockedOverviewWidget
 				blockedCount={ctx.blockedItems.length}

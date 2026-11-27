@@ -10,7 +10,19 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
 
         public static WithinSleShare Of(IReadOnlyCollection<int> cycleTimesInDays, ServiceLevelExpectation? sle)
         {
-            throw new NotImplementedException("The share within the Service Level Expectation is not counted yet.");
+            var closed = cycleTimesInDays.Count;
+
+            if (sle is null)
+            {
+                return new NoSle(closed);
+            }
+
+            if (closed < MinimumClosed)
+            {
+                return new TooFew(closed, sle);
+            }
+
+            return new Measured(cycleTimesInDays.Count(days => days <= sle.Days), closed, sle);
         }
 
         public sealed record NoSle(int Closed) : WithinSleShare;
@@ -19,9 +31,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
 
         public sealed record Measured(int Within, int Closed, ServiceLevelExpectation Sle) : WithinSleShare
         {
-#pragma warning disable S2325 // Skeleton: reads Within and Closed once it is filled in.
-            public double SharePercent => throw new NotImplementedException("The share percentage is not computed yet.");
-#pragma warning restore S2325
+            public double SharePercent => Math.Round(Within * 100.0 / Closed, 1, MidpointRounding.AwayFromZero);
         }
     }
 }

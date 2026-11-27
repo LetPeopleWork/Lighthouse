@@ -35,11 +35,12 @@ namespace Lighthouse.Backend.API
         private readonly IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository;
         private readonly IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery;
         private readonly IProcessBehaviorSeriesQuery processBehaviorSeriesQuery;
+        private readonly IWithinSleInfoQuery withinSleInfoQuery;
         private readonly ILighthouseClock clock;
         private readonly ILogger<TeamMetricsController> logger;
 
 #pragma warning disable S107 // The blocked-drill-through endpoint (slice-08) genuinely needs the snapshot repo, work-item repo and blocked-transition repo alongside the existing metrics collaborators; grouping them into an aggregate purely to dodge the 7-param threshold would add indirection without a domain rationale (same rationale as OAuthService).
-        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, IBlockedItemService blockedItemService, IBlockedCountSnapshotRepository blockedCountSnapshotRepository, IWorkItemRepository workItemRepository, IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository, IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery, IProcessBehaviorSeriesQuery processBehaviorSeriesQuery, ILighthouseClock clock, ILogger<TeamMetricsController> logger)
+        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, IBlockedItemService blockedItemService, IBlockedCountSnapshotRepository blockedCountSnapshotRepository, IWorkItemRepository workItemRepository, IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository, IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery, IProcessBehaviorSeriesQuery processBehaviorSeriesQuery, IWithinSleInfoQuery withinSleInfoQuery, ILighthouseClock clock, ILogger<TeamMetricsController> logger)
 #pragma warning restore S107
         {
             this.teamRepository = teamRepository;
@@ -51,6 +52,7 @@ namespace Lighthouse.Backend.API
             this.workItemBlockedTransitionRepository = workItemBlockedTransitionRepository;
             this.percentilesOverTimeSeriesQuery = percentilesOverTimeSeriesQuery;
             this.processBehaviorSeriesQuery = processBehaviorSeriesQuery;
+            this.withinSleInfoQuery = withinSleInfoQuery;
             this.clock = clock;
             this.logger = logger;
         }
@@ -431,6 +433,18 @@ namespace Lighthouse.Backend.API
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
                 teamMetricsService.GetCycleTimePercentilesInfoForTeam(team, startDate, endDate, definitionId));
+        }
+
+        [HttpGet("withinSleInfo")]
+        public ActionResult<WithinSleInfoDto> GetWithinSleInfo(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                withinSleInfoQuery.GetForTeam(team, startDate, endDate));
         }
 
         [HttpGet("throughput/pbc")]

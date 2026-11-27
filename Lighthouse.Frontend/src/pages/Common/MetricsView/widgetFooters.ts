@@ -199,6 +199,11 @@ export function buildWidgetFooters(
 			inputs.predictabilityScore,
 			inputs.terms,
 		),
+		// No verdict yet: the share is shown as a number, and the status is a plain neutral one.
+		withinSle: {
+			ragStatus: "none",
+			tipText: `The share of closed ${inputs.terms.workItems} that finished within the ${inputs.terms.sle} days or less, next to the target. No status is given.`,
+		},
 		percentiles:
 			inputs.percentilesScopeDefinitionId === null
 				? computeCycleTimePercentilesRag(

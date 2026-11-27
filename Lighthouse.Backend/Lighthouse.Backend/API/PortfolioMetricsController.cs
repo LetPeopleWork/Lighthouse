@@ -30,6 +30,7 @@ namespace Lighthouse.Backend.API
         IFeatureBlockedTransitionRepository featureBlockedTransitionRepository,
         IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery,
         IProcessBehaviorSeriesQuery processBehaviorSeriesQuery,
+        IWithinSleInfoQuery withinSleInfoQuery,
         ILighthouseClock clock,
         ILogger<PortfolioMetricsController> logger)
         : ControllerBase
@@ -424,6 +425,18 @@ namespace Lighthouse.Backend.API
 
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
                 portfolioMetricsService.GetCycleTimePercentilesInfoForPortfolio(portfolio, startDate, endDate, definitionId));
+        }
+
+        [HttpGet("withinSleInfo")]
+        public ActionResult<WithinSleInfoDto> GetWithinSleInfo(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                withinSleInfoQuery.GetForPortfolio(portfolio, startDate, endDate));
         }
 
         [HttpGet("throughput/pbc")]

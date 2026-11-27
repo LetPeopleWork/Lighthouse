@@ -58,6 +58,8 @@ export type ViewDataPayload = {
 	readonly items: IWorkItem[];
 	readonly timeInStateColumn?: TimeInStateColumnDefinition;
 	readonly sle?: number;
+	/** Called each time the reader opens this list. */
+	readonly onOpened?: () => void;
 	/** Forwarded to the dialog untouched; the shell never looks inside it. */
 	readonly ageBandColumn?: AgeBandColumnDescriptor;
 	/** Forwarded the same way, and absent whenever the owner published no target. */
@@ -592,7 +594,10 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 						showTips={showTips}
 						parts={headerParts}
 						isLoading={isLoading}
-						onViewData={() => setViewDataOpen(true)}
+						onViewData={() => {
+							setViewDataOpen(true);
+							headerParts.viewData?.onOpened?.();
+						}}
 					/>
 				)}
 

@@ -21,6 +21,7 @@ import type {
 import type { ProcessBehaviourChartData } from "../models/Metrics/ProcessBehaviourChartData";
 import type { RunChartData } from "../models/Metrics/RunChartData";
 import type { ISleRisk } from "../models/Metrics/SleRisk";
+import type { IWithinSleInfo } from "../models/Metrics/WithinSleInfo";
 import type { IPercentileValue } from "../models/PercentileValue";
 import type { IPerStatePercentileValues } from "../models/PerStatePercentileValues";
 import type { IPortfolio } from "../models/Portfolio/Portfolio";
@@ -119,6 +120,7 @@ export interface MetricsData<T> {
 	totalWorkItemAgeInfo: ITotalWorkItemAgeInfo | null;
 	predictabilityScoreInfo: IPredictabilityScoreInfo | null;
 	cycleTimePercentilesInfo: ICycleTimePercentilesInfo | null;
+	withinSleInfo: IWithinSleInfo | null;
 	flowEfficiencyInfo: IFlowEfficiencyInfo | null;
 	blockedCountHistory: BlockedCountSnapshot[] | null;
 	/** How far each request for the selected window has got, by the fetch key that asks for it. */
@@ -614,6 +616,15 @@ export function useMetricsData<
 		"Error fetching cycle time percentiles info:",
 	);
 
+	const withinSleInfo = useMetricsQuery(
+		"getWithinSleInfo",
+		selectedWindow,
+		({ ownerId, from, to }) =>
+			metricsService.getWithinSleInfo(ownerId, dayOf(from), dayOf(to)),
+		isAsked("withinSleInfo"),
+		"Error fetching within SLE info:",
+	);
+
 	const featuresWorkedOnInfo = useMetricsQuery(
 		"getFeaturesWorkedOnInfo",
 		selectedWindow,
@@ -697,6 +708,7 @@ export function useMetricsData<
 		totalWorkItemAgeInfo: [totalWorkItemAgeInfo.progress],
 		predictabilityScoreInfo: [predictabilityScoreInfo.progress],
 		cycleTimePercentilesInfo: [cycleTimePercentilesInfo.progress],
+		withinSleInfo: [withinSleInfo.progress],
 		featuresWorkedOnInfo: [featuresWorkedOnInfo.progress],
 		pbcCharts: [cycleTimePbc.progress, arrivalsPbc.progress],
 		throughputPbc: [throughputPbc.progress],
@@ -761,6 +773,7 @@ export function useMetricsData<
 		totalWorkItemAgeInfo: totalWorkItemAgeInfo.answer,
 		predictabilityScoreInfo: predictabilityScoreInfo.answer,
 		cycleTimePercentilesInfo: cycleTimePercentilesInfo.answer,
+		withinSleInfo: withinSleInfo.answer,
 		flowEfficiencyInfo: flowEfficiency.answer,
 		blockedCountHistory: blockedCountHistory.answer,
 		fetchStates,

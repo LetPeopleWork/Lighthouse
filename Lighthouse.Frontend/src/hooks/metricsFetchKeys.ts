@@ -34,6 +34,7 @@ export const metricsFetchKeys = [
 	"totalWorkItemAgeInfo",
 	"predictabilityScoreInfo",
 	"cycleTimePercentilesInfo",
+	"withinSleInfo",
 	"blockedCountHistory",
 	"featuresWorkedOnInfo",
 	"pbcCore",
