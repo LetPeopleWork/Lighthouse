@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using System.Globalization;
 using Lighthouse.Backend.Cache;

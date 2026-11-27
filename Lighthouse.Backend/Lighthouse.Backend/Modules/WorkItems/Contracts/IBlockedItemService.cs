@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
 
-namespace Lighthouse.Backend.Modules.WorkItems.Application
+namespace Lighthouse.Backend.Modules.WorkItems.Contracts
 {
     /// <summary>
     /// Single, pure-function authority for "is this item blocked?" (ADR-067). The third Include

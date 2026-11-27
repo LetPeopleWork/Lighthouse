@@ -4,7 +4,7 @@ using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Modules.Forecasting.Contracts;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Modules.Licensing.Contracts;
-using Lighthouse.Backend.Modules.WorkItems.Application;
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 
 namespace Lighthouse.Backend.Modules.Forecasting.Application
 {

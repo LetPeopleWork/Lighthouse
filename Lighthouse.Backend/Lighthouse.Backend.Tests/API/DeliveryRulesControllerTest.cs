@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Tests.API
                 portfolioRepositoryMock.Object,
                 deliveryRuleServiceMock.Object,
                 blackoutPeriodServiceMock.Object,
-                Mock.Of<Lighthouse.Backend.Modules.WorkItems.Application.IBlockedItemService>(),
+                Mock.Of<Lighthouse.Backend.Modules.WorkItems.Contracts.IBlockedItemService>(),
                 TestToday.Clock);
         }
 

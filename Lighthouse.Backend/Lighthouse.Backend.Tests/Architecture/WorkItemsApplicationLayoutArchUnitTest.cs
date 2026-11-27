@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Mono.Cecil;
 
 namespace Lighthouse.Backend.Tests.Architecture
@@ -20,11 +21,15 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string DependenciesApplicationNamespace = "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies";
 
+        private static string ContractsNamespace => typeof(IBlockedItemService).Namespace!;
+
         private const string WorkItemsApplication = @"^Lighthouse\.Backend\.Modules\.WorkItems\.Application(\.|$)";
 
         private const string WorkItemsApplicationFolder = "Modules/WorkItems/Application";
 
         private const string DependenciesApplicationFolder = "Modules/WorkItems/Application/Dependencies";
+
+        private const string ContractsFolder = "Modules/WorkItems/Contracts";
 
         private const string WhatTheApplicationMayNotReach =
             @"^(Microsoft\.EntityFrameworkCore|Lighthouse\.Backend\.Data|Lighthouse\.Backend\.API|Lighthouse\.Backend\.Modules\.WorkItems\.Adapters)(\.|$)";
@@ -52,18 +57,23 @@ namespace Lighthouse.Backend.Tests.Architecture
             "WorkItemService",
             "IWorkItemService",
             "BlockedItemService",
-            "IBlockedItemService",
             "TeamDataService",
             "ITeamDataService",
             "RuleEvaluator`1",
-            "IRuleEvaluator`1",
-            "IRuleFieldProvider`1",
             "WorkItemFieldProvider",
             "FeatureFieldProvider",
             "ParentPlacementReport",
             "RecordPlacement",
             "RefreshLogService",
+        ];
+
+        private static readonly string[] ContractsTypes =
+        [
+            "IBlockedItemService",
+            "IRuleEvaluator`1",
+            "IRuleFieldProvider`1",
             "IRefreshLogService",
+            "IWhatTheForecastWaitsFor",
         ];
 
         private static readonly string[] DependencyApplicationTypes =
@@ -77,7 +87,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             "FeatureDependencyRendering",
             "DependenciesAsRead",
             "WhatTheForecastWaitsFor",
-            "IWhatTheForecastWaitsFor",
         ];
 
         private static readonly string[] ApplicationFiles =
@@ -85,17 +94,22 @@ namespace Lighthouse.Backend.Tests.Architecture
             "WorkItemService.cs",
             "IWorkItemService.cs",
             "BlockedItemService.cs",
-            "IBlockedItemService.cs",
             "TeamDataService.cs",
             "ITeamDataService.cs",
             "RuleEvaluator.cs",
-            "IRuleEvaluator.cs",
-            "IRuleFieldProvider.cs",
             "WorkItemFieldProvider.cs",
             "FeatureFieldProvider.cs",
             "ParentPlacementReport.cs",
             "RefreshLogService.cs",
+        ];
+
+        private static readonly string[] ContractsFiles =
+        [
+            "IBlockedItemService.cs",
+            "IRuleEvaluator.cs",
+            "IRuleFieldProvider.cs",
             "IRefreshLogService.cs",
+            "IWhatTheForecastWaitsFor.cs",
         ];
 
         private static readonly string[] DependencyApplicationFiles =
@@ -108,7 +122,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             "IDependencyRefreshReporter.cs",
             "FeatureDependencyRendering.cs",
             "WhatTheForecastWaitsFor.cs",
-            "IWhatTheForecastWaitsFor.cs",
         ];
 
         private static readonly Regex AnOldFullName = new(
@@ -147,10 +160,17 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
+        public void TheTypesTheOtherContextsReach_LiveInTheModuleContracts_AndNoneIsLeftInTheApplication()
+        {
+            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ContractsNamespace, ContractsTypes).Check();
+        }
+
+        [Test]
         public void TheWorkItemsApplicationFiles_SitInTheModuleApplicationFolders_AndNowhereElse()
         {
             ThenEachFileSitsOnlyIn(WorkItemsApplicationFolder, ApplicationFiles);
             ThenEachFileSitsOnlyIn(DependenciesApplicationFolder, DependencyApplicationFiles);
+            ThenEachFileSitsOnlyIn(ContractsFolder, ContractsFiles);
         }
 
         [Test]
@@ -274,7 +294,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "the data layer, the API or the module's Adapters ties a use case to one way of storing or serving. Ask through a port the Application owns instead.");
 
         private static IEnumerable<string> AllMovedNames()
-            => ApplicationTypes.Concat(DependencyApplicationTypes).Select(name => name.Split('`')[0]);
+            => ApplicationTypes.Concat(DependencyApplicationTypes).Concat(ContractsTypes).Select(name => name.Split('`')[0]);
 
         private static List<string> StaleNamesIn(string text)
             => [.. AnOldFullName.Matches(text).Select(match => match.Value), .. AnOldFilePath.Matches(text).Select(match => match.Value)];

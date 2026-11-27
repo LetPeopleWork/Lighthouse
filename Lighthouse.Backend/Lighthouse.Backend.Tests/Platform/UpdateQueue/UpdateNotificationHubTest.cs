@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Platform.UpdateQueue;
 ﻿using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Microsoft.AspNetCore.SignalR;
@@ -6,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Tests.TestHelpers;
-using Lighthouse.Backend.Modules.WorkItems.Application;
 
 namespace Lighthouse.Backend.Tests.Platform.UpdateQueue
 {

@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
-using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 
 namespace Lighthouse.Backend.Tests.TestDoubles
 {

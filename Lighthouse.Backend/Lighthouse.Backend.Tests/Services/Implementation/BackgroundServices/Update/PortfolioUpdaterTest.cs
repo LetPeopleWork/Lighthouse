@@ -5,6 +5,7 @@ using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Modules.Forecasting.Contracts;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth;
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 using Lighthouse.Backend.Platform.Encryption;

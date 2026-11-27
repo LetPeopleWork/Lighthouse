@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models.WorkItemRules;
 
-namespace Lighthouse.Backend.Modules.WorkItems.Application
+namespace Lighthouse.Backend.Modules.WorkItems.Contracts
 {
     /// <summary>
     /// Generic rule-engine port. <c>Match</c> returns the subset of <paramref name="items"/>

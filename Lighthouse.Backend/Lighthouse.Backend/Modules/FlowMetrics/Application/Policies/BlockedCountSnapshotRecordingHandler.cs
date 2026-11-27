@@ -2,9 +2,9 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using Lighthouse.Backend.Modules.WorkItems.Application;
 using Microsoft.Extensions.Logging;
 using Lighthouse.Backend.Platform.Host;
 

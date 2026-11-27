@@ -1,5 +1,6 @@
 using System.Reflection;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Modules.WorkItemsFixtures.Boundaries.Domain;
 using Lighthouse.Backend.Modules.WorkItemsFixtures.Boundaries.Services;
 using Lighthouse.Backend.Modules.WorkItemsFixtures.BoundariesOutbound.HoldingADbSet.Application;
@@ -107,14 +108,18 @@ namespace Lighthouse.Backend.Tests.Architecture
             ],
             ["Lighthouse.Backend.Modules.WorkItems.Application"] =
             [
-                "WorkItemService", "IWorkItemService", "BlockedItemService", "IBlockedItemService", "TeamDataService", "ITeamDataService",
-                "RuleEvaluator`1", "IRuleEvaluator`1", "IRuleFieldProvider`1", "WorkItemFieldProvider", "FeatureFieldProvider",
-                "ParentPlacementReport", "RecordPlacement", "RefreshLogService", "IRefreshLogService",
+                "WorkItemService", "IWorkItemService", "BlockedItemService", "TeamDataService", "ITeamDataService",
+                "RuleEvaluator`1", "WorkItemFieldProvider", "FeatureFieldProvider",
+                "ParentPlacementReport", "RecordPlacement", "RefreshLogService",
+            ],
+            [typeof(IBlockedItemService).Namespace!] =
+            [
+                "IBlockedItemService", "IRuleEvaluator`1", "IRuleFieldProvider`1", "IRefreshLogService", "IWhatTheForecastWaitsFor",
             ],
             ["Lighthouse.Backend.Modules.WorkItems.Application.Dependencies"] =
             [
                 "DependencyDecision", "IDependencyDecision", "DependencyReconciler", "IDependencyReconciler", "DependencyRefreshReporter",
-                "IDependencyRefreshReporter", "FeatureDependencyRendering", "DependenciesAsRead", "WhatTheForecastWaitsFor", "IWhatTheForecastWaitsFor",
+                "IDependencyRefreshReporter", "FeatureDependencyRendering", "DependenciesAsRead", "WhatTheForecastWaitsFor",
             ],
             ["Lighthouse.Backend.Modules.WorkItems.Application.Policies"] =
             [

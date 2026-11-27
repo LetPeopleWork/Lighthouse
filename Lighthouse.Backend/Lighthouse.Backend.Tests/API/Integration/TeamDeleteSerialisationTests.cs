@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using System.Collections.Concurrent;
 using System.Net;

@@ -1,8 +1,8 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Modules.WorkItems.Application;
 using Lighthouse.Backend.Platform.Host;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 

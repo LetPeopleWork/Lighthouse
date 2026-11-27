@@ -50,16 +50,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         // Each edge names its source and target under the modules root; the comment names the context that owns the target.
         private static IReadOnlyList<string> CrossContextEdgesOutsideContracts =>
         [
-            Edge("FlowMetrics.Application.Policies.BlockedCountSnapshotRecordingHandler", "WorkItems.Application.IBlockedItemService"), // owner: Work Items
-            Edge("FlowMetrics.Application.Policies.DemoBlockedHistoryBackfillHandler", "WorkItems.Application.IBlockedItemService"), // owner: Work Items
             Edge("FlowMetrics.Application.PortfolioMetricsService", "OrganisationSetup.Application.IAppSettingService"), // owner: Organisation set-up
             Edge("FlowMetrics.Application.TeamMetricsService", "OrganisationSetup.Application.IAppSettingService"), // owner: Organisation set-up
             Edge("FlowMetrics.Application.TeamMetricsService", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
-            Edge("Forecasting.Adapters.Background.ForecastUpdater", "WorkItems.Application.IRefreshLogService"), // owner: Work Items
-            Edge("Forecasting.Application.ForecastFilterRuleService", "WorkItems.Application.IRuleEvaluator`1"), // owner: Work Items
-            Edge("Forecasting.Application.ForecastFilterRuleService", "WorkItems.Application.IRuleFieldProvider`1"), // owner: Work Items
             Edge("Forecasting.Application.ForecastRealityCheckService", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
-            Edge("Forecasting.Application.ForecastService", "WorkItems.Application.Dependencies.IWhatTheForecastWaitsFor"), // owner: Work Items
             Edge("Forecasting.Application.WriteBack.WriteBackService", "TrackerIntegration.Application.IWorkTrackingConnector"), // owner: Tracker integration
             Edge("Forecasting.Application.WriteBack.WriteBackService", "TrackerIntegration.Application.IWorkTrackingConnectorFactory"), // owner: Tracker integration
             Edge("Forecasting.Application.WriteBack.WriteBackService", "TrackerIntegration.Application.IWriteBackTarget"), // owner: Tracker integration
@@ -71,8 +65,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             Edge("Promises.Application.DeliveryForecastPublishingService", "TrackerIntegration.Application.IWorkTrackingConnectorFactory"), // owner: Tracker integration
             Edge("Promises.Application.DeliveryMetricValuesProjector", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
             Edge("Promises.Application.DeliveryRuleService", "WorkItems.Application.FeatureFieldProvider"), // owner: Work Items
-            Edge("Promises.Application.DeliveryRuleService", "WorkItems.Application.IRuleEvaluator`1"), // owner: Work Items
-            Edge("Promises.Application.DeliveryRuleService", "WorkItems.Application.IRuleFieldProvider`1"), // owner: Work Items
             Edge("Promises.Application.DeliveryRuleService", "WorkItems.Application.RuleEvaluator`1"), // owner: Work Items
             Edge("Promises.Application.DeliverySourceResolver", "TrackerIntegration.Application.IDeliverySourceProvider"), // owner: Tracker integration
             Edge("Promises.Application.DeliverySourceResolver", "TrackerIntegration.Application.IWorkTrackingConnector"), // owner: Tracker integration
@@ -80,8 +72,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             Edge("Refinement.Application.RefinementCadenceCalendar", "OrganisationSetup.Domain.WeeklyRecurrence"), // owner: Organisation set-up
             Edge("Refinement.Application.RefinementCalendar", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
             Edge("Refinement.Application.RefinementNeedCalculator", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
-            Edge("Refinement.Application.StageRuleMatcher", "WorkItems.Application.IRuleEvaluator`1"), // owner: Work Items
-            Edge("Refinement.Application.StageRuleMatcher", "WorkItems.Application.IRuleFieldProvider`1"), // owner: Work Items
             Edge("Refinement.Application.VoterIdentityResolver", "Access.Application.CurrentUserProfileService"), // owner: Access
             Edge("Reports.Application.Metrics.DailySeriesSummary", "FlowMetrics.Domain.PercentileCalculator"), // owner: Flow metrics
             Edge("TrackerIntegration.Application.ConnectionHealth.ConnectionHealthCadence", "OrganisationSetup.Application.IAppSettingService"), // owner: Organisation set-up

@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Lighthouse.Backend.Models.Encryption;
@@ -9,7 +10,6 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Modules.Access.Contracts;
-using Lighthouse.Backend.Modules.WorkItems.Application;
 using System.Reflection;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;

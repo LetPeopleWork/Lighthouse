@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models.WorkItemRules;
 
-namespace Lighthouse.Backend.Modules.WorkItems.Application
+namespace Lighthouse.Backend.Modules.WorkItems.Contracts
 {
     /// <summary>
     /// Field accessor for <see cref="IRuleEvaluator{T}"/>. Implementations map a typed item

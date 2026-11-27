@@ -7,6 +7,7 @@ using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Modules.Forecasting.Contracts;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Modules.Licensing.Contracts;
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Hosting;
@@ -15,7 +16,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using NUnit.Framework;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
-using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
 {

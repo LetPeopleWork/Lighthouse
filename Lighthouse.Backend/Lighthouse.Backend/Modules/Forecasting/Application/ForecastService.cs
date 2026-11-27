@@ -6,9 +6,9 @@ using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Modules.Forecasting.Contracts;
+using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
-using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Modules.Forecasting.Application

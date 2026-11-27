@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Modules.WorkItems.Application
+namespace Lighthouse.Backend.Modules.WorkItems.Contracts
 {
     public interface IRefreshLogService
     {
