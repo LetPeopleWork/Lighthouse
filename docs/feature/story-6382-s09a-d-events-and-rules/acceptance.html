@@ -156,7 +156,148 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The compiled backend is read for the place of each of the fifteen named domain events
+</code></pre>
+
+<pre><code>Each event resolves to exactly one type, in the Contracts of the context that owns it; one still in the kernel events namespace is named with its owner and the move to make
+</code></pre>
+
+<pre><code>Event types sit with the context that owns them
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventsLiveWithTheirPublisherArchUnitTest.cs</p>
+
+<p>TheEvent_ResolvesToExactlyOneTypeInTheContractsOfItsOwner</p>
+
+<pre><code>an event sits in a different context&#x27;s Contracts; or a copy stays in the kernel
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The compiled backend is read for every domain event and the code that constructs it
+</code></pre>
+
+<pre><code>Every event is declared in the Contracts of the context whose code constructs it, or of the owner the context map names when only code outside every context constructs it
+</code></pre>
+
+<pre><code>A new event cannot be filed under the wrong context unnoticed
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventsLiveWithTheirPublisherArchUnitTest.cs</p>
+
+<p>EveryDomainEvent_LivesInTheContractsOfTheContextThatPublishesIt</p>
+
+<pre><code>an event is placed in the Contracts of a context that only reacts to it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The compiled backend is read for what the kernel events namespace holds
+</code></pre>
+
+<pre><code>The kernel events namespace holds the event base type and nothing else
+</code></pre>
+
+<pre><code>The kernel carries only the shared event contract
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventsLiveWithTheirPublisherArchUnitTest.cs</p>
+
+<p>TheKernelEventsNamespace_HoldsNothingButTheEventBase</p>
+
+<pre><code>a sixteenth event type is left in the kernel
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Made-up contexts hold events filed in another context&#x27;s Contracts, constructed by a context and by outside code, next to correctly filed ones
+</code></pre>
+
+<pre><code>Exactly the two misfiled events are named with their place, owner&#x27;s Contracts, how the owner was found and the move to make
+</code></pre>
+
+<pre><code>A developer who misfiles an event is told where it sits, where it belongs and what to do
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventsLiveWithTheirPublisherArchUnitTest.cs</p>
+
+<p>AnEventFiledInAnotherContextsContracts_IsNamedWithItsPlaceItsOwnerAndTheWayOut</p>
+
+<pre><code>the rule names every event or none
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The compiled backend and the context map are read for event names
+</code></pre>
+
+<pre><code>The map names exactly the events the compiled code declares
+</code></pre>
+
+<pre><code>Every event has a declared owner
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventsLiveWithTheirPublisherArchUnitTest.cs</p>
+
+<p>TheContextMap_NamesExactlyTheEventsTheCompiledCodeDeclares</p>
+
+<pre><code>an event is renamed in code and map together
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 

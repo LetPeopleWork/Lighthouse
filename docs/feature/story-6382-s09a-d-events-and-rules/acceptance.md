@@ -2,7 +2,168 @@
 
 ## Slices
 
-None.
+### S1
+
+##### Covers
+
+P1
+
+```text
+The compiled backend is read for the place of each of the fifteen named domain events
+```
+
+```text
+Each event resolves to exactly one type, in the Contracts of the context that owns it; one still in the kernel events namespace is named with its owner and the move to make
+```
+
+```text
+Event types sit with the context that owns them
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/DomainEventsLiveWithTheirPublisherArchUnitTest\.cs
+
+TheEvent\_ResolvesToExactlyOneTypeInTheContractsOfItsOwner
+
+```text
+an event sits in a different context's Contracts; or a copy stays in the kernel
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P1
+
+```text
+The compiled backend is read for every domain event and the code that constructs it
+```
+
+```text
+Every event is declared in the Contracts of the context whose code constructs it, or of the owner the context map names when only code outside every context constructs it
+```
+
+```text
+A new event cannot be filed under the wrong context unnoticed
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/DomainEventsLiveWithTheirPublisherArchUnitTest\.cs
+
+EveryDomainEvent\_LivesInTheContractsOfTheContextThatPublishesIt
+
+```text
+an event is placed in the Contracts of a context that only reacts to it
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P1
+
+```text
+The compiled backend is read for what the kernel events namespace holds
+```
+
+```text
+The kernel events namespace holds the event base type and nothing else
+```
+
+```text
+The kernel carries only the shared event contract
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/DomainEventsLiveWithTheirPublisherArchUnitTest\.cs
+
+TheKernelEventsNamespace\_HoldsNothingButTheEventBase
+
+```text
+a sixteenth event type is left in the kernel
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Made-up contexts hold events filed in another context's Contracts, constructed by a context and by outside code, next to correctly filed ones
+```
+
+```text
+Exactly the two misfiled events are named with their place, owner's Contracts, how the owner was found and the move to make
+```
+
+```text
+A developer who misfiles an event is told where it sits, where it belongs and what to do
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/DomainEventsLiveWithTheirPublisherArchUnitTest\.cs
+
+AnEventFiledInAnotherContextsContracts\_IsNamedWithItsPlaceItsOwnerAndTheWayOut
+
+```text
+the rule names every event or none
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+The compiled backend and the context map are read for event names
+```
+
+```text
+The map names exactly the events the compiled code declares
+```
+
+```text
+Every event has a declared owner
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/DomainEventsLiveWithTheirPublisherArchUnitTest\.cs
+
+TheContextMap\_NamesExactlyTheEventsTheCompiledCodeDeclares
+
+```text
+an event is renamed in code and map together
+```
+
+###### Obligations
+
 
 ## Expectations
 

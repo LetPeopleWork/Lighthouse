@@ -1,10 +1,105 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F206",
+"T4",
+"T1"
+],
+"still_passes_if": "F231",
+"test": "TheEvent_ResolvesToExactlyOneTypeInTheContractsOfItsOwner",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventsLiveWithTheirPublisherArchUnitTest.cs"
+},
+"expected": "F229",
+"stimulus": "F228",
+"user_result": "F230"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6",
+"T4",
+"T2"
+],
+"still_passes_if": "F235",
+"test": "EveryDomainEvent_LivesInTheContractsOfTheContextThatPublishesIt",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventsLiveWithTheirPublisherArchUnitTest.cs"
+},
+"expected": "F233",
+"stimulus": "F232",
+"user_result": "F234"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F207",
+"T4"
+],
+"still_passes_if": "F239",
+"test": "TheKernelEventsNamespace_HoldsNothingButTheEventBase",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventsLiveWithTheirPublisherArchUnitTest.cs"
+},
+"expected": "F237",
+"stimulus": "F236",
+"user_result": "F238"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F208",
+"T4"
+],
+"still_passes_if": "F243",
+"test": "AnEventFiledInAnotherContextsContracts_IsNamedWithItsPlaceItsOwnerAndTheWayOut",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventsLiveWithTheirPublisherArchUnitTest.cs"
+},
+"expected": "F241",
+"stimulus": "F240",
+"user_result": "F242"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6"
+],
+"still_passes_if": "F247",
+"test": "TheContextMap_NamesExactlyTheEventsTheCompiledCodeDeclares",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventsLiveWithTheirPublisherArchUnitTest.cs"
+},
+"expected": "F245",
+"stimulus": "F244",
+"user_result": "F246"
+}
+]
+},
 "counters": {
 "B": 1,
 "C": 1,
 "D": 8,
 "E": 4,
-"F": 227,
+"F": 247,
 "K": 7,
 "L": 6,
 "P": 3,
@@ -3145,8 +3240,28 @@
 "F225": "Across the feature the product behaves as before: forecast and refresh answers equal those of the base revision and the backend tests pass, with no new user-visible change.",
 "F226": "Answer comparisons cover only the sampled forecast and refresh scenarios; behaviour outside them, and timing or ordering of event handling, stays unobserved.",
 "F227": "refresh-answers-compare, forecast-answers-compare and backend-tests probes",
+"F228": "The compiled backend is read for the place of each of the fifteen named domain events",
+"F229": "Each event resolves to exactly one type, in the Contracts of the context that owns it; one still in the kernel events namespace is named with its owner and the move to make",
 "F23": "Out of scope: any other cross-context command (RX2-RX5 keep their owners), any fix of an R-C1 residue edge, mutation testing (end of the Story).",
+"F230": "Event types sit with the context that owns them",
+"F231": "an event sits in a different context's Contracts; or a copy stays in the kernel",
+"F232": "The compiled backend is read for every domain event and the code that constructs it",
+"F233": "Every event is declared in the Contracts of the context whose code constructs it, or of the owner the context map names when only code outside every context constructs it",
+"F234": "A new event cannot be filed under the wrong context unnoticed",
+"F235": "an event is placed in the Contracts of a context that only reacts to it",
+"F236": "The compiled backend is read for what the kernel events namespace holds",
+"F237": "The kernel events namespace holds the event base type and nothing else",
+"F238": "The kernel carries only the shared event contract",
+"F239": "a sixteenth event type is left in the kernel",
 "F24": "Lists by full type name, compared both ways, only shrink, with one exception: an S1 rename may restate a pre-existing listed edge from code that is not a module (API, Services, Data, platform lane) under the event's new name. No module-to-module entry is ever added to a per-module list.",
+"F240": "Made-up contexts hold events filed in another context's Contracts, constructed by a context and by outside code, next to correctly filed ones",
+"F241": "Exactly the two misfiled events are named with their place, owner's Contracts, how the owner was found and the move to make",
+"F242": "A developer who misfiles an event is told where it sits, where it belongs and what to do",
+"F243": "the rule names every event or none",
+"F244": "The compiled backend and the context map are read for event names",
+"F245": "The map names exactly the events the compiled code declares",
+"F246": "Every event has a declared owner",
+"F247": "an event is renamed in code and map together",
 "F25": "Tests: no nWave scenario tags; backend acceptance scenarios drive the application-service port; the test-writing skill and its backend half win over nWave's timing and PBT density rules. Each new test within the default per-test budget, no infrastructure suite, no derogation; the Architecture tests reuse the IL loaded once per assembly.",
 "F26": "Do not run the full backend suite under parallel load or any live connector category; the filtered full gate (TestCategory exclusions of CLAUDE.md) runs once before the push, by the host.",
 "F27": "Program.cs changes in S1 and S2, so the feature's single push runs every live connector suite once in CI (D-12).",
