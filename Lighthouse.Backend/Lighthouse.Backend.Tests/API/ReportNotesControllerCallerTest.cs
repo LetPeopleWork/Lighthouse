@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Modules.Reports.Domain;
 
 namespace Lighthouse.Backend.Tests.API
@@ -40,6 +41,28 @@ namespace Lighthouse.Backend.Tests.API
         public void Nobody_can_be_named_when_sign_in_is_misconfigured_or_blocked(AuthMode mode, bool aProfileIsAtHand)
         {
             Assert.That(ReportNotesControllerBase.CallerOf(mode, aProfileIsAtHand ? Ann : null), Is.EqualTo(new ReportNoteCaller.Unresolved()));
+        }
+
+        [TestCase(null)]
+        [TestCase(7)]
+        public void A_caller_signed_in_whom_the_instance_cannot_name_may_change_no_note(int? signedBy)
+        {
+            var note = new ReportNote { Id = 1, ReportId = 42, Text = "Team grew to 9", AuthorUserProfileId = signedBy };
+
+            Assert.That(new ReportNoteCaller.Unresolved().MayChange(note), Is.False);
+        }
+
+        [Test]
+        public void A_caller_nobody_is_named_for_with_sign_in_off_may_change_a_note_nobody_signed_and_no_signed_one()
+        {
+            var unsigned = new ReportNote { Id = 1, ReportId = 42, Text = "Training took place" };
+            var signed = new ReportNote { Id = 2, ReportId = 42, Text = "Team grew to 9", AuthorUserProfileId = 7 };
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(new ReportNoteCaller.Anonymous().MayChange(unsigned), Is.True);
+                Assert.That(new ReportNoteCaller.Anonymous().MayChange(signed), Is.False);
+            }
         }
     }
 }

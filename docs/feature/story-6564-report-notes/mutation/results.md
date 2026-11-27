@@ -38,7 +38,7 @@ round's figures for the files it re-mutated (`ReportNotesControllerBase.cs`, `Re
   (`A_writer_adds_a_note_is_told_why_an_empty_one_or_one_on_a_missing_report_is_refused_and_deletes_their_own`): 201 with
   the notes route as the location, 400 with a `code` property and the problem's status for an empty note, 404 for a missing
   report, and 204 when the author deletes their own note.
-- `ReportNoteCaller.Unresolved`: `ReportNoteCallerTest` pins that a signed-in caller the instance cannot name may change
+- `ReportNoteCaller.Unresolved`: `ReportNotesControllerCallerTest` now pins that a signed-in caller the instance cannot name may change
   no note, not even one nobody signed.
 - `ReportRepository` note reads (`Any` mutated to `All`): `ReportRepositoryTest` now holds a Team with two reports, and a
   note is listed and found for edit on its own report alone. The port suite cannot show this, because without a premium
