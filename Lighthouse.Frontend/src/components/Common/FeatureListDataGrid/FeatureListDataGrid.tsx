@@ -156,6 +156,7 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 			onSortModelChange={(model) => setIsSortActive(model.length > 0)}
 			search={{
 				placeholder: `Search ${featuresTerm}`,
+				noMatchMessage: (text) => `No ${featuresTerm} match "${text}".`,
 				onTextChange: reportSearchOnce,
 			}}
 		/>

@@ -759,6 +759,10 @@ function DataGridBase<T extends GridValidRowModel>({
 						}}
 						localeText={{
 							noRowsLabel: emptyStateMessage,
+							...(search?.noMatchMessage &&
+								searchText.text.trim() !== "" && {
+									noResultsOverlayLabel: search.noMatchMessage(searchText.text),
+								}),
 						}}
 					/>
 				</Box>

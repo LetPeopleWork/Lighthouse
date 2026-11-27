@@ -67,6 +67,13 @@ Design facts live in `handoff.json` (rendered to `architecture.md`). Choices tak
   stays by name. The Refinement grid shares the column, so its Name filter also matches the ID.
 - No formal model: a stateless row filter. Pure matcher gets property tests; the rest is component tests. No new E2E.
 
+## DELIVER decisions (2026-11-27, AFK)
+
+- **S2, `noMatchMessage` optional on `GridSearch`.** The design showed it required; the crafter made it optional,
+  because the shared grid's own test passes a search without one, and a grid with no message keeps the grid's
+  default no-results label. Taken: the search is opt-in on a shared component, so its parts are too. Every feature
+  list passes the message.
+
 ## DEVOPS (2026-11-27, AFK)
 
 - **Platform risk:** none. Frontend change inside the existing deployable; no new service, setting, migration or

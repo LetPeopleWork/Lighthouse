@@ -100,6 +100,8 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 export interface GridSearch {
 	/** What the box asks for, and its accessible name. */
 	placeholder: string;
+	/** What the grid says when the typed text matches no row, given the text as typed; the grid's own wording when not given. */
+	noMatchMessage?: (text: string) => string;
 	/** Told the whole text after every change, the empty text once the box is cleared. */
 	onTextChange?: (text: string) => void;
 }
