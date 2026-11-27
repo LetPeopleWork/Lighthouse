@@ -1,5 +1,8 @@
 {
   "enabled": true,
+  "examine": {
+    "level": "extended"
+  },
   "jev": "unauthorized",
   "schema-version": 1
 }
