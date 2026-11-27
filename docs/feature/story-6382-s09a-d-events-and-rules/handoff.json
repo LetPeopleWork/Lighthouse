@@ -99,7 +99,7 @@
 "C": 1,
 "D": 8,
 "E": 4,
-"F": 247,
+"F": 255,
 "K": 7,
 "L": 6,
 "P": 3,
@@ -357,7 +357,7 @@
 ],
 "decisions": [
 "F175",
-"F176"
+"F250"
 ],
 "impact": [
 {
@@ -1037,6 +1037,12 @@
 "kind": "test",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs:16",
 "reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:35",
+"reason": "F252"
 }
 ],
 "laws": [
@@ -1745,6 +1751,12 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs:16",
 "reason": "F196",
 "symbol": "OrganisationSetupModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:15",
+"reason": "F251",
+"symbol": "ModuleRules"
 }
 ]
 },
@@ -2292,12 +2304,17 @@
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs",
-"reason": "F170"
+"reason": "F248"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs",
 "reason": "F171"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs",
+"reason": "F249"
 }
 ],
 "verification": [
@@ -2419,7 +2436,7 @@
 "decisions": [
 "F84",
 "F85",
-"F86",
+"F254",
 "F87"
 ],
 "impact": [
@@ -2454,10 +2471,10 @@
 "reason": "F99"
 },
 {
-"decision": "Changed",
+"decision": "UnchangedCompatible",
 "kind": "architecture-tests",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:145",
-"reason": "F100"
+"reason": "F255"
 },
 {
 "decision": "Changed",
@@ -2664,7 +2681,7 @@
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs",
-"reason": "F78"
+"reason": "F253"
 },
 {
 "change": "Extend",
@@ -3099,7 +3116,6 @@
 "facts": {
 "F1": "Story 6382 S09a feature D, events and rules: the 15 domain event types move from Models/Events into the Contracts of their publishing context (IDomainEvent stays in the kernel); the one cross-context command inside the modules becomes a reaction, Work Items writing a forecast round's refresh-log entry on ForecastRoundFinished (RX1); the per-module boundary rules give up their module-to-module entries to the single contracts rule R-C1, and ADR-270 and ARCHITECTURE.md section 4 describe contracts and the CI test-selection payoff. Behaviour unchanged apart from who writes the refresh-log entry.",
 "F10": "Forecasting no longer commands Work Items; Work Items reacts to an event.",
-"F100": "legal callers widened by Work Items' Application.Policies",
 "F101": "new file of the RX1 path",
 "F102": "edited for this slice's law",
 "F103": "new producer replacing the direct LogRefreshAsync call",
@@ -3176,13 +3192,11 @@
 "F168": "git mv from Models/Events; namespace line only",
 "F169": "using line or old event name/path literal only",
 "F17": "Ports. Driving: unchanged (controllers, hosted services, the update queue). The forecast round is driven at IForecastUpdater.TriggerImmediateUpdate with the harness's scope factory, no host (test-writing skill rule 1, background job at the port). Driven: IDomainEventDispatcher (platform lane) and IRefreshLogService (Work Items' Contracts), both reused unchanged. One new in-process event path: ForecastUpdater -> IDomainEventDispatcher -> ForecastRoundFinishedRefreshLogHandler -> IRefreshLogService. No new external call.",
-"F170": "direction pattern admits the Application.Policies of contexts reacting to its event",
 "F171": "direction pattern or non-module outsider entry restated under the event's new name",
 "F172": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Architecture over the compiled assembly",
 "F173": "RED before the move: the oracle names each of the 15 events still in Models.Events. GREEN after: each event resolves to exactly one type in its owner's Contracts, Models.Events holds only IDomainEvent, and every other Architecture rule passes.",
 "F174": "An event left in Models.Events, or placed in a context's Contracts other than its publisher's (planted fixture), fails with source, owner and the HOW.",
 "F175": "The S1 oracle's law is generic so no later slice edits it: every type implementing IDomainEvent, except IDomainEvent itself, lives in Lighthouse.Backend.Modules.<C>.Contracts where C is the context whose code constructs it; for an event constructed only outside the modules (TeamDeleted by API.TeamController, PortfolioFeaturesRefreshed by PortfolioUpdater) C is the owner named inline by ADR-270 Decision 3 (D-5); the 15 events of D-5 are named inline with their owner and compared one way (each found at its owner); no type but IDomainEvent is left in Models.Events. ConnectionFetchShapeChanged belongs to Organisation set-up (open question 5 default, its publisher ConnectionSaveService). ContextContractsMembership's event rows (A1) are reused as the old/new namespace map.",
-"F176": "Direction after the move: a handler in context Y naming an event now in X.Contracts is a downstream reaction, legal by ADR-270 (upstream publishes, downstream reacts). Where X's per-module direction rule does not admit Y (measured at HEAD: Forecasting admits only the API and Refinement, so Promises' PortfolioForecastsUpdated handlers), the crafter widens X's legal-callers pattern by Y's Application.Policies namespace only, never by a list entry. Non-module publishers (API, Services) keep or restate their existing outsider entries under the new name.",
 "F177": "already maps each of the 15 events to its owner's Contracts (A1); the oracle reads it instead of a second map",
 "F178": "already holds the old/new event literals of the open-host test and OrganisationSetupMembership; never edited",
 "F179": "stays in the kernel (D-5); every event keeps implementing it",
@@ -3262,7 +3276,15 @@
 "F245": "The map names exactly the events the compiled code declares",
 "F246": "Every event has a declared owner",
 "F247": "an event is renamed in code and map together",
+"F248": "Application rule's target becomes ModuleRules.WithoutTheEvents(ForecastingApplication, \"Forecasting\"); PromisesPolicies removed from ForecastingsLegalCallers",
+"F249": "EventsOf(context) and WithoutTheEvents(frontDoor, context): one owner of the event exemption for every front-door rule",
 "F25": "Tests: no nWave scenario tags; backend acceptance scenarios drive the application-service port; the test-writing skill and its backend half win over nWave's timing and PBT density rules. Each new test within the default per-test budget, no infrastructure suite, no derogation; the Architecture tests reuse the IL loaded once per assembly.",
+"F250": "Direction after the move, decided once for every published event (S1 and S2): a domain event in X.Contracts is a published fact; who may construct it is owned by S1's law (the publisher's context only), and naming it to react is legal for any packaged context. So X's per-module front-door rule does not govern event types: ModuleRules gains EventsOf(context) (the exact full names of the types in Lighthouse.Backend.Modules.<context>.Contracts that implement IDomainEvent, read by reflection from the production assembly, so a new event is covered without an edit) and WithoutTheEvents(frontDoor, context) (the front-door pattern with a negative lookahead on those names; unchanged when the context publishes none). A rule passes that property as its target instead of the const front-door pattern; the const stays as the namespace-move law reads it (property, not constant, as feature C D16). Legal-caller patterns are never widened for an event reaction: no other context's Policies are admitted into a front door, so Forecasting's Application and its non-event Contracts stay reachable only by the API and Refinement. Non-module publishers (API, Services) keep or restate their existing outsider entries under the new name. Applied where a rule fails after the move (measured: Forecasting's Application rule, Promises' PortfolioForecastsUpdated handlers).",
+"F251": "already owns the shared boundary patterns (SetUpContracts, SetUpBehindItsContracts as properties); the event exemption joins them so no module rule computes it alone",
+"F252": "two members added; existing members unchanged",
+"F253": "only if the Architecture run after S2 still names the handler; expected unchanged under S1's event rule",
+"F254": "Work Items' handler names Forecasting.Contracts.ForecastRoundFinished under S1's event rule: Forecasting's Application rule targets ModuleRules.WithoutTheEvents(ForecastingApplication, \"Forecasting\"), whose EventsOf reads ForecastRoundFinished as soon as it exists, so Forecasting's legal callers stay the API and Refinement and no Work Items namespace is admitted. S2 does not edit ForecastingModuleBoundariesArchUnitTest.cs.",
+"F255": "events are outside the front-door target since S1; legal callers unchanged",
 "F26": "Do not run the full backend suite under parallel load or any live connector category; the filtered full gate (TestCategory exclusions of CLAUDE.md) runs once before the push, by the host.",
 "F27": "Program.cs changes in S1 and S2, so the feature's single push runs every live connector suite once in CI (D-12).",
 "F28": "Every producer and consumer of the touched contracts (the 15 event types, ForecastRoundFinished, IRefreshLogService, RefreshLog) lives in the one backend deployable and changes in the same commit; nothing is serialised, persisted in a new shape or sent on a wire. The S2 oracle runs the real producer through the real consumer at the service port.",
@@ -3320,7 +3342,6 @@
 "F75": "writes the same RefreshLog row through IRefreshLogService",
 "F76": "publishes ForecastRoundFinished where LogForecastRefresh was called; drops IRefreshLogService",
 "F77": "registers the handler Scoped in the one ordered handler block",
-"F78": "Forecasting's legal callers admit Work Items' Application.Policies",
 "F79": "unit rows capture the published ForecastRoundFinished instead of the refresh-log mock",
 "F8": "Event types sit with the context that owns them.",
 "F80": "only if its placement list names the Work Items handlers",
@@ -3329,7 +3350,6 @@
 "F83": "Publishing with the round's token (cancelled row missing), a wrong flag mapping (skipped row with Success false), a missing registration (no row), or ForecastUpdater still writing the row directly each fails a named row.",
 "F84": "ForecastUpdater keeps the round's flags and, in the same finally and at the same point, publishes ForecastRoundFinished(portfolio.Id, portfolio.Name, itemCount, stopwatch ms, CurrentInstant, outcome) through IDomainEventDispatcher with CancellationToken.None, so a cancelled round still writes its row. Outcome: Cancelled when cancelled, Failed when not successful, Skipped when successful and skipped, else Succeeded; Forecasting owns that decision: a static factory ForecastRoundFinished.For(portfolio, itemCount, durationMs, finishedAt, success, cancelled, skipped) on the event record derives the outcome, replacing ForecastUpdater's private LogForecastRefresh.",
 "F85": "ForecastRoundFinishedRefreshLogHandler (Work Items, Application/Policies, IDomainEventHandler<ForecastRoundFinished>) translates the event into today's RefreshLog row: Type Forecast, EntityId, EntityName, ItemCount, SyncOutcome.None's Mode/RecordsScanned/RecordsFetched, DurationMs, ExecutedAt = FinishedAt, Success = Succeeded or Skipped, Cancelled = Cancelled, Skipped = Skipped; a total switch over ForecastRoundOutcome (CS8524 pragma per the repository idiom). It is the anti-corruption translation of Work Items' own record and holds no other rule. Registered Scoped in Program's handler block; it is the only handler of the event.",
-"F86": "Forecasting's direction rule (ForecastingsLegalCallers: the API and Refinement at HEAD) admits Lighthouse.Backend.Modules.WorkItems.Application.Policies, so the handler may name Forecasting.Contracts.ForecastRoundFinished. A namespace pattern, not a list entry (S3's law forbids module-to-module list entries).",
 "F87": "The S2 oracle is one file at the port: a ServicePortHarness registering the forecast round as Program builds it (real ForecastUpdater, DomainEventDispatcher, RefreshLogService, the handler through the start-up registration), doubles only for IForecastService outcomes (computed, confirmed unchanged, throws) and the operator stop; four rows (succeeded, failed, cancelled, skipped) read the row through IRefreshLogService.GetRefreshLogs against today's expected fields; one row with a throwing IRefreshLogService observes the dispatcher's error log and the round's completion; one IL row asserts ForecastUpdater names no IRefreshLogService. The order pin (support) reads ForecastRoundFinished and pins [ForecastRoundFinishedRefreshLogHandler].",
 "F88": "existing transport (ADR-027 D7); its log-and-continue policy is the accepted degradation",
 "F89": "owns the round and its outcome flags; LogForecastRefresh becomes the publish",

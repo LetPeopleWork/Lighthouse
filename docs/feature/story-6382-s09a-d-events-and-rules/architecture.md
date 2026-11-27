@@ -1297,7 +1297,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingModule
 Extend
 
 ```text
-direction pattern admits the Application.Policies of contexts reacting to its event
+Application rule's target becomes ModuleRules.WithoutTheEvents(ForecastingApplication, "Forecasting"); PromisesPolicies removed from ForecastingsLegalCallers
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupModuleBoundariesArchUnitTest\.cs
@@ -1306,6 +1306,14 @@ Extend
 
 ```text
 direction pattern or non-module outsider entry restated under the event's new name
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModuleRules\.cs
+
+Extend
+
+```text
+EventsOf(context) and WithoutTheEvents(frontDoor, context): one owner of the event exemption for every front-door rule
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/DomainEventsLiveWithTheirPublisherArchUnitTest\.cs
@@ -1357,7 +1365,7 @@ The S1 oracle's law is generic so no later slice edits it: every type implementi
 ```
 
 ```text
-Direction after the move: a handler in context Y naming an event now in X.Contracts is a downstream reaction, legal by ADR-270 (upstream publishes, downstream reacts). Where X's per-module direction rule does not admit Y (measured at HEAD: Forecasting admits only the API and Refinement, so Promises' PortfolioForecastsUpdated handlers), the crafter widens X's legal-callers pattern by Y's Application.Policies namespace only, never by a list entry. Non-module publishers (API, Services) keep or restate their existing outsider entries under the new name.
+Direction after the move, decided once for every published event (S1 and S2): a domain event in X.Contracts is a published fact; who may construct it is owned by S1's law (the publisher's context only), and naming it to react is legal for any packaged context. So X's per-module front-door rule does not govern event types: ModuleRules gains EventsOf(context) (the exact full names of the types in Lighthouse.Backend.Modules.<context>.Contracts that implement IDomainEvent, read by reflection from the production assembly, so a new event is covered without an edit) and WithoutTheEvents(frontDoor, context) (the front-door pattern with a negative lookahead on those names; unchanged when the context publishes none). A rule passes that property as its target instead of the const front-door pattern; the const stays as the namespace-move law reads it (property, not constant, as feature C D16). Legal-caller patterns are never widened for an event reaction: no other context's Policies are admitted into a front door, so Forecasting's Application and its non-event Contracts stay reachable only by the API and Refinement. Non-module publishers (API, Services) keep or restate their existing outsider entries under the new name. Applied where a rule fails after the move (measured: Forecasting's Application rule, Promises' PortfolioForecastsUpdated handlers).
 ```
 
 ##### Constraints
@@ -2496,6 +2504,16 @@ Extend
 existing owner edited in place: using line or event literal only
 ```
 
+ModuleRules
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModuleRules\.cs\:15
+
+Extend
+
+```text
+already owns the shared boundary patterns (SetUpContracts, SetUpBehindItsContracts as properties); the event exemption joins them so no module rule computes it alone
+```
+
 ##### Impact
 
 production\-event\-types
@@ -3628,6 +3646,16 @@ Changed
 using line or event literal only
 ```
 
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModuleRules\.cs\:35
+
+Changed
+
+```text
+two members added; existing members unchanged
+```
+
 ##### Agreement
 
 None.
@@ -3863,7 +3891,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingModule
 Extend
 
 ```text
-Forecasting's legal callers admit Work Items' Application.Policies
+only if the Architecture run after S2 still names the handler; expected unchanged under S1's event rule
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/Forecasting\/Adapters\/Background\/ForecastUpdaterTest\.cs
@@ -3936,7 +3964,7 @@ ForecastRoundFinishedRefreshLogHandler (Work Items, Application/Policies, IDomai
 ```
 
 ```text
-Forecasting's direction rule (ForecastingsLegalCallers: the API and Refinement at HEAD) admits Lighthouse.Backend.Modules.WorkItems.Application.Policies, so the handler may name Forecasting.Contracts.ForecastRoundFinished. A namespace pattern, not a list entry (S3's law forbids module-to-module list entries).
+Work Items' handler names Forecasting.Contracts.ForecastRoundFinished under S1's event rule: Forecasting's Application rule targets ModuleRules.WithoutTheEvents(ForecastingApplication, "Forecasting"), whose EventsOf reads ForecastRoundFinished as soon as it exists, so Forecasting's legal callers stay the API and Refinement and no Work Items namespace is admitted. S2 does not edit ForecastingModuleBoundariesArchUnitTest.cs.
 ```
 
 ```text
@@ -4135,10 +4163,10 @@ architecture\-tests
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingModuleBoundariesArchUnitTest\.cs\:145
 
-Changed
+UnchangedCompatible
 
 ```text
-legal callers widened by Work Items' Application.Policies
+events are outside the front-door target since S1; legal callers unchanged
 ```
 
 production

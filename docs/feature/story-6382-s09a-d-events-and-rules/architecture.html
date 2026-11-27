@@ -1278,7 +1278,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Extend</p>
 
-<pre><code>direction pattern admits the Application.Policies of contexts reacting to its event
+<pre><code>Application rule&#x27;s target becomes ModuleRules.WithoutTheEvents(ForecastingApplication, &quot;Forecasting&quot;); PromisesPolicies removed from ForecastingsLegalCallers
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs</p>
@@ -1286,6 +1286,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Extend</p>
 
 <pre><code>direction pattern or non-module outsider entry restated under the event&#x27;s new name
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs</p>
+
+<p>Extend</p>
+
+<pre><code>EventsOf(context) and WithoutTheEvents(frontDoor, context): one owner of the event exemption for every front-door rule
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventsLiveWithTheirPublisherArchUnitTest.cs</p>
@@ -1331,7 +1338,7 @@ pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1
 <pre><code>The S1 oracle&#x27;s law is generic so no later slice edits it: every type implementing IDomainEvent, except IDomainEvent itself, lives in Lighthouse.Backend.Modules.&lt;C&gt;.Contracts where C is the context whose code constructs it; for an event constructed only outside the modules (TeamDeleted by API.TeamController, PortfolioFeaturesRefreshed by PortfolioUpdater) C is the owner named inline by ADR-270 Decision 3 (D-5); the 15 events of D-5 are named inline with their owner and compared one way (each found at its owner); no type but IDomainEvent is left in Models.Events. ConnectionFetchShapeChanged belongs to Organisation set-up (open question 5 default, its publisher ConnectionSaveService). ContextContractsMembership&#x27;s event rows (A1) are reused as the old/new namespace map.
 </code></pre>
 
-<pre><code>Direction after the move: a handler in context Y naming an event now in X.Contracts is a downstream reaction, legal by ADR-270 (upstream publishes, downstream reacts). Where X&#x27;s per-module direction rule does not admit Y (measured at HEAD: Forecasting admits only the API and Refinement, so Promises&#x27; PortfolioForecastsUpdated handlers), the crafter widens X&#x27;s legal-callers pattern by Y&#x27;s Application.Policies namespace only, never by a list entry. Non-module publishers (API, Services) keep or restate their existing outsider entries under the new name.
+<pre><code>Direction after the move, decided once for every published event (S1 and S2): a domain event in X.Contracts is a published fact; who may construct it is owned by S1&#x27;s law (the publisher&#x27;s context only), and naming it to react is legal for any packaged context. So X&#x27;s per-module front-door rule does not govern event types: ModuleRules gains EventsOf(context) (the exact full names of the types in Lighthouse.Backend.Modules.&lt;context&gt;.Contracts that implement IDomainEvent, read by reflection from the production assembly, so a new event is covered without an edit) and WithoutTheEvents(frontDoor, context) (the front-door pattern with a negative lookahead on those names; unchanged when the context publishes none). A rule passes that property as its target instead of the const front-door pattern; the const stays as the namespace-move law reads it (property, not constant, as feature C D16). Legal-caller patterns are never widened for an event reaction: no other context&#x27;s Policies are admitted into a front door, so Forecasting&#x27;s Application and its non-event Contracts stay reachable only by the API and Refinement. Non-module publishers (API, Services) keep or restate their existing outsider entries under the new name. Applied where a rule fails after the move (measured: Forecasting&#x27;s Application rule, Promises&#x27; PortfolioForecastsUpdated handlers).
 </code></pre>
 
 <h5>Constraints</h5>
@@ -2357,6 +2364,15 @@ pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1
 <pre><code>existing owner edited in place: using line or event literal only
 </code></pre>
 
+<p>ModuleRules</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:15</p>
+
+<p>Extend</p>
+
+<pre><code>already owns the shared boundary patterns (SetUpContracts, SetUpBehindItsContracts as properties); the event exemption joins them so no module rule computes it alone
+</code></pre>
+
 <h5>Impact</h5>
 
 <p>production-event-types</p>
@@ -3376,6 +3392,15 @@ pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1
 <pre><code>using line or event literal only
 </code></pre>
 
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:35</p>
+
+<p>Changed</p>
+
+<pre><code>two members added; existing members unchanged
+</code></pre>
+
 <h5>Agreement</h5>
 
 <p>None.</p>
@@ -3588,7 +3613,7 @@ pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1
 
 <p>Extend</p>
 
-<pre><code>Forecasting&#x27;s legal callers admit Work Items&#x27; Application.Policies
+<pre><code>only if the Architecture run after S2 still names the handler; expected unchanged under S1&#x27;s event rule
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs</p>
@@ -3652,7 +3677,7 @@ pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1
 <pre><code>ForecastRoundFinishedRefreshLogHandler (Work Items, Application/Policies, IDomainEventHandler&lt;ForecastRoundFinished&gt;) translates the event into today&#x27;s RefreshLog row: Type Forecast, EntityId, EntityName, ItemCount, SyncOutcome.None&#x27;s Mode/RecordsScanned/RecordsFetched, DurationMs, ExecutedAt = FinishedAt, Success = Succeeded or Skipped, Cancelled = Cancelled, Skipped = Skipped; a total switch over ForecastRoundOutcome (CS8524 pragma per the repository idiom). It is the anti-corruption translation of Work Items&#x27; own record and holds no other rule. Registered Scoped in Program&#x27;s handler block; it is the only handler of the event.
 </code></pre>
 
-<pre><code>Forecasting&#x27;s direction rule (ForecastingsLegalCallers: the API and Refinement at HEAD) admits Lighthouse.Backend.Modules.WorkItems.Application.Policies, so the handler may name Forecasting.Contracts.ForecastRoundFinished. A namespace pattern, not a list entry (S3&#x27;s law forbids module-to-module list entries).
+<pre><code>Work Items&#x27; handler names Forecasting.Contracts.ForecastRoundFinished under S1&#x27;s event rule: Forecasting&#x27;s Application rule targets ModuleRules.WithoutTheEvents(ForecastingApplication, &quot;Forecasting&quot;), whose EventsOf reads ForecastRoundFinished as soon as it exists, so Forecasting&#x27;s legal callers stay the API and Refinement and no Work Items namespace is admitted. S2 does not edit ForecastingModuleBoundariesArchUnitTest.cs.
 </code></pre>
 
 <pre><code>The S2 oracle is one file at the port: a ServicePortHarness registering the forecast round as Program builds it (real ForecastUpdater, DomainEventDispatcher, RefreshLogService, the handler through the start-up registration), doubles only for IForecastService outcomes (computed, confirmed unchanged, throws) and the operator stop; four rows (succeeded, failed, cancelled, skipped) read the row through IRefreshLogService.GetRefreshLogs against today&#x27;s expected fields; one row with a throwing IRefreshLogService observes the dispatcher&#x27;s error log and the round&#x27;s completion; one IL row asserts ForecastUpdater names no IRefreshLogService. The order pin (support) reads ForecastRoundFinished and pins [ForecastRoundFinishedRefreshLogHandler].
@@ -3832,9 +3857,9 @@ pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:145</p>
 
-<p>Changed</p>
+<p>UnchangedCompatible</p>
 
-<pre><code>legal callers widened by Work Items&#x27; Application.Policies
+<pre><code>events are outside the front-door target since S1; legal callers unchanged
 </code></pre>
 
 <p>production</p>
