@@ -7,5 +7,6 @@ namespace Lighthouse.Backend.Models.Metrics
         int? SlePercentile,
         int? SleDays,
         double? SharePercent,
-        InfoWidgetComparisonDto Comparison);
+        InfoWidgetComparisonDto Comparison,
+        int MinimumClosed);
 }

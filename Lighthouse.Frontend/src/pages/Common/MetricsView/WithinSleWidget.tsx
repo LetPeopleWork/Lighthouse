@@ -1,6 +1,7 @@
 import { Card, CardContent, Typography, useTheme } from "@mui/material";
 import type React from "react";
 import type { IWithinSleInfo } from "../../../models/Metrics/WithinSleInfo";
+import { minimumClosedOf } from "../../../models/Metrics/WithinSleMinimumClosed";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
 
@@ -56,7 +57,7 @@ const WithinSleWidget: React.FC<WithinSleWidgetProps> = ({ info }) => {
 
 				{info.verdict === "TooFew" && (
 					<Typography variant="body2" color="text.secondary">
-						{`${info.closedCount} ${workItems} closed — too few to judge (needs at least 5)`}
+						{`${info.closedCount} ${workItems} closed — too few to judge (needs at least ${minimumClosedOf(info)})`}
 					</Typography>
 				)}
 			</CardContent>

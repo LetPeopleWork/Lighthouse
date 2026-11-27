@@ -17,5 +17,6 @@ export interface IWithinSleDay {
 export interface IWithinSleOverTime {
 	currentSlePercentile: number | null;
 	currentSleDays: number | null;
+	minimumClosed?: number;
 	days: IWithinSleDay[];
 }

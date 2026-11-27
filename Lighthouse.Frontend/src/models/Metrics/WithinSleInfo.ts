@@ -5,6 +5,7 @@ export type WithinSleVerdict = "NoSle" | "TooFew" | "Measured";
 interface WithinSleInfoCommon {
 	closedCount: number;
 	withinCount: number;
+	minimumClosed?: number;
 	comparison: IInfoWidgetComparison;
 }
 

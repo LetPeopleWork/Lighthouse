@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.Tests.API
             withinSleOverTimeSeriesQueryMock = new Mock<IWithinSleOverTimeSeriesQuery>();
             withinSleOverTimeSeriesQueryMock
                 .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<int>(), It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>()))
-                .Returns(new WithinSleOverTimeDto(70, 10, []));
+                .Returns(new WithinSleOverTimeDto(70, 10, [], 5));
             loggerMock = new Mock<ILogger<PortfolioMetricsController>>();
             subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, blockedItemServiceMock.Object, featureBlockedTransitionRepositoryMock.Object, percentilesOverTimeSeriesQueryMock.Object, processBehaviorSeriesQueryMock.Object, new Mock<IWithinSleInfoQuery>().Object, withinSleOverTimeSeriesQueryMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(TestToday.FrozenNow), loggerMock.Object);
 

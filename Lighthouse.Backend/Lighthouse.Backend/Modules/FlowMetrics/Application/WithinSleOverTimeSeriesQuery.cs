@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             var currentSle = CurrentSleOf(ownerId, ownerType);
             var days = snapshots.GetSeries(ownerId, ownerType, horizon, from, to).Select(WithinSleDayDto.From).ToList();
 
-            return new WithinSleOverTimeDto(currentSle?.Percentile, currentSle?.Days, days);
+            return new WithinSleOverTimeDto(currentSle?.Percentile, currentSle?.Days, days, WithinSleShare.MinimumClosed);
         }
 
         private ServiceLevelExpectation? CurrentSleOf(int ownerId, OwnerType ownerType)

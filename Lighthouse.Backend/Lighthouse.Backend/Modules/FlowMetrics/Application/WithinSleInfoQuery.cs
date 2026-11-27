@@ -82,9 +82,9 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         {
             return share switch
             {
-                WithinSleShare.Measured m => new WithinSleInfoDto(WithinSleVerdict.Measured, m.Closed, m.Within, m.Sle.Percentile, m.Sle.Days, m.SharePercent, comparison),
-                WithinSleShare.TooFew t => new WithinSleInfoDto(WithinSleVerdict.TooFew, t.Closed, 0, t.Sle.Percentile, t.Sle.Days, null, comparison),
-                WithinSleShare.NoSle n => new WithinSleInfoDto(WithinSleVerdict.NoSle, n.Closed, 0, null, null, null, comparison),
+                WithinSleShare.Measured m => new WithinSleInfoDto(WithinSleVerdict.Measured, m.Closed, m.Within, m.Sle.Percentile, m.Sle.Days, m.SharePercent, comparison, WithinSleShare.MinimumClosed),
+                WithinSleShare.TooFew t => new WithinSleInfoDto(WithinSleVerdict.TooFew, t.Closed, 0, t.Sle.Percentile, t.Sle.Days, null, comparison, WithinSleShare.MinimumClosed),
+                WithinSleShare.NoSle n => new WithinSleInfoDto(WithinSleVerdict.NoSle, n.Closed, 0, null, null, null, comparison, WithinSleShare.MinimumClosed),
                 _ => throw new ArgumentOutOfRangeException(nameof(share), share, "Unknown share within the Service Level Expectation."),
             };
         }

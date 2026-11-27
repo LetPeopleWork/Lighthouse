@@ -11,6 +11,7 @@ import { LineChart } from "@mui/x-charts";
 import type React from "react";
 import type { MetricsOwnerKey } from "../../../hooks/metricsOwnerKey";
 import type { IFeature } from "../../../models/Feature";
+import { minimumClosedOf } from "../../../models/Metrics/WithinSleMinimumClosed";
 import type { WithinSleHorizon } from "../../../models/Metrics/WithinSleOverTime";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
@@ -115,7 +116,7 @@ const WithinSleOverTimeWidget: React.FC<WithinSleOverTimeWidgetProps> = ({
 				)}
 				{anyTooFew && (
 					<Typography variant="caption" color="text.secondary">
-						{`No point is drawn on a day with fewer than 5 closed ${workItems}.`}
+						{`No point is drawn on a day with fewer than ${minimumClosedOf(answer)} closed ${workItems}.`}
 					</Typography>
 				)}
 			</>

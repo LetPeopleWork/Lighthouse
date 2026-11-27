@@ -1,4 +1,5 @@
 import type { IWithinSleInfo } from "../../../models/Metrics/WithinSleInfo";
+import { minimumClosedOf } from "../../../models/Metrics/WithinSleMinimumClosed";
 import type { RagResult, RagTerms } from "./ragTypes";
 
 const OBSERVE_BAND_POINTS = 20;
@@ -149,7 +150,7 @@ export function computeWithinSleRag(
 	if (info.verdict === "TooFew") {
 		return {
 			ragStatus: "none",
-			tipText: `Too few closed ${terms.workItems} to judge; at least 5 are needed.`,
+			tipText: `Too few closed ${terms.workItems} to judge; at least ${minimumClosedOf(info)} are needed.`,
 		};
 	}
 

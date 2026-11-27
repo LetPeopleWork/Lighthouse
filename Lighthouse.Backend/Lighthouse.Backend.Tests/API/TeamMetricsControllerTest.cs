@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Tests.API
             withinSleOverTimeSeriesQueryMock = new Mock<IWithinSleOverTimeSeriesQuery>();
             withinSleOverTimeSeriesQueryMock
                 .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<int>(), It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>()))
-                .Returns(new WithinSleOverTimeDto(70, 10, []));
+                .Returns(new WithinSleOverTimeDto(70, 10, [], 5));
             processBehaviorSeriesQueryMock
                 .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<ProcessBehaviorMetricType>(), It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>()))
                 .Returns([]);
