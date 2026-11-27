@@ -361,11 +361,11 @@ The colour state shown without the status word
 P3
 
 ```text
-Render the widget with a server comparison of up, and with one of none
+Read the widget's trend policy; render the widget with a server comparison of up (+4.1 pts) and with one of none
 ```
 
 ```text
-The header trend indicator appears for up and is absent for none; the body holds no change of its own
+The policy is previous-period; the header trend shows the up arrow and +4.1 pts for up and is absent for none; the body holds no change of its own
 ```
 
 ```text
@@ -376,12 +376,12 @@ The reader sees the change against the preceding period in the header
 
 Tested
 
-Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/WithinSleWidget\.verdicts\.test\.tsx
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/categoryMetadata\.withinSle\.test\.ts
 
-says Sustain and shows the change against the preceding period when the share is at or above the target
+compares against the preceding period of the same length
 
 ```text
-A header trend shown for none
+A header trend shown for none, or a down arrow for up
 ```
 
 ###### Obligations
@@ -454,15 +454,15 @@ Act missing, or an empty body
 P5
 
 ```text
-Render the widget with 3 closed Work Items and an SLE set; compute the rule for too few
+Render the widget with 3 and with 4 closed Work Items and an SLE set, and with exactly 5 closed
 ```
 
 ```text
-Body reads 3 Work Items closed — too few to judge (needs at least 5); no status; no trend
+3 and 4 read N Work Items closed - too few to judge (needs at least 5) with no status and no trend; 5 closed is judged and shows its status
 ```
 
 ```text
-The reader gets a count and no pass or fail
+The reader gets a count and no pass or fail below five, and a verdict from five
 ```
 
 ##### Disposition
@@ -471,10 +471,10 @@ Tested
 
 Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/WithinSleWidget\.verdicts\.test\.tsx
 
-says how many closed and that this is too few to judge\, with no status and no change
+too few to judge\, with no status and no change
 
 ```text
-A status or a trend shown for too few
+A status or trend for too few, or a threshold of 6
 ```
 
 ###### Obligations
@@ -485,15 +485,15 @@ A status or a trend shown for too few
 P2
 
 ```text
-Open View Data on the withinSle widget; render without opening; read the event name's number
+Open View Data on the withinSle widget, close it, reopen it; render without opening; read the event name's number
 ```
 
 ```text
-WithinSleListOpened is reported once per open and never on render; the event name keeps value 31 and carries only its name
+WithinSleListOpened is reported exactly twice for two opens and never on render; the event name keeps value 31 and carries only its name
 ```
 
 ```text
-Opening the closed Work Items list counts as one engaged use, rendering counts nothing
+Each opening of the closed Work Items list counts as one engaged use, rendering counts nothing
 ```
 
 ##### Disposition
@@ -502,10 +502,41 @@ Tested
 
 Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/WithinSleWidget\.verdicts\.test\.tsx
 
-the Within SLE widget\'s usage report
+reports the list opened once per open of View Data\, and nothing while it only renders
 
 ```text
-Reported on render, twice per open, or renumbered
+Reported once for the whole session, on render, or renumbered
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Compute the rule for shares of 72.7, 70, 69.9, 60, 50 and 49.9 percent against a target of 70, and 65 and 64.9 against 85; no SLE; too few
+```
+
+```text
+Sustain at or above the target, Observe up to and including 20 points below, Act beyond; no SLE is Act; too few has no status
+```
+
+```text
+The status the reader sees follows the percentiles rule
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/ragRulesTimeAndAge\.test\.ts
+
+computeWithinSleRag
+
+```text
+Observe starting at 15 points, or Act at exactly 20 points below
 ```
 
 ###### Obligations

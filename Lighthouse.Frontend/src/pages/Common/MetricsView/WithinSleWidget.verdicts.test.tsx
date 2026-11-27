@@ -4,7 +4,14 @@ import {
 	QueryClient,
 	QueryClientProvider,
 } from "@tanstack/react-query";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitForElementToBeRemoved,
+	within,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -158,7 +165,28 @@ describe("the Within SLE widget's verdict", () => {
 		expect(status).toHaveTextContent("Sustain");
 		expect(status).toHaveAttribute("data-rag", "green");
 		expect(theTrend()).toBeInTheDocument();
+		expect(
+			within(screen.getByTestId("widget-trend-arrow-withinSle")).getByTestId(
+				"NorthEastIcon",
+			),
+		).toBeInTheDocument();
+		fireEvent.mouseOver(theTrend() as HTMLElement);
+		expect(await screen.findByText("+4.1 pts")).toBeInTheDocument();
 		expect(within(theFrame()).getByText("72.7 % (8 / 11)")).toBeInTheDocument();
+	});
+
+	it("judges a share at exactly five closed Work Items and shows its status", async () => {
+		await openTheFlowOverviewAnswering({
+			...measured(80, noComparison),
+			closedCount: 5,
+			withinCount: 4,
+		});
+
+		expect(within(theHeader()).getByTestId("rag-status")).toHaveTextContent(
+			"Sustain",
+		);
+		expect(within(theFrame()).getByText("80 % (4 / 5)")).toBeInTheDocument();
+		expect(within(theFrame()).queryByText(/too few to judge/)).toBeNull();
 	});
 
 	it.each([
@@ -192,30 +220,33 @@ describe("the Within SLE widget's verdict", () => {
 		expect(theTrend()).not.toBeInTheDocument();
 	});
 
-	it("says how many closed and that this is too few to judge, with no status and no change", async () => {
-		await openTheFlowOverviewAnswering({
-			verdict: "TooFew",
-			closedCount: 3,
-			withinCount: 0,
-			slePercentile: 70,
-			sleDays: 10,
-			comparison: noComparison,
-		});
+	it.each([3, 4])(
+		"says %i closed and that this is too few to judge, with no status and no change",
+		async (closed) => {
+			await openTheFlowOverviewAnswering({
+				verdict: "TooFew",
+				closedCount: closed,
+				withinCount: 0,
+				slePercentile: 70,
+				sleDays: 10,
+				comparison: noComparison,
+			});
 
-		expect(
-			within(theFrame()).getByText(
-				"3 Work Items closed — too few to judge (needs at least 5)",
-			),
-		).toBeInTheDocument();
-		expect(
-			within(theHeader()).queryByTestId("rag-status"),
-		).not.toBeInTheDocument();
-		expect(theTrend()).not.toBeInTheDocument();
-	});
+			expect(
+				within(theFrame()).getByText(
+					`${closed} Work Items closed — too few to judge (needs at least 5)`,
+				),
+			).toBeInTheDocument();
+			expect(
+				within(theHeader()).queryByTestId("rag-status"),
+			).not.toBeInTheDocument();
+			expect(theTrend()).not.toBeInTheDocument();
+		},
+	);
 });
 
 describe("the Within SLE widget's usage report", () => {
-	it("reports the list opened once when the reader opens View Data, and nothing while it only renders", async () => {
+	it("reports the list opened once per open of View Data, and nothing while it only renders", async () => {
 		await openTheFlowOverviewAnswering(measured(72.7, noComparison));
 		await act(async () => held.answer());
 
@@ -225,5 +256,14 @@ describe("the Within SLE widget's usage report", () => {
 
 		expect(reportUsage).toHaveBeenCalledTimes(1);
 		expect(reportUsage).toHaveBeenCalledWith({ name: "WithinSleListOpened" });
+
+		fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+		await waitForElementToBeRemoved(() => screen.queryByRole("dialog"));
+		fireEvent.click(screen.getByTestId("widget-view-data-withinSle"));
+
+		expect(reportUsage).toHaveBeenCalledTimes(2);
+		expect(reportUsage).toHaveBeenNthCalledWith(2, {
+			name: "WithinSleListOpened",
+		});
 	});
 });

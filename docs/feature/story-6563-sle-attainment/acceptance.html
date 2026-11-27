@@ -470,10 +470,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P3</p>
 
-<pre><code>Render the widget with a server comparison of up, and with one of none
+<pre><code>Read the widget&#x27;s trend policy; render the widget with a server comparison of up (+4.1 pts) and with one of none
 </code></pre>
 
-<pre><code>The header trend indicator appears for up and is absent for none; the body holds no change of its own
+<pre><code>The policy is previous-period; the header trend shows the up arrow and +4.1 pts for up and is absent for none; the body holds no change of its own
 </code></pre>
 
 <pre><code>The reader sees the change against the preceding period in the header
@@ -483,11 +483,11 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.verdicts.test.tsx</p>
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.withinSle.test.ts</p>
 
-<p>says Sustain and shows the change against the preceding period when the share is at or above the target</p>
+<p>compares against the preceding period of the same length</p>
 
-<pre><code>A header trend shown for none
+<pre><code>A header trend shown for none, or a down arrow for up
 </code></pre>
 
 <h6>Obligations</h6>
@@ -551,13 +551,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P5</p>
 
-<pre><code>Render the widget with 3 closed Work Items and an SLE set; compute the rule for too few
+<pre><code>Render the widget with 3 and with 4 closed Work Items and an SLE set, and with exactly 5 closed
 </code></pre>
 
-<pre><code>Body reads 3 Work Items closed — too few to judge (needs at least 5); no status; no trend
+<pre><code>3 and 4 read N Work Items closed - too few to judge (needs at least 5) with no status and no trend; 5 closed is judged and shows its status
 </code></pre>
 
-<pre><code>The reader gets a count and no pass or fail
+<pre><code>The reader gets a count and no pass or fail below five, and a verdict from five
 </code></pre>
 
 <h5>Disposition</h5>
@@ -566,9 +566,9 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.verdicts.test.tsx</p>
 
-<p>says how many closed and that this is too few to judge, with no status and no change</p>
+<p>too few to judge, with no status and no change</p>
 
-<pre><code>A status or a trend shown for too few
+<pre><code>A status or trend for too few, or a threshold of 6
 </code></pre>
 
 <h6>Obligations</h6>
@@ -578,13 +578,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>Open View Data on the withinSle widget; render without opening; read the event name&#x27;s number
+<pre><code>Open View Data on the withinSle widget, close it, reopen it; render without opening; read the event name&#x27;s number
 </code></pre>
 
-<pre><code>WithinSleListOpened is reported once per open and never on render; the event name keeps value 31 and carries only its name
+<pre><code>WithinSleListOpened is reported exactly twice for two opens and never on render; the event name keeps value 31 and carries only its name
 </code></pre>
 
-<pre><code>Opening the closed Work Items list counts as one engaged use, rendering counts nothing
+<pre><code>Each opening of the closed Work Items list counts as one engaged use, rendering counts nothing
 </code></pre>
 
 <h5>Disposition</h5>
@@ -593,9 +593,36 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.verdicts.test.tsx</p>
 
-<p>the Within SLE widget&#x27;s usage report</p>
+<p>reports the list opened once per open of View Data, and nothing while it only renders</p>
 
-<pre><code>Reported on render, twice per open, or renumbered
+<pre><code>Reported once for the whole session, on render, or renumbered
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Compute the rule for shares of 72.7, 70, 69.9, 60, 50 and 49.9 percent against a target of 70, and 65 and 64.9 against 85; no SLE; too few
+</code></pre>
+
+<pre><code>Sustain at or above the target, Observe up to and including 20 points below, Act beyond; no SLE is Act; too few has no status
+</code></pre>
+
+<pre><code>The status the reader sees follows the percentiles rule
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts</p>
+
+<p>computeWithinSleRag</p>
+
+<pre><code>Observe starting at 15 points, or Act at exactly 20 points below
 </code></pre>
 
 <h6>Obligations</h6>
