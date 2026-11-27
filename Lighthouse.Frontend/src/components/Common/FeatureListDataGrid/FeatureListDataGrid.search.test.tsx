@@ -166,11 +166,18 @@ describe("FeatureListDataGrid search", () => {
 		givenTheFeatureList();
 
 		expect(theBox()).toHaveValue("");
+		const icons = screen.getAllByTestId(/-button$/);
 		expect(
-			theBox().compareDocumentPosition(screen.getByTestId("copy-button")) &
-				Node.DOCUMENT_POSITION_FOLLOWING,
-			"the search box belongs at the left of the toolbar row, before the copy, export and layout icons",
-		).toBeTruthy();
+			icons.length,
+			"the toolbar row must hold its icons for the order to mean anything",
+		).toBeGreaterThan(1);
+		for (const icon of icons) {
+			expect(
+				theBox().compareDocumentPosition(icon) &
+					Node.DOCUMENT_POSITION_FOLLOWING,
+				`the search box belongs at the left of the toolbar row, before every icon, but it comes after ${icon.dataset.testid}`,
+			).toBeTruthy();
+		}
 	});
 
 	it("reports one use of the search per visit, however much is typed, cleared and typed again", async () => {

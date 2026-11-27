@@ -1,52 +1,18 @@
 import fc from "fast-check";
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
+import { quickSearchValues, shownTextQuickFilter } from "./quickSearch";
 
 /**
  * What a person typing into a list's search box means: the whole typed text, trimmed, is one literal
  * piece of text, and a row stays when the text it shows in a column contains it, in any letter case.
- * The module is loaded inside the tests so that a missing matcher fails the stated promise rather
- * than the loading of this file.
  */
-
-type TheCell = (
-	cellValue: unknown,
-	row: unknown,
-	column: unknown,
-	apiRef: unknown,
-) => boolean;
-
-interface TheMatcher {
-	quickSearchValues: (text: string) => string[];
-	shownTextQuickFilter: (value: string) => TheCell | null;
-}
-
-const MATCHER_FILE = "./quickSearch";
-
-let loaded: Partial<TheMatcher> = {};
-
-beforeAll(async () => {
-	loaded = await import(/* @vite-ignore */ MATCHER_FILE).catch(() => ({}));
-});
-
-const theMatcher = (): TheMatcher => {
-	expect(
-		loaded.quickSearchValues,
-		"the search must turn the typed text into the one value the grid filters by; quickSearchValues is missing, so the search box cannot narrow a list",
-	).toBeTypeOf("function");
-	expect(
-		loaded.shownTextQuickFilter,
-		"the search must test the text a column shows against that value; shownTextQuickFilter is missing, so a cell can never match",
-	).toBeTypeOf("function");
-	return loaded as TheMatcher;
-};
 
 /** Whether a cell showing `shown` stays in the list when the person types `typed`. */
 const staysWhenTyping = (typed: string, shown: unknown): boolean => {
-	const matcher = theMatcher();
-	const values = matcher.quickSearchValues(typed);
+	const values = quickSearchValues(typed);
 	if (values.length === 0) return true;
-	const test = matcher.shownTextQuickFilter(values[0]);
-	return test?.(shown, {}, {}, {}) ?? false;
+	const test = shownTextQuickFilter(values[0]);
+	return test?.(shown) ?? false;
 };
 
 const lettersDigitsSpacesAndSpecials = fc.constantFrom(
@@ -66,7 +32,7 @@ const withCaseFlipped = (text: string, flips: boolean[]): string =>
 		.join("");
 
 describe("The search text and the cells it is tested against", () => {
-	it("keeps a cell whose shown text contains the typed text, in any letter case (law L1)", () => {
+	it("keeps a cell whose shown text contains the typed text, in any letter case", () => {
 		fc.assert(
 			fc.property(
 				shownText,
@@ -89,7 +55,7 @@ describe("The search text and the cells it is tested against", () => {
 		);
 	});
 
-	it("keeps a cell showing a reference ID when the ID is typed in lower case (law L1)", () => {
+	it("keeps a cell showing a reference ID when the ID is typed in lower case", () => {
 		expect(staysWhenTyping("proj-12", "PROJ-12: Checkout")).toBe(true);
 	});
 
@@ -109,33 +75,30 @@ describe("The search text and the cells it is tested against", () => {
 		["false", false, "false"],
 		["nothing at all", undefined, "undefined"],
 		["a null", null, "null"],
-	])(
-		"never keeps a cell holding %s, whatever is typed (law L2)",
-		(_, value, typed) => {
-			expect(
-				staysWhenTyping(typed, value),
-				`a cell holding ${JSON.stringify(value)} has no shown text, so typing ${JSON.stringify(typed)} must not keep it`,
-			).toBe(false);
-		},
-	);
+	])("never keeps a cell holding %s, whatever is typed", (_, value, typed) => {
+		expect(
+			staysWhenTyping(typed, value),
+			`a cell holding ${JSON.stringify(value)} has no shown text, so typing ${JSON.stringify(typed)} must not keep it`,
+		).toBe(false);
+	});
 
-	it("keeps a cell holding a number when its digits are typed (law L2)", () => {
+	it("keeps a cell holding a number when its digits are typed", () => {
 		expect(staysWhenTyping("12", 12)).toBe(true);
 		expect(staysWhenTyping("13", 12)).toBe(false);
 	});
 
 	it("hands the grid the typed text without its surrounding spaces", () => {
-		expect(theMatcher().quickSearchValues("  Proj-12 ")).toEqual(["Proj-12"]);
+		expect(quickSearchValues("  Proj-12 ")).toEqual(["Proj-12"]);
 	});
 
 	it.each(["", " ", "   \t "])(
-		"hands the grid nothing for %j, so every row stays (law L3)",
+		"hands the grid nothing for %j, so every row stays",
 		(typed) => {
-			expect(theMatcher().quickSearchValues(typed)).toEqual([]);
+			expect(quickSearchValues(typed)).toEqual([]);
 		},
 	);
 
-	it("never brings back a row when more text is typed, and keeps exactly the rows whose shown text contains it (law L3)", () => {
+	it("never brings back a row when more text is typed, and keeps exactly the rows whose shown text contains it", () => {
 		const denseText = fc.string({
 			unit: fc.constantFrom("a", "b", "A", "B", " ", "(", ".", "1"),
 			maxLength: 6,

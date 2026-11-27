@@ -58,11 +58,11 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F303",
+"still_passes_if": "F349",
 "test": "offers an empty box named after the Features in the toolbar before its icons",
 "test_path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.search.test.tsx"
 },
-"expected": "F301",
+"expected": "F348",
 "stimulus": "F300",
 "user_result": "F302"
 },
@@ -104,7 +104,7 @@
 "L1"
 ],
 "still_passes_if": "F315",
-"test": "keeps a cell whose shown text contains the typed text, in any letter case (law L1)",
+"test": "keeps a cell whose shown text contains the typed text, in any letter case",
 "test_path": "Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.test.ts"
 },
 "expected": "F313",
@@ -121,7 +121,7 @@
 "L2"
 ],
 "still_passes_if": "F319",
-"test": "never keeps a cell holding %s, whatever is typed (law L2)",
+"test": "never keeps a cell holding %s, whatever is typed",
 "test_path": "Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.test.ts"
 },
 "expected": "F317",
@@ -138,7 +138,7 @@
 "L3"
 ],
 "still_passes_if": "F323",
-"test": "never brings back a row when more text is typed, and keeps exactly the rows whose shown text contains it (law L3)",
+"test": "never brings back a row when more text is typed, and keeps exactly the rows whose shown text contains it",
 "test_path": "Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.test.ts"
 },
 "expected": "F321",
@@ -216,7 +216,7 @@
 "C": 1,
 "D": 9,
 "E": 10,
-"F": 347,
+"F": 349,
 "K": 9,
 "L": 4,
 "P": 10,
@@ -1541,9 +1541,7 @@
 "F3": "A user finds a Feature in a feature list by typing part of any value shown in the list (reference ID, name, parent ID or name, or any other column) into one search box above the list; case does not matter and part of a word is enough.",
 "F30": "the Portfolio Features tab, the Team Features tab and the Delivery Work Items tab",
 "F300": "The list opens",
-"F301": "An empty box named Search Features sits in the toolbar row before the copy, export and layout icons",
 "F302": "The user sees the search box above the list without opening any column menu",
-"F303": "The box sits after the icons or is named with a fixed word instead of the configured Features term",
 "F304": "The user types proj, clears the box and types checkout",
 "F305": "The use of the search is reported once, as a bare FeatureListSearched event with no property",
 "F306": "The use of the search is counted once per visit and nothing the user typed leaves the browser",
@@ -1584,6 +1582,8 @@
 "F338": "The list owner can react to the text, such as counting the first use",
 "F339": "The owner hears only the final text or never hears the clear",
 "F34": "a Feature has reference ID PROJ-12 and name 'Checkout'",
+"F348": "An empty box named Search Features sits in the toolbar row before every icon (copy, export, layout, column order)",
+"F349": "The box sits between two icons, or after them, or is named with a fixed word instead of the configured Features term",
 "F35": "the user types 'PROJ-12' in the Name column filter",
 "F36": "that Feature is listed",
 "F37": "One search box above every full feature list: Features page, Portfolio Features tab, Team Features tab, Delivery Work Items tab. Matches every visible column as the cell reads, case-insensitive, part of a word enough.",

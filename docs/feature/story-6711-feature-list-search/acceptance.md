@@ -106,7 +106,7 @@ The list opens
 ```
 
 ```text
-An empty box named Search Features sits in the toolbar row before the copy, export and layout icons
+An empty box named Search Features sits in the toolbar row before every icon (copy, export, layout, column order)
 ```
 
 ```text
@@ -122,7 +122,7 @@ Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListD
 offers an empty box named after the Features in the toolbar before its icons
 
 ```text
-The box sits after the icons or is named with a fixed word instead of the configured Features term
+The box sits between two icons, or after them, or is named with a fixed word instead of the configured Features term
 ```
 
 ###### Obligations
@@ -215,7 +215,7 @@ Tested
 
 Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/quickSearch\.test\.ts
 
-keeps a cell whose shown text contains the typed text\, in any letter case \(law L1\)
+keeps a cell whose shown text contains the typed text\, in any letter case
 
 ```text
 The matcher is case-sensitive or treats typed special characters as a pattern
@@ -246,7 +246,7 @@ Tested
 
 Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/quickSearch\.test\.ts
 
-never keeps a cell holding \%s\, whatever is typed \(law L2\)
+never keeps a cell holding \%s\, whatever is typed
 
 ```text
 An object cell matches typing obj through its object text
@@ -277,7 +277,7 @@ Tested
 
 Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/quickSearch\.test\.ts
 
-never brings back a row when more text is typed\, and keeps exactly the rows whose shown text contains it \(law L3\)
+never brings back a row when more text is typed\, and keeps exactly the rows whose shown text contains it
 
 ```text
 Whitespace-only text is treated as a literal and hides rows

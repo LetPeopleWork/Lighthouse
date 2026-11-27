@@ -246,7 +246,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>The list opens
 </code></pre>
 
-<pre><code>An empty box named Search Features sits in the toolbar row before the copy, export and layout icons
+<pre><code>An empty box named Search Features sits in the toolbar row before every icon (copy, export, layout, column order)
 </code></pre>
 
 <pre><code>The user sees the search box above the list without opening any column menu
@@ -260,7 +260,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>offers an empty box named after the Features in the toolbar before its icons</p>
 
-<pre><code>The box sits after the icons or is named with a fixed word instead of the configured Features term
+<pre><code>The box sits between two icons, or after them, or is named with a fixed word instead of the configured Features term
 </code></pre>
 
 <h6>Obligations</h6>
@@ -342,7 +342,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.test.ts</p>
 
-<p>keeps a cell whose shown text contains the typed text, in any letter case (law L1)</p>
+<p>keeps a cell whose shown text contains the typed text, in any letter case</p>
 
 <pre><code>The matcher is case-sensitive or treats typed special characters as a pattern
 </code></pre>
@@ -369,7 +369,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.test.ts</p>
 
-<p>never keeps a cell holding %s, whatever is typed (law L2)</p>
+<p>never keeps a cell holding %s, whatever is typed</p>
 
 <pre><code>An object cell matches typing obj through its object text
 </code></pre>
@@ -396,7 +396,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.test.ts</p>
 
-<p>never brings back a row when more text is typed, and keeps exactly the rows whose shown text contains it (law L3)</p>
+<p>never brings back a row when more text is typed, and keeps exactly the rows whose shown text contains it</p>
 
 <pre><code>Whitespace-only text is treated as a literal and hides rows
 </code></pre>
