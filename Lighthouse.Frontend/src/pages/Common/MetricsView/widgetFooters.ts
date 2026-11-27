@@ -207,7 +207,7 @@ export function buildWidgetFooters(
 			? computeWithinSleRag(inputs.withinSleInfo, inputs.terms)
 			: {
 					ragStatus: "none",
-					tipText: `The share of closed ${inputs.terms.workItems} that finished within the ${inputs.terms.sle} days or less, next to the target.`,
+					tipText: `The share of closed ${inputs.terms.workItems} that finished within the ${inputs.terms.sle}, next to the target.`,
 				},
 		percentiles:
 			inputs.percentilesScopeDefinitionId === null
