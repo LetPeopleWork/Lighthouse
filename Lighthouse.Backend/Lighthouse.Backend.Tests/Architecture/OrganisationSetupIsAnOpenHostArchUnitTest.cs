@@ -60,10 +60,11 @@ namespace Lighthouse.Backend.Tests.Architecture
             ContextContractsMembership.ContractsOf("OrganisationSetup"),
         ];
 
-        // Refinement's cadence still takes the weekly recurrence from set-up's Domain, which set-up does not publish; this one
-        // listed edge into set-up is allowed and any other is not.
-        private static string TheListedEdgeIntoSetUpsDomain =>
-            "Lighthouse.Backend.Modules.Refinement.Application.RefinementCadenceCalendar -> Lighthouse.Backend.Modules.OrganisationSetup.Domain.WeeklyRecurrence";
+        // Refinement's own list names the edges its Application still takes into set-up's Domain, which set-up does not
+        // publish; those listed entries are allowed here and any other listed edge into set-up is not.
+        private static string[] TheEdgesRefinementListsIntoSetUpsDomain =>
+            [.. GivenTheEntriesOfTheList(typeof(RefinementModuleBoundariesArchUnitTest), "EdgesOfTheApplicationIntoForbiddenCode")
+                .Where(entry => entry.Contains($" -> {SetUpModule}.Domain.", StringComparison.Ordinal))];
 
         // Work Items' Application reaches set-up along these edges in the compiled code; once set-up is open to Work Items
         // they are legal by namespace and no list names them.
@@ -153,7 +154,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var entries = GivenTheEntriesOfTheList(ruleClass, list);
 
-            var entriesIntoSetUp = WhenTheEntriesIntoSetUpAreTaken(entries).Where(entry => entry != TheListedEdgeIntoSetUpsDomain).ToList();
+            var entriesIntoSetUp = WhenTheEntriesIntoSetUpAreTaken(entries).Except(TheEdgesRefinementListsIntoSetUpsDomain).ToList();
 
             ThenNoEntryLeadsIntoSetUp(module, list, entriesIntoSetUp);
         }
