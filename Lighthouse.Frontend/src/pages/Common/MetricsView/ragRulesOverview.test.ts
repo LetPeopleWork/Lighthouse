@@ -311,6 +311,7 @@ describe("the status rules are split into three rule families", () => {
 			"computeSleRiskRag",
 			"computeTotalWorkItemAgeOverTimeRag",
 			"computeTotalWorkItemAgeRag",
+			"computeWithinSleRag",
 			"computeWorkItemAgeChartRag",
 			"computeWorkItemAgePercentilesRag",
 		]);
