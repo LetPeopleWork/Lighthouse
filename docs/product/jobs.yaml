@@ -9088,7 +9088,7 @@ jobs:
     title: Change the API contract once and have every consumer typed and checked
     persona: lighthouse-developer
     feature_context: api-shape-evaluation
-    ado: "ADR-288; follow-up Epic to be created by the maintainer"
+    ado: "ADR-288; follow-up Epic #6713 (Stories #6714-#6717); speed fixes Story #6712"
     created: 2026-11-27
     note: >
       NEW in DIVERGE of api-shape-evaluation. The request was "switch to graphql ... instead of bare API calls"; a speed
