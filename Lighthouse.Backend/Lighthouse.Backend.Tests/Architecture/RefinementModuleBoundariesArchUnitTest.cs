@@ -148,7 +148,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // The edges from Refinement's Application into EF Core, the data layer, the API, any module's adapters, Tracker
         // integration, the update code or Organisation set-up behind its Contracts. The cadence arithmetic still takes the
-        // weekly recurrence from set-up's Domain, which set-up does not publish. The list only shrinks.
+        // weekly recurrence from set-up's Domain, which set-up does not publish.
         private static readonly string[] EdgesOfTheApplicationIntoForbiddenCode =
         [
             "Lighthouse.Backend.Modules.Refinement.Application.RefinementCadenceCalendar -> Lighthouse.Backend.Modules.OrganisationSetup.Domain.WeeklyRecurrence",

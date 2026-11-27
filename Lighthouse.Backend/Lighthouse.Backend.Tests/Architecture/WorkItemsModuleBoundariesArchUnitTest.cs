@@ -169,12 +169,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static string TheLayersBelowTheApplication =>
             $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{AnyModuleAdapters})|(?:{ModuleRules.SetUpBehindItsContracts})";
 
-        // A property, not a field: it deliberately stops reading set-up's Application and Domain namespaces, which the
-        // namespace-move law would otherwise read as a rule losing sight of a moved type.
-        private static string SetUpOpenToTheContextsBuildingOnIt => @"Lighthouse\.Backend\.Modules\.OrganisationSetup\.Contracts(\.|$)";
-
         private static string AccessLicensingOrganisationSetUpAndTheUpdateQueue =>
-            $"^(?!{SetUpOpenToTheContextsBuildingOnIt})(?:(?:{AccessAndLicensing})|(?:{OrganisationSetUp})|(?:{KernelRules.TheUpdateQueue}))";
+            $"^(?!{ModuleRules.SetUpContracts})(?:(?:{AccessAndLicensing})|(?:{OrganisationSetUp})|(?:{KernelRules.TheUpdateQueue}))";
 
         private static readonly string WorkItemsLegalCallers =
             $"(?:{ApplicationCoreRules.TheApi})|(?:{ModuleRules.FlowMetricsModule})|(?:{ModuleRules.ForecastingModule})|(?:{ModuleBoundariesArchUnitTest.RefinementPattern})|(?:{PromisesApplicationOutsideItsPolicies})";
@@ -209,6 +205,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static string LicenceService => typeof(global::Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService).FullName!;
 
         private static string OrphanedFeatureCleanup => typeof(global::Lighthouse.Backend.Services.Interfaces.IOrphanedFeatureCleanupService).FullName!;
+
+        private static string SetUpRecurrence => typeof(global::Lighthouse.Backend.Modules.OrganisationSetup.Domain.WeeklyRecurrence).FullName!;
 
         private static string SetUpSettings => typeof(global::Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService).FullName!;
 
@@ -339,14 +337,14 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void AWorkItemsApplicationTypeReachingSetUpAndALooseService_IsNamedForTheLooseServiceOnly()
+        public void AWorkItemsApplicationTypeReachingSetUpsContractsSetUpsDomainAndALooseService_IsNamedForTheDomainAndTheLooseServiceOnly()
         {
             var offender = typeof(AWorkItemServiceAskingSetUpAndTheOrphanCleanup);
             var verdict = AccessLicensingOrganisationSetUpAndUpdateQueueOutboundRule(TestModule.Value, OutboundCase(offender), []);
 
             ThenTheFailureNamesOnly(
                 verdict.Check,
-                $"Not on the list, and offending: {Edge(offender, OrphanedFeatureCleanup)}. ",
+                $"Not on the list, and offending: {Edge(offender, SetUpRecurrence)}, {Edge(offender, OrphanedFeatureCleanup)}. ",
                 [Edge(offender, SetUpSettings)],
                 "the Application outbound rule into Access, Licensing, Organisation set-up and the update queue");
         }
@@ -796,6 +794,8 @@ namespace Lighthouse.Backend.Modules.WorkItemsFixtures.BoundariesOutbound.Reachi
     internal static class AWorkItemServiceAskingSetUpAndTheOrphanCleanup
     {
         public static bool Asks(global::Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService settings) => settings is not null;
+
+        public static DateOnly Recurs(DateOnly day) => global::Lighthouse.Backend.Modules.OrganisationSetup.Domain.WeeklyRecurrence.MondayOfWeek(day);
 
         public static bool Cleans(global::Lighthouse.Backend.Services.Interfaces.IOrphanedFeatureCleanupService cleanup) => cleanup is not null;
     }

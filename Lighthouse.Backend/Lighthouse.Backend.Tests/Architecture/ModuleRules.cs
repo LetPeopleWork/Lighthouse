@@ -32,7 +32,13 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // A property, not a constant: the namespace-move law reads constants and fields for the types they see, and this one
         // deliberately sees none of the types set-up publishes.
-        public static string SetUpBehindItsContracts => @"^Lighthouse\.Backend\.Modules\.OrganisationSetup\.(?!Contracts(\.|$))";
+        public static string SetUpContracts => $@"^{Regex.Escape(TheSetUpContractsNamespace)}(\.|$)";
+
+        public static string SetUpBehindItsContracts => $@"^(?!{Regex.Escape(TheSetUpContractsNamespace)}(\.|$)){Regex.Escape(TheModulesRoot)}\.OrganisationSetup\.";
+
+        private static string TheModulesRoot => ContextContractsMembership.TheModulesRoot;
+
+        private static string TheSetUpContractsNamespace => ContextContractsMembership.ContractsOf("OrganisationSetup");
 
         public const string FlowMetricsAdapters = @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.Adapters(\.|$)";
 

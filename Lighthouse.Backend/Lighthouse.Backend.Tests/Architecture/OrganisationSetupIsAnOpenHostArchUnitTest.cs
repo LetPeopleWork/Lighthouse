@@ -57,8 +57,13 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly string[] SetUpNamespacesOpenToDownstreamModules =
         [
-            SetUpModule + ".Contracts",
+            ContextContractsMembership.ContractsOf("OrganisationSetup"),
         ];
+
+        // Refinement's cadence still takes the weekly recurrence from set-up's Domain, which set-up does not publish; this one
+        // listed edge into set-up is allowed and any other is not.
+        private static string TheListedEdgeIntoSetUpsDomain =>
+            "Lighthouse.Backend.Modules.Refinement.Application.RefinementCadenceCalendar -> Lighthouse.Backend.Modules.OrganisationSetup.Domain.WeeklyRecurrence";
 
         // Work Items' Application reaches set-up along these edges in the compiled code; once set-up is open to Work Items
         // they are legal by namespace and no list names them.
@@ -148,7 +153,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var entries = GivenTheEntriesOfTheList(ruleClass, list);
 
-            var entriesIntoSetUp = WhenTheEntriesIntoSetUpAreTaken(entries);
+            var entriesIntoSetUp = WhenTheEntriesIntoSetUpAreTaken(entries).Where(entry => entry != TheListedEdgeIntoSetUpsDomain).ToList();
 
             ThenNoEntryLeadsIntoSetUp(module, list, entriesIntoSetUp);
         }
@@ -158,7 +163,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var production = ProductionModule.Value;
 
-            var edgesIntoSetUp = WhenTheCompiledEdgesAreRead(production, WorkItemsApplication, $@"^{Regex.Escape(SetUpModule)}\.Contracts(\.|$)");
+            var edgesIntoSetUp = WhenTheCompiledEdgesAreRead(production, WorkItemsApplication, ModuleRules.SetUpContracts);
 
             ThenTheEdgesThatBecomeLegalAreStillCompiled(edgesIntoSetUp);
         }
@@ -261,7 +266,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             => [.. namespaces.Where(candidate => Regex.IsMatch(candidate, target, RegexOptions.None, TimeSpan.FromSeconds(1)))];
 
         private static List<string> WhenTheEntriesIntoSetUpAreTaken(IEnumerable<string> entries)
-            => [.. entries.Where(entry => entry.Contains($" -> {SetUpModule}.Contracts.", StringComparison.Ordinal))];
+            => [.. entries.Where(entry => entry.Contains($" -> {SetUpModule}.", StringComparison.Ordinal))];
 
         private static List<string> WhenTheCompiledEdgesAreRead(ModuleDefinition production, string dependents, string targets)
             => [.. IlDependencies.DependentsIn(production, dependents, type => IlDependencies.ResidesInNamespaceMatching(type, targets))
@@ -303,8 +308,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static void ThenNoEntryLeadsIntoSetUp(string module, string list, List<string> entriesIntoSetUp)
             => Assert.That(entriesIntoSetUp, Is.Empty,
                 $"{new ModuleWording(module, string.Empty).Of("outbound list")} {list} still names these edges into Organisation set-up: {string.Join("; ", entriesIntoSetUp)}. " +
-                $"{module} reaches set-up by right, so a listed set-up edge is an exception for something that is allowed. Take these entries " +
-                "off once the rule's target admits set-up's Application and Domain.");
+                $"{module} reaches set-up through its Contracts by right, and set-up's Application and Domain stay foreign to it, so a listed set-up edge is " +
+                "either an exception for something allowed or a new way round the Contracts. Take these entries off, or reach set-up through its Contracts.");
 
         private static void ThenTheEdgesThatBecomeLegalAreStillCompiled(List<string> edgesIntoSetUp)
             => Assert.That(edgesIntoSetUp, Is.SupersetOf(WorkItemsEdgesIntoSetUpThatBecomeLegal),
