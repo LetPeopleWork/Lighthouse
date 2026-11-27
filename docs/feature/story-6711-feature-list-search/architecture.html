@@ -156,13 +156,1767 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Paradigm</h2>
 
-<p>None.</p>
+<p>functional</p>
 
 <h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>Paradigm: the repository frontend is hooks and pure functions inside an object-oriented project; this feature adds no class. Carriers: search text is a useState in DataGridBase (per mount, never persisted, empty on every open); the narrowing itself is MUI filterModel.quickFilterValues, set with apiRef.setQuickFilterValues(quickSearchValues(text)); the pure core is the new DataGridBase-adjacent module quickSearch.ts (quickSearchValues and the per-column quick filter). Effects stay in DataGridBase and the toolbar; the core calls neither.
+</code></pre>
+
+<h4>D2</h4>
+
+<pre><code>Matching rule (D2, as the cell reads): use the MUI quick filter, not a custom row pre-filter. The whole trimmed text is ONE literal value, case-insensitive substring, matched against each shown column text. Shown text = the column valueFormatter result when the column has one, else its raw value when that is a string or number. Objects, arrays, undefined and booleans are never matched, so typing obj never matches every row via [object Object] and true never matches Active Work. MUI already excludes hidden columns and gives no quick filter to boolean and actions columns. Columns with no text value (Progress, Forecasted Start, Forecasted Completion, Likelihood, Warnings, Active Work) are not searchable; this is the declared residue. Why the quick filter: it already narrows together with column filters (P7) and opens the first page on a changed value (P8, MUI useGridPaginationModel), which a custom pre-filter would have to rebuild as OpensFirstPageOnSearch does. Rejected: matching every column raw value (wrong for count, boolean and object columns), per-column getApplyQuickFilterFn overrides on each page column (many sites, easy to forget), one custom filter over rendered text (renderCell is a React node, no text).
+</code></pre>
+
+<h4>D3</h4>
+
+<pre><code>Name text: the shown Name cell text is getWorkItemName(name, referenceId) (utils/featureName.ts is the only owner; unparented names and GUID ids show the name alone). createNameColumn exposes it as valueFormatter first (so search finds the ID) and then, in the Name filter slice, as valueGetter plus a sortComparator over row.name using gridStringOrNumberComparator, so column sort and any getCellValue consumer keep seeing the name as today while the column filter sees the shown text. The Delivery Work Items tab name column is a second copy of the same cell and adopts the shared factory.
+</code></pre>
+
+<h4>D4</h4>
+
+<pre><code>UI placement (agreed sketch): DataGridToolbar gets an optional search prop and renders the new GridSearchBox at the left of the toolbar row (search icon, placeholder, clear button); the other toolbar icons stay right-aligned. DataGridBase takes an optional search prop (placeholder, later the no-match copy) and renders no box without it. FeatureListDataGrid is the only caller that passes it, so Refinement, Archived, FeatureGrid, WorkItemsDialog, ReportList, ConnectionsSettings, ThirdPartyPackages and DataOverviewTable gain nothing. Copy uses the configured term: placeholder Search ${features term}; no match: No ${features term} match &quot;${text}&quot;. (Confirms the Proposed placeholder/no-match decision; DELIVER sketch already agreed.) Reuse verdict: FilterBar (full-width own row, Ctrl+F, portfolio/team wording) and the ThirdPartyPackages TextField (pre-filters rows, own page-reset hook) are not the target; MUI TextField is reused inside a new small GridSearchBox.
+</code></pre>
+
+<h4>D5</h4>
+
+<pre><code>Loading and failure (Open decision F47, resolved): the box lives inside the grid, so it is shown whenever the grid is mounted and stays usable while data loads (it narrows what is loaded; the existing loading overlay or dimming shows). Wherever the page already replaces the grid (lone spinner with nothing to dim, the could-not-load look, the Delivery tab Loading and no-Features texts) there is no box and those looks stay exactly as they are. No new loading or failure look is added. The no-Features message is untouched and distinct from the no-match message because the grid shows noRowsLabel for an empty list and noResultsOverlayLabel for a narrowed-to-nothing list.
+</code></pre>
+
+<h4>D6</h4>
+
+<pre><code>Checker map: No model for the search narrowing: it is a stateless pure row filter over an already loaded list; there is no shared state, multi-step protocol, retry, crash or concurrency window (the only asynchrony is MUI zero-delay debounced page reset, which cannot change which rows match). Quint 0.33.1 is installed but no claim needs it. The laws are checked by native property tests (fast-check 4.10.3, declared in package.json) on the pure core plus component examples; nothing is claimed formally verified. Liveness: no liveness claim, the filter is synchronous and always enabled. MUI behaviours relied on were read in the installed @mui/x-data-grid 9.18.0 source (quick filter reads getRowFormattedValue; excludes hidden columns; boolean and actions columns have a null quick filter; filterModel change navigates to page 0; localeText noResultsOverlayLabel; apiRef.setQuickFilterValues) and are pinned by the component oracles.
+</code></pre>
+
+<h4>D7</h4>
+
+<pre><code>Cross-layer algebra. Domain (pure core, quickSearch.ts): states = query text; operations = quickSearchValues(text) -&gt; [] or [trimmed text], shownTextQuickFilter(value) -&gt; null or predicate over one cell; observation = which rows remain. Application (FeatureListDataGrid/DataGridBase): passes the search prop, owns the text state, calls setQuickFilterValues; outcomes = rows narrowed, no-match message, page 0. Adapter (MUI DataGrid): applies the quick filter together with column filters. Infrastructure and recovery: none, nothing is stored or fetched; a reload or remount returns an empty box, which is the specified behaviour.
+</code></pre>
+
+<h4>D8</h4>
+
+<pre><code>Test substrate: Vitest + React Testing Library under Lighthouse.Frontend, driving port = the rendered FeatureListDataGrid (and the four page components for the every-list slice) with the shared grid kit mock of @mui/x-data-grid (tests/SharedGridFitKit.tsx), pure laws on quickSearch.ts as .test.ts with fast-check. Runner argv: pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run &lt;file&gt;. Default per-test and suite budgets apply, fixtures are 3 to 5 Features, the page-reset test uses PAGE_SIZE + 1 rows; no new E2E: search is client-side over a loaded list and no new user flow is created, so the existing component layer is the lowest layer that proves it. Prerequisite for the host: the worktree has no node_modules; run pnpm install in Lighthouse.Frontend before RED.
+</code></pre>
+
+<h4>D9</h4>
+
+<pre><code>No backend, API, DTO, RBAC, client, usage-data or persistence change; export and clipboard keep copying every row in sort order, unaffected by the search exactly as a column filter does today.
+</code></pre>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Input bounds: the search text has no authority-given length limit and none is added; it is treated as a literal (regex characters escaped), trimmed at both ends, a whitespace-only box is the same as an empty box; case-insensitive; part of a word is enough; no multi-word tokenising (the whole text is one substring). Search text is never persisted and column filters, sort, layout persistence are unchanged.
+</code></pre>
+
+<h4>K2</h4>
+
+<pre><code>Scope: only FeatureListDataGrid (Features page, Portfolio Features tab, Team Features tab, Delivery Work Items tab). A Delivery Work Items tab without Features keeps its own text and shows no box. Column filter on Parent is unchanged.
+</code></pre>
+
+<h4>K3</h4>
+
+<pre><code>Deviation recorded: Name column filter now also matches the ID in the other lists that reuse createNameColumn (Refinement grid): the shown text is what is filtered, consistent with the cell. No other behaviour of those grids changes (their sort order stays by name).
+</code></pre>
+
+<h4>K4</h4>
+
+<pre><code>Terminology: copy uses useTerminology(TERMINOLOGY_KEYS.FEATURES), never Epic or Story. No nWave scenario tags in code. Move menu neighbours are still computed from the hide-completed list, not the searched list, exactly as for a column filter today; not changed here.
+</code></pre>
+
+<h4>K5</h4>
+
+<pre><code>Search box on the full feature list only (four pages named in scope); pickers, Refinement and Archived grids excluded and suggested for later.
+</code></pre>
+
+<h4>K6</h4>
+
+<pre><code>Search matches every visible column as the cell value reads; named fields (reference ID, name, parent ID and name) must be findable.
+</code></pre>
+
+<h4>K7</h4>
+
+<pre><code>Name column filter also matches the Feature reference ID.
+</code></pre>
+
+<h4>K8</h4>
+
+<pre><code>Search text is not remembered; box is empty each time a page opens.
+</code></pre>
+
+<h4>K9</h4>
+
+<pre><code>Fact: the Parent column filter already matches both ID and name (its value is the same &#x27;ID: name&#x27; text the cell shows); no change.
+</code></pre>
+
+<h3>Reuse</h3>
+
+<p>None.</p>
+
+<h3>Impact</h3>
+
+<p>None.</p>
+
+<h3>Agreement</h3>
+
+<p>None.</p>
+
+<h3>Not applicable</h3>
+
+<p>None.</p>
+
+<h3>Boundaries</h3>
+
+<pre><code>Rendered FeatureListDataGrid props (features, columns, storageKey, status, emptyStateMessage) as mounted by FeaturesView, PortfolioFeatureList, TeamFeatureList and WorkItemsTab; user stimulus = typing in the search role textbox
+</code></pre>
+
+<h4>Driven ports</h4>
+
+<pre><code>None (no backend call). Inward only: @mui/x-data-grid apiRef.setQuickFilterValues and localeText
+</code></pre>
+
+<pre><code>pages -&gt; FeatureListDataGrid -&gt; DataGridBase -&gt; DataGridToolbar -&gt; GridSearchBox; DataGridBase -&gt; quickSearch.ts (pure, imports nothing from React or MUI components); columns.tsx -&gt; utils/featureName.ts. DataGrid knows nothing of Features; the term strings come in through the search prop.
+</code></pre>
+
+<h4>Failures</h4>
+
+<p>None.</p>
+
+<h3>Observations</h3>
+
+<pre><code>Rows listed by the grid after a search text is typed: the row set shown, and the grid overlay text when no row remains
+</code></pre>
+
+<p>rows shown (set of Feature ids, paged) plus overlay text</p>
+
+<pre><code>Order of rows (sort owns it); which column matched; a column with no text value (Progress, forecasts, Likelihood, Warnings, Active Work) matching
+</code></pre>
+
+<h3>Equality</h3>
+
+<p>rows shown after a search</p>
+
+<pre><code>Two searches are equal when the same set of rows is shown on the first page and the same overlay text, whatever mix of case, surrounding spaces or typing history produced the text.
+</code></pre>
+
+<h3>Constructors</h3>
+
+<p>quickSearchValues</p>
+
+<p>(text: string) =&gt; string[]</p>
+
+<p>shownTextQuickFilter</p>
+
+<p>(value: string) =&gt; null | ((_, row, column, apiRef) =&gt; boolean)</p>
+
+<h3>Laws</h3>
+
+<h4>L1</h4>
+
+<pre><code>Inhabitation and case: for any shown cell text and any substring of it, in any letter case, the shown text matches the query; Reference-ID and parent-text searches are instances.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Domain</p>
+
+<p>quickSearch.ts</p>
+
+<h5>Treatment</h5>
+
+<p>Broad</p>
+
+<h6>Generator</h6>
+
+<pre><code>shown text: strings of 0..40 chars over letters, digits, space and regex specials ( ) [ ] . * + ? ^ $ \ | : - ; query: a random slice of it with random per-character case flips
+</code></pre>
+
+<p>numRuns 100; text length 40</p>
+
+<p>fixed seed in the test, replayed from the printed fast-check seed</p>
+
+<h6>Must include</h6>
+
+<pre><code>regex specials; empty slice; whole text; an ID-like PROJ-12 prefix
+</code></pre>
+
+<p>single call, no nesting</p>
+
+<pre><code>fast-check built-in shrinking of the string and slice bounds
+</code></pre>
+
+<pre><code>Reference: shown.toLowerCase().includes(query.toLowerCase()), not regex
+</code></pre>
+
+<pre><code>An implementation that does not escape regex specials, is case-sensitive, or tests the raw value instead of the shown text fails on a generated special character or flipped case.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h4>L2</h4>
+
+<pre><code>Safety: a cell whose shown value is an object, array, undefined, null or boolean never matches any non-empty query (typing obj or true narrows nothing by those cells).
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Domain</p>
+
+<p>quickSearch.ts</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>object value with query obj -&gt; no match
+</code></pre>
+
+<pre><code>array of objects with query object -&gt; no match
+</code></pre>
+
+<pre><code>true/false with query true -&gt; no match
+</code></pre>
+
+<pre><code>undefined/null -&gt; no match
+</code></pre>
+
+<pre><code>number 12 with query 12 -&gt; match
+</code></pre>
+
+<pre><code>Finite closed set of value kinds
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h4>L3</h4>
+
+<pre><code>Monotone narrowing and empty identity: extending the query never adds rows; an empty or whitespace-only query yields no quick filter value and so shows every row.
+</code></pre>
+
+<p>Algebraic</p>
+
+<p>Domain</p>
+
+<p>quickSearch.ts</p>
+
+<h5>Treatment</h5>
+
+<p>Broad</p>
+
+<h6>Generator</h6>
+
+<pre><code>rows: 0..8 shown strings as in the first law; query: random string then a random extension
+</code></pre>
+
+<p>numRuns 100; 8 rows</p>
+
+<p>fixed seed, replayable</p>
+
+<h6>Must include</h6>
+
+<pre><code>whitespace-only query; extension to empty result
+</code></pre>
+
+<p>single call</p>
+
+<pre><code>fast-check built-in
+</code></pre>
+
+<pre><code>Reference filter by lowercase includes over the same rows
+</code></pre>
+
+<pre><code>A matcher that trims differently per call or treats whitespace-only as a literal fails the identity law.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h4>L4</h4>
+
+<pre><code>Combination and page: search and column filter both apply (AND), and a changed search text opens page 0; the box clear restores the unfiltered row set.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>DataGridBase.tsx</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>column filter set + search: only rows meeting both
+</code></pre>
+
+<pre><code>page 2 + new search: first page of results
+</code></pre>
+
+<pre><code>clear box: every row shown again
+</code></pre>
+
+<pre><code>Behaviour of the MUI adapter, a few finite stimuli through the rendered port
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<p>None.</p>
+
+<h3>Claims</h3>
+
+<h4>C1</h4>
+
+<pre><code>A search text can only narrow rows by shown cell text and never by an object, count or boolean value
+</code></pre>
+
+<pre><code>Typing a few letters lists unrelated Features or hides the one the user wants
+</code></pre>
+
+<p>quickSearch.ts</p>
+
+<pre><code>search text string; cell formatted value of any kind
+</code></pre>
+
+<p>quickSearchValues</p>
+
+<p>DataGridBase.tsx apiRef.setQuickFilterValues</p>
+
+<pre><code>rows listed by FeatureListDataGrid
+</code></pre>
+
+<pre><code>A column that sets its own getApplyQuickFilterFn in a caller; MUI own quick filter UI; closure checked by reading, enforced only by the oracles (TypeScript does not exclude it)
+</code></pre>
+
+<h3>States</h3>
+
+<p>Admitted</p>
+
+<pre><code>Any text string typed in the box, including regex characters and surrounding spaces
+</code></pre>
+
+<p>DataGridBase.tsx</p>
+
+<p>Excluded</p>
+
+<pre><code>A quick filter value that is empty or whitespace-only; a cell value that is an object matching a query
+</code></pre>
+
+<p>quickSearch.ts</p>
+
+<p>Unknown</p>
+
+<pre><code>Searchability of forecast, progress and likelihood cell text (not text values today)
+</code></pre>
+
+<p>product owner</p>
+
+<h3>Models</h3>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<pre><code>quick filter matches shown text only
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Object, array, boolean and undefined values return no match in the pure core; MUI source read for hidden, boolean and actions columns. Type strength: string-typed props only; invalid cell kinds are representable and excluded at the predicate, not by types.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>search by reference ID, name, parent
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Name valueFormatter returns getWorkItemName; Parent valueGetter already returns the shown text; both reach quick filter via getRowFormattedValue
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>typing in the toolbar box narrows the list on all four pages
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>input: user typing -&gt; GridSearchBox onChange -&gt; DataGridBase state -&gt; setQuickFilterValues -&gt; MUI rows -&gt; FeatureListDataGrid render; FeatureListDataGrid is mounted by FeaturesView:68, PortfolioFeatureList:97, TeamFeatureList:118, WorkItemsTab:50
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>search narrowing
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>Indeterminate</p>
+
+<pre><code>No liveness claim: the filter is a synchronous total function over loaded rows, no step that can wait or be starved
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption negated: a column value equals the shown text (it does not for object, count and boolean columns)
+</code></pre>
+
+<pre><code>Search finds what the reader sees in text columns
+</code></pre>
+
+<pre><code>Columns with no text value are simply not searchable
+</code></pre>
+
+<pre><code>A search matching [object Object], a count or the word true
+</code></pre>
+
+<pre><code>Forecast dates, progress and likelihood text cannot be searched; a later slice may add a shown-text valueFormatter per column
+</code></pre>
+
+<p>quickSearch.ts / each page column definition</p>
+
+<h4>Y2</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption negated: MUI keeps its quick filter semantics across upgrades (@mui/x-data-grid ^9.18)
+</code></pre>
+
+<pre><code>AND with column filters, page 0 on change, hidden columns excluded
+</code></pre>
+
+<pre><code>An upgrade changes internals but not these
+</code></pre>
+
+<pre><code>Silent loss of page reset or of column-filter combination
+</code></pre>
+
+<pre><code>Pinned only by the component oracles; a major MUI upgrade must rerun them
+</code></pre>
+
+<p>DataGridBase.tsx</p>
+
+<h4>Y3</h4>
+
+<p>Bypass</p>
+
+<pre><code>Second writer of the quick filter: a user opening MUI own filter UI or another caller of apiRef.setQuickFilterValues
+</code></pre>
+
+<pre><code>One writer (DataGridBase search state)
+</code></pre>
+
+<pre><code>None: DataGridBase shows no MUI toolbar quick filter
+</code></pre>
+
+<pre><code>A second box or stale text that disagrees with the filter model
+</code></pre>
+
+<pre><code>A future grid enabling MUI GridToolbarQuickFilter would fight the same filter model; not reachable today
+</code></pre>
+
+<p>DataGridBase.tsx</p>
+
+<h4>Y4</h4>
+
+<p>SinglePointOfFailure</p>
+
+<pre><code>Name text derives from one function getWorkItemName
+</code></pre>
+
+<pre><code>Cell, search and column filter agree on the shown Name text
+</code></pre>
+
+<pre><code>Future wording change in that function reaches all three at once
+</code></pre>
+
+<pre><code>A copy of the Name cell that formats differently (the Delivery tab copy)
+</code></pre>
+
+<pre><code>Removed in the every-list slice by adopting the factory
+</code></pre>
+
+<p>utils/featureName.ts</p>
+
+<h4>Y5</h4>
+
+<p>Stressor</p>
+
+<pre><code>Second stressor set (walk of the finished design): very long list of 500 Features
+</code></pre>
+
+<pre><code>Typing stays responsive
+</code></pre>
+
+<pre><code>One filter pass per keystroke over loaded rows
+</code></pre>
+
+<pre><code>Network call or re-fetch on typing
+</code></pre>
+
+<pre><code>Per-keystroke filtering of a few hundred rows is walked, not measured; MUI debounces nothing here
+</code></pre>
+
+<p>DataGridBase.tsx</p>
+
+<h4>Y6</h4>
+
+<p>Stressor</p>
+
+<pre><code>Second stressor set: the list reloads or Hide Completed toggles while text is typed
+</code></pre>
+
+<pre><code>Text stays in the box and keeps narrowing the new rows
+</code></pre>
+
+<pre><code>Rows change under the text
+</code></pre>
+
+<pre><code>Box showing text that is not applied
+</code></pre>
+
+<pre><code>Page failure look unmounts the grid, so text is lost on retry; accepted, not persisted by decision
+</code></pre>
+
+<p>FeatureListDataGrid.tsx</p>
+
+<h3>Architectural tests</h3>
+
+<p>None.</p>
+
+<h3>Contract tests</h3>
 
 <p>None.</p>
 
 <h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.ts</p>
+
+<p>Create</p>
+
+<pre><code>Pure core: quickSearchValues(text) and shownTextQuickFilter; one owner of the matching rule
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/GridSearchBox.tsx</p>
+
+<p>Create</p>
+
+<pre><code>The search text box with search icon and clear button, one component per file
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/DataGridToolbar.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Renders GridSearchBox at the left when a search prop is given
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Holds the search text state, calls setQuickFilterValues, gives every plain text column the shown-text quick filter
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/types.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Adds the optional search prop to DataGridBaseProps and DataGridToolbarProps
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Passes the search prop with the configured Features term
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>createNameColumn gets valueFormatter = getWorkItemName(name, referenceId); new exported projectNamesText(feature) helper
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Features/FeaturesView.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Projects column gets valueFormatter = projectNamesText so Portfolio names are searchable on the Features page
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.search.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/FeatureListDataGrid/FeatureListDataGrid.search.test.tsx
+pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/DataGrid/quickSearch.test.ts src/components/Common/DataGrid/DataGridBase.search.test.tsx
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.test.ts</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.search.test.tsx</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Render FeatureListDataGrid (Name and Parent columns, 3 Features, one PROJ-12: Checkout under parent PROJ-3: Shop), type proj-12 into the textbox named Search Features, then type checkout, then clear the box
+</code></pre>
+
+<pre><code>Typing proj-12 lists only rows whose shown text contains it (PROJ-12: Checkout); checkout finds the Feature through its Parent text PROJ-3: Checkout too; clearing shows all three rows again; the box sits in the toolbar row before the icons
+</code></pre>
+
+<pre><code>Name column without valueFormatter (search by ID misses), a case-sensitive or regex-unescaped matcher, or an object column matching obj makes the stated rows differ
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P3</p>
+
+<p>P4</p>
+
+<p>P6</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>Add no behaviour first: nothing to move. Prefactoring decision per touched file: DataGridBase.tsx one component plus helpers, no several types; DataGridToolbar.tsx one component; FeatureListDataGrid.tsx one component; FeaturesView.tsx one component; columns.tsx factories with one local row type; types.ts holds several distinct interfaces imported across the DataGrid folder and its callers, so no split in this slice (a split would rewrite every importer without adding the observation) - the new optional props go in as they are
+</code></pre>
+
+<pre><code>Every existing DataGridBase, toolbar, columns and FeatureListDataGrid assertion unchanged
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.test.tsx</p>
+
+<h5>Verification</h5>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/DataGrid/DataGridBase.test.tsx src/components/Common/DataGrid/DataGridToolbar.test.tsx src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx src/components/Common/FeatureListDataGrid/columns.test.tsx
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>DataGridBase</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx:470</p>
+
+<p>Extend</p>
+
+<pre><code>Owns the apiRef and the grid; the only place that can call setQuickFilterValues; an opt-in prop leaves the eight other callers untouched
+</code></pre>
+
+<p>DataGridToolbar</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/DataGridToolbar.tsx:175</p>
+
+<p>Extend</p>
+
+<pre><code>Already the toolbar row where the agreed sketch puts the box; customActions sits to the right of it and is not the place for a left-aligned box
+</code></pre>
+
+<p>GridSearchBox</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/GridSearchBox.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No candidate fits: FilterBar is a full-width own row with Ctrl+F and portfolio/team wording (FilterBar.tsx:22), the ThirdPartyPackages TextField (ThirdPartyPackagesSection.tsx:154) pre-filters rows outside the grid; a small component wrapping MUI TextField is the simplest owner of box + clear button
+</code></pre>
+
+<p>quickSearch</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No existing owner decides which cell text a query matches; getGridStringQuickFilterFn in MUI would match [object Object] for object values. SEMANTIC duplicate check: ThirdPartyPackagesSection.tsx:99 lowercases and includes over its own rows, it is a different list and not a shared rule
+</code></pre>
+
+<p>createNameColumn</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx:39</p>
+
+<p>Extend</p>
+
+<pre><code>The shared Name column; its shown text getWorkItemName is already the cell text, so exposing it as valueFormatter makes search agree with the cell
+</code></pre>
+
+<p>getWorkItemName</p>
+
+<p>Lighthouse.Frontend/src/utils/featureName.ts:4</p>
+
+<p>Reuse</p>
+
+<pre><code>Sole owner of the shown Name text; consumed, not changed
+</code></pre>
+
+<p>parentWorkItemText</p>
+
+<p>Lighthouse.Frontend/src/components/Common/ParentWorkItemCell/ParentWorkItemCell.tsx:14</p>
+
+<p>Reuse</p>
+
+<pre><code>Parent column valueGetter already returns the shown text, so search finds the parent ID and name with no change
+</code></pre>
+
+<p>DataGridBaseProps</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/types.ts:57</p>
+
+<p>Extend</p>
+
+<pre><code>Owns the grid props; optional search prop added here
+</code></pre>
+
+<p>FeatureListDataGrid</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx:29</p>
+
+<p>Extend</p>
+
+<pre><code>Single caller that opts in; owns the configured term
+</code></pre>
+
+<p>FeaturesView</p>
+
+<p>Lighthouse.Frontend/src/pages/Features/FeaturesView.tsx:18</p>
+
+<p>Extend</p>
+
+<pre><code>Owns the projects column on the Features page
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx:470</p>
+
+<p>Changed</p>
+
+<pre><code>New optional search prop; without it behaviour is identical
+</code></pre>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/DataGridToolbar.tsx:175</p>
+
+<p>Changed</p>
+
+<pre><code>New optional search prop rendered left of the icons
+</code></pre>
+
+<p>type</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/types.ts:57</p>
+
+<p>Changed</p>
+
+<pre><code>Optional fields only, every existing literal still compiles
+</code></pre>
+
+<p>page</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx:134</p>
+
+<p>Changed</p>
+
+<pre><code>Passes search to DataGridBase; all four pages inherit it
+</code></pre>
+
+<p>column-factory</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx:39</p>
+
+<p>Changed</p>
+
+<pre><code>Name column gains valueFormatter; displayed cell unchanged; tooltip fullText now equals the cell text
+</code></pre>
+
+<p>page</p>
+
+<p>Lighthouse.Frontend/src/pages/Features/FeaturesView.tsx:45</p>
+
+<p>Changed</p>
+
+<pre><code>Projects column gains valueFormatter
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportList.tsx:307</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Passes no search prop; no box, no quick filter
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.tsx:231</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Passes no search prop
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.tsx:161</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Keeps its own TextField above the grid; passes no search prop
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementGrid.tsx:93</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Out of scope; passes no search prop
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/ArchivedFeatureGrid.tsx:67</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Out of scope; passes no search prop
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureGrid/FeatureGrid.tsx:237</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Delivery dialog picker, out of scope; passes no search prop
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx:304</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Passes no search prop
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.tsx:355</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Passes no search prop
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/DataGridToolbar.test.tsx:69</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Existing toolbar tests pass no search prop
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.test.tsx:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Name column render assertions keep reading the rendered cell
+</code></pre>
+
+<p>build-metadata</p>
+
+<p>Lighthouse.Frontend/package.json:35</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>No new dependency: @mui/x-data-grid ^9.18.0, fast-check 4.10.3 already declared
+</code></pre>
+
+<p>new-module</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New pure module, imported only by DataGridBase
+</code></pre>
+
+<p>new-module</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/GridSearchBox.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New component, imported only by DataGridToolbar
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>agreement</p>
+
+<pre><code>The search prop is passed between FeatureListDataGrid and DataGridBase in one deployable and one commit; no persisted or wire shape changes
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>Producer and consumer of the new props change together in one bundle; the primary oracle covers the real producer through the real consumer
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T1</h6>
+
+<pre><code>The search box is opt-in: DataGridBase and DataGridToolbar render no search textbox unless a search prop is given, so the grids outside the four pages gain none
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.search.test.tsx</p>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/DataGrid/DataGridBase.search.test.tsx
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>search.noMatchMessage(text) becomes localeText.noResultsOverlayLabel while the text is non-empty
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/types.ts</p>
+
+<p>Extend</p>
+
+<pre><code>search prop gains noMatchMessage: (text: string) =&gt; string
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Supplies the No Features match copy from the configured term
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.searchEdges.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/FeatureListDataGrid/FeatureListDataGrid.searchEdges.test.tsx
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Render FeatureListDataGrid with PAGE_SIZE + 1 Features and a state column filter set, go to page 2, type a text that matches nothing (zzz), then a text matching some; also render with an empty features array
+</code></pre>
+
+<pre><code>Typing narrows together with the column filter (only rows meeting both); typing from page 2 shows the first page of results; zzz shows No Features match &quot;zzz&quot;. in words different from the emptyStateMessage shown for the empty list
+</code></pre>
+
+<pre><code>A pre-filter that keeps the open page, an OR instead of AND with the column filter, or reusing the empty-list message for no match makes the observed rows or text differ
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P5</p>
+
+<p>P7</p>
+
+<p>P8</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>None: no move. Per touched file, DataGridBase.tsx, types.ts and FeatureListDataGrid.tsx are decided in S1 and nothing in them blocks this change; no preserving move
+</code></pre>
+
+<pre><code>S1 behaviour and the existing no-rows message
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.test.tsx</p>
+
+<h5>Verification</h5>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/DataGrid/DataGridBase.test.tsx src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>noRowsLabel</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx:728</p>
+
+<p>Extend</p>
+
+<pre><code>localeText already carries the empty-list message; MUI shows noResultsOverlayLabel for a list narrowed to nothing, keeping the two messages distinct with no new overlay slot
+</code></pre>
+
+<p>DataGridBaseProps</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/types.ts:57</p>
+
+<p>Extend</p>
+
+<pre><code>search shape gains noMatchMessage
+</code></pre>
+
+<p>FeatureListDataGrid</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx:29</p>
+
+<p>Extend</p>
+
+<pre><code>Supplies the no-match copy from the configured term
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx:728</p>
+
+<p>Changed</p>
+
+<pre><code>noResultsOverlayLabel set only when a search prop is given and its text is non-empty; otherwise MUI default stays
+</code></pre>
+
+<p>type</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/types.ts:57</p>
+
+<p>Changed</p>
+
+<pre><code>Extends the optional search shape; no existing literal affected
+</code></pre>
+
+<p>page</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx:134</p>
+
+<p>Changed</p>
+
+<pre><code>Passes noMatchMessage built from the Features term
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>agreement</p>
+
+<pre><code>Same deployable, same commit; no shared persisted or wire contract
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>Props between two modules of one bundle; the primary oracle runs the real producer through the real consumer
+</code></pre>
+
+<p>architectural_tests</p>
+
+<pre><code>No dependency, boundary or ownership law is reachable beyond the opt-in law already recorded in S1
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Delivery name column adopts createNameColumn (minWidth and no fixed width kept); owningTeam gets a shown-text valueFormatter sharing the OwningTeams rule
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Projects column gets valueFormatter = projectNamesText
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/featureListSearch.everyList.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/pages/Common/featureListSearch.everyList.test.tsx
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Mount PortfolioFeatureList, TeamFeatureList and the Delivery WorkItemsTab with a Feature of reference PROJ-12 and type proj-12 into each Search Features box
+</code></pre>
+
+<pre><code>Each of the three shows the same box above its list and lists the PROJ-12 Feature; typing the Team name on the Delivery tab finds Features that team works on
+</code></pre>
+
+<pre><code>Delivery tab keeping its own name column (name only) misses PROJ-12; a page not mounting FeatureListDataGrid shows no box
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P9</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>None: no move. Per touched file: deliveryFeatureRow.tsx holds several components (DeliveryRowActions, SelectionModeMarker, OwningTeams) that are not variants of one sum type; splitting them is not needed to make this change easier and would widen the diff of an unrelated delivery file, so no split here and OwningTeams stays in place; TeamFeatureList.tsx holds one component
+</code></pre>
+
+<pre><code>deliveryFeatureRow.test.tsx assertions on the Name cell, Team cell and column order
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.test.tsx</p>
+
+<h5>Verification</h5>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.test.tsx
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>createNameColumn</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx:39</p>
+
+<p>Reuse</p>
+
+<pre><code>The Delivery tab name column (deliveryFeatureRow.tsx:200) is a second copy of the same cell with the same getWorkItemName; replacing it gives search by ID there with one owner of the Name text
+</code></pre>
+
+<p>OwningTeams</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.tsx:155</p>
+
+<p>Extend</p>
+
+<pre><code>Its teamsWithWork rule and Unassigned text become the owner of the shown Team text, also used by the column valueFormatter, so cell and search cannot disagree
+</code></pre>
+
+<p>FeatureListDataGrid</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx:29</p>
+
+<p>Reuse</p>
+
+<pre><code>Opt-in already inherited by PortfolioFeatureList:97, TeamFeatureList:118 and WorkItemsTab:50; no per-page code needed for the box
+</code></pre>
+
+<p>projects</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.tsx:77</p>
+
+<p>Extend</p>
+
+<pre><code>Existing Portfolios column gains valueFormatter using the helper created in S1
+</code></pre>
+
+<p>TeamFeatureList</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.tsx:32</p>
+
+<p>Extend</p>
+
+<pre><code>Owns the projects column on the Team tab
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>page</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.tsx:200</p>
+
+<p>Migrated</p>
+
+<pre><code>Own name column replaced by the shared factory spread with minWidth 120 and width undefined; same renderCell output
+</code></pre>
+
+<p>page</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.tsx:213</p>
+
+<p>Changed</p>
+
+<pre><code>owningTeam gains valueFormatter
+</code></pre>
+
+<p>page</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.tsx:77</p>
+
+<p>Changed</p>
+
+<pre><code>projects gains valueFormatter
+</code></pre>
+
+<p>page</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.tsx:97</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Gets the box through FeatureListDataGrid; Name factory and Parent column already search by shown text
+</code></pre>
+
+<p>page</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/WorkItemsTab.tsx:50</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Gets the box through FeatureListDataGrid; its Loading and no-Features texts stay
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.test.tsx:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Asserts the rendered Name cell and column set, which the factory reproduces
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>agreement</p>
+
+<pre><code>Page column definitions and the grid are one deployable changed in one commit; no shared wire or persisted shape
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>No parties that can change apart; the primary oracle mounts the real pages
+</code></pre>
+
+<p>architectural_tests</p>
+
+<pre><code>Opt-in law is recorded in S1; this slice adds no dependency edge
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S4</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>createNameColumn: valueFormatter replaced by valueGetter = getWorkItemName plus sortComparator over row.name (gridStringOrNumberComparator)
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.nameFilter.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/FeatureListDataGrid/FeatureListDataGrid.nameFilter.test.tsx
+pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/FeatureListDataGrid/columns.test.tsx src/components/Common/FeatureListDataGrid/FeatureListDataGrid.search.test.tsx
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Render FeatureListDataGrid with a Feature PROJ-12 Checkout, open the Name column filter and type PROJ-12; also sort the Name column ascending over names not in ID order
+</code></pre>
+
+<pre><code>The PROJ-12 Feature is listed; sort order is by name as before, not by ID prefix
+</code></pre>
+
+<pre><code>Name column without valueGetter finds nothing for PROJ-12; a valueGetter without sortComparator reorders the sort by ID prefix
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<p>P10</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>None: no move. Per touched file, columns.tsx holds factory functions and one local row type, nothing to split
+</code></pre>
+
+<pre><code>Name sort order by name, Name cell rendering, S1 search by ID
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.test.tsx</p>
+
+<h5>Verification</h5>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/FeatureListDataGrid/columns.test.tsx
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>createNameColumn</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx:39</p>
+
+<p>Extend</p>
+
+<pre><code>Column filter and MUI value both read valueGetter; one getter gives filter, search and tooltip the shown text; the comparator keeps today sort order by name
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>column-factory</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx:39</p>
+
+<p>Changed</p>
+
+<pre><code>Name column value is the shown text for filter; sort comparator keeps name order
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/refinementColumns.tsx:115</p>
+
+<p>Migrated</p>
+
+<pre><code>Refinement Name filter also matches the ID (accepted side effect, shown text); its sort stays by name; it has no export
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Features/FeaturesView.tsx:43</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Takes the factory; filter now finds the ID
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.tsx:53</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Takes the factory; filter now finds the ID
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.tsx:57</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Takes the factory; filter now finds the ID
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.tsx:200</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Already on the factory since S3
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/DataGridToolbar.tsx:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Export reads getCellValue, which would now be the shown Name text; no grid using the factory exports through getCellValue today (Delivery passes exportTable, Refinement has no export)
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>Name column value (valueGetter) as the shown ID: name text</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx:39</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Producer of the Name cell value: filter and search now see the shown text, sort keeps name
+</code></pre>
+
+<p>Name column value (valueGetter) as the shown ID: name text</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/refinementColumns.tsx:115</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Filter finds the ID; sort and layout unchanged
+</code></pre>
+
+<p>Name column value (valueGetter) as the shown ID: name text</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.tsx:200</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Adopted the factory in S3
+</code></pre>
+
+<p>Name column value (valueGetter) as the shown ID: name text</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/DataGridToolbar.tsx:1</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>getCellValue export reader; none of the grids using the factory exports through it today
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>contract_tests</p>
+
+<pre><code>All parties are modules of one bundle changed in one commit; no persisted or wire data outlives the producer
+</code></pre>
+
+<p>architectural_tests</p>
+
+<pre><code>No dependency or ownership law is reachable; the single owner of the Name text (getWorkItemName) is unchanged
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
 
 <p>None.</p>
 

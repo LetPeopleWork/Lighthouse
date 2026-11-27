@@ -1,27 +1,1109 @@
 {
 "counters": {
-"F": 61,
+"C": 1,
+"D": 9,
+"F": 248,
+"K": 9,
+"L": 4,
 "P": 10,
-"S": 4
+"S": 4,
+"T": 1,
+"Y": 6
+},
+"design": {
+"paradigm": "functional",
+"shared": {
+"boundaries": {
+"dependency_direction": "F77",
+"driven_ports": [
+"F76"
+],
+"driving_port": "F75"
+},
+"claims": [
+{
+"admitted_input": "F107",
+"bypass": "F109",
+"constructor": "quickSearchValues",
+"consumer": "DataGridBase.tsx apiRef.setQuickFilterValues",
+"harm": "F106",
+"id": "C1",
+"owner": "quickSearch.ts",
+"proposition": "F105",
+"public_observation": "F108"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F114",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F113"
+},
+{
+"axis": "Inhabitation",
+"basis": "F116",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F115"
+},
+{
+"axis": "PublicReachability",
+"basis": "F118",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F117"
+},
+{
+"axis": "Liveness",
+"basis": "F120",
+"design": "Pass",
+"runtime": "Indeterminate",
+"subject": "F119"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F71"
+},
+{
+"id": "K2",
+"text": "F72"
+},
+{
+"id": "K3",
+"text": "F73"
+},
+{
+"id": "K4",
+"text": "F74"
+},
+{
+"id": "K5",
+"text": "F41"
+},
+{
+"id": "K6",
+"text": "F42"
+},
+{
+"id": "K7",
+"text": "F43"
+},
+{
+"id": "K8",
+"text": "F44"
+},
+{
+"id": "K9",
+"text": "F45"
+}
+],
+"constructors": [
+{
+"name": "quickSearchValues",
+"signature": "(text: string) => string[]"
+},
+{
+"name": "shownTextQuickFilter",
+"signature": "(value: string) => null | ((_, row, column, apiRef) => boolean)"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F62"
+},
+{
+"id": "D2",
+"text": "F63"
+},
+{
+"id": "D3",
+"text": "F64"
+},
+{
+"id": "D4",
+"text": "F65"
+},
+{
+"id": "D5",
+"text": "F66"
+},
+{
+"id": "D6",
+"text": "F67"
+},
+{
+"id": "D7",
+"text": "F68"
+},
+{
+"id": "D8",
+"text": "F69"
+},
+{
+"id": "D9",
+"text": "F70"
+}
+],
+"equality": [
+{
+"definition": "F80",
+"under": "rows shown after a search"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "quickSearch.ts",
+"statement": "F81",
+"treatment": {
+"falsifier": "F86",
+"generator": {
+"depth_bound": "single call, no nesting",
+"domain": "F82",
+"must_include": [
+"F83"
+],
+"seed_policy": "fixed seed in the test, replayed from the printed fast-check seed",
+"shrinking": "F84",
+"size_bound": "numRuns 100; text length 40"
+},
+"independent_observation": "F85",
+"kind": "Broad"
+}
+},
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "quickSearch.ts",
+"statement": "F87",
+"treatment": {
+"cases": [
+"F88",
+"F89",
+"F90",
+"F91",
+"F92"
+],
+"kind": "Finite",
+"reason": "F93"
+}
+},
+{
+"id": "L3",
+"kind": "Algebraic",
+"layer": "Domain",
+"owner": "quickSearch.ts",
+"statement": "F94",
+"treatment": {
+"falsifier": "F99",
+"generator": {
+"depth_bound": "single call",
+"domain": "F95",
+"must_include": [
+"F96"
+],
+"seed_policy": "fixed seed, replayable",
+"shrinking": "F97",
+"size_bound": "numRuns 100; 8 rows"
+},
+"independent_observation": "F98",
+"kind": "Broad"
+}
+},
+{
+"id": "L4",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "DataGridBase.tsx",
+"statement": "F100",
+"treatment": {
+"cases": [
+"F101",
+"F102",
+"F103"
+],
+"kind": "Finite",
+"reason": "F104"
+}
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F79",
+"description": "F78",
+"result_type": "rows shown (set of Feature ids, paged) plus overlay text"
+}
+],
+"risks": [
+{
+"allowed": "F123",
+"forbidden": "F124",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "quickSearch.ts / each page column definition",
+"preserved": "F122",
+"residue": "F125",
+"source": "F121"
+},
+{
+"allowed": "F128",
+"forbidden": "F129",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "DataGridBase.tsx",
+"preserved": "F127",
+"residue": "F130",
+"source": "F126"
+},
+{
+"allowed": "F133",
+"forbidden": "F134",
+"id": "Y3",
+"kind": "Bypass",
+"owner": "DataGridBase.tsx",
+"preserved": "F132",
+"residue": "F135",
+"source": "F131"
+},
+{
+"allowed": "F138",
+"forbidden": "F139",
+"id": "Y4",
+"kind": "SinglePointOfFailure",
+"owner": "utils/featureName.ts",
+"preserved": "F137",
+"residue": "F140",
+"source": "F136"
+},
+{
+"allowed": "F143",
+"forbidden": "F144",
+"id": "Y5",
+"kind": "Stressor",
+"owner": "DataGridBase.tsx",
+"preserved": "F142",
+"residue": "F145",
+"source": "F141"
+},
+{
+"allowed": "F148",
+"forbidden": "F149",
+"id": "Y6",
+"kind": "Stressor",
+"owner": "FeatureListDataGrid.tsx",
+"preserved": "F147",
+"residue": "F150",
+"source": "F146"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "DataGridBase.tsx",
+"state": "F110"
+},
+{
+"kind": "Excluded",
+"owner": "quickSearch.ts",
+"state": "F111"
+},
+{
+"kind": "Unknown",
+"owner": "product owner",
+"state": "F112"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.search.test.tsx",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.test.tsx",
+"move": "F218",
+"preserved": "F219",
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/DataGrid/DataGridBase.test.tsx src/components/Common/DataGrid/DataGridToolbar.test.tsx src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx src/components/Common/FeatureListDataGrid/columns.test.tsx"
+]
+},
+"public_oracle": {
+"expected": "F216",
+"falsifier": "F217",
+"promises": [
+"P1",
+"P3",
+"P4",
+"P6"
+],
+"stimulus": "F215"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/DataGrid/DataGridBase.search.test.tsx",
+"id": "T1",
+"obligation": "F248",
+"oracle": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.search.test.tsx"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx:470",
+"reason": "F230"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridToolbar.tsx:175",
+"reason": "F231"
+},
+{
+"decision": "Changed",
+"kind": "type",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/types.ts:57",
+"reason": "F232"
+},
+{
+"decision": "Changed",
+"kind": "page",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx:134",
+"reason": "F233"
+},
+{
+"decision": "Changed",
+"kind": "column-factory",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx:39",
+"reason": "F234"
+},
+{
+"decision": "Changed",
+"kind": "page",
+"locator": "Lighthouse.Frontend/src/pages/Features/FeaturesView.tsx:45",
+"reason": "F235"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/ReportList.tsx:307",
+"reason": "F236"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.tsx:231",
+"reason": "F237"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.tsx:161",
+"reason": "F238"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementGrid.tsx:93",
+"reason": "F239"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/ArchivedFeatureGrid.tsx:67",
+"reason": "F239"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureGrid/FeatureGrid.tsx:237",
+"reason": "F240"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx:304",
+"reason": "F237"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.tsx:355",
+"reason": "F237"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridToolbar.test.tsx:69",
+"reason": "F241"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.test.tsx:1",
+"reason": "F242"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "build-metadata",
+"locator": "Lighthouse.Frontend/package.json:35",
+"reason": "F243"
+},
+{
+"decision": "Changed",
+"kind": "new-module",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.ts:1",
+"reason": "F244"
+},
+{
+"decision": "Changed",
+"kind": "new-module",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/GridSearchBox.tsx:1",
+"reason": "F245"
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F246"
+},
+{
+"analysis": "contract_tests",
+"reason": "F247"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx:470",
+"reason": "F220",
+"symbol": "DataGridBase"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridToolbar.tsx:175",
+"reason": "F221",
+"symbol": "DataGridToolbar"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/GridSearchBox.tsx:1",
+"reason": "F222",
+"symbol": "GridSearchBox"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.ts:1",
+"reason": "F223",
+"symbol": "quickSearch"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx:39",
+"reason": "F224",
+"symbol": "createNameColumn"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/utils/featureName.ts:4",
+"reason": "F225",
+"symbol": "getWorkItemName"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/components/Common/ParentWorkItemCell/ParentWorkItemCell.tsx:14",
+"reason": "F226",
+"symbol": "parentWorkItemText"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/types.ts:57",
+"reason": "F227",
+"symbol": "DataGridBaseProps"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx:29",
+"reason": "F228",
+"symbol": "FeatureListDataGrid"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Features/FeaturesView.tsx:18",
+"reason": "F229",
+"symbol": "FeaturesView"
+}
+]
+},
+"supports": [
+"Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.test.ts",
+"Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.search.test.tsx"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.ts",
+"reason": "F207"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/Common/DataGrid/GridSearchBox.tsx",
+"reason": "F208"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridToolbar.tsx",
+"reason": "F209"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx",
+"reason": "F210"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/DataGrid/types.ts",
+"reason": "F211"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx",
+"reason": "F212"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx",
+"reason": "F213"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Features/FeaturesView.tsx",
+"reason": "F214"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/FeatureListDataGrid/FeatureListDataGrid.search.test.tsx",
+"pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/DataGrid/quickSearch.test.ts src/components/Common/DataGrid/DataGridBase.search.test.tsx"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.searchEdges.test.tsx",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.test.tsx",
+"move": "F175",
+"preserved": "F176",
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/DataGrid/DataGridBase.test.tsx src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx"
+]
+},
+"public_oracle": {
+"expected": "F173",
+"falsifier": "F174",
+"promises": [
+"P5",
+"P7",
+"P8"
+],
+"stimulus": "F172"
+},
+"records": {
+"impact": [
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx:728",
+"reason": "F180"
+},
+{
+"decision": "Changed",
+"kind": "type",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/types.ts:57",
+"reason": "F181"
+},
+{
+"decision": "Changed",
+"kind": "page",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx:134",
+"reason": "F182"
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F183"
+},
+{
+"analysis": "contract_tests",
+"reason": "F184"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F185"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx:728",
+"reason": "F177",
+"symbol": "noRowsLabel"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/types.ts:57",
+"reason": "F178",
+"symbol": "DataGridBaseProps"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx:29",
+"reason": "F179",
+"symbol": "FeatureListDataGrid"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/DataGrid/types.ts",
+"reason": "F170"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx",
+"reason": "F171"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/FeatureListDataGrid/FeatureListDataGrid.searchEdges.test.tsx"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Frontend/src/pages/Common/featureListSearch.everyList.test.tsx",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.test.tsx",
+"move": "F191",
+"preserved": "F192",
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.test.tsx"
+]
+},
+"public_oracle": {
+"expected": "F189",
+"falsifier": "F190",
+"promises": [
+"P9"
+],
+"stimulus": "F188"
+},
+"records": {
+"impact": [
+{
+"decision": "Migrated",
+"kind": "page",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.tsx:200",
+"reason": "F198"
+},
+{
+"decision": "Changed",
+"kind": "page",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.tsx:213",
+"reason": "F199"
+},
+{
+"decision": "Changed",
+"kind": "page",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.tsx:77",
+"reason": "F200"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "page",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.tsx:97",
+"reason": "F201"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "page",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/WorkItemsTab.tsx:50",
+"reason": "F202"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.test.tsx:1",
+"reason": "F203"
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F204"
+},
+{
+"analysis": "contract_tests",
+"reason": "F205"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F206"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx:39",
+"reason": "F193",
+"symbol": "createNameColumn"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.tsx:155",
+"reason": "F194",
+"symbol": "OwningTeams"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx:29",
+"reason": "F195",
+"symbol": "FeatureListDataGrid"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.tsx:77",
+"reason": "F196",
+"symbol": "projects"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.tsx:32",
+"reason": "F197",
+"symbol": "TeamFeatureList"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.tsx",
+"reason": "F186"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.tsx",
+"reason": "F187"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/pages/Common/featureListSearch.everyList.test.tsx"
+]
+},
+"S4": {
+"oracle": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.nameFilter.test.tsx",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.test.tsx",
+"move": "F155",
+"preserved": "F156",
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/FeatureListDataGrid/columns.test.tsx"
+]
+},
+"public_oracle": {
+"expected": "F153",
+"falsifier": "F154",
+"promises": [
+"P2",
+"P10"
+],
+"stimulus": "F152"
+},
+"records": {
+"agreement": [
+{
+"contract": "Name column value (valueGetter) as the shown ID: name text",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx:39",
+"party": "Producer",
+"reason": "F163"
+},
+{
+"contract": "Name column value (valueGetter) as the shown ID: name text",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/refinementColumns.tsx:115",
+"party": "Consumer",
+"reason": "F164"
+},
+{
+"contract": "Name column value (valueGetter) as the shown ID: name text",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.tsx:200",
+"party": "Consumer",
+"reason": "F165"
+},
+{
+"contract": "Name column value (valueGetter) as the shown ID: name text",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridToolbar.tsx:1",
+"party": "Consumer",
+"reason": "F166"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "column-factory",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx:39",
+"reason": "F158"
+},
+{
+"decision": "Migrated",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/refinementColumns.tsx:115",
+"reason": "F159"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/pages/Features/FeaturesView.tsx:43",
+"reason": "F160"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.tsx:53",
+"reason": "F160"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.tsx:57",
+"reason": "F160"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.tsx:200",
+"reason": "F161"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridToolbar.tsx:1",
+"reason": "F162"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F167"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F168"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx:39",
+"reason": "F157",
+"symbol": "createNameColumn"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx",
+"reason": "F151"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/FeatureListDataGrid/FeatureListDataGrid.nameFilter.test.tsx",
+"pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/FeatureListDataGrid/columns.test.tsx src/components/Common/FeatureListDataGrid/FeatureListDataGrid.search.test.tsx"
+]
+}
+}
 },
 "facts": {
 "F1": "ADO Story 6711 \"Improve Search on Feature List\": It is not obvious that you have to click on the \"...\" in a column and then get the filter. At least to filter: Feature Reference ID; Feature Name; Parent ID & Reference. A textbox on top would be nice. This applies everywhere we have the feature list. Also right now we only search for the \"name\" and not the \"Reference ID\" if we filter on Feature Name (which is confusing).",
 "F10": "a Feature has a parent shown as 'PROJ-3: Checkout'",
+"F100": "Combination and page: search and column filter both apply (AND), and a changed search text opens page 0; the box clear restores the unfiltered row set.",
+"F101": "column filter set + search: only rows meeting both",
+"F102": "page 2 + new search: first page of results",
+"F103": "clear box: every row shown again",
+"F104": "Behaviour of the MUI adapter, a few finite stimuli through the rendered port",
+"F105": "A search text can only narrow rows by shown cell text and never by an object, count or boolean value",
+"F106": "Typing a few letters lists unrelated Features or hides the one the user wants",
+"F107": "search text string; cell formatted value of any kind",
+"F108": "rows listed by FeatureListDataGrid",
+"F109": "A column that sets its own getApplyQuickFilterFn in a caller; MUI own quick filter UI; closure checked by reading, enforced only by the oracles (TypeScript does not exclude it)",
 "F11": "the user types 'checkout' into the search box",
+"F110": "Any text string typed in the box, including regex characters and surrounding spaces",
+"F111": "A quick filter value that is empty or whitespace-only; a cell value that is an object matching a query",
+"F112": "Searchability of forecast, progress and likelihood cell text (not text values today)",
+"F113": "quick filter matches shown text only",
+"F114": "Object, array, boolean and undefined values return no match in the pure core; MUI source read for hidden, boolean and actions columns. Type strength: string-typed props only; invalid cell kinds are representable and excluded at the predicate, not by types.",
+"F115": "search by reference ID, name, parent",
+"F116": "Name valueFormatter returns getWorkItemName; Parent valueGetter already returns the shown text; both reach quick filter via getRowFormattedValue",
+"F117": "typing in the toolbar box narrows the list on all four pages",
+"F118": "input: user typing -> GridSearchBox onChange -> DataGridBase state -> setQuickFilterValues -> MUI rows -> FeatureListDataGrid render; FeatureListDataGrid is mounted by FeaturesView:68, PortfolioFeatureList:97, TeamFeatureList:118, WorkItemsTab:50",
+"F119": "search narrowing",
 "F12": "that Feature appears in the list",
+"F120": "No liveness claim: the filter is a synchronous total function over loaded rows, no step that can wait or be starved",
+"F121": "Assumption negated: a column value equals the shown text (it does not for object, count and boolean columns)",
+"F122": "Search finds what the reader sees in text columns",
+"F123": "Columns with no text value are simply not searchable",
+"F124": "A search matching [object Object], a count or the word true",
+"F125": "Forecast dates, progress and likelihood text cannot be searched; a later slice may add a shown-text valueFormatter per column",
+"F126": "Assumption negated: MUI keeps its quick filter semantics across upgrades (@mui/x-data-grid ^9.18)",
+"F127": "AND with column filters, page 0 on change, hidden columns excluded",
+"F128": "An upgrade changes internals but not these",
+"F129": "Silent loss of page reset or of column-filter combination",
 "F13": "User sees that nothing matches the search",
+"F130": "Pinned only by the component oracles; a major MUI upgrade must rerun them",
+"F131": "Second writer of the quick filter: a user opening MUI own filter UI or another caller of apiRef.setQuickFilterValues",
+"F132": "One writer (DataGridBase search state)",
+"F133": "None: DataGridBase shows no MUI toolbar quick filter",
+"F134": "A second box or stale text that disagrees with the filter model",
+"F135": "A future grid enabling MUI GridToolbarQuickFilter would fight the same filter model; not reachable today",
+"F136": "Name text derives from one function getWorkItemName",
+"F137": "Cell, search and column filter agree on the shown Name text",
+"F138": "Future wording change in that function reaches all three at once",
+"F139": "A copy of the Name cell that formats differently (the Delivery tab copy)",
 "F14": "no Feature shows the text 'zzz'",
+"F140": "Removed in the every-list slice by adopting the factory",
+"F141": "Second stressor set (walk of the finished design): very long list of 500 Features",
+"F142": "Typing stays responsive",
+"F143": "One filter pass per keystroke over loaded rows",
+"F144": "Network call or re-fetch on typing",
+"F145": "Per-keystroke filtering of a few hundred rows is walked, not measured; MUI debounces nothing here",
+"F146": "Second stressor set: the list reloads or Hide Completed toggles while text is typed",
+"F147": "Text stays in the box and keeps narrowing the new rows",
+"F148": "Rows change under the text",
+"F149": "Box showing text that is not applied",
 "F15": "the user types 'zzz' into the search box",
+"F150": "Page failure look unmounts the grid, so text is lost on retry; accepted, not persisted by decision",
+"F151": "createNameColumn: valueFormatter replaced by valueGetter = getWorkItemName plus sortComparator over row.name (gridStringOrNumberComparator)",
+"F152": "Render FeatureListDataGrid with a Feature PROJ-12 Checkout, open the Name column filter and type PROJ-12; also sort the Name column ascending over names not in ID order",
+"F153": "The PROJ-12 Feature is listed; sort order is by name as before, not by ID prefix",
+"F154": "Name column without valueGetter finds nothing for PROJ-12; a valueGetter without sortComparator reorders the sort by ID prefix",
+"F155": "None: no move. Per touched file, columns.tsx holds factory functions and one local row type, nothing to split",
+"F156": "Name sort order by name, Name cell rendering, S1 search by ID",
+"F157": "Column filter and MUI value both read valueGetter; one getter gives filter, search and tooltip the shown text; the comparator keeps today sort order by name",
+"F158": "Name column value is the shown text for filter; sort comparator keeps name order",
+"F159": "Refinement Name filter also matches the ID (accepted side effect, shown text); its sort stays by name; it has no export",
 "F16": "the list says in words that no Feature matches the search, distinct from the message for a list that has no Features at all",
+"F160": "Takes the factory; filter now finds the ID",
+"F161": "Already on the factory since S3",
+"F162": "Export reads getCellValue, which would now be the shown Name text; no grid using the factory exports through getCellValue today (Delivery passes exportTable, Refinement has no export)",
+"F163": "Producer of the Name cell value: filter and search now see the shown text, sort keeps name",
+"F164": "Filter finds the ID; sort and layout unchanged",
+"F165": "Adopted the factory in S3",
+"F166": "getCellValue export reader; none of the grids using the factory exports through it today",
+"F167": "All parties are modules of one bundle changed in one commit; no persisted or wire data outlives the producer",
+"F168": "No dependency or ownership law is reachable; the single owner of the Name text (getWorkItemName) is unchanged",
+"F169": "search.noMatchMessage(text) becomes localeText.noResultsOverlayLabel while the text is non-empty",
 "F17": "User clears the search and sees every Feature again",
+"F170": "search prop gains noMatchMessage: (text: string) => string",
+"F171": "Supplies the No Features match copy from the configured term",
+"F172": "Render FeatureListDataGrid with PAGE_SIZE + 1 Features and a state column filter set, go to page 2, type a text that matches nothing (zzz), then a text matching some; also render with an empty features array",
+"F173": "Typing narrows together with the column filter (only rows meeting both); typing from page 2 shows the first page of results; zzz shows No Features match \"zzz\". in words different from the emptyStateMessage shown for the empty list",
+"F174": "A pre-filter that keeps the open page, an OR instead of AND with the column filter, or reusing the empty-list message for no match makes the observed rows or text differ",
+"F175": "None: no move. Per touched file, DataGridBase.tsx, types.ts and FeatureListDataGrid.tsx are decided in S1 and nothing in them blocks this change; no preserving move",
+"F176": "S1 behaviour and the existing no-rows message",
+"F177": "localeText already carries the empty-list message; MUI shows noResultsOverlayLabel for a list narrowed to nothing, keeping the two messages distinct with no new overlay slot",
+"F178": "search shape gains noMatchMessage",
+"F179": "Supplies the no-match copy from the configured term",
 "F18": "the search box holds text and the list is narrowed",
+"F180": "noResultsOverlayLabel set only when a search prop is given and its text is non-empty; otherwise MUI default stays",
+"F181": "Extends the optional search shape; no existing literal affected",
+"F182": "Passes noMatchMessage built from the Features term",
+"F183": "Same deployable, same commit; no shared persisted or wire contract",
+"F184": "Props between two modules of one bundle; the primary oracle runs the real producer through the real consumer",
+"F185": "No dependency, boundary or ownership law is reachable beyond the opt-in law already recorded in S1",
+"F186": "Delivery name column adopts createNameColumn (minWidth and no fixed width kept); owningTeam gets a shown-text valueFormatter sharing the OwningTeams rule",
+"F187": "Projects column gets valueFormatter = projectNamesText",
+"F188": "Mount PortfolioFeatureList, TeamFeatureList and the Delivery WorkItemsTab with a Feature of reference PROJ-12 and type proj-12 into each Search Features box",
+"F189": "Each of the three shows the same box above its list and lists the PROJ-12 Feature; typing the Team name on the Delivery tab finds Features that team works on",
 "F19": "the user clears the box",
+"F190": "Delivery tab keeping its own name column (name only) misses PROJ-12; a page not mounting FeatureListDataGrid shows no box",
+"F191": "None: no move. Per touched file: deliveryFeatureRow.tsx holds several components (DeliveryRowActions, SelectionModeMarker, OwningTeams) that are not variants of one sum type; splitting them is not needed to make this change easier and would widen the diff of an unrelated delivery file, so no split here and OwningTeams stays in place; TeamFeatureList.tsx holds one component",
+"F192": "deliveryFeatureRow.test.tsx assertions on the Name cell, Team cell and column order",
+"F193": "The Delivery tab name column (deliveryFeatureRow.tsx:200) is a second copy of the same cell with the same getWorkItemName; replacing it gives search by ID there with one owner of the Name text",
+"F194": "Its teamsWithWork rule and Unassigned text become the owner of the shown Team text, also used by the column valueFormatter, so cell and search cannot disagree",
+"F195": "Opt-in already inherited by PortfolioFeatureList:97, TeamFeatureList:118 and WorkItemsTab:50; no per-page code needed for the box",
+"F196": "Existing Portfolios column gains valueFormatter using the helper created in S1",
+"F197": "Owns the projects column on the Team tab",
+"F198": "Own name column replaced by the shared factory spread with minWidth 120 and width undefined; same renderCell output",
+"F199": "owningTeam gains valueFormatter",
 "F2": "A user finds a Feature in any feature list by typing part of its ID, name, parent or any other shown value into one search box above the list, and the Name column filter also finds a Feature by its ID.",
 "F20": "every Feature of the list is shown again",
+"F200": "projects gains valueFormatter",
+"F201": "Gets the box through FeatureListDataGrid; Name factory and Parent column already search by shown text",
+"F202": "Gets the box through FeatureListDataGrid; its Loading and no-Features texts stay",
+"F203": "Asserts the rendered Name cell and column set, which the factory reproduces",
+"F204": "Page column definitions and the grid are one deployable changed in one commit; no shared wire or persisted shape",
+"F205": "No parties that can change apart; the primary oracle mounts the real pages",
+"F206": "Opt-in law is recorded in S1; this slice adds no dependency edge",
+"F207": "Pure core: quickSearchValues(text) and shownTextQuickFilter; one owner of the matching rule",
+"F208": "The search text box with search icon and clear button, one component per file",
+"F209": "Renders GridSearchBox at the left when a search prop is given",
 "F21": "Search and a column filter narrow the list together",
+"F210": "Holds the search text state, calls setQuickFilterValues, gives every plain text column the shown-text quick filter",
+"F211": "Adds the optional search prop to DataGridBaseProps and DataGridToolbarProps",
+"F212": "Passes the search prop with the configured Features term",
+"F213": "createNameColumn gets valueFormatter = getWorkItemName(name, referenceId); new exported projectNamesText(feature) helper",
+"F214": "Projects column gets valueFormatter = projectNamesText so Portfolio names are searchable on the Features page",
+"F215": "Render FeatureListDataGrid (Name and Parent columns, 3 Features, one PROJ-12: Checkout under parent PROJ-3: Shop), type proj-12 into the textbox named Search Features, then type checkout, then clear the box",
+"F216": "Typing proj-12 lists only rows whose shown text contains it (PROJ-12: Checkout); checkout finds the Feature through its Parent text PROJ-3: Checkout too; clearing shows all three rows again; the box sits in the toolbar row before the icons",
+"F217": "Name column without valueFormatter (search by ID misses), a case-sensitive or regex-unescaped matcher, or an object column matching obj makes the stated rows differ",
+"F218": "Add no behaviour first: nothing to move. Prefactoring decision per touched file: DataGridBase.tsx one component plus helpers, no several types; DataGridToolbar.tsx one component; FeatureListDataGrid.tsx one component; FeaturesView.tsx one component; columns.tsx factories with one local row type; types.ts holds several distinct interfaces imported across the DataGrid folder and its callers, so no split in this slice (a split would rewrite every importer without adding the observation) - the new optional props go in as they are",
+"F219": "Every existing DataGridBase, toolbar, columns and FeatureListDataGrid assertion unchanged",
 "F22": "a column filter is set and the search box holds text",
+"F220": "Owns the apiRef and the grid; the only place that can call setQuickFilterValues; an opt-in prop leaves the eight other callers untouched",
+"F221": "Already the toolbar row where the agreed sketch puts the box; customActions sits to the right of it and is not the place for a left-aligned box",
+"F222": "No candidate fits: FilterBar is a full-width own row with Ctrl+F and portfolio/team wording (FilterBar.tsx:22), the ThirdPartyPackages TextField (ThirdPartyPackagesSection.tsx:154) pre-filters rows outside the grid; a small component wrapping MUI TextField is the simplest owner of box + clear button",
+"F223": "No existing owner decides which cell text a query matches; getGridStringQuickFilterFn in MUI would match [object Object] for object values. SEMANTIC duplicate check: ThirdPartyPackagesSection.tsx:99 lowercases and includes over its own rows, it is a different list and not a shared rule",
+"F224": "The shared Name column; its shown text getWorkItemName is already the cell text, so exposing it as valueFormatter makes search agree with the cell",
+"F225": "Sole owner of the shown Name text; consumed, not changed",
+"F226": "Parent column valueGetter already returns the shown text, so search finds the parent ID and name with no change",
+"F227": "Owns the grid props; optional search prop added here",
+"F228": "Single caller that opts in; owns the configured term",
+"F229": "Owns the projects column on the Features page",
 "F23": "the list is shown",
+"F230": "New optional search prop; without it behaviour is identical",
+"F231": "New optional search prop rendered left of the icons",
+"F232": "Optional fields only, every existing literal still compiles",
+"F233": "Passes search to DataGridBase; all four pages inherit it",
+"F234": "Name column gains valueFormatter; displayed cell unchanged; tooltip fullText now equals the cell text",
+"F235": "Projects column gains valueFormatter",
+"F236": "Passes no search prop; no box, no quick filter",
+"F237": "Passes no search prop",
+"F238": "Keeps its own TextField above the grid; passes no search prop",
+"F239": "Out of scope; passes no search prop",
 "F24": "only Features meeting both the column filter and the search are listed",
+"F240": "Delivery dialog picker, out of scope; passes no search prop",
+"F241": "Existing toolbar tests pass no search prop",
+"F242": "Name column render assertions keep reading the rendered cell",
+"F243": "No new dependency: @mui/x-data-grid ^9.18.0, fast-check 4.10.3 already declared",
+"F244": "New pure module, imported only by DataGridBase",
+"F245": "New component, imported only by DataGridToolbar",
+"F246": "The search prop is passed between FeatureListDataGrid and DataGridBase in one deployable and one commit; no persisted or wire shape changes",
+"F247": "Producer and consumer of the new props change together in one bundle; the primary oracle covers the real producer through the real consumer",
+"F248": "The search box is opt-in: DataGridBase and DataGridToolbar render no search textbox unless a search prop is given, so the grids outside the four pages gain none",
 "F25": "A new search opens the first page of results",
 "F26": "the user is on page 2 of a long list",
 "F27": "the user types a search",
@@ -63,9 +1145,47 @@
 "F6": "the Features page lists Features and one has the reference ID PROJ-12 (Proposal value)",
 "F60": "Typing a Feature's reference ID into the Name column filter finds that Feature in every full feature list.",
 "F61": "Name filter no longer ignores the ID shown in the cell",
+"F62": "Paradigm: the repository frontend is hooks and pure functions inside an object-oriented project; this feature adds no class. Carriers: search text is a useState in DataGridBase (per mount, never persisted, empty on every open); the narrowing itself is MUI filterModel.quickFilterValues, set with apiRef.setQuickFilterValues(quickSearchValues(text)); the pure core is the new DataGridBase-adjacent module quickSearch.ts (quickSearchValues and the per-column quick filter). Effects stay in DataGridBase and the toolbar; the core calls neither.",
+"F63": "Matching rule (D2, as the cell reads): use the MUI quick filter, not a custom row pre-filter. The whole trimmed text is ONE literal value, case-insensitive substring, matched against each shown column text. Shown text = the column valueFormatter result when the column has one, else its raw value when that is a string or number. Objects, arrays, undefined and booleans are never matched, so typing obj never matches every row via [object Object] and true never matches Active Work. MUI already excludes hidden columns and gives no quick filter to boolean and actions columns. Columns with no text value (Progress, Forecasted Start, Forecasted Completion, Likelihood, Warnings, Active Work) are not searchable; this is the declared residue. Why the quick filter: it already narrows together with column filters (P7) and opens the first page on a changed value (P8, MUI useGridPaginationModel), which a custom pre-filter would have to rebuild as OpensFirstPageOnSearch does. Rejected: matching every column raw value (wrong for count, boolean and object columns), per-column getApplyQuickFilterFn overrides on each page column (many sites, easy to forget), one custom filter over rendered text (renderCell is a React node, no text).",
+"F64": "Name text: the shown Name cell text is getWorkItemName(name, referenceId) (utils/featureName.ts is the only owner; unparented names and GUID ids show the name alone). createNameColumn exposes it as valueFormatter first (so search finds the ID) and then, in the Name filter slice, as valueGetter plus a sortComparator over row.name using gridStringOrNumberComparator, so column sort and any getCellValue consumer keep seeing the name as today while the column filter sees the shown text. The Delivery Work Items tab name column is a second copy of the same cell and adopts the shared factory.",
+"F65": "UI placement (agreed sketch): DataGridToolbar gets an optional search prop and renders the new GridSearchBox at the left of the toolbar row (search icon, placeholder, clear button); the other toolbar icons stay right-aligned. DataGridBase takes an optional search prop (placeholder, later the no-match copy) and renders no box without it. FeatureListDataGrid is the only caller that passes it, so Refinement, Archived, FeatureGrid, WorkItemsDialog, ReportList, ConnectionsSettings, ThirdPartyPackages and DataOverviewTable gain nothing. Copy uses the configured term: placeholder Search ${features term}; no match: No ${features term} match \"${text}\". (Confirms the Proposed placeholder/no-match decision; DELIVER sketch already agreed.) Reuse verdict: FilterBar (full-width own row, Ctrl+F, portfolio/team wording) and the ThirdPartyPackages TextField (pre-filters rows, own page-reset hook) are not the target; MUI TextField is reused inside a new small GridSearchBox.",
+"F66": "Loading and failure (Open decision F47, resolved): the box lives inside the grid, so it is shown whenever the grid is mounted and stays usable while data loads (it narrows what is loaded; the existing loading overlay or dimming shows). Wherever the page already replaces the grid (lone spinner with nothing to dim, the could-not-load look, the Delivery tab Loading and no-Features texts) there is no box and those looks stay exactly as they are. No new loading or failure look is added. The no-Features message is untouched and distinct from the no-match message because the grid shows noRowsLabel for an empty list and noResultsOverlayLabel for a narrowed-to-nothing list.",
+"F67": "Checker map: No model for the search narrowing: it is a stateless pure row filter over an already loaded list; there is no shared state, multi-step protocol, retry, crash or concurrency window (the only asynchrony is MUI zero-delay debounced page reset, which cannot change which rows match). Quint 0.33.1 is installed but no claim needs it. The laws are checked by native property tests (fast-check 4.10.3, declared in package.json) on the pure core plus component examples; nothing is claimed formally verified. Liveness: no liveness claim, the filter is synchronous and always enabled. MUI behaviours relied on were read in the installed @mui/x-data-grid 9.18.0 source (quick filter reads getRowFormattedValue; excludes hidden columns; boolean and actions columns have a null quick filter; filterModel change navigates to page 0; localeText noResultsOverlayLabel; apiRef.setQuickFilterValues) and are pinned by the component oracles.",
+"F68": "Cross-layer algebra. Domain (pure core, quickSearch.ts): states = query text; operations = quickSearchValues(text) -> [] or [trimmed text], shownTextQuickFilter(value) -> null or predicate over one cell; observation = which rows remain. Application (FeatureListDataGrid/DataGridBase): passes the search prop, owns the text state, calls setQuickFilterValues; outcomes = rows narrowed, no-match message, page 0. Adapter (MUI DataGrid): applies the quick filter together with column filters. Infrastructure and recovery: none, nothing is stored or fetched; a reload or remount returns an empty box, which is the specified behaviour.",
+"F69": "Test substrate: Vitest + React Testing Library under Lighthouse.Frontend, driving port = the rendered FeatureListDataGrid (and the four page components for the every-list slice) with the shared grid kit mock of @mui/x-data-grid (tests/SharedGridFitKit.tsx), pure laws on quickSearch.ts as .test.ts with fast-check. Runner argv: pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run <file>. Default per-test and suite budgets apply, fixtures are 3 to 5 Features, the page-reset test uses PAGE_SIZE + 1 rows; no new E2E: search is client-side over a loaded list and no new user flow is created, so the existing component layer is the lowest layer that proves it. Prerequisite for the host: the worktree has no node_modules; run pnpm install in Lighthouse.Frontend before RED.",
 "F7": "the user types 'proj-12' into the search box above the list",
+"F70": "No backend, API, DTO, RBAC, client, usage-data or persistence change; export and clipboard keep copying every row in sort order, unaffected by the search exactly as a column filter does today.",
+"F71": "Input bounds: the search text has no authority-given length limit and none is added; it is treated as a literal (regex characters escaped), trimmed at both ends, a whitespace-only box is the same as an empty box; case-insensitive; part of a word is enough; no multi-word tokenising (the whole text is one substring). Search text is never persisted and column filters, sort, layout persistence are unchanged.",
+"F72": "Scope: only FeatureListDataGrid (Features page, Portfolio Features tab, Team Features tab, Delivery Work Items tab). A Delivery Work Items tab without Features keeps its own text and shows no box. Column filter on Parent is unchanged.",
+"F73": "Deviation recorded: Name column filter now also matches the ID in the other lists that reuse createNameColumn (Refinement grid): the shown text is what is filtered, consistent with the cell. No other behaviour of those grids changes (their sort order stays by name).",
+"F74": "Terminology: copy uses useTerminology(TERMINOLOGY_KEYS.FEATURES), never Epic or Story. No nWave scenario tags in code. Move menu neighbours are still computed from the hide-completed list, not the searched list, exactly as for a column filter today; not changed here.",
+"F75": "Rendered FeatureListDataGrid props (features, columns, storageKey, status, emptyStateMessage) as mounted by FeaturesView, PortfolioFeatureList, TeamFeatureList and WorkItemsTab; user stimulus = typing in the search role textbox",
+"F76": "None (no backend call). Inward only: @mui/x-data-grid apiRef.setQuickFilterValues and localeText",
+"F77": "pages -> FeatureListDataGrid -> DataGridBase -> DataGridToolbar -> GridSearchBox; DataGridBase -> quickSearch.ts (pure, imports nothing from React or MUI components); columns.tsx -> utils/featureName.ts. DataGrid knows nothing of Features; the term strings come in through the search prop.",
+"F78": "Rows listed by the grid after a search text is typed: the row set shown, and the grid overlay text when no row remains",
+"F79": "Order of rows (sort owns it); which column matched; a column with no text value (Progress, forecasts, Likelihood, Warnings, Active Work) matching",
 "F8": "the list shows only Features whose shown values contain 'proj-12', including that Feature",
-"F9": "User finds a Feature by its parent"
+"F80": "Two searches are equal when the same set of rows is shown on the first page and the same overlay text, whatever mix of case, surrounding spaces or typing history produced the text.",
+"F81": "Inhabitation and case: for any shown cell text and any substring of it, in any letter case, the shown text matches the query; Reference-ID and parent-text searches are instances.",
+"F82": "shown text: strings of 0..40 chars over letters, digits, space and regex specials ( ) [ ] . * + ? ^ $ \\ | : - ; query: a random slice of it with random per-character case flips",
+"F83": "regex specials; empty slice; whole text; an ID-like PROJ-12 prefix",
+"F84": "fast-check built-in shrinking of the string and slice bounds",
+"F85": "Reference: shown.toLowerCase().includes(query.toLowerCase()), not regex",
+"F86": "An implementation that does not escape regex specials, is case-sensitive, or tests the raw value instead of the shown text fails on a generated special character or flipped case.",
+"F87": "Safety: a cell whose shown value is an object, array, undefined, null or boolean never matches any non-empty query (typing obj or true narrows nothing by those cells).",
+"F88": "object value with query obj -> no match",
+"F89": "array of objects with query object -> no match",
+"F9": "User finds a Feature by its parent",
+"F90": "true/false with query true -> no match",
+"F91": "undefined/null -> no match",
+"F92": "number 12 with query 12 -> match",
+"F93": "Finite closed set of value kinds",
+"F94": "Monotone narrowing and empty identity: extending the query never adds rows; an empty or whitespace-only query yields no quick filter value and so shows every row.",
+"F95": "rows: 0..8 shown strings as in the first law; query: random string then a random extension",
+"F96": "whitespace-only query; extension to empty result",
+"F97": "fast-check built-in",
+"F98": "Reference filter by lowercase includes over the same rows",
+"F99": "A matcher that trims differently per call or treats whitespace-only as a literal fails the identity law."
 },
 "product": {
 "decisions": [
