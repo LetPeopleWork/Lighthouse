@@ -4,6 +4,8 @@ import type { IWithinSleInfo } from "../../../models/Metrics/WithinSleInfo";
 import { minimumClosedOf } from "../../../models/Metrics/WithinSleMinimumClosed";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { computeWithinSleRag } from "./ragRulesTimeAndAge";
+import type { RagTerms } from "./ragTypes";
 
 interface WithinSleWidgetProps {
 	readonly info: IWithinSleInfo;
@@ -14,6 +16,29 @@ const WithinSleWidget: React.FC<WithinSleWidgetProps> = ({ info }) => {
 	const { getTerm } = useTerminology();
 	const workItems = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const sle = getTerm(TERMINOLOGY_KEYS.SLE);
+
+	const terms: RagTerms = {
+		workItem: getTerm(TERMINOLOGY_KEYS.WORK_ITEM),
+		workItems,
+		feature: getTerm(TERMINOLOGY_KEYS.FEATURE),
+		features: getTerm(TERMINOLOGY_KEYS.FEATURES),
+		cycleTime: getTerm(TERMINOLOGY_KEYS.CYCLE_TIME),
+		throughput: getTerm(TERMINOLOGY_KEYS.THROUGHPUT),
+		wip: getTerm(TERMINOLOGY_KEYS.WIP),
+		workItemAge: getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE),
+		blocked: getTerm(TERMINOLOGY_KEYS.BLOCKED),
+		sle: getTerm(TERMINOLOGY_KEYS.SLE),
+	};
+	const status =
+		info.verdict === "Measured"
+			? computeWithinSleRag(info, terms).ragStatus
+			: "none";
+	const statusColours = {
+		green: theme.palette.success.main,
+		amber: theme.palette.warning.main,
+		red: theme.palette.error.main,
+		none: theme.palette.primary.main,
+	};
 
 	return (
 		<Card sx={{ borderRadius: 2, height: "100%", width: "100%" }}>
@@ -36,7 +61,8 @@ const WithinSleWidget: React.FC<WithinSleWidgetProps> = ({ info }) => {
 						<Typography
 							variant="h4"
 							data-testid="within-sle-share"
-							sx={{ color: theme.palette.primary.main, fontWeight: "bold" }}
+							data-rag={status}
+							sx={{ color: statusColours[status], fontWeight: "bold" }}
 						>
 							{`${info.sharePercent} % (${info.withinCount} / ${info.closedCount})`}
 						</Typography>
