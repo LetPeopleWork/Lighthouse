@@ -11,6 +11,7 @@ import type { LicenseCheckStatus } from "../../../hooks/useLicenseRestrictions";
 import type { IBoardInformation } from "../../../models/Boards/BoardInformation";
 import type { IDataRetrievalWizard } from "../../../models/DataRetrievalWizard/DataRetrievalWizard";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import QueryTextField from "../BaseSettings/QueryTextField";
 import StatesList from "../StatesList/StatesList";
 import WizardPickerButton from "../WizardPickerButton/WizardPickerButton";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
@@ -235,12 +236,10 @@ const CreateWizardShell: React.FC<CreateWizardShellProps> = ({
 						</Box>
 					)}
 					{showDataRetrievalField && (
-						<TextField
+						<QueryTextField
 							label={dataRetrievalLabel}
 							placeholder={dataRetrievalPlaceholder}
 							helperText={dataRetrievalHelpText}
-							multiline
-							rows={4}
 							fullWidth
 							value={dataRetrievalValue}
 							onChange={(e) => onDataRetrievalChange(e.target.value)}

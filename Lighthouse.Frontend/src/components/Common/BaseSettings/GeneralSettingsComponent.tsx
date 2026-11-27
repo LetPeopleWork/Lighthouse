@@ -21,6 +21,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import { getWizardsForSystem } from "../../DataRetrievalWizards";
 import InputGroup from "../InputGroup/InputGroup";
 import WizardPickerButton from "../WizardPickerButton/WizardPickerButton";
+import QueryTextField from "./QueryTextField";
 
 interface GeneralSettingsComponentProps<T extends IBaseSettings> {
 	settings: T | null;
@@ -179,10 +180,8 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 
 			{showDataRetrievalField && (
 				<Grid size={{ xs: 12 }}>
-					<TextField
+					<QueryTextField
 						label={getDataRetrievalDisplayName(selectedWorkTrackingSystem)}
-						multiline
-						rows={4}
 						fullWidth
 						margin="normal"
 						placeholder={schema?.placeholder ?? undefined}
@@ -190,11 +189,7 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 						value={queryDraft}
 						onChange={(e) => setQueryDraft(e.target.value)}
 						onBlur={commitQuery}
-						slotProps={{
-							input: {
-								readOnly: isDataRetrievalReadOnly,
-							},
-						}}
+						readOnly={isDataRetrievalReadOnly}
 					/>
 				</Grid>
 			)}
