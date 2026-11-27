@@ -514,7 +514,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.WithinSle
                         $"With no SLE set the chart was told the SLE is {chart.CurrentSlePercentile} % within {chart.CurrentSleDays} days. " +
                         "Name no current SLE, so the chart says that none is set instead of drawing a line.");
                     Assert.That(chart.Days, Is.Empty,
-                        $"With no SLE set the record holds {chart.Days.Count()} days. A day has nothing to be measured against without an SLE: write no row.");
+                        $"With no SLE set the record holds {chart.Days.Count} days. A day has nothing to be measured against without an SLE: write no row.");
                 }
             }
 

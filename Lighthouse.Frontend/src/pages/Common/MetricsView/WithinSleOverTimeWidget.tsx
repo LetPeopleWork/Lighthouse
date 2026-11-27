@@ -62,7 +62,7 @@ const WithinSleOverTimeWidget: React.FC<WithinSleOverTimeWidgetProps> = ({
 	const days = answer?.days ?? [];
 	const lines = withinSleLinesOf(days);
 	const anyTooFew = days.some((day) => day.verdict === "TooFew");
-	const anyFilledIn = lines.filledIn.some((filledIn) => filledIn);
+	const anyFilledIn = lines.filledIn.some(Boolean);
 
 	const sentence = (text: string) => (
 		<Typography
