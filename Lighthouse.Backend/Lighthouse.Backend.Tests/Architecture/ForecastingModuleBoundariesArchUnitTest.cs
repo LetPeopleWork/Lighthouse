@@ -143,11 +143,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{MadeUpAdapters})|(?:{TheLicence})";
 
         private static readonly string ForecastingsLegalCallers =
-            $"(?:{ApplicationCoreRules.TheApi})|(?:{ModuleBoundariesArchUnitTest.RefinementPattern})|(?:{PromisesPolicies})";
-
-        // Promises reacts to the forecast round's published event from its policies, a downstream reaction to what
-        // Forecasting publishes in its Contracts.
-        private const string PromisesPolicies = @"^Lighthouse\.Backend\.Modules\.Promises\.Application\.Policies(\.|$)";
+            $"(?:{ApplicationCoreRules.TheApi})|(?:{ModuleBoundariesArchUnitTest.RefinementPattern})";
 
         private static readonly string FlowMetricsLegalCallers =
             $"(?:{ApplicationCoreRules.TheApi})|(?:{ModuleBoundariesArchUnitTest.ReportsPattern})|(?:{ModuleBoundariesArchUnitTest.RefinementPattern})|(?:{ForecastingModule})";
@@ -201,7 +197,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 ProductionModule.Value,
                 OtherOutsideTypesReachingTheApplication,
                 ForecastingModule,
-                ForecastingApplication,
+                ModuleRules.WithoutTheEvents(ForecastingApplication, "Forecasting"),
                 ForecastingsLegalCallers,
                 TheCompositionRootAndItsNestedTypes,
                 ModuleRules.AnyNamespace);

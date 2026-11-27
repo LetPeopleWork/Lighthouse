@@ -265,7 +265,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             ThenTheModuleProblemIsNamed(problem, context, expectedProblem);
         }
 
-        private static IReadOnlyList<string> MayRegister(string context) => [.. RegisteredByTheHandlerBlock[context], .. RegisteredByCrossContextWiring[context]];
+        private static IReadOnlyList<string> MayRegister(string context) => [.. RegisteredByTheHandlerBlock[context], .. EventTypesTheCompositionRootNames.Of(context), .. RegisteredByCrossContextWiring[context]];
 
         private static IReadOnlyList<string> MayLookUp(string context) => [.. LookedUpByTheHandlerBlockAndToSetTheHostUp[context], .. LookedUpByCrossContextWiring[context]];
 

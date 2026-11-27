@@ -46,6 +46,33 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public const string AnyNamespace = "^";
 
+        /// <summary>
+        /// The exact full names of the domain event types a context publishes in its Contracts, as a regular-expression
+        /// alternation, or null when it publishes none.
+        /// </summary>
+        public static string? EventsOf(string context)
+        {
+            var contracts = $"Lighthouse.Backend.Modules.{context}.Contracts";
+            var names = typeof(global::Lighthouse.Backend.Models.Feature).Assembly.GetTypes()
+                .Where(type => type.Namespace == contracts && typeof(global::Lighthouse.Backend.Models.Events.IDomainEvent).IsAssignableFrom(type))
+                .Select(type => Regex.Escape(type.FullName!))
+                .Order(StringComparer.Ordinal)
+                .ToList();
+
+            return names.Count == 0 ? null : string.Join("|", names);
+        }
+
+        /// <summary>
+        /// A front-door pattern that leaves out the context's own event types: a context publishing an event lets any
+        /// reacting context name it, so the rule about who may reach the context's front door is about everything else.
+        /// </summary>
+        public static string WithoutTheEvents(string frontDoor, string context)
+            => EventsOf(context) is { } events ? $"{EventExemptionPrefix}{events})$)(?:{frontDoor})" : frontDoor;
+
+        // A pattern that starts like this exempts whole types by full name, so it is matched against the type's full name;
+        // every other pattern is about namespaces.
+        private const string EventExemptionPrefix = "^(?!(?:";
+
         public const string TheWriteBackRound = @"^Lighthouse\.Backend\.Modules\.Forecasting\.Application\.WriteBack(\.|$)";
 
         private const string MicrosoftExtensions = @"^Microsoft\.Extensions(\.|$)";
@@ -293,7 +320,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         // A generic parameter takes the namespace of the type that declares it, so a type built on a generic base would
         // otherwise count its own type parameter as a second type of the base's namespace.
         private static bool IsATypeIn(TypeReference type, string namespacePattern)
-            => !IsCompilerMade(type) && IlDependencies.ResidesInNamespaceMatching(type, namespacePattern);
+            => !IsCompilerMade(type)
+                && (namespacePattern.StartsWith(EventExemptionPrefix, StringComparison.Ordinal)
+                    ? Regex.IsMatch(IlDependencies.NamespaceOf(type) + "." + OutermostOf(type).Name, namespacePattern, RegexOptions.None, TimeSpan.FromSeconds(1))
+                    : IlDependencies.ResidesInNamespaceMatching(type, namespacePattern));
 
         private static bool IsNamedLike(TypeReference type, string? fullNamePattern)
             => fullNamePattern is not null

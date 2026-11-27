@@ -276,7 +276,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         private static IReadOnlyList<string> MayRegister(string context)
-            => [.. RegisteredByTheHandlerBlock[context], .. RegisteredToKeepTheirOrder[context], .. RegisteredByCrossContextWiring[context]];
+            => [.. RegisteredByTheHandlerBlock[context], .. EventTypesTheCompositionRootNames.Of(context), .. RegisteredToKeepTheirOrder[context], .. RegisteredByCrossContextWiring[context]];
 
         private static IReadOnlyList<string> MayLookUp(string context)
             => [.. LookedUpByTheHandlerBlock[context], .. LookedUpToSetTheHostUp[context], .. LookedUpByCrossContextWiring[context]];
