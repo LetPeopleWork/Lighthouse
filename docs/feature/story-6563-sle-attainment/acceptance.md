@@ -105,10 +105,8 @@ a share over all items instead of closed ones passes only without open or out-of
 
 P1
 
-P11
-
 ```text
-Render the widget with no licence context from a server answer of 8 of 11 within 10 days, then with a renamed Work Items term, then with counts that disagree with the share
+Render the widget from a server answer of 8 of 11 within 10 days, then with a renamed Work Items term, then with counts that disagree with the share
 ```
 
 ```text
@@ -144,11 +142,11 @@ On a Team's Flow Overview select View Data on the Within SLE widget
 ```
 
 ```text
-The closed-items dialog opens listing as many Work Items as the share counts, with a Cycle Time column
+The widget is shown; the closed-items dialog lists as many Work Items as the share counts, with Closed and Cycle Time columns, Cycle Times in non-increasing order
 ```
 
 ```text
-The reader can list the Work Items behind the share
+The reader can list the Work Items behind the share, longest first
 ```
 
 ##### Disposition
@@ -157,10 +155,10 @@ Tested
 
 Lighthouse\.EndToEndTests\/tests\/specs\/metrics\/WithinSle\.spec\.ts
 
-a delivery lead sees the share of closed Work Items within the SLE next to its target and can list those Work Items
+a delivery lead sees the share of closed Work Items within the SLE next to its target and can list those Work Items\, longest first
 
 ```text
-a dialog with the wrong population passes only if its row count is not compared with the widget's closed count; it is
+a dialog in the wrong order or population passes only if the order and row count are not compared; both are
 ```
 
 ###### Obligations
@@ -259,6 +257,40 @@ a widget without entries passes if the test does not enumerate the registry
 
 ###### Obligations
 
+
+##### Covers
+
+P1
+
+P11
+
+```text
+On an instance without a Premium licence, open a Team's or Portfolio's Flow Overview and hold the Within SLE answer; then let it fail
+```
+
+```text
+The widget is placed without a licence; while the answer is on its way the frame reads loading; when it fails the frame reads error and shows the could-not-load message
+```
+
+```text
+Without Premium the reader sees the widget, with a loading look or a could-not-load message, never an empty area
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/WithinSleWidget\.loading\.test\.tsx
+
+the Within SLE widget on a team\'s Flow Overview
+
+```text
+an empty frame passes only if status and message are not read; both are
+```
+
+###### Obligations
+
+None.
 
 ## Expectations
 

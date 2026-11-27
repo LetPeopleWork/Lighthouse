@@ -9,7 +9,7 @@ import { WithinSleWidget } from "../../models/metrics/WithinSleWidget";
 const DEMO_SCENARIO_ID = 0; // "When Will This Be Done?" — seeds Team Zenith deterministically
 const DEMO_TEAM_NAME = "Team Zenith";
 
-test("a delivery lead sees the share of closed Work Items within the SLE next to its target and can list those Work Items", async ({
+test("a delivery lead sees the share of closed Work Items within the SLE next to its target and can list those Work Items, longest first", async ({
 	page,
 	request,
 	overviewPage,
@@ -34,9 +34,17 @@ test("a delivery lead sees the share of closed Work Items within the SLE next to
 	const dialog = await withinSle.openViewData();
 
 	await expect(dialog.dialog).toBeVisible();
+	await expect(dialog.columnHeader(/^Closed$/)).toBeVisible();
 	await expect(dialog.columnHeader(/Cycle Time/)).toBeVisible();
 	expect(
 		await dialog.countRows(),
 		`View Data listed a different number of Work Items than the ${closed} the share counts`,
 	).toBe(closed);
+
+	const cycleTimes = await (await dialog.cellsIn(/Cycle Time/)).allInnerTexts();
+	const days = cycleTimes.map((text) => Number.parseInt(text, 10));
+	expect(
+		days,
+		"View Data must list the Work Items longest Cycle Time first",
+	).toEqual([...days].sort((first, second) => second - first));
 });

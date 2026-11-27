@@ -51,7 +51,7 @@ describe("WithinSleWidget", () => {
 		theWordsOnThePage.terms = { ...productDefaults };
 	});
 
-	it("shows the share within the SLE with its counts, the sentence and the target, with no licence needed", async () => {
+	it("shows the share within the SLE with its counts, the sentence and the target", async () => {
 		await renderTheWidget(elevenClosedEightWithinTenDays);
 
 		expect(screen.getByText("72.7 % (8 / 11)")).toBeInTheDocument();

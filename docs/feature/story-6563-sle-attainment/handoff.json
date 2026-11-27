@@ -49,8 +49,7 @@
 },
 {
 "covers": [
-"P1",
-"P11"
+"P1"
 ],
 "disposition": {
 "kind": "Tested",
@@ -59,7 +58,7 @@
 "test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.test.tsx"
 },
 "expected": "F487",
-"stimulus": "F486",
+"stimulus": "F515",
 "user_result": "F488"
 },
 {
@@ -68,13 +67,13 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F493",
-"test": "a delivery lead sees the share of closed Work Items within the SLE next to its target and can list those Work Items",
+"still_passes_if": "F519",
+"test": "a delivery lead sees the share of closed Work Items within the SLE next to its target and can list those Work Items, longest first",
 "test_path": "Lighthouse.EndToEndTests/tests/specs/metrics/WithinSle.spec.ts"
 },
-"expected": "F491",
-"stimulus": "F490",
-"user_result": "F492"
+"expected": "F525",
+"stimulus": "F524",
+"user_result": "F526"
 },
 {
 "covers": [
@@ -126,6 +125,21 @@
 "expected": "F503",
 "stimulus": "F502",
 "user_result": "F504"
+},
+{
+"covers": [
+"P1",
+"P11"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F523",
+"test": "the Within SLE widget on a team's Flow Overview",
+"test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.loading.test.tsx"
+},
+"expected": "F528",
+"stimulus": "F527",
+"user_result": "F529"
 }
 ]
 },
@@ -134,7 +148,7 @@
 "C": 2,
 "D": 23,
 "E": 15,
-"F": 514,
+"F": 529,
 "K": 26,
 "L": 7,
 "N": 4,
@@ -2917,15 +2931,10 @@
 "F483": "Counts and share equal a direct loop count, TooFew below 5",
 "F484": "The share always matches the Work Items that finished within the SLE",
 "F485": "a share over all items instead of closed ones passes only without open or out-of-range items; the November example covers that",
-"F486": "Render the widget with no licence context from a server answer of 8 of 11 within 10 days, then with a renamed Work Items term, then with counts that disagree with the share",
 "F487": "72.7 % (8 / 11), of Work Items closed within 10 days or less, Target 70 %; renamed term shown; the server share shown not recounted",
 "F488": "The widget reads as agreed and in the reader's own words",
 "F489": "a widget that recounts passes the first case but not the disagreeing-counts case",
 "F49": "Q2: the change against the preceding period lives in the widget's header trend indicator (previous-period policy), not in the widget body.",
-"F490": "On a Team's Flow Overview select View Data on the Within SLE widget",
-"F491": "The closed-items dialog opens listing as many Work Items as the share counts, with a Cycle Time column",
-"F492": "The reader can list the Work Items behind the share",
-"F493": "a dialog with the wrong population passes only if its row count is not compared with the widget's closed count; it is",
 "F494": "Inspect where the share rule, the SLE value, the read port and its implementation live",
 "F495": "Domain types stay pure in FlowMetrics Domain; the port and its implementation sit in Application",
 "F496": "none: structure that keeps the share owned in one place",
@@ -2949,7 +2958,16 @@
 "F512": "membership lists name the new FlowMetrics types, in the skeleton commit",
 "F513": "shared IMetricsService mock gains getWithinSleInfo so the frontend build stays green",
 "F514": "shared held IMetricsService gains getWithinSleInfo",
+"F515": "Render the widget from a server answer of 8 of 11 within 10 days, then with a renamed Work Items term, then with counts that disagree with the share",
+"F519": "a dialog in the wrong order or population passes only if the order and row count are not compared; both are",
 "F52": "Q5: fewer than 5 closed Work Items gives no verdict on the widget and no point on the chart.",
+"F523": "an empty frame passes only if status and message are not read; both are",
+"F524": "On a Team's Flow Overview select View Data on the Within SLE widget",
+"F525": "The widget is shown; the closed-items dialog lists as many Work Items as the share counts, with Closed and Cycle Time columns, Cycle Times in non-increasing order",
+"F526": "The reader can list the Work Items behind the share, longest first",
+"F527": "On an instance without a Premium licence, open a Team's or Portfolio's Flow Overview and hold the Within SLE answer; then let it fail",
+"F528": "The widget is placed without a licence; while the answer is on its way the frame reads loading; when it fails the frame reads error and shows the could-not-load message",
+"F529": "Without Premium the reader sees the widget, with a loading look or a could-not-load message, never an empty area",
 "F53": "Q6: both the widget and the chart appear for Teams and Portfolios.",
 "F54": "Q7: the widget reuses the Cycle Time Percentiles status rule (Sustain at or above target, Observe up to 20 points below, Act beyond or no SLE); Cycle Time Percentiles keeps its own status.",
 "F55": "Q8: free, no Premium gate.",
