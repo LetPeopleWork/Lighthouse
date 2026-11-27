@@ -126,6 +126,35 @@ namespace Lighthouse.Backend.Tests.Contracts.Reports
             }
         }
 
+        [TestCase("team")]
+        [TestCase("portfolio")]
+        public async Task A_writer_adds_a_note_is_told_why_an_empty_one_or_one_on_a_missing_report_is_refused_and_deletes_their_own(string ownerKind)
+        {
+            var report = await ReportWithANote(ownerKind);
+            var writer = WriterOf(report);
+
+            using var added = await writer.PostAsJsonAsync(NotesRoute(report), new { text = "Team grew to 9" });
+            var addedId = JsonElement.Parse(await added.Content.ReadAsStringAsync()).GetProperty("id").GetInt32();
+            using var empty = await writer.PostAsJsonAsync(NotesRoute(report), new { text = "" });
+            var problem = JsonElement.Parse(await empty.Content.ReadAsStringAsync());
+            var missingReport = report with { ReportId = report.ReportId + 1000 };
+            using var onAMissingReport = await writer.PostAsJsonAsync(NotesRoute(missingReport), new { text = "Team grew to 9" });
+            using var deleted = await writer.DeleteAsync($"{NotesRoute(report)}/{addedId}");
+            var afterwards = await TextsOfTheNotes(report);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(added.StatusCode, Is.EqualTo(HttpStatusCode.Created), $"WHAT: a writer adding a note was answered {(int)added.StatusCode}. WHY: a new note is created. HOW: answer 201.");
+                Assert.That(added.Headers.Location?.ToString(), Is.EqualTo(NotesRoute(report)), "WHAT: the answer to a new note names no place. WHY: a created resource says where it lives. HOW: answer the notes route as the location.");
+                Assert.That(empty.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), $"WHAT: an empty note was answered {(int)empty.StatusCode}. WHY: what is written is wrong, not who writes it. HOW: answer 400 for a text refusal.");
+                Assert.That(problem.GetProperty("code").GetString(), Is.EqualTo(ReportRefusalCodes.NoteTextMissing), $"WHAT: the refusal was {problem}. WHY: the client matches on the code to say why. HOW: answer the problem with a code property.");
+                Assert.That(problem.GetProperty("status").GetInt32(), Is.EqualTo(400), "WHAT: the problem does not carry its status. WHY: a problem says its own status. HOW: set the status on the problem.");
+                Assert.That(onAMissingReport.StatusCode, Is.EqualTo(HttpStatusCode.NotFound), $"WHAT: a note on a report that is not there was answered {(int)onAMissingReport.StatusCode}. WHY: there is nothing to add it to. HOW: answer 404.");
+                Assert.That(deleted.StatusCode, Is.EqualTo(HttpStatusCode.NoContent), $"WHAT: the author deleting their note was answered {(int)deleted.StatusCode}. WHY: the author may delete it. HOW: answer 204.");
+                Assert.That(afterwards, Is.EqualTo(new[] { TheNote }), "WHAT: the notes are not as they were before the writer's own note. WHY: the empty note was refused and the added one deleted. HOW: save only accepted notes.");
+            }
+        }
+
         private sealed record ReportAt(string OwnerKind, int OwnerId, int ReportId);
 
         private static string NotesRoute(ReportAt report)

@@ -512,6 +512,90 @@ describe("ReportService", () => {
 		expect(mockedAxios.delete).toHaveBeenCalledWith("/teams/1/reports/42");
 	});
 
+	describe("the notes of a report", () => {
+		const aNote = {
+			id: 7,
+			text: "Team grew to 9",
+			createdAt: "2026-10-03T08:00:00Z",
+			createdOn: "2026-10-03",
+			authorDisplayName: "Ann",
+			canModify: true,
+		};
+
+		it("reads the notes of a Team's report", async () => {
+			mockedAxios.get.mockResolvedValueOnce({ data: [aNote] });
+
+			const notes = await subject.getNotes(LIGHTSPEED, ENGAGEMENT_START_ID);
+
+			expect(mockedAxios.get).toHaveBeenCalledWith("/teams/1/reports/42/notes");
+			expect(notes).toEqual([aNote]);
+		});
+
+		it("adds a note to a Portfolio's report with the text as typed", async () => {
+			mockedAxios.post.mockResolvedValueOnce({ data: aNote });
+
+			const saved = await subject.addNote(
+				APOLLO,
+				ENGAGEMENT_START_ID,
+				"  Team grew to 9  ",
+			);
+
+			expect(mockedAxios.post).toHaveBeenCalledWith(
+				"/portfolios/3/reports/42/notes",
+				{ text: "  Team grew to 9  " },
+			);
+			expect(saved).toEqual(aNote);
+		});
+
+		it("saves a changed note under its own id", async () => {
+			const changed = { ...aNote, text: "Team grew to 12" };
+			mockedAxios.put.mockResolvedValueOnce({ data: changed });
+
+			const saved = await subject.updateNote(
+				LIGHTSPEED,
+				ENGAGEMENT_START_ID,
+				7,
+				"Team grew to 12",
+			);
+
+			expect(mockedAxios.put).toHaveBeenCalledWith(
+				"/teams/1/reports/42/notes/7",
+				{ text: "Team grew to 12" },
+			);
+			expect(saved).toEqual(changed);
+		});
+
+		it("deletes a note under its own id", async () => {
+			mockedAxios.delete.mockResolvedValueOnce({ status: 204 });
+
+			await subject.deleteNote(APOLLO, ENGAGEMENT_START_ID, 7);
+
+			expect(mockedAxios.delete).toHaveBeenCalledWith(
+				"/portfolios/3/reports/42/notes/7",
+			);
+		});
+
+		it("hands a refused note on as an ApiError carrying the reason's code", async () => {
+			mockedAxios.isAxiosError.mockReturnValue(true);
+			mockedAxios.post.mockRejectedValueOnce({
+				message: "Bad Request",
+				response: { status: 400, data: { code: "note-text-missing" } },
+			});
+
+			await expect(
+				subject.addNote(LIGHTSPEED, ENGAGEMENT_START_ID, ""),
+			).rejects.toMatchObject({ code: 400, problemCode: "note-text-missing" });
+		});
+
+		it("refuses notes that are not the shape the server promises", async () => {
+			mockedAxios.get.mockResolvedValueOnce({ data: [{ id: "seven" }] });
+
+			await expect(
+				subject.getNotes(LIGHTSPEED, ENGAGEMENT_START_ID),
+			).rejects.toBeInstanceOf(Error);
+		});
+	});
+
 	it("hands a refusal on as an ApiError carrying the reason's code", async () => {
 		mockedAxios.isAxiosError.mockReturnValue(true);
 		mockedAxios.post.mockRejectedValueOnce({

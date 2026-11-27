@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models.Reports;
+using Lighthouse.Backend.Modules.Reports.Application;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
@@ -47,6 +48,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var listed = subject.ListForOwner(ReportOwner.Team(SharedId)).Select(report => report.Id);
 
             Assert.That(listed, Is.EqualTo(oldestFirst));
+        }
+
+        [Test]
+        public async Task A_note_on_one_of_several_reports_of_a_Team_is_listed_and_found_on_that_report_alone()
+        {
+            var first = await Stored(ReportOwner.Team(SharedId), "First");
+            var second = await Stored(ReportOwner.Team(SharedId), "Second");
+            context.ReportNotes.AddRange(
+                new ReportNote { ReportId = first.Id, Text = "Training took place", CreatedAt = CreatedAt },
+                new ReportNote { ReportId = second.Id, Text = "Team grew to 9", CreatedAt = CreatedAt });
+            await context.SaveChangesAsync();
+            IReportNoteStore notes = subject;
+
+            var onTheSecond = notes.NotesNewestFirst(ReportOwner.Team(SharedId), second.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(onTheSecond.Select(note => note.Text), Is.EqualTo((string[])["Team grew to 9"]));
+                Assert.That(notes.FindForEdit(ReportOwner.Team(SharedId), second.Id, onTheSecond[0].Id)?.Text, Is.EqualTo("Team grew to 9"));
+                Assert.That(notes.FindForEdit(ReportOwner.Team(SharedId), first.Id, onTheSecond[0].Id), Is.Null, "a note is found only on its own report");
+            }
         }
 
         [Test]

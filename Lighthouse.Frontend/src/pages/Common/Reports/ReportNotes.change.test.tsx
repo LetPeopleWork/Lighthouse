@@ -2,6 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IReportNote } from "../../../models/Reports/ReportNote";
+import { deferred } from "../../../tests/HeldMetricsService";
 import {
 	aRefusal,
 	aReportService,
@@ -110,7 +111,7 @@ const startEditing = async (text: string) => {
 	await userEvent.click(
 		within(theNoteWith(text)).getByRole("button", { name: /^Edit$/ }),
 	);
-	return within(theNoteWith(text)).getByRole("textbox");
+	return within(theNoteWith(text)).getByRole("textbox", { name: "Note text" });
 };
 
 const replaceTheTextWith = async (field: HTMLElement, text: string) => {
@@ -202,11 +203,16 @@ describe("Changing and deleting the notes of a report", () => {
 		await waitFor(() => expect(theNotes()).toHaveLength(2));
 
 		const field = await startEditing("Team grew to 9");
+		expect(field).toHaveAttribute("aria-invalid", "false");
 		await replaceTheTextWith(field, "");
 		await saveTheEdit(theNotes()[0]);
 
 		expect(await screen.findByText(NEEDS_TEXT)).toBeInTheDocument();
 		expect(within(theNotes()[0]).getByRole("textbox")).toHaveValue("");
+		expect(within(theNotes()[0]).getByRole("textbox")).toHaveAttribute(
+			"aria-invalid",
+			"true",
+		);
 		expect(theNotes()).toHaveLength(2);
 	});
 
@@ -245,5 +251,66 @@ describe("Changing and deleting the notes of a report", () => {
 		);
 		expect(theNotes()).toHaveLength(2);
 		expect(deleteOf(theNoteWith("Team grew to 9"))).toBeInTheDocument();
+	});
+
+	it("leaves no reason behind when the user cancels a refused edit, so the next edit opens clean", async () => {
+		const reportService = openTheNotes();
+		await openTheNotesArea();
+		vi.mocked(reportService.updateNote).mockRejectedValue(
+			aRefusal(400, "note-text-missing"),
+		);
+		await waitFor(() => expect(theNotes()).toHaveLength(2));
+		const field = await startEditing("Team grew to 9");
+		await replaceTheTextWith(field, "");
+		await saveTheEdit(theNotes()[0]);
+		await screen.findByText(NEEDS_TEXT);
+
+		await userEvent.click(
+			within(theNotes()[0]).getByRole("button", { name: /^Cancel$/ }),
+		);
+		const again = await startEditing("Team grew to 9");
+
+		expect(screen.queryByText(NEEDS_TEXT)).toBeNull();
+		expect(again).toHaveAttribute("aria-invalid", "false");
+	});
+
+	it("does not offer Save while a change is on its way, and offers it again once the change is refused", async () => {
+		const reportService = openTheNotes();
+		await openTheNotesArea();
+		const answer = deferred<IReportNote>();
+		vi.mocked(reportService.updateNote).mockReturnValue(answer.promise);
+		await waitFor(() => expect(theNotes()).toHaveLength(2));
+		const field = await startEditing("Team grew to 9");
+		await replaceTheTextWith(field, "Team grew to 12");
+
+		await saveTheEdit(theNotes()[0]);
+
+		const saveButton = within(theNotes()[0]).getByRole("button", {
+			name: /^Save$/,
+		});
+		expect(saveButton).toBeDisabled();
+		answer.reject(aRefusal(400, "note-text-missing"));
+		await screen.findByText(NEEDS_TEXT);
+		expect(saveButton).toBeEnabled();
+	});
+
+	it("drops the reason a delete failed once a later change of the same note is saved", async () => {
+		const reportService = openTheNotes();
+		await openTheNotesArea();
+		vi.mocked(reportService.deleteNote).mockRejectedValueOnce(
+			aRefusal(500, "failed"),
+		);
+		await waitFor(() => expect(theNotes()).toHaveLength(2));
+		await deleteTheNoteShowing("Team grew to 9");
+		await screen.findByText(COULD_NOT_DELETE);
+
+		const field = await startEditing("Team grew to 9");
+		await replaceTheTextWith(field, "Team grew to 12");
+		await saveTheEdit(theNotes()[0]);
+
+		await waitFor(() =>
+			expect(theNoteWith("Team grew to 12")).toBeInTheDocument(),
+		);
+		expect(screen.queryByText(COULD_NOT_DELETE)).toBeNull();
 	});
 });

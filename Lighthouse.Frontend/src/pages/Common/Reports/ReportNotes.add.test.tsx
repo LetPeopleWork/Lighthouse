@@ -135,8 +135,9 @@ describe("The notes of a report", () => {
 		const area = await openTheNotesArea();
 		await waitFor(() => expect(theNotes()).toHaveLength(2));
 		const [first, second] = theNotes();
+		expect(screen.queryByText("No notes yet.")).toBeNull();
 		expect(
-			within(area).getByRole("heading", { name: /^Notes \(2\)$/ }),
+			within(area).getByRole("heading", { level: 2, name: /^Notes \(2\)$/ }),
 		).toBeInTheDocument();
 		expect(first).toHaveTextContent("Team grew to 9");
 		expect(first).toHaveTextContent("2026-10-03 · Ann");
@@ -221,6 +222,32 @@ describe("The notes of a report", () => {
 			expect(theUsageEventsNamed("ReportNoteAdded")).toHaveLength(0);
 		},
 	);
+
+	it("does not offer Add note while a note is on its way, marks the field when the note is refused, and clears the mark once a note is saved", async () => {
+		const reportService = openTheNotes();
+		await openTheNotesArea();
+		const refused = deferred<IReportNote>();
+		vi.mocked(reportService.addNote)
+			.mockReturnValueOnce(refused.promise)
+			.mockResolvedValueOnce(aNote({ id: 9, text: "Team grew to 12" }));
+		await waitFor(() => expect(theNotes()).toHaveLength(2));
+		expect(theField()).toHaveAttribute("aria-invalid", "false");
+
+		await saveWhatWasTyped();
+
+		expect(theSaveButton()).toBeDisabled();
+		refused.reject(aRefusal(400, "note-text-missing"));
+		expect(await screen.findByText(NEEDS_TEXT)).toBeInTheDocument();
+		expect(theSaveButton()).toBeEnabled();
+		expect(theField()).toHaveAttribute("aria-invalid", "true");
+
+		await typeIntoTheField("Team grew to 12");
+		await saveWhatWasTyped();
+
+		await waitFor(() => expect(theNotes()).toHaveLength(3));
+		expect(screen.queryByText(NEEDS_TEXT)).toBeNull();
+		expect(theField()).toHaveAttribute("aria-invalid", "false");
+	});
 
 	it("does not save a note over 2000 characters and tells the writer the limit", async () => {
 		const reportService = openTheNotes();
