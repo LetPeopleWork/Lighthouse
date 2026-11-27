@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import type { MetricsOwnerKey } from "../../../hooks/metricsOwnerKey";
+import { metricsQueryOptions } from "../../../hooks/useMetricsQuery";
 import type { IFeature } from "../../../models/Feature";
 import type {
 	IWithinSleOverTime,
@@ -27,6 +28,7 @@ export function useWithinSleOverTime(
 ): WithinSleOverTimeState {
 	const [horizon, setHorizon] = useState<WithinSleHorizon>(30);
 	const query = useQuery({
+		...metricsQueryOptions,
 		queryKey: [
 			"withinSleOverTime",
 			owner.ownerId,
