@@ -1,5 +1,9 @@
 import { Box, Link, Tooltip, Typography } from "@mui/material";
-import type { GridValidRowModel } from "@mui/x-data-grid";
+import {
+	type GridSortCellParams,
+	type GridValidRowModel,
+	gridStringOrNumberComparator,
+} from "@mui/x-data-grid";
 import type { ParentWorkItem } from "../../../hooks/useParentWorkItems";
 import type { IEntityReference } from "../../../models/EntityReference";
 import type { IFeature } from "../../../models/Feature";
@@ -46,7 +50,18 @@ export const createNameColumn = <
 	hideable: false,
 	width: 300,
 	flex: 1,
-	valueFormatter: (_value, row) => getWorkItemName(row.name, row.referenceId),
+	valueGetter: (_value, row) => getWorkItemName(row.name, row.referenceId),
+	// The value now carries the reference ID, so sorting by it would order by ID; keep ordering by name.
+	sortComparator: (_first, _second, firstParams, secondParams) => {
+		const first = firstParams as GridSortCellParams;
+		const second = secondParams as GridSortCellParams;
+		return gridStringOrNumberComparator(
+			first.api.getRow(first.id).name,
+			second.api.getRow(second.id).name,
+			first,
+			second,
+		);
+	},
 	renderCell: ({ row }) => (
 		<FeatureName
 			name={getWorkItemName(row.name, row.referenceId)}
