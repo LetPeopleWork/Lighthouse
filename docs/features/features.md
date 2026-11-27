@@ -80,6 +80,19 @@ If you move a Feature up and a lower one is still forecast to finish first, that
 - **A soft shadow on an edge** shows that more columns are out of sight on that side, and screen readers are told so too. On a narrow window the table scrolls inside itself rather than the page.
 - **Forecasted Start** and **Forecasted Completion** say when work on a Feature is expected to begin and to end, each at four probabilities. A Feature that has already started shows the day it started. See [Forecasted Start](../portfolios/detail.html#forecasted-start).
 
+## Searching the list
+
+The **Search Features** box at the left of the list's toolbar finds a Feature without opening any column menu. Type part of anything the list shows — a Feature's ID, its name, its parent, its state, the Portfolios or Teams it belongs to — and the list narrows to the rows that contain it. Letter case does not matter, and the whole text you type is searched as one piece.
+
+- **Nothing matches?** The list says *No Features match "…"*, so an empty search result is never mistaken for an empty list.
+- **Clear the box** with the ✕ to see every Feature again.
+- The search works **together with column filters**: a row has to meet both. A new search always opens the first page of the results.
+- Columns that show no text, such as the progress bar, the forecast dates or the warning icon, are not searched.
+- The box starts empty each time you open the page; Lighthouse does not remember what you searched.
+- The **Name** column's own filter also finds a Feature by its ID, the way the cell shows it (`PROJ-12: Checkout`). Sorting by name still sorts by the name alone.
+
+The same box sits above the Feature lists of the [Portfolio](../portfolios/detail.html#features) and [Team](../teams/detail.html#features) pages and a Delivery's Work Items.
+
 ## Dependencies
 
 The **Dependencies** column lists the other Features a Feature is waiting on. Lighthouse reads those links from your work tracking system on every refresh and never writes one back — you record a dependency where you already record it, not a second time here.
