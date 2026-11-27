@@ -513,6 +513,116 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A person types text that matches no Feature, &#x27;zzz&#x27;, into the search box of a feature list that holds Features
+</code></pre>
+
+<pre><code>The list says No Features match &quot;zzz&quot;. and lists no Feature; the message for a list with no Features does not appear
+</code></pre>
+
+<pre><code>The person knows the search found nothing and the list is not simply empty
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.searchEdges.test.tsx</p>
+
+<p>FeatureListDataGrid search in its edge states says that no Feature matches the search, not that the list is empty</p>
+
+<pre><code>The no-match case reuses the empty-list message, or shows a blank area
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A feature list with no Features is shown and nobody searched
+</code></pre>
+
+<pre><code>The list shows its own empty-list message and no sentence saying a search matched nothing
+</code></pre>
+
+<pre><code>The person sees an empty list described as empty, not as an unmatched search
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.searchEdges.test.tsx</p>
+
+<p>FeatureListDataGrid search in its edge states keeps the empty-list message for a list that holds no Features</p>
+
+<pre><code>The no-match wording replaces the empty-list wording everywhere
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>A person has typed &#x27;pay&#x27; into the search box and then filters the State column by &#x27;Doing&#x27;
+</code></pre>
+
+<pre><code>Only the Feature that meets both is listed; Features meeting just one are left out
+</code></pre>
+
+<pre><code>The person sees the search and the column filter narrow the list together
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.searchEdges.test.tsx</p>
+
+<p>FeatureListDataGrid search in its edge states lists only the Features that meet both the column filter and the search</p>
+
+<pre><code>The search and column filter are combined with OR, or the search drops the column filter
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P8</p>
+
+<pre><code>A person on page 2 of a list of 101 Features types &#x27;proj&#x27;, which still matches all of them
+</code></pre>
+
+<pre><code>The list shows the first page of results, 1 to 100 of 101, starting at the first Feature
+</code></pre>
+
+<pre><code>The person lands on the first page of the new search results
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.searchEdges.test.tsx</p>
+
+<p>FeatureListDataGrid search in its edge states opens the first page of the results when a search is typed on the second page</p>
+
+<pre><code>The page stays on page 2 after a search that leaves more than one page
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

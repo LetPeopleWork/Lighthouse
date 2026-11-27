@@ -411,6 +411,132 @@ The owner hears only the final text or never hears the clear
 
 None.
 
+### S2
+
+##### Covers
+
+P5
+
+```text
+A person types text that matches no Feature, 'zzz', into the search box of a feature list that holds Features
+```
+
+```text
+The list says No Features match "zzz". and lists no Feature; the message for a list with no Features does not appear
+```
+
+```text
+The person knows the search found nothing and the list is not simply empty
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.searchEdges\.test\.tsx
+
+FeatureListDataGrid search in its edge states says that no Feature matches the search\, not that the list is empty
+
+```text
+The no-match case reuses the empty-list message, or shows a blank area
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+A feature list with no Features is shown and nobody searched
+```
+
+```text
+The list shows its own empty-list message and no sentence saying a search matched nothing
+```
+
+```text
+The person sees an empty list described as empty, not as an unmatched search
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.searchEdges\.test\.tsx
+
+FeatureListDataGrid search in its edge states keeps the empty\-list message for a list that holds no Features
+
+```text
+The no-match wording replaces the empty-list wording everywhere
+```
+
+###### Obligations
+
+
+##### Covers
+
+P7
+
+```text
+A person has typed 'pay' into the search box and then filters the State column by 'Doing'
+```
+
+```text
+Only the Feature that meets both is listed; Features meeting just one are left out
+```
+
+```text
+The person sees the search and the column filter narrow the list together
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.searchEdges\.test\.tsx
+
+FeatureListDataGrid search in its edge states lists only the Features that meet both the column filter and the search
+
+```text
+The search and column filter are combined with OR, or the search drops the column filter
+```
+
+###### Obligations
+
+
+##### Covers
+
+P8
+
+```text
+A person on page 2 of a list of 101 Features types 'proj', which still matches all of them
+```
+
+```text
+The list shows the first page of results, 1 to 100 of 101, starting at the first Feature
+```
+
+```text
+The person lands on the first page of the new search results
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.searchEdges\.test\.tsx
+
+FeatureListDataGrid search in its edge states opens the first page of the results when a search is typed on the second page
+
+```text
+The page stays on page 2 after a search that leaves more than one page
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

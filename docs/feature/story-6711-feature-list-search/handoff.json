@@ -210,13 +210,83 @@
 "stimulus": "F336",
 "user_result": "F338"
 }
+],
+"S2": [
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F353",
+"test": "FeatureListDataGrid search in its edge states says that no Feature matches the search, not that the list is empty",
+"test_path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.searchEdges.test.tsx"
+},
+"expected": "F351",
+"stimulus": "F350",
+"user_result": "F352"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F357",
+"test": "FeatureListDataGrid search in its edge states keeps the empty-list message for a list that holds no Features",
+"test_path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.searchEdges.test.tsx"
+},
+"expected": "F355",
+"stimulus": "F354",
+"user_result": "F356"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F361",
+"test": "FeatureListDataGrid search in its edge states lists only the Features that meet both the column filter and the search",
+"test_path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.searchEdges.test.tsx"
+},
+"expected": "F359",
+"stimulus": "F358",
+"user_result": "F360"
+},
+{
+"covers": [
+"P8"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F365",
+"test": "FeatureListDataGrid search in its edge states opens the first page of the results when a search is typed on the second page",
+"test_path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.searchEdges.test.tsx"
+},
+"expected": "F363",
+"stimulus": "F362",
+"user_result": "F364"
+}
 ]
 },
 "counters": {
 "C": 1,
 "D": 9,
 "E": 10,
-"F": 349,
+"F": 365,
 "K": 9,
 "L": 4,
 "P": 10,
@@ -1585,7 +1655,23 @@
 "F348": "An empty box named Search Features sits in the toolbar row before every icon (copy, export, layout, column order)",
 "F349": "The box sits between two icons, or after them, or is named with a fixed word instead of the configured Features term",
 "F35": "the user types 'PROJ-12' in the Name column filter",
+"F350": "A person types text that matches no Feature, 'zzz', into the search box of a feature list that holds Features",
+"F351": "The list says No Features match \"zzz\". and lists no Feature; the message for a list with no Features does not appear",
+"F352": "The person knows the search found nothing and the list is not simply empty",
+"F353": "The no-match case reuses the empty-list message, or shows a blank area",
+"F354": "A feature list with no Features is shown and nobody searched",
+"F355": "The list shows its own empty-list message and no sentence saying a search matched nothing",
+"F356": "The person sees an empty list described as empty, not as an unmatched search",
+"F357": "The no-match wording replaces the empty-list wording everywhere",
+"F358": "A person has typed 'pay' into the search box and then filters the State column by 'Doing'",
+"F359": "Only the Feature that meets both is listed; Features meeting just one are left out",
 "F36": "that Feature is listed",
+"F360": "The person sees the search and the column filter narrow the list together",
+"F361": "The search and column filter are combined with OR, or the search drops the column filter",
+"F362": "A person on page 2 of a list of 101 Features types 'proj', which still matches all of them",
+"F363": "The list shows the first page of results, 1 to 100 of 101, starting at the first Feature",
+"F364": "The person lands on the first page of the new search results",
+"F365": "The page stays on page 2 after a search that leaves more than one page",
 "F37": "One search box above every full feature list: Features page, Portfolio Features tab, Team Features tab, Delivery Work Items tab. Matches every visible column as the cell reads, case-insensitive, part of a word enough.",
 "F38": "The Name column filter also matches the Feature reference ID.",
 "F39": "Delivery dialog Feature pickers, the Refinement grid and the Archived features grid get no search box now; Suggestion: could follow later.",
