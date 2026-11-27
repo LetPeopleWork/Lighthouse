@@ -108,6 +108,18 @@ property: not which report or report type, not which Team or Portfolio, not the 
   - The usage-data event `ReportNoteAdded` carries no property.
   - Delivery notes have the same gap for authentication on with no profile (a possible Bug, not created).
 
+## After the candidate: maintainer decisions (2026-11-27)
+
+- **Notes start closed.** Maintainer: "notes should be 'below' and not above the reports, OR be collapsible and
+  collapsed by default". Chosen: collapsed, at the same place as Option A, so the numbers come first and the count
+  still shows at the top. The notes area is an Accordion (the style `DeliverySection` uses) with the heading
+  "Notes (<count>)", "Notes" while the notes load, load again or cannot be loaded (so an old count never passes
+  for the current one), and "Notes (0)" for a report without notes.
+  The loading and failure looks are unchanged inside it.
+- **Route:** worked directly, one Haiku review of the diff (its test gaps closed), then mutation testing on the frozen code. nwdes holds no
+  record of this change. CI fix first: the Slice06 connection-defaults scenario read the Task Manager after the
+  updates had finished (run 45895905322); fixed in `66604d44f`.
+
 ## Open, for DESIGN
 
 - Maximum length of a note (Delivery notes have none).
