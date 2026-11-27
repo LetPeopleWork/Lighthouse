@@ -206,3 +206,11 @@ Taken autonomously in AFK mode, for the maintainer to revisit:
   Before item: `BaseMetricsService` gets nothing new.
 - **Program.cs registration** of the recording handler, for handler order after the metrics update; S7 therefore runs
   the full backend Integration suite.
+
+## DEVOPS (2026-11-27, AFK)
+
+No material platform risk: one additive migration through the CreateMigration script, the recording handler reuses the
+existing failure containment, and nothing new is configured or called outside. Usage data, two name-only events (taken
+autonomously; recorded as shared design decisions): `WithinSleListOpened = 31` (S5, View Data opened on the widget)
+and `WithinSleHorizonSwitched = 32` (S7, the horizon switched on the chart, which tests DISCOVER's riskiest assumption
+that readers use the trend). Each carries nothing; rendering emits nothing.

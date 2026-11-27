@@ -134,6 +134,19 @@ Context map: Flow metrics only. New glossary terms for ADR-270 Flow metrics: sha
 Slice split confirmed as proposed: S5 is the walking skeleton (real closed Work Items and the owner real SLE through the running app); S6 carries the four verdict states; S7 carries the chart own too-few, no-SLE and no-history states; S8 the fill-in. Named Cycle Times out (confirmed). Between S5 and S6 nothing is pushed (AFK: nothing pushed until the maintainer says so), so the S5 body for NoSle/TooFew is never released alone.
 ```
 
+#### D22
+
+```text
+DEVOPS (host, 2026-11-27): no material platform risk. One additive migration (the WithinSleSnapshot table) through the CreateMigration script on every provider; the recording handler reuses the existing per-handler failure containment; no new external call, configuration, secret or environment.
+```
+
+#### D23
+
+```text
+DEVOPS usage data (host, 2026-11-27): two name-only events, appended to UsageDataEventName with the next integers and listed in docs/settings/usagedata.md by the slice that emits them. WithinSleListOpened = 31, emitted by S5 when View Data opens on the Within SLE widget (the widget is engaged, not merely rendered). WithinSleHorizonSwitched = 32, emitted by S7 when the reader switches the horizon on Within SLE Over Time (the riskiest assumption from DISCOVER: readers use the trend, not only today's number). Each carries nothing: not which Team or Portfolio, not the share, not the horizon chosen. Rendering a widget or chart emits nothing.
+```
+Governed slices: S5, S7
+
 ### Constraints
 
 #### K1

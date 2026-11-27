@@ -2,8 +2,8 @@
 "counters": {
 "B": 6,
 "C": 2,
-"D": 21,
-"F": 441,
+"D": 23,
+"F": 443,
 "K": 26,
 "L": 7,
 "N": 4,
@@ -336,6 +336,18 @@
 {
 "id": "D21",
 "text": "F120"
+},
+{
+"id": "D22",
+"text": "F442"
+},
+{
+"id": "D23",
+"slices": [
+"S5",
+"S7"
+],
+"text": "F443"
 }
 ],
 "equality": [
@@ -2505,6 +2517,8 @@
 "F44": "Lighthouse-Clients CLI and MCP: a follow-up Story once the API is settled; no client version bump here.",
 "F440": "refresh handlers run in the pinned order with the metrics update first",
 "F441": "the migration is additive only",
+"F442": "DEVOPS (host, 2026-11-27): no material platform risk. One additive migration (the WithinSleSnapshot table) through the CreateMigration script on every provider; the recording handler reuses the existing per-handler failure containment; no new external call, configuration, secret or environment.",
+"F443": "DEVOPS usage data (host, 2026-11-27): two name-only events, appended to UsageDataEventName with the next integers and listed in docs/settings/usagedata.md by the slice that emits them. WithinSleListOpened = 31, emitted by S5 when View Data opens on the Within SLE widget (the widget is engaged, not merely rendered). WithinSleHorizonSwitched = 32, emitted by S7 when the reader switches the horizon on Within SLE Over Time (the riskiest assumption from DISCOVER: readers use the trend, not only today's number). Each carries nothing: not which Team or Portfolio, not the share, not the horizon chosen. Rendering a widget or chart emits nothing.",
 "F45": "Named Cycle Times: the SLE targets the default Cycle Time only.",
 "F46": "Any change to SLE Risk or to the Cycle Time Percentiles widget and its status.",
 "F48": "Q1: the widget counts the Work Items closed in the selected date range, like its sibling widgets; filters apply.",
