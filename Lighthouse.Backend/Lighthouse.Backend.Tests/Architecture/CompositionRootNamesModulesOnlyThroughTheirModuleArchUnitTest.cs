@@ -724,7 +724,9 @@ namespace Lighthouse.Backend.Tests.Architecture.CompositionRootFixtures.Roots
             services.AddHttpClient<AlphaClient>().AddHttpMessageHandler<AlphaMessageHandler>();
             services.AddHttpClient("alpha").AddTypedClient<AlphaTypedClient>();
             services.AddKeyedSingleton<AlphaKeyed>("alpha");
+#pragma warning disable CA2263 // The rule must be shown to catch a registration written with the Type overload, so this fixture keeps that form on purpose.
             services.AddScoped(typeof(AlphaByType));
+#pragma warning restore CA2263
             services.Add(ServiceDescriptor.Singleton<AlphaDescribed, AlphaDescribed>());
             services.Add(new ServiceDescriptor(typeof(AlphaDescribedByType), typeof(AlphaDescribedByType), ServiceLifetime.Scoped));
             services.AddScoped<AlphaPlusService>();
