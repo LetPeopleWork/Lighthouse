@@ -29,7 +29,7 @@ Slice order is by publisher: S1 Licensing and Access, S2 Flow metrics and Foreca
 #### D4
 
 ```text
-Each slice's oracle is ContextContractsArchUnitTest with exactly that slice's CrossContextEdgesOutsideContracts entries deleted: the entries whose target is a moving type of that slice's publishers; edges onto ReachedButNotPublished types stay. The acceptance designer deletes them; the crafter moves types and fixes usings until the oracle and every Architecture rule pass (D-8).
+Each slice has its own new oracle under Tests/Architecture (<Publisher>PublishesItsContracts or PublishTheirContracts ArchUnitTest), RED before the move: every non-event ContextContractsMembership entry of the slice's publishers lives in Modules.<X>.Contracts and no type names it through its old namespace. No later slice edits an earlier oracle. ContextContractsArchUnitTest (the R-C1 list), and every shared rule file a slice changes, is an Extend target of that slice: the crafter deletes the slice's R-C1 entries, the entries whose target is one of its moved types; edges onto ReachedButNotPublished types stay (D-8).
 ```
 
 #### D5
@@ -559,11 +559,11 @@ S4
 SinglePointOfFailure
 
 ```text
-The single inline ratchet list in ContextContractsArchUnitTest
+The single inline R-C1 ratchet list in ContextContractsArchUnitTest, edited by every slice
 ```
 
 ```text
-Compared both ways
+Compared both ways; it is a craft target, never an oracle, so editing it in a later slice stales no approval
 ```
 
 ```text
@@ -571,14 +571,14 @@ None
 ```
 
 ```text
-An entry deleted without its move landing
+An entry deleted without its move landing, or an earlier slice's oracle edited later
 ```
 
 ```text
-Shared oracle file across five slices; each slice edits only its own entries
+Each slice's own oracle checks its types moved; R-C1 checks the list both ways
 ```
 
-Acceptance designer
+Crafter per slice
 
 #### Y6
 
@@ -2432,6 +2432,14 @@ Names a moved type: using line or old full-name literal changes only
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ContextContractsArchUnitTest\.cs
 
+Extend
+
+```text
+Rule list the crafter edits: delete this slice's R-C1 entries (targets among its moved types)
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingAndAccessPublishTheirContractsArchUnitTest\.cs
+
 #### Verification
 
 ```text
@@ -2450,15 +2458,15 @@ None.
 #### Public oracle
 
 ```text
-Run the Architecture tests over the compiled assembly with every CrossContextEdgesOutsideContracts entry whose target is a published type of Licensing and Access deleted
+Run LicensingAndAccessPublishTheirContractsArchUnitTest.cs (Architecture filter) over the compiled production and test assemblies: take every ContextContractsMembership entry of Licensing and Access that is not an event, look it up in its Contracts namespace and its old namespace, and scan the IL for any type outside Licensing and Access naming it through its old namespace.
 ```
 
 ```text
-RED before the move: R-C1 names the deleted edges as unlisted edges into Licensing and Access's Application or Domain. GREEN after: ILicenseService, IAuthModeResolver, IRbacAdministrationService live in Modules.<X>.Contracts, R-C1, R-C2, R-C3, the membership and pattern-role tests and every Architecture rule pass.
+RED before the move: each of ILicenseService, IAuthModeResolver, IRbacAdministrationService is found in its old namespace and not in Lighthouse.Backend.Modules.Licensing.Contracts and Lighthouse.Backend.Modules.Access.Contracts. GREEN after: each resolves to exactly one top-level type in Lighthouse.Backend.Modules.Licensing.Contracts and Lighthouse.Backend.Modules.Access.Contracts, none is left in the old namespace, no type names one through the old name, and with R-C1's entries for these targets deleted every Architecture rule passes.
 ```
 
 ```text
-A Licensing and Access published type left in its old namespace, or a consumer naming it there, keeps R-C1 RED naming the edge; a residue edge deleted from the list, or an entry left for a moved type, fails R-C1 as gone or unlisted.
+A Licensing and Access published type left in its old namespace, present in both, moved to another context's Contracts, or a membership entry matching no type (vacuous list): the oracle fails naming the type. A stale R-C1 entry or a residue entry deleted fails R-C1 as gone or unlisted.
 ```
 
 ##### Promises
@@ -4735,6 +4743,16 @@ Changed
 Names a moved type: using line or old full-name literal changes only
 ```
 
+rule\-file
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ContextContractsArchUnitTest\.cs\:1
+
+Changed
+
+```text
+Rule list the crafter edits: delete this slice's R-C1 entries (targets among its moved types)
+```
+
 ##### Agreement
 
 None.
@@ -6483,6 +6501,14 @@ Names a moved type: using line or old full-name literal changes only
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ContextContractsArchUnitTest\.cs
 
+Extend
+
+```text
+Rule list the crafter edits: delete this slice's R-C1 entries (targets among its moved types)
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsAndForecastingPublishTheirContractsArchUnitTest\.cs
+
 #### Verification
 
 ```text
@@ -6501,15 +6527,15 @@ None.
 #### Public oracle
 
 ```text
-Run the Architecture tests over the compiled assembly with every CrossContextEdgesOutsideContracts entry whose target is a published type of Flow metrics and Forecasting deleted
+Run FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.cs (Architecture filter) over the compiled production and test assemblies: take every ContextContractsMembership entry of Flow metrics and Forecasting that is not an event, look it up in its Contracts namespace and its old namespace, and scan the IL for any type outside Flow metrics and Forecasting naming it through its old namespace.
 ```
 
 ```text
-RED before the move: R-C1 names the deleted edges as unlisted edges into Flow metrics and Forecasting's Application or Domain. GREEN after: ITeamMetricsService, IPortfolioMetricsService, ForecastThroughputStatus, IThroughputFilter, IForecastDataSufficiency, IHowManyForecaster, CycleTimeFeature, CycleTimeWorkItem, OutlierVerdict, UpperNaturalProcessLimit, IForecastService, IForecastFilterRuleService, ForecastRunOutcome live in Modules.<X>.Contracts, R-C1, R-C2, R-C3, the membership and pattern-role tests and every Architecture rule pass.
+RED before the move: each of ITeamMetricsService, IPortfolioMetricsService, ForecastThroughputStatus, IThroughputFilter, IForecastDataSufficiency, IHowManyForecaster, CycleTimeFeature, CycleTimeWorkItem, OutlierVerdict, UpperNaturalProcessLimit, IForecastService, IForecastFilterRuleService, ForecastRunOutcome is found in its old namespace and not in Lighthouse.Backend.Modules.FlowMetrics.Contracts and Lighthouse.Backend.Modules.Forecasting.Contracts. GREEN after: each resolves to exactly one top-level type in Lighthouse.Backend.Modules.FlowMetrics.Contracts and Lighthouse.Backend.Modules.Forecasting.Contracts, none is left in the old namespace, no type names one through the old name, and with R-C1's entries for these targets deleted every Architecture rule passes.
 ```
 
 ```text
-A Flow metrics and Forecasting published type left in its old namespace, or a consumer naming it there, keeps R-C1 RED naming the edge; a residue edge deleted from the list, or an entry left for a moved type, fails R-C1 as gone or unlisted.
+A Flow metrics and Forecasting published type left in its old namespace, present in both, moved to another context's Contracts, or a membership entry matching no type (vacuous list): the oracle fails naming the type. A stale R-C1 entry or a residue entry deleted fails R-C1 as gone or unlisted.
 ```
 
 ##### Promises
@@ -8641,6 +8667,16 @@ Changed
 Names a moved type: using line or old full-name literal changes only
 ```
 
+rule\-file
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ContextContractsArchUnitTest\.cs\:1
+
+Changed
+
+```text
+Rule list the crafter edits: delete this slice's R-C1 entries (targets among its moved types)
+```
+
 ##### Agreement
 
 None.
@@ -9479,6 +9515,14 @@ Names a moved type: using line or old full-name literal changes only
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ContextContractsArchUnitTest\.cs
 
+Extend
+
+```text
+Rule list the crafter edits: delete this slice's R-C1 entries (targets among its moved types)
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsPublishesItsContractsArchUnitTest\.cs
+
 #### Verification
 
 ```text
@@ -9497,15 +9541,15 @@ None.
 #### Public oracle
 
 ```text
-Run the Architecture tests over the compiled assembly with every CrossContextEdgesOutsideContracts entry whose target is a published type of Work Items deleted
+Run WorkItemsPublishesItsContractsArchUnitTest.cs (Architecture filter) over the compiled production and test assemblies: take every ContextContractsMembership entry of Work Items that is not an event, look it up in its Contracts namespace and its old namespace, and scan the IL for any type outside Work Items naming it through its old namespace.
 ```
 
 ```text
-RED before the move: R-C1 names the deleted edges as unlisted edges into Work Items's Application or Domain. GREEN after: IBlockedItemService, IRefreshLogService, IRuleEvaluator`1, IRuleFieldProvider`1, IWhatTheForecastWaitsFor live in Modules.<X>.Contracts, R-C1, R-C2, R-C3, the membership and pattern-role tests and every Architecture rule pass.
+RED before the move: each of IBlockedItemService, IRefreshLogService, IRuleEvaluator`1, IRuleFieldProvider`1, IWhatTheForecastWaitsFor is found in its old namespace and not in Lighthouse.Backend.Modules.WorkItems.Contracts. GREEN after: each resolves to exactly one top-level type in Lighthouse.Backend.Modules.WorkItems.Contracts, none is left in the old namespace, no type names one through the old name, and with R-C1's entries for these targets deleted every Architecture rule passes.
 ```
 
 ```text
-A Work Items published type left in its old namespace, or a consumer naming it there, keeps R-C1 RED naming the edge; a residue edge deleted from the list, or an entry left for a moved type, fails R-C1 as gone or unlisted.
+A Work Items published type left in its old namespace, present in both, moved to another context's Contracts, or a membership entry matching no type (vacuous list): the oracle fails naming the type. A stale R-C1 entry or a residue entry deleted fails R-C1 as gone or unlisted.
 ```
 
 ##### Promises
@@ -10490,6 +10534,16 @@ Changed
 
 ```text
 Names a moved type: using line or old full-name literal changes only
+```
+
+rule\-file
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ContextContractsArchUnitTest\.cs\:1
+
+Changed
+
+```text
+Rule list the crafter edits: delete this slice's R-C1 entries (targets among its moved types)
 ```
 
 ##### Agreement
@@ -11600,6 +11654,22 @@ SHARED_REGEX gains Contracts for TrackerIntegration (E8)
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ContextContractsArchUnitTest\.cs
 
+Extend
+
+```text
+Rule list the crafter edits: delete this slice's R-C1 entries (targets among its moved types)
+```
+
+Scripts\/test\-selection\/test\-path\-classifier\.sh
+
+Extend
+
+```text
+Classifier test gains the TrackerIntegration Contracts case beside the SHARED_REGEX change
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationPublishesItsContractsArchUnitTest\.cs
+
 #### Verification
 
 ```text
@@ -11610,7 +11680,7 @@ dotnet build Lighthouse.Backend
 
 #### Supports
 
-Scripts\/test\-selection\/test\-path\-classifier\.sh
+None.
 
 None.
 
@@ -11619,15 +11689,15 @@ None.
 #### Public oracle
 
 ```text
-Run the Architecture tests over the compiled assembly with every CrossContextEdgesOutsideContracts entry whose target is a published type of Tracker integration deleted, plus the classifier case for a TrackerIntegration Contracts path
+Run TrackerIntegrationPublishesItsContractsArchUnitTest.cs (Architecture filter) over the compiled production and test assemblies: take every ContextContractsMembership entry of Tracker integration that is not an event, look it up in its Contracts namespace and its old namespace, and scan the IL for any type outside Tracker integration naming it through its old namespace. Also run test-path-classifier.sh.
 ```
 
 ```text
-RED before the move: R-C1 names the deleted edges as unlisted edges into Tracker integration's Application or Domain. GREEN after: IWorkTrackingConnector, IWorkTrackingConnectorFactory, IFeatureSource, IIncrementalSource, IDeliverySourceProvider, IDeliveryForecastPublisher, IDescriptionBlockMerger, IWriteBackTarget live in Modules.<X>.Contracts, R-C1, R-C2, R-C3, the membership and pattern-role tests and every Architecture rule pass. CsvWorkTrackingOptionNames resolves by reflection in Modules.TrackerIntegration.Contracts and not in Adapters.Connectors.Csv; test-path-classifier.sh classifies Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Contracts/IWorkTrackingConnector.cs as shared and passes.
+RED before the move: each of IWorkTrackingConnector, IWorkTrackingConnectorFactory, IFeatureSource, IIncrementalSource, IDeliverySourceProvider, IDeliveryForecastPublisher, IDescriptionBlockMerger, IWriteBackTarget is found in its old namespace and not in Lighthouse.Backend.Modules.TrackerIntegration.Contracts. GREEN after: each resolves to exactly one top-level type in Lighthouse.Backend.Modules.TrackerIntegration.Contracts, none is left in the old namespace, no type names one through the old name, and with R-C1's entries for these targets deleted every Architecture rule passes. It also asserts by reflection that CsvWorkTrackingOptionNames lives in Lighthouse.Backend.Modules.TrackerIntegration.Contracts and not in Adapters.Connectors.Csv (a constants class the IL cannot show as an edge). test-path-classifier.sh classifies Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Contracts/IWorkTrackingConnector.cs as shared.
 ```
 
 ```text
-A Tracker integration published type left in its old namespace, or a consumer naming it there, keeps R-C1 RED naming the edge; a residue edge deleted from the list, or an entry left for a moved type, fails R-C1 as gone or unlisted.
+A Tracker integration published type left in its old namespace, present in both, moved to another context's Contracts, or a membership entry matching no type (vacuous list): the oracle fails naming the type. A stale R-C1 entry or a residue entry deleted fails R-C1 as gone or unlisted.
 ```
 
 ##### Promises
@@ -12944,6 +13014,26 @@ Changed
 SHARED_REGEX gains Contracts for TrackerIntegration (E8)
 ```
 
+rule\-file
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ContextContractsArchUnitTest\.cs\:1
+
+Changed
+
+```text
+Rule list the crafter edits: delete this slice's R-C1 entries (targets among its moved types)
+```
+
+rule\-file
+
+Scripts\/test\-selection\/test\-path\-classifier\.sh\:1
+
+Changed
+
+```text
+Classifier test gains the TrackerIntegration Contracts case beside the SHARED_REGEX change
+```
+
 ##### Agreement
 
 None.
@@ -14036,6 +14126,38 @@ Names a moved type: using line or old full-name literal changes only
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ContextContractsArchUnitTest\.cs
 
+Extend
+
+```text
+Rule list the crafter edits: delete this slice's R-C1 entries (targets among its moved types)
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupIsAnOpenHostArchUnitTest\.cs
+
+Extend
+
+```text
+Open-host narrowing: set-up patterns admit only Contracts; Refinement lists its WeeklyRecurrence edge until feature D
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsModuleBoundariesArchUnitTest\.cs
+
+Extend
+
+```text
+Open-host narrowing: set-up patterns admit only Contracts; Refinement lists its WeeklyRecurrence edge until feature D
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementModuleBoundariesArchUnitTest\.cs
+
+Extend
+
+```text
+Open-host narrowing: set-up patterns admit only Contracts; Refinement lists its WeeklyRecurrence edge until feature D
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupPublishesItsContractsArchUnitTest\.cs
+
 #### Verification
 
 ```text
@@ -14045,11 +14167,7 @@ dotnet build Lighthouse.Backend
 
 #### Supports
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupIsAnOpenHostArchUnitTest\.cs
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsModuleBoundariesArchUnitTest\.cs
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementModuleBoundariesArchUnitTest\.cs
+None.
 
 None.
 
@@ -14058,15 +14176,15 @@ None.
 #### Public oracle
 
 ```text
-Run the Architecture tests over the compiled assembly with every CrossContextEdgesOutsideContracts entry whose target is a published type of Organisation set-up deleted and the open host narrowed to Contracts
+Run OrganisationSetupPublishesItsContractsArchUnitTest.cs (Architecture filter) over the compiled production and test assemblies: take every ContextContractsMembership entry of Organisation set-up that is not an event, look it up in its Contracts namespace and its old namespace, and scan the IL for any type outside Organisation set-up naming it through its old namespace.
 ```
 
 ```text
-RED before the move: R-C1 names the deleted edges as unlisted edges into Organisation set-up's Application or Domain. GREEN after: IAppSettingService, IBlackoutPeriodService, IFeatureOrdering live in Modules.<X>.Contracts, R-C1, R-C2, R-C3, the membership and pattern-role tests and every Architecture rule pass. The open host admits only Modules.OrganisationSetup.Contracts; after S5 the list holds only the eight residue edges onto ReachedButNotPublished types.
+RED before the move: each of IAppSettingService, IBlackoutPeriodService, IFeatureOrdering is found in its old namespace and not in Lighthouse.Backend.Modules.OrganisationSetup.Contracts. GREEN after: each resolves to exactly one top-level type in Lighthouse.Backend.Modules.OrganisationSetup.Contracts, none is left in the old namespace, no type names one through the old name, and with R-C1's entries for these targets deleted every Architecture rule passes. It also asserts the open host is narrowed: no downstream module's set-up pattern or SetUpNamespacesOpenToDownstreamModules admits Organisation set-up's Application or Domain, only its Contracts.
 ```
 
 ```text
-A Organisation set-up published type left in its old namespace, or a consumer naming it there, keeps R-C1 RED naming the edge; a residue edge deleted from the list, or an entry left for a moved type, fails R-C1 as gone or unlisted.
+A Organisation set-up published type left in its old namespace, present in both, moved to another context's Contracts, or a membership entry matching no type (vacuous list): the oracle fails naming the type. A stale R-C1 entry or a residue entry deleted fails R-C1 as gone or unlisted.
 ```
 
 ##### Promises
@@ -15361,6 +15479,46 @@ Changed
 
 ```text
 Names a moved type: using line or old full-name literal changes only
+```
+
+rule\-file
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ContextContractsArchUnitTest\.cs\:1
+
+Changed
+
+```text
+Rule list the crafter edits: delete this slice's R-C1 entries (targets among its moved types)
+```
+
+rule\-file
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupIsAnOpenHostArchUnitTest\.cs\:1
+
+Changed
+
+```text
+Open-host narrowing: set-up patterns admit only Contracts; Refinement lists its WeeklyRecurrence edge until feature D
+```
+
+rule\-file
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsModuleBoundariesArchUnitTest\.cs\:1
+
+Changed
+
+```text
+Open-host narrowing: set-up patterns admit only Contracts; Refinement lists its WeeklyRecurrence edge until feature D
+```
+
+rule\-file
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementModuleBoundariesArchUnitTest\.cs\:1
+
+Changed
+
+```text
+Open-host narrowing: set-up patterns admit only Contracts; Refinement lists its WeeklyRecurrence edge until feature D
 ```
 
 ##### Agreement

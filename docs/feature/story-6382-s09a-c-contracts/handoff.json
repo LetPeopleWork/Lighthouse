@@ -4,7 +4,7 @@
 "C": 1,
 "D": 15,
 "E": 6,
-"F": 137,
+"F": 160,
 "K": 4,
 "L": 2,
 "P": 5,
@@ -114,7 +114,7 @@
 },
 {
 "id": "D4",
-"text": "F35"
+"text": "F138"
 },
 {
 "id": "D5",
@@ -281,13 +281,13 @@
 },
 {
 "allowed": "F92",
-"forbidden": "F105",
+"forbidden": "F141",
 "id": "Y5",
 "kind": "SinglePointOfFailure",
-"owner": "Acceptance designer",
-"preserved": "F104",
-"residue": "F106",
-"source": "F103"
+"owner": "Crafter per slice",
+"preserved": "F140",
+"residue": "F142",
+"source": "F139"
 },
 {
 "allowed": "F92",
@@ -323,14 +323,14 @@
 },
 "slices": {
 "S1": {
-"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingAndAccessPublishTheirContractsArchUnitTest.cs",
 "public_oracle": {
-"expected": "F115",
-"falsifier": "F116",
+"expected": "F145",
+"falsifier": "F146",
 "promises": [
 "P1"
 ],
-"stimulus": "F114"
+"stimulus": "F144"
 },
 "records": {
 "impact": [
@@ -1683,6 +1683,12 @@
 "kind": "consumer",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeatureListService.cs:1",
 "reason": "F112"
+},
+{
+"decision": "Changed",
+"kind": "rule-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:1",
+"reason": "F143"
 }
 ],
 "not_applicable": [
@@ -2821,6 +2827,11 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeatureListService.cs",
 "reason": "F112"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs",
+"reason": "F143"
 }
 ],
 "verification": [
@@ -2829,7 +2840,7 @@
 ]
 },
 "S2": {
-"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.cs",
 "prefactoring": {
 "existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs",
 "move": "F124",
@@ -2840,12 +2851,12 @@
 ]
 },
 "public_oracle": {
-"expected": "F122",
-"falsifier": "F123",
+"expected": "F148",
+"falsifier": "F149",
 "promises": [
 "P2"
 ],
-"stimulus": "F121"
+"stimulus": "F147"
 },
 "records": {
 "impact": [
@@ -4102,6 +4113,12 @@
 "kind": "consumer",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeatureListActiveWork.cs:1",
 "reason": "F112"
+},
+{
+"decision": "Changed",
+"kind": "rule-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:1",
+"reason": "F143"
 }
 ],
 "not_applicable": [
@@ -5156,6 +5173,11 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeatureListActiveWork.cs",
 "reason": "F112"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs",
+"reason": "F143"
 }
 ],
 "verification": [
@@ -5164,14 +5186,14 @@
 ]
 },
 "S3": {
-"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPublishesItsContractsArchUnitTest.cs",
 "public_oracle": {
-"expected": "F128",
-"falsifier": "F129",
+"expected": "F151",
+"falsifier": "F152",
 "promises": [
 "P3"
 ],
-"stimulus": "F127"
+"stimulus": "F150"
 },
 "records": {
 "impact": [
@@ -5750,6 +5772,12 @@
 "kind": "consumer",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/RefreshLogSeeder.cs:1",
 "reason": "F112"
+},
+{
+"decision": "Changed",
+"kind": "rule-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:1",
+"reason": "F143"
 }
 ],
 "not_applicable": [
@@ -6243,6 +6271,11 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/RefreshLogSeeder.cs",
 "reason": "F112"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs",
+"reason": "F143"
 }
 ],
 "verification": [
@@ -6251,14 +6284,14 @@
 ]
 },
 "S4": {
-"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationPublishesItsContractsArchUnitTest.cs",
 "public_oracle": {
-"expected": "F132",
-"falsifier": "F133",
+"expected": "F155",
+"falsifier": "F156",
 "promises": [
 "P4"
 ],
-"stimulus": "F131"
+"stimulus": "F154"
 },
 "records": {
 "impact": [
@@ -7035,6 +7068,18 @@
 "kind": "consumer",
 "locator": "Scripts/test-selection/path-classifier.sh:1",
 "reason": "F130"
+},
+{
+"decision": "Changed",
+"kind": "rule-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:1",
+"reason": "F143"
+},
+{
+"decision": "Changed",
+"kind": "rule-file",
+"locator": "Scripts/test-selection/test-path-classifier.sh:1",
+"reason": "F153"
 }
 ],
 "not_applicable": [
@@ -7048,9 +7093,6 @@
 }
 ]
 },
-"supports": [
-"Scripts/test-selection/test-path-classifier.sh"
-],
 "targets": [
 {
 "change": "Create",
@@ -7696,6 +7738,16 @@
 "change": "Extend",
 "path": "Scripts/test-selection/path-classifier.sh",
 "reason": "F130"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs",
+"reason": "F143"
+},
+{
+"change": "Extend",
+"path": "Scripts/test-selection/test-path-classifier.sh",
+"reason": "F153"
 }
 ],
 "verification": [
@@ -7705,14 +7757,14 @@
 ]
 },
 "S5": {
-"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs",
 "public_oracle": {
-"expected": "F135",
-"falsifier": "F136",
+"expected": "F159",
+"falsifier": "F160",
 "promises": [
 "P5"
 ],
-"stimulus": "F134"
+"stimulus": "F158"
 },
 "records": {
 "impact": [
@@ -8477,6 +8529,30 @@
 "kind": "consumer",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs:1",
 "reason": "F112"
+},
+{
+"decision": "Changed",
+"kind": "rule-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:1",
+"reason": "F143"
+},
+{
+"decision": "Changed",
+"kind": "rule-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Changed",
+"kind": "rule-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Changed",
+"kind": "rule-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs:1",
+"reason": "F157"
 }
 ],
 "not_applicable": [
@@ -8490,11 +8566,6 @@
 }
 ]
 },
-"supports": [
-"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs",
-"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
-"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs"
-],
 "targets": [
 {
 "change": "Create",
@@ -9130,6 +9201,26 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs",
 "reason": "F112"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs",
+"reason": "F143"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs",
+"reason": "F157"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
+"reason": "F157"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs",
+"reason": "F157"
 }
 ],
 "verification": [
@@ -9207,10 +9298,6 @@
 "F100": "The build fails on an old using; the rename-list test names old literals",
 "F101": "A stale string silently passing",
 "F102": "Strings outside the test project are not swept; measured: only test-path-classifier.sh outside .cs names an old path",
-"F103": "The single inline ratchet list in ContextContractsArchUnitTest",
-"F104": "Compared both ways",
-"F105": "An entry deleted without its move landing",
-"F106": "Shared oracle file across five slices; each slice edits only its own entries",
 "F107": "Second set (walkthrough, not execution): a later Story adds a new caller of a moved type through the old name",
 "F108": "Compile error: the old namespace no longer holds the type",
 "F109": "A silent new edge",
@@ -9219,34 +9306,42 @@
 "F111": "New Contracts home (git mv); namespace line only",
 "F112": "Names a moved type: using line or old full-name literal changes only",
 "F113": "Moved away to Contracts (git mv source)",
-"F114": "Run the Architecture tests over the compiled assembly with every CrossContextEdgesOutsideContracts entry whose target is a published type of Licensing and Access deleted",
-"F115": "RED before the move: R-C1 names the deleted edges as unlisted edges into Licensing and Access's Application or Domain. GREEN after: ILicenseService, IAuthModeResolver, IRbacAdministrationService live in Modules.<X>.Contracts, R-C1, R-C2, R-C3, the membership and pattern-role tests and every Architecture rule pass.",
-"F116": "A Licensing and Access published type left in its old namespace, or a consumer naming it there, keeps R-C1 RED naming the edge; a residue edge deleted from the list, or an entry left for a moved type, fails R-C1 as gone or unlisted.",
 "F117": "Per file: every moving file of this slice holds one top-level type (measured); new Contracts files hold one type each; consumer files change only a using line or a renamed literal, no design step, so they are left as they are. Nothing to split.",
 "F118": "No new owner in this slice: each moved type is reused as is (same members, implementations and registrations, only its namespace becomes Modules.<X>.Contracts; owner is the shared ContextContractsMembership entry); every other target only changes a using line or an old full-name literal.",
 "F119": "Split out of a multi-type file before the move; content unchanged",
 "F12": "R-C1 with the Flow metrics and Forecasting entries deleted fails until their contract types move; then every Architecture rule passes.",
 "F120": "Split: published type leaves, the rest stays",
-"F121": "Run the Architecture tests over the compiled assembly with every CrossContextEdgesOutsideContracts entry whose target is a published type of Flow metrics and Forecasting deleted",
-"F122": "RED before the move: R-C1 names the deleted edges as unlisted edges into Flow metrics and Forecasting's Application or Domain. GREEN after: ITeamMetricsService, IPortfolioMetricsService, ForecastThroughputStatus, IThroughputFilter, IForecastDataSufficiency, IHowManyForecaster, CycleTimeFeature, CycleTimeWorkItem, OutlierVerdict, UpperNaturalProcessLimit, IForecastService, IForecastFilterRuleService, ForecastRunOutcome live in Modules.<X>.Contracts, R-C1, R-C2, R-C3, the membership and pattern-role tests and every Architecture rule pass.",
-"F123": "A Flow metrics and Forecasting published type left in its old namespace, or a consumer naming it there, keeps R-C1 RED naming the edge; a residue edge deleted from the list, or an entry left for a moved type, fails R-C1 as gone or unlisted.",
 "F124": "L1 split, own commit before the move: ITeamMetricsService.cs -> ForecastThroughputStatus.cs, CycleTimeWorkItem.cs; IPortfolioMetricsService.cs -> CycleTimeFeature.cs; CycleTimeOutlierDefinition.cs -> OutlierVerdict.cs (sum type with Limited, NoLimits), CycleTimeObservation.cs, ICycleTimeOutlierDefinition.cs, UpperNaturalProcessLimitOutlierDefinition.cs; XmRCalculator.cs -> UpperNaturalProcessLimit.cs, XmRResult.cs; namespaces unchanged. Makes the Contracts move a pure per-file git mv. ForecastRunOutcome.cs is one sum type and stays whole; every other touched file holds one type or changes only a using line.",
 "F125": "Same IL: types, namespaces and edges unchanged, so the membership and every Architecture rule stay green",
-"F127": "Run the Architecture tests over the compiled assembly with every CrossContextEdgesOutsideContracts entry whose target is a published type of Work Items deleted",
-"F128": "RED before the move: R-C1 names the deleted edges as unlisted edges into Work Items's Application or Domain. GREEN after: IBlockedItemService, IRefreshLogService, IRuleEvaluator`1, IRuleFieldProvider`1, IWhatTheForecastWaitsFor live in Modules.<X>.Contracts, R-C1, R-C2, R-C3, the membership and pattern-role tests and every Architecture rule pass.",
-"F129": "A Work Items published type left in its old namespace, or a consumer naming it there, keeps R-C1 RED naming the edge; a residue edge deleted from the list, or an entry left for a moved type, fails R-C1 as gone or unlisted.",
 "F13": "Flow metrics and Forecasting are named by other contexts only through Contracts.",
 "F130": "SHARED_REGEX gains Contracts for TrackerIntegration (E8)",
-"F131": "Run the Architecture tests over the compiled assembly with every CrossContextEdgesOutsideContracts entry whose target is a published type of Tracker integration deleted, plus the classifier case for a TrackerIntegration Contracts path",
-"F132": "RED before the move: R-C1 names the deleted edges as unlisted edges into Tracker integration's Application or Domain. GREEN after: IWorkTrackingConnector, IWorkTrackingConnectorFactory, IFeatureSource, IIncrementalSource, IDeliverySourceProvider, IDeliveryForecastPublisher, IDescriptionBlockMerger, IWriteBackTarget live in Modules.<X>.Contracts, R-C1, R-C2, R-C3, the membership and pattern-role tests and every Architecture rule pass. CsvWorkTrackingOptionNames resolves by reflection in Modules.TrackerIntegration.Contracts and not in Adapters.Connectors.Csv; test-path-classifier.sh classifies Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Contracts/IWorkTrackingConnector.cs as shared and passes.",
-"F133": "A Tracker integration published type left in its old namespace, or a consumer naming it there, keeps R-C1 RED naming the edge; a residue edge deleted from the list, or an entry left for a moved type, fails R-C1 as gone or unlisted.",
-"F134": "Run the Architecture tests over the compiled assembly with every CrossContextEdgesOutsideContracts entry whose target is a published type of Organisation set-up deleted and the open host narrowed to Contracts",
-"F135": "RED before the move: R-C1 names the deleted edges as unlisted edges into Organisation set-up's Application or Domain. GREEN after: IAppSettingService, IBlackoutPeriodService, IFeatureOrdering live in Modules.<X>.Contracts, R-C1, R-C2, R-C3, the membership and pattern-role tests and every Architecture rule pass. The open host admits only Modules.OrganisationSetup.Contracts; after S5 the list holds only the eight residue edges onto ReachedButNotPublished types.",
-"F136": "A Organisation set-up published type left in its old namespace, or a consumer naming it there, keeps R-C1 RED naming the edge; a residue edge deleted from the list, or an entry left for a moved type, fails R-C1 as gone or unlisted.",
 "F137": "No new owner in this slice: each moved type is reused as is (same members, implementations and registrations, only its namespace becomes Modules.<X>.Contracts; owner is the shared ContextContractsMembership entry); split-out files keep their types unchanged; every other target only changes a using line or an old full-name literal.",
+"F138": "Each slice has its own new oracle under Tests/Architecture (<Publisher>PublishesItsContracts or PublishTheirContracts ArchUnitTest), RED before the move: every non-event ContextContractsMembership entry of the slice's publishers lives in Modules.<X>.Contracts and no type names it through its old namespace. No later slice edits an earlier oracle. ContextContractsArchUnitTest (the R-C1 list), and every shared rule file a slice changes, is an Extend target of that slice: the crafter deletes the slice's R-C1 entries, the entries whose target is one of its moved types; edges onto ReachedButNotPublished types stay (D-8).",
+"F139": "The single inline R-C1 ratchet list in ContextContractsArchUnitTest, edited by every slice",
 "F14": "R-C1 with the Work Items entries deleted fails until its contract types move; then every Architecture rule passes.",
+"F140": "Compared both ways; it is a craft target, never an oracle, so editing it in a later slice stales no approval",
+"F141": "An entry deleted without its move landing, or an earlier slice's oracle edited later",
+"F142": "Each slice's own oracle checks its types moved; R-C1 checks the list both ways",
+"F143": "Rule list the crafter edits: delete this slice's R-C1 entries (targets among its moved types)",
+"F144": "Run LicensingAndAccessPublishTheirContractsArchUnitTest.cs (Architecture filter) over the compiled production and test assemblies: take every ContextContractsMembership entry of Licensing and Access that is not an event, look it up in its Contracts namespace and its old namespace, and scan the IL for any type outside Licensing and Access naming it through its old namespace.",
+"F145": "RED before the move: each of ILicenseService, IAuthModeResolver, IRbacAdministrationService is found in its old namespace and not in Lighthouse.Backend.Modules.Licensing.Contracts and Lighthouse.Backend.Modules.Access.Contracts. GREEN after: each resolves to exactly one top-level type in Lighthouse.Backend.Modules.Licensing.Contracts and Lighthouse.Backend.Modules.Access.Contracts, none is left in the old namespace, no type names one through the old name, and with R-C1's entries for these targets deleted every Architecture rule passes.",
+"F146": "A Licensing and Access published type left in its old namespace, present in both, moved to another context's Contracts, or a membership entry matching no type (vacuous list): the oracle fails naming the type. A stale R-C1 entry or a residue entry deleted fails R-C1 as gone or unlisted.",
+"F147": "Run FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.cs (Architecture filter) over the compiled production and test assemblies: take every ContextContractsMembership entry of Flow metrics and Forecasting that is not an event, look it up in its Contracts namespace and its old namespace, and scan the IL for any type outside Flow metrics and Forecasting naming it through its old namespace.",
+"F148": "RED before the move: each of ITeamMetricsService, IPortfolioMetricsService, ForecastThroughputStatus, IThroughputFilter, IForecastDataSufficiency, IHowManyForecaster, CycleTimeFeature, CycleTimeWorkItem, OutlierVerdict, UpperNaturalProcessLimit, IForecastService, IForecastFilterRuleService, ForecastRunOutcome is found in its old namespace and not in Lighthouse.Backend.Modules.FlowMetrics.Contracts and Lighthouse.Backend.Modules.Forecasting.Contracts. GREEN after: each resolves to exactly one top-level type in Lighthouse.Backend.Modules.FlowMetrics.Contracts and Lighthouse.Backend.Modules.Forecasting.Contracts, none is left in the old namespace, no type names one through the old name, and with R-C1's entries for these targets deleted every Architecture rule passes.",
+"F149": "A Flow metrics and Forecasting published type left in its old namespace, present in both, moved to another context's Contracts, or a membership entry matching no type (vacuous list): the oracle fails naming the type. A stale R-C1 entry or a residue entry deleted fails R-C1 as gone or unlisted.",
 "F15": "Work Items is named by other contexts only through Contracts.",
+"F150": "Run WorkItemsPublishesItsContractsArchUnitTest.cs (Architecture filter) over the compiled production and test assemblies: take every ContextContractsMembership entry of Work Items that is not an event, look it up in its Contracts namespace and its old namespace, and scan the IL for any type outside Work Items naming it through its old namespace.",
+"F151": "RED before the move: each of IBlockedItemService, IRefreshLogService, IRuleEvaluator`1, IRuleFieldProvider`1, IWhatTheForecastWaitsFor is found in its old namespace and not in Lighthouse.Backend.Modules.WorkItems.Contracts. GREEN after: each resolves to exactly one top-level type in Lighthouse.Backend.Modules.WorkItems.Contracts, none is left in the old namespace, no type names one through the old name, and with R-C1's entries for these targets deleted every Architecture rule passes.",
+"F152": "A Work Items published type left in its old namespace, present in both, moved to another context's Contracts, or a membership entry matching no type (vacuous list): the oracle fails naming the type. A stale R-C1 entry or a residue entry deleted fails R-C1 as gone or unlisted.",
+"F153": "Classifier test gains the TrackerIntegration Contracts case beside the SHARED_REGEX change",
+"F154": "Run TrackerIntegrationPublishesItsContractsArchUnitTest.cs (Architecture filter) over the compiled production and test assemblies: take every ContextContractsMembership entry of Tracker integration that is not an event, look it up in its Contracts namespace and its old namespace, and scan the IL for any type outside Tracker integration naming it through its old namespace. Also run test-path-classifier.sh.",
+"F155": "RED before the move: each of IWorkTrackingConnector, IWorkTrackingConnectorFactory, IFeatureSource, IIncrementalSource, IDeliverySourceProvider, IDeliveryForecastPublisher, IDescriptionBlockMerger, IWriteBackTarget is found in its old namespace and not in Lighthouse.Backend.Modules.TrackerIntegration.Contracts. GREEN after: each resolves to exactly one top-level type in Lighthouse.Backend.Modules.TrackerIntegration.Contracts, none is left in the old namespace, no type names one through the old name, and with R-C1's entries for these targets deleted every Architecture rule passes. It also asserts by reflection that CsvWorkTrackingOptionNames lives in Lighthouse.Backend.Modules.TrackerIntegration.Contracts and not in Adapters.Connectors.Csv (a constants class the IL cannot show as an edge). test-path-classifier.sh classifies Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Contracts/IWorkTrackingConnector.cs as shared.",
+"F156": "A Tracker integration published type left in its old namespace, present in both, moved to another context's Contracts, or a membership entry matching no type (vacuous list): the oracle fails naming the type. A stale R-C1 entry or a residue entry deleted fails R-C1 as gone or unlisted.",
+"F157": "Open-host narrowing: set-up patterns admit only Contracts; Refinement lists its WeeklyRecurrence edge until feature D",
+"F158": "Run OrganisationSetupPublishesItsContractsArchUnitTest.cs (Architecture filter) over the compiled production and test assemblies: take every ContextContractsMembership entry of Organisation set-up that is not an event, look it up in its Contracts namespace and its old namespace, and scan the IL for any type outside Organisation set-up naming it through its old namespace.",
+"F159": "RED before the move: each of IAppSettingService, IBlackoutPeriodService, IFeatureOrdering is found in its old namespace and not in Lighthouse.Backend.Modules.OrganisationSetup.Contracts. GREEN after: each resolves to exactly one top-level type in Lighthouse.Backend.Modules.OrganisationSetup.Contracts, none is left in the old namespace, no type names one through the old name, and with R-C1's entries for these targets deleted every Architecture rule passes. It also asserts the open host is narrowed: no downstream module's set-up pattern or SetUpNamespacesOpenToDownstreamModules admits Organisation set-up's Application or Domain, only its Contracts.",
 "F16": "R-C1 with the Tracker integration entries deleted fails until its contract types move; the path classifier test classifies a Tracker integration Contracts path as shared; then every Architecture rule and the classifier test pass.",
+"F160": "A Organisation set-up published type left in its old namespace, present in both, moved to another context's Contracts, or a membership entry matching no type (vacuous list): the oracle fails naming the type. A stale R-C1 entry or a residue entry deleted fails R-C1 as gone or unlisted.",
 "F17": "Tracker integration is named only through Contracts, and CI still selects the right suites for a change there.",
 "F18": "R-C1 with the Organisation set-up entries deleted, and its open host narrowed to Contracts, fails until the types move; then R-C1 holds only the owned residue and every Architecture rule passes.",
 "F19": "Organisation set-up is named only through Contracts; the ratchet list is down to its owned residue.",
@@ -9267,7 +9362,6 @@
 "F32": "No behaviour, schema, route, DTO, registration or usage-data change: only namespace lines, using lines, string literals naming a moved type, file splits and the R-C1 ratchet list change (D-0, scope out).",
 "F33": "Each published type moves into Modules/<X>/Contracts with namespace Lighthouse.Backend.Modules.<X>.Contracts, flat, no sub-folders; the set per context is ContextContractsMembership.Entries with Seed or Closure admission at HEAD, not the feature-delta's expected list (D-1, D-2).",
 "F34": "Slice order is by publisher: S1 Licensing and Access, S2 Flow metrics and Forecasting, S3 Work Items, S4 Tracker integration, S5 Organisation set-up; no moving type names another context's module type in its signature (measured from the moving files' using lines), so R-C2 stays empty after every slice whatever the order.",
-"F35": "Each slice's oracle is ContextContractsArchUnitTest with exactly that slice's CrossContextEdgesOutsideContracts entries deleted: the entries whose target is a moving type of that slice's publishers; edges onto ReachedButNotPublished types stay. The acceptance designer deletes them; the crafter moves types and fixes usings until the oracle and every Architecture rule pass (D-8).",
 "F36": "Domain event types stay in Models.Events in feature C; their Event entries in ContextContractsMembership are feature D's (scope out).",
 "F37": "CsvWorkTrackingOptionNames moves to TrackerIntegration.Contracts in S4 per P4: a static class of constants that Flow metrics' two demo backfill handlers name at source level; C# inlines constants, so the IL shows no edge and neither ContextContractsMembership nor R-C1 can see it. It is not added to the membership (which is compared both ways with the IL closure); S4's oracle observes its namespace by reflection instead.",
 "F38": "Files that hold several top-level types and move are split first, in a preserving commit before the move (File layout): ITeamMetricsService.cs, IPortfolioMetricsService.cs, CycleTimeOutlierDefinition.cs, XmRCalculator.cs in S2. A consumer file whose only change is a using line or a renamed literal is not restructured (maintainer default on open question 7).",

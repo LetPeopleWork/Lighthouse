@@ -179,7 +179,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h4>D4</h4>
 
-<pre><code>Each slice&#x27;s oracle is ContextContractsArchUnitTest with exactly that slice&#x27;s CrossContextEdgesOutsideContracts entries deleted: the entries whose target is a moving type of that slice&#x27;s publishers; edges onto ReachedButNotPublished types stay. The acceptance designer deletes them; the crafter moves types and fixes usings until the oracle and every Architecture rule pass (D-8).
+<pre><code>Each slice has its own new oracle under Tests/Architecture (&lt;Publisher&gt;PublishesItsContracts or PublishTheirContracts ArchUnitTest), RED before the move: every non-event ContextContractsMembership entry of the slice&#x27;s publishers lives in Modules.&lt;X&gt;.Contracts and no type names it through its old namespace. No later slice edits an earlier oracle. ContextContractsArchUnitTest (the R-C1 list), and every shared rule file a slice changes, is an Extend target of that slice: the crafter deletes the slice&#x27;s R-C1 entries, the entries whose target is one of its moved types; edges onto ReachedButNotPublished types stay (D-8).
 </code></pre>
 
 <h4>D5</h4>
@@ -636,22 +636,22 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>SinglePointOfFailure</p>
 
-<pre><code>The single inline ratchet list in ContextContractsArchUnitTest
+<pre><code>The single inline R-C1 ratchet list in ContextContractsArchUnitTest, edited by every slice
 </code></pre>
 
-<pre><code>Compared both ways
+<pre><code>Compared both ways; it is a craft target, never an oracle, so editing it in a later slice stales no approval
 </code></pre>
 
 <pre><code>None
 </code></pre>
 
-<pre><code>An entry deleted without its move landing
+<pre><code>An entry deleted without its move landing, or an earlier slice&#x27;s oracle edited later
 </code></pre>
 
-<pre><code>Shared oracle file across five slices; each slice edits only its own entries
+<pre><code>Each slice&#x27;s own oracle checks its types moved; R-C1 checks the list both ways
 </code></pre>
 
-<p>Acceptance designer</p>
+<p>Crafter per slice</p>
 
 <h4>Y6</h4>
 
@@ -2273,6 +2273,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
 
+<p>Extend</p>
+
+<pre><code>Rule list the crafter edits: delete this slice&#x27;s R-C1 entries (targets among its moved types)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingAndAccessPublishTheirContractsArchUnitTest.cs</p>
+
 <h4>Verification</h4>
 
 <pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~Architecture&quot;
@@ -2289,13 +2296,13 @@ dotnet build Lighthouse.Backend
 
 <h4>Public oracle</h4>
 
-<pre><code>Run the Architecture tests over the compiled assembly with every CrossContextEdgesOutsideContracts entry whose target is a published type of Licensing and Access deleted
+<pre><code>Run LicensingAndAccessPublishTheirContractsArchUnitTest.cs (Architecture filter) over the compiled production and test assemblies: take every ContextContractsMembership entry of Licensing and Access that is not an event, look it up in its Contracts namespace and its old namespace, and scan the IL for any type outside Licensing and Access naming it through its old namespace.
 </code></pre>
 
-<pre><code>RED before the move: R-C1 names the deleted edges as unlisted edges into Licensing and Access&#x27;s Application or Domain. GREEN after: ILicenseService, IAuthModeResolver, IRbacAdministrationService live in Modules.&lt;X&gt;.Contracts, R-C1, R-C2, R-C3, the membership and pattern-role tests and every Architecture rule pass.
+<pre><code>RED before the move: each of ILicenseService, IAuthModeResolver, IRbacAdministrationService is found in its old namespace and not in Lighthouse.Backend.Modules.Licensing.Contracts and Lighthouse.Backend.Modules.Access.Contracts. GREEN after: each resolves to exactly one top-level type in Lighthouse.Backend.Modules.Licensing.Contracts and Lighthouse.Backend.Modules.Access.Contracts, none is left in the old namespace, no type names one through the old name, and with R-C1&#x27;s entries for these targets deleted every Architecture rule passes.
 </code></pre>
 
-<pre><code>A Licensing and Access published type left in its old namespace, or a consumer naming it there, keeps R-C1 RED naming the edge; a residue edge deleted from the list, or an entry left for a moved type, fails R-C1 as gone or unlisted.
+<pre><code>A Licensing and Access published type left in its old namespace, present in both, moved to another context&#x27;s Contracts, or a membership entry matching no type (vacuous list): the oracle fails naming the type. A stale R-C1 entry or a residue entry deleted fails R-C1 as gone or unlisted.
 </code></pre>
 
 <h5>Promises</h5>
@@ -4347,6 +4354,15 @@ dotnet build Lighthouse.Backend
 <pre><code>Names a moved type: using line or old full-name literal changes only
 </code></pre>
 
+<p>rule-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Rule list the crafter edits: delete this slice&#x27;s R-C1 entries (targets among its moved types)
+</code></pre>
+
 <h5>Agreement</h5>
 
 <p>None.</p>
@@ -5884,6 +5900,13 @@ dotnet build Lighthouse.Backend
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
 
+<p>Extend</p>
+
+<pre><code>Rule list the crafter edits: delete this slice&#x27;s R-C1 entries (targets among its moved types)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.cs</p>
+
 <h4>Verification</h4>
 
 <pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~Architecture&quot;
@@ -5900,13 +5923,13 @@ dotnet build Lighthouse.Backend
 
 <h4>Public oracle</h4>
 
-<pre><code>Run the Architecture tests over the compiled assembly with every CrossContextEdgesOutsideContracts entry whose target is a published type of Flow metrics and Forecasting deleted
+<pre><code>Run FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.cs (Architecture filter) over the compiled production and test assemblies: take every ContextContractsMembership entry of Flow metrics and Forecasting that is not an event, look it up in its Contracts namespace and its old namespace, and scan the IL for any type outside Flow metrics and Forecasting naming it through its old namespace.
 </code></pre>
 
-<pre><code>RED before the move: R-C1 names the deleted edges as unlisted edges into Flow metrics and Forecasting&#x27;s Application or Domain. GREEN after: ITeamMetricsService, IPortfolioMetricsService, ForecastThroughputStatus, IThroughputFilter, IForecastDataSufficiency, IHowManyForecaster, CycleTimeFeature, CycleTimeWorkItem, OutlierVerdict, UpperNaturalProcessLimit, IForecastService, IForecastFilterRuleService, ForecastRunOutcome live in Modules.&lt;X&gt;.Contracts, R-C1, R-C2, R-C3, the membership and pattern-role tests and every Architecture rule pass.
+<pre><code>RED before the move: each of ITeamMetricsService, IPortfolioMetricsService, ForecastThroughputStatus, IThroughputFilter, IForecastDataSufficiency, IHowManyForecaster, CycleTimeFeature, CycleTimeWorkItem, OutlierVerdict, UpperNaturalProcessLimit, IForecastService, IForecastFilterRuleService, ForecastRunOutcome is found in its old namespace and not in Lighthouse.Backend.Modules.FlowMetrics.Contracts and Lighthouse.Backend.Modules.Forecasting.Contracts. GREEN after: each resolves to exactly one top-level type in Lighthouse.Backend.Modules.FlowMetrics.Contracts and Lighthouse.Backend.Modules.Forecasting.Contracts, none is left in the old namespace, no type names one through the old name, and with R-C1&#x27;s entries for these targets deleted every Architecture rule passes.
 </code></pre>
 
-<pre><code>A Flow metrics and Forecasting published type left in its old namespace, or a consumer naming it there, keeps R-C1 RED naming the edge; a residue edge deleted from the list, or an entry left for a moved type, fails R-C1 as gone or unlisted.
+<pre><code>A Flow metrics and Forecasting published type left in its old namespace, present in both, moved to another context&#x27;s Contracts, or a membership entry matching no type (vacuous list): the oracle fails naming the type. A stale R-C1 entry or a residue entry deleted fails R-C1 as gone or unlisted.
 </code></pre>
 
 <h5>Promises</h5>
@@ -7826,6 +7849,15 @@ dotnet build Lighthouse.Backend
 <pre><code>Names a moved type: using line or old full-name literal changes only
 </code></pre>
 
+<p>rule-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Rule list the crafter edits: delete this slice&#x27;s R-C1 entries (targets among its moved types)
+</code></pre>
+
 <h5>Agreement</h5>
 
 <p>None.</p>
@@ -8567,6 +8599,13 @@ dotnet build Lighthouse.Backend
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
 
+<p>Extend</p>
+
+<pre><code>Rule list the crafter edits: delete this slice&#x27;s R-C1 entries (targets among its moved types)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPublishesItsContractsArchUnitTest.cs</p>
+
 <h4>Verification</h4>
 
 <pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~Architecture&quot;
@@ -8583,13 +8622,13 @@ dotnet build Lighthouse.Backend
 
 <h4>Public oracle</h4>
 
-<pre><code>Run the Architecture tests over the compiled assembly with every CrossContextEdgesOutsideContracts entry whose target is a published type of Work Items deleted
+<pre><code>Run WorkItemsPublishesItsContractsArchUnitTest.cs (Architecture filter) over the compiled production and test assemblies: take every ContextContractsMembership entry of Work Items that is not an event, look it up in its Contracts namespace and its old namespace, and scan the IL for any type outside Work Items naming it through its old namespace.
 </code></pre>
 
-<pre><code>RED before the move: R-C1 names the deleted edges as unlisted edges into Work Items&#x27;s Application or Domain. GREEN after: IBlockedItemService, IRefreshLogService, IRuleEvaluator`1, IRuleFieldProvider`1, IWhatTheForecastWaitsFor live in Modules.&lt;X&gt;.Contracts, R-C1, R-C2, R-C3, the membership and pattern-role tests and every Architecture rule pass.
+<pre><code>RED before the move: each of IBlockedItemService, IRefreshLogService, IRuleEvaluator`1, IRuleFieldProvider`1, IWhatTheForecastWaitsFor is found in its old namespace and not in Lighthouse.Backend.Modules.WorkItems.Contracts. GREEN after: each resolves to exactly one top-level type in Lighthouse.Backend.Modules.WorkItems.Contracts, none is left in the old namespace, no type names one through the old name, and with R-C1&#x27;s entries for these targets deleted every Architecture rule passes.
 </code></pre>
 
-<pre><code>A Work Items published type left in its old namespace, or a consumer naming it there, keeps R-C1 RED naming the edge; a residue edge deleted from the list, or an entry left for a moved type, fails R-C1 as gone or unlisted.
+<pre><code>A Work Items published type left in its old namespace, present in both, moved to another context&#x27;s Contracts, or a membership entry matching no type (vacuous list): the oracle fails naming the type. A stale R-C1 entry or a residue entry deleted fails R-C1 as gone or unlisted.
 </code></pre>
 
 <h5>Promises</h5>
@@ -9478,6 +9517,15 @@ dotnet build Lighthouse.Backend
 <p>Changed</p>
 
 <pre><code>Names a moved type: using line or old full-name literal changes only
+</code></pre>
+
+<p>rule-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Rule list the crafter edits: delete this slice&#x27;s R-C1 entries (targets among its moved types)
 </code></pre>
 
 <h5>Agreement</h5>
@@ -10457,6 +10505,20 @@ dotnet build Lighthouse.Backend
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
 
+<p>Extend</p>
+
+<pre><code>Rule list the crafter edits: delete this slice&#x27;s R-C1 entries (targets among its moved types)
+</code></pre>
+
+<p>Scripts/test-selection/test-path-classifier.sh</p>
+
+<p>Extend</p>
+
+<pre><code>Classifier test gains the TrackerIntegration Contracts case beside the SHARED_REGEX change
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationPublishesItsContractsArchUnitTest.cs</p>
+
 <h4>Verification</h4>
 
 <pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~Architecture&quot;
@@ -10466,7 +10528,7 @@ dotnet build Lighthouse.Backend
 
 <h4>Supports</h4>
 
-<p>Scripts/test-selection/test-path-classifier.sh</p>
+<p>None.</p>
 
 <p>None.</p>
 
@@ -10474,13 +10536,13 @@ dotnet build Lighthouse.Backend
 
 <h4>Public oracle</h4>
 
-<pre><code>Run the Architecture tests over the compiled assembly with every CrossContextEdgesOutsideContracts entry whose target is a published type of Tracker integration deleted, plus the classifier case for a TrackerIntegration Contracts path
+<pre><code>Run TrackerIntegrationPublishesItsContractsArchUnitTest.cs (Architecture filter) over the compiled production and test assemblies: take every ContextContractsMembership entry of Tracker integration that is not an event, look it up in its Contracts namespace and its old namespace, and scan the IL for any type outside Tracker integration naming it through its old namespace. Also run test-path-classifier.sh.
 </code></pre>
 
-<pre><code>RED before the move: R-C1 names the deleted edges as unlisted edges into Tracker integration&#x27;s Application or Domain. GREEN after: IWorkTrackingConnector, IWorkTrackingConnectorFactory, IFeatureSource, IIncrementalSource, IDeliverySourceProvider, IDeliveryForecastPublisher, IDescriptionBlockMerger, IWriteBackTarget live in Modules.&lt;X&gt;.Contracts, R-C1, R-C2, R-C3, the membership and pattern-role tests and every Architecture rule pass. CsvWorkTrackingOptionNames resolves by reflection in Modules.TrackerIntegration.Contracts and not in Adapters.Connectors.Csv; test-path-classifier.sh classifies Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Contracts/IWorkTrackingConnector.cs as shared and passes.
+<pre><code>RED before the move: each of IWorkTrackingConnector, IWorkTrackingConnectorFactory, IFeatureSource, IIncrementalSource, IDeliverySourceProvider, IDeliveryForecastPublisher, IDescriptionBlockMerger, IWriteBackTarget is found in its old namespace and not in Lighthouse.Backend.Modules.TrackerIntegration.Contracts. GREEN after: each resolves to exactly one top-level type in Lighthouse.Backend.Modules.TrackerIntegration.Contracts, none is left in the old namespace, no type names one through the old name, and with R-C1&#x27;s entries for these targets deleted every Architecture rule passes. It also asserts by reflection that CsvWorkTrackingOptionNames lives in Lighthouse.Backend.Modules.TrackerIntegration.Contracts and not in Adapters.Connectors.Csv (a constants class the IL cannot show as an edge). test-path-classifier.sh classifies Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Contracts/IWorkTrackingConnector.cs as shared.
 </code></pre>
 
-<pre><code>A Tracker integration published type left in its old namespace, or a consumer naming it there, keeps R-C1 RED naming the edge; a residue edge deleted from the list, or an entry left for a moved type, fails R-C1 as gone or unlisted.
+<pre><code>A Tracker integration published type left in its old namespace, present in both, moved to another context&#x27;s Contracts, or a membership entry matching no type (vacuous list): the oracle fails naming the type. A stale R-C1 entry or a residue entry deleted fails R-C1 as gone or unlisted.
 </code></pre>
 
 <h5>Promises</h5>
@@ -11668,6 +11730,24 @@ dotnet build Lighthouse.Backend
 <pre><code>SHARED_REGEX gains Contracts for TrackerIntegration (E8)
 </code></pre>
 
+<p>rule-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Rule list the crafter edits: delete this slice&#x27;s R-C1 entries (targets among its moved types)
+</code></pre>
+
+<p>rule-file</p>
+
+<p>Scripts/test-selection/test-path-classifier.sh:1</p>
+
+<p>Changed</p>
+
+<pre><code>Classifier test gains the TrackerIntegration Contracts case beside the SHARED_REGEX change
+</code></pre>
+
 <h5>Agreement</h5>
 
 <p>None.</p>
@@ -12631,6 +12711,34 @@ dotnet build Lighthouse.Backend
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
 
+<p>Extend</p>
+
+<pre><code>Rule list the crafter edits: delete this slice&#x27;s R-C1 entries (targets among its moved types)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Open-host narrowing: set-up patterns admit only Contracts; Refinement lists its WeeklyRecurrence edge until feature D
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Open-host narrowing: set-up patterns admit only Contracts; Refinement lists its WeeklyRecurrence edge until feature D
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Open-host narrowing: set-up patterns admit only Contracts; Refinement lists its WeeklyRecurrence edge until feature D
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs</p>
+
 <h4>Verification</h4>
 
 <pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~Architecture&quot;
@@ -12639,11 +12747,7 @@ dotnet build Lighthouse.Backend
 
 <h4>Supports</h4>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs</p>
+<p>None.</p>
 
 <p>None.</p>
 
@@ -12651,13 +12755,13 @@ dotnet build Lighthouse.Backend
 
 <h4>Public oracle</h4>
 
-<pre><code>Run the Architecture tests over the compiled assembly with every CrossContextEdgesOutsideContracts entry whose target is a published type of Organisation set-up deleted and the open host narrowed to Contracts
+<pre><code>Run OrganisationSetupPublishesItsContractsArchUnitTest.cs (Architecture filter) over the compiled production and test assemblies: take every ContextContractsMembership entry of Organisation set-up that is not an event, look it up in its Contracts namespace and its old namespace, and scan the IL for any type outside Organisation set-up naming it through its old namespace.
 </code></pre>
 
-<pre><code>RED before the move: R-C1 names the deleted edges as unlisted edges into Organisation set-up&#x27;s Application or Domain. GREEN after: IAppSettingService, IBlackoutPeriodService, IFeatureOrdering live in Modules.&lt;X&gt;.Contracts, R-C1, R-C2, R-C3, the membership and pattern-role tests and every Architecture rule pass. The open host admits only Modules.OrganisationSetup.Contracts; after S5 the list holds only the eight residue edges onto ReachedButNotPublished types.
+<pre><code>RED before the move: each of IAppSettingService, IBlackoutPeriodService, IFeatureOrdering is found in its old namespace and not in Lighthouse.Backend.Modules.OrganisationSetup.Contracts. GREEN after: each resolves to exactly one top-level type in Lighthouse.Backend.Modules.OrganisationSetup.Contracts, none is left in the old namespace, no type names one through the old name, and with R-C1&#x27;s entries for these targets deleted every Architecture rule passes. It also asserts the open host is narrowed: no downstream module&#x27;s set-up pattern or SetUpNamespacesOpenToDownstreamModules admits Organisation set-up&#x27;s Application or Domain, only its Contracts.
 </code></pre>
 
-<pre><code>A Organisation set-up published type left in its old namespace, or a consumer naming it there, keeps R-C1 RED naming the edge; a residue edge deleted from the list, or an entry left for a moved type, fails R-C1 as gone or unlisted.
+<pre><code>A Organisation set-up published type left in its old namespace, present in both, moved to another context&#x27;s Contracts, or a membership entry matching no type (vacuous list): the oracle fails naming the type. A stale R-C1 entry or a residue entry deleted fails R-C1 as gone or unlisted.
 </code></pre>
 
 <h5>Promises</h5>
@@ -13825,6 +13929,42 @@ dotnet build Lighthouse.Backend
 <p>Changed</p>
 
 <pre><code>Names a moved type: using line or old full-name literal changes only
+</code></pre>
+
+<p>rule-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Rule list the crafter edits: delete this slice&#x27;s R-C1 entries (targets among its moved types)
+</code></pre>
+
+<p>rule-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Open-host narrowing: set-up patterns admit only Contracts; Refinement lists its WeeklyRecurrence edge until feature D
+</code></pre>
+
+<p>rule-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Open-host narrowing: set-up patterns admit only Contracts; Refinement lists its WeeklyRecurrence edge until feature D
+</code></pre>
+
+<p>rule-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Open-host narrowing: set-up patterns admit only Contracts; Refinement lists its WeeklyRecurrence edge until feature D
 </code></pre>
 
 <h5>Agreement</h5>
