@@ -485,6 +485,7 @@ export const BaseMetricsView = <
 		// inputs below, which all have to name the same promise.
 
 		percentilesScopeDefinitionId,
+		withinSleInfo,
 		percentileValues,
 		startedTotal: arrivalsData?.total ?? 0,
 		closedTotal: throughputData?.total ?? 0,
@@ -632,6 +633,7 @@ export const BaseMetricsView = <
 		featuresWorkedOnOverview: featuresWorkedOnInfo?.comparison,
 		totalWorkItemAge: totalWorkItemAgeInfo?.comparison,
 		predictabilityScore: predictabilityScoreInfo?.comparison,
+		withinSle: withinSleInfo?.comparison,
 		percentiles: (scopedPercentilesInfo ?? cycleTimePercentilesInfo)
 			?.comparison,
 		workItemAgePercentiles: computeWorkItemAgePercentilesTrend(

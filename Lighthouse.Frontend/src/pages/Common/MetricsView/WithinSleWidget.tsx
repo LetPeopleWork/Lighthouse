@@ -12,6 +12,7 @@ const WithinSleWidget: React.FC<WithinSleWidgetProps> = ({ info }) => {
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
 	const workItems = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const sle = getTerm(TERMINOLOGY_KEYS.SLE);
 
 	return (
 		<Card sx={{ borderRadius: 2, height: "100%", width: "100%" }}>
@@ -26,7 +27,7 @@ const WithinSleWidget: React.FC<WithinSleWidgetProps> = ({ info }) => {
 				}}
 			>
 				<Typography variant="h6" gutterBottom sx={{ textAlign: "center" }}>
-					Within {getTerm(TERMINOLOGY_KEYS.SLE)}
+					Within {sle}
 				</Typography>
 
 				{info.verdict === "Measured" && (
@@ -45,6 +46,18 @@ const WithinSleWidget: React.FC<WithinSleWidgetProps> = ({ info }) => {
 							{`Target ${info.slePercentile} %`}
 						</Typography>
 					</>
+				)}
+
+				{info.verdict === "NoSle" && (
+					<Typography variant="body2" color="text.secondary">
+						{`No ${sle} set — define one in settings to see how many ${workItems} finish within it`}
+					</Typography>
+				)}
+
+				{info.verdict === "TooFew" && (
+					<Typography variant="body2" color="text.secondary">
+						{`${info.closedCount} ${workItems} closed — too few to judge (needs at least 5)`}
+					</Typography>
 				)}
 			</CardContent>
 		</Card>

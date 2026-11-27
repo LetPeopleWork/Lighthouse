@@ -1,6 +1,7 @@
 import type { ICumulativeStateTimeResponse } from "../../../models/Metrics/CumulativeStateTime";
 import type { IFlowEfficiencyInfo } from "../../../models/Metrics/FlowEfficiencyInfo";
 import type { ProcessBehaviourChartData } from "../../../models/Metrics/ProcessBehaviourChartData";
+import type { IWithinSleInfo } from "../../../models/Metrics/WithinSleInfo";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { computeBlockedMaxAgeRag } from "./blockedMaxAgeRag";
@@ -19,6 +20,7 @@ import {
 	computeSleRiskRag,
 	computeTotalWorkItemAgeOverTimeRag,
 	computeTotalWorkItemAgeRag,
+	computeWithinSleRag,
 	computeWorkItemAgeChartRag,
 	computeWorkItemAgePercentilesRag,
 } from "./ragRulesTimeAndAge";
@@ -121,6 +123,7 @@ type RagInputs = {
 	readonly cumulativeStateTime: ICumulativeStateTimeResponse | null;
 	readonly flowEfficiencyInfo: IFlowEfficiencyInfo | null;
 	readonly percentilesScopeDefinitionId: number | null;
+	readonly withinSleInfo: IWithinSleInfo | null;
 	readonly terms: RagTerms;
 };
 
@@ -199,11 +202,13 @@ export function buildWidgetFooters(
 			inputs.predictabilityScore,
 			inputs.terms,
 		),
-		// No verdict yet: the share is shown as a number, and the status is a plain neutral one.
-		withinSle: {
-			ragStatus: "none",
-			tipText: `The share of closed ${inputs.terms.workItems} that finished within the ${inputs.terms.sle} days or less, next to the target. No status is given.`,
-		},
+		// Until the answer arrives the widget still needs its header, so the status stays neutral.
+		withinSle: inputs.withinSleInfo
+			? computeWithinSleRag(inputs.withinSleInfo, inputs.terms)
+			: {
+					ragStatus: "none",
+					tipText: `The share of closed ${inputs.terms.workItems} that finished within the ${inputs.terms.sle} days or less, next to the target.`,
+				},
 		percentiles:
 			inputs.percentilesScopeDefinitionId === null
 				? computeCycleTimePercentilesRag(

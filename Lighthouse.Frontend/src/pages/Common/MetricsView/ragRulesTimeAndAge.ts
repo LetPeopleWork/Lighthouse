@@ -1,4 +1,23 @@
+import type { IWithinSleInfo } from "../../../models/Metrics/WithinSleInfo";
 import type { RagResult, RagTerms } from "./ragTypes";
+
+const OBSERVE_BAND_POINTS = 20;
+
+/**
+ * The one place that turns a share within the target into a status: at or above the target is
+ * Sustain, up to 20 points below is Observe, further below is Act.
+ */
+function statusAgainstTarget(
+	percentageWithin: number,
+	targetPercentile: number,
+): RagResult["ragStatus"] {
+	if (percentageWithin >= targetPercentile) {
+		return "green";
+	}
+	return targetPercentile - percentageWithin > OBSERVE_BAND_POINTS
+		? "red"
+		: "amber";
+}
 
 function calculateSLEStats(
 	sle: { percentile: number; value: number },
@@ -92,7 +111,9 @@ export function computeCycleTimePercentilesRag(
 		};
 	}
 
-	if (percentageWithinSLE >= sle.percentile) {
+	const status = statusAgainstTarget(percentageWithinSLE, sle.percentile);
+
+	if (status === "green") {
 		return {
 			ragStatus: "green",
 			tipText: `${percentageWithinSLE.toFixed(1)}% of ${terms.workItems} are within the ${terms.sle} target of ${sle.percentile}% @ ${sle.value} days. Consider tightening the target.`,
@@ -101,7 +122,7 @@ export function computeCycleTimePercentilesRag(
 
 	const difference = sle.percentile - percentageWithinSLE;
 
-	if (difference > 20) {
+	if (status === "red") {
 		return {
 			ragStatus: "red",
 			tipText: `Only ${percentageWithinSLE.toFixed(1)}% within the ${terms.sle} target (${sle.percentile}% @ ${sle.value} days) — ${difference.toFixed(1)}pp below. Focus on the oldest items.`,
@@ -111,6 +132,34 @@ export function computeCycleTimePercentilesRag(
 	return {
 		ragStatus: "amber",
 		tipText: `${percentageWithinSLE.toFixed(1)}% within the ${terms.sle} target (${sle.percentile}% @ ${sle.value} days) — ${difference.toFixed(1)}pp below. Focus on items approaching the limit.`,
+	};
+}
+
+export function computeWithinSleRag(
+	info: IWithinSleInfo,
+	terms: RagTerms,
+): RagResult | { readonly ragStatus: "none"; readonly tipText: string } {
+	if (info.verdict === "NoSle") {
+		return {
+			ragStatus: "red",
+			tipText: `Define a ${terms.sle} in settings to see how many closed ${terms.workItems} finish within it.`,
+		};
+	}
+
+	if (info.verdict === "TooFew") {
+		return {
+			ragStatus: "none",
+			tipText: `Too few closed ${terms.workItems} to judge; at least 5 are needed.`,
+		};
+	}
+
+	const share = info.sharePercent ?? 0;
+	const target = info.slePercentile ?? 0;
+	const status = statusAgainstTarget(share, target);
+
+	return {
+		ragStatus: status,
+		tipText: `${share}% of closed ${terms.workItems} finished within ${info.sleDays} days or less, against a target of ${target}%.`,
 	};
 }
 

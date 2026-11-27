@@ -123,7 +123,7 @@ const trendPolicies: Record<string, TrendPolicy> = {
 	totalThroughput: "previous-period",
 	totalArrivals: "previous-period",
 	percentiles: "previous-period",
-	withinSle: "none",
+	withinSle: "previous-period",
 	workItemAgePercentiles: "previous-period",
 	featureSizePercentiles: "previous-period",
 	cycleScatter: "none",
