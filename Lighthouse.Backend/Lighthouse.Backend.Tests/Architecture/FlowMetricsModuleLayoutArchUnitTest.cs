@@ -54,6 +54,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             "SleRiskCalculator",
             "BaselineValidationService",
             "BaselineValidationResult",
+            "ServiceLevelExpectation",
+            "WithinSleShare",
         ];
 
         private static readonly string[] PureCalculationFiles =
@@ -62,6 +64,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             "XmRCalculator.cs",
             "SleRiskCalculator.cs",
             "BaselineValidationService.cs",
+            "ServiceLevelExpectation.cs",
+            "WithinSleShare.cs",
         ];
 
         // Every type the contract files declare, the records and companion interfaces that travel with them included.
@@ -80,6 +84,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "IBlockedCountSnapshotRepository",
             "IPercentilesOverTimeSnapshotRepository",
             "IProcessBehaviorSnapshotRepository",
+            "IWithinSleInfoQuery",
         ];
 
         // What the other contexts may name, published in the module's Contracts.
@@ -108,6 +113,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "IBlockedCountSnapshotRepository.cs",
             "IPercentilesOverTimeSnapshotRepository.cs",
             "IProcessBehaviorSnapshotRepository.cs",
+            "IWithinSleInfoQuery.cs",
         ];
 
         // Each implementation file declares exactly one type, named like the file.
@@ -129,6 +135,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "ReconstructionMemo",
             "RetentionEdge",
             "OverTimeFillTarget",
+            "WithinSleInfoQuery",
         ];
 
         // The module's reactions to domain events. Each file declares exactly one handler, named like the file.

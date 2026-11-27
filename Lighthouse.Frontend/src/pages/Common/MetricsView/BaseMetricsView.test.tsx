@@ -972,6 +972,7 @@ describe("BaseMetricsView component", () => {
 					metricLabel: "Predictability Score",
 				},
 			}),
+			getWithinSleInfo: vi.fn(),
 			getCycleTimePercentilesInfo: vi.fn().mockResolvedValue({
 				percentiles: [],
 				comparison: {
@@ -1559,6 +1560,7 @@ describe("BaseMetricsView component", () => {
 			getPredictabilityScoreInfo: vi
 				.fn()
 				.mockRejectedValue(new Error("API error")),
+			getWithinSleInfo: vi.fn(),
 			getCycleTimePercentilesInfo: vi
 				.fn()
 				.mockRejectedValue(new Error("API error")),
@@ -2379,6 +2381,7 @@ describe("BaseMetricsView component", () => {
 				getPredictabilityScoreInfo: vi
 					.fn()
 					.mockRejectedValue(new Error("API error")),
+				getWithinSleInfo: vi.fn(),
 				getCycleTimePercentilesInfo: vi
 					.fn()
 					.mockRejectedValue(new Error("API error")),

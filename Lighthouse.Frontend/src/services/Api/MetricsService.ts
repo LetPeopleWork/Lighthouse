@@ -38,6 +38,7 @@ import type {
 import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../models/Metrics/RunChartData";
 import type { ISleRisk } from "../../models/Metrics/SleRisk";
+import type { IWithinSleInfo } from "../../models/Metrics/WithinSleInfo";
 import {
 	type IPercentileValue,
 	PercentileValueSchema,
@@ -222,6 +223,12 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		endDate: Date,
 		definitionId?: number,
 	): Promise<ICycleTimePercentilesInfo>;
+
+	getWithinSleInfo(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IWithinSleInfo>;
 
 	getBlockedCountHistory(
 		id: number,
@@ -824,6 +831,14 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 			);
 			return response.data;
 		});
+	}
+
+	getWithinSleInfo(
+		_id: number,
+		_startDate: Date,
+		_endDate: Date,
+	): Promise<IWithinSleInfo> {
+		return Promise.reject(new Error("getWithinSleInfo is not built yet."));
 	}
 
 	getBlockedCountHistory(
