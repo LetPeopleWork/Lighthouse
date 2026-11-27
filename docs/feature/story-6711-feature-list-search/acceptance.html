@@ -160,6 +160,190 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>A user finds a Feature by typing part of any value shown in the list, into the one search box above the list; case does not matter.
+</code></pre>
+
+<pre><code>Does not show that every column&#x27;s shown value is searched, only that the listed values are; no check for values shown only on hover.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>A user finds a Feature by its reference ID typed into the Name column filter, because that filter matches the same &#x27;ID: name&#x27; text the cell shows.
+</code></pre>
+
+<pre><code>Does not check a Feature whose name is empty, or an ID typed with different case or spacing than the cell shows.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>Typing &#x27;proj-12&#x27; in the search box shows only Features whose shown values contain &#x27;proj-12&#x27;, and includes the Feature with reference ID PROJ-12.
+</code></pre>
+
+<pre><code>Does not show that no other matching Feature is left out when the list spans more than one page.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>Typing &#x27;checkout&#x27; in the search box shows a Feature whose parent is shown as &#x27;PROJ-3: Checkout&#x27;.
+</code></pre>
+
+<pre><code>Does not cover a parent shown in a different case or only on a second line of the cell.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P5</p>
+
+<pre><code>When no Feature matches the search &#x27;zzz&#x27;, the list says in words that no Feature matches, which differs from the message for a list with no Features at all.
+</code></pre>
+
+<pre><code>Does not prove the two messages differ in every locale, or that the empty-search message is not shown in the same case.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P6</p>
+
+<pre><code>After the user clears the search box, every Feature of the list is shown again.
+</code></pre>
+
+<pre><code>Does not show whether a column filter still narrows the list after the search is cleared.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E7</h4>
+
+<h5>Promises</h5>
+
+<p>P7</p>
+
+<pre><code>With a column filter set and text in the search box, the list shows only Features that meet both the column filter and the search.
+</code></pre>
+
+<pre><code>Does not show the result when the column filter is later cleared while the search stays.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E8</h4>
+
+<h5>Promises</h5>
+
+<p>P8</p>
+
+<pre><code>When the user is on page 2 and types a new search, the list shows the first page of the results.
+</code></pre>
+
+<pre><code>Does not cover a search whose results fit on one page, or a search typed while a page change is still pending.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E9</h4>
+
+<h5>Promises</h5>
+
+<p>P9</p>
+
+<pre><code>The Portfolio Features, Team Features and Delivery Work Items tabs each show the same search box above their list, and the box finds a Feature by its reference ID.
+</code></pre>
+
+<pre><code>Does not show the search box while the tab&#x27;s list is still loading, and does not check Delivery Work Items beyond a Feature reference ID.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E10</h4>
+
+<h5>Promises</h5>
+
+<p>P10</p>
+
+<pre><code>Typing &#x27;PROJ-12&#x27; in the Name column filter lists the Feature with reference ID PROJ-12 and name &#x27;Checkout&#x27;.
+</code></pre>
+
+<pre><code>Does not check a Feature whose name alone contains the typed text.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h3>Waivers</h3>
+
 <p>None.</p>
 
 <h2>Charter</h2>

@@ -2,7 +2,8 @@
 "counters": {
 "C": 1,
 "D": 9,
-"F": 263,
+"E": 10,
+"F": 283,
 "K": 9,
 "L": 4,
 "P": 10,
@@ -1022,6 +1023,90 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"lacuna": "F265",
+"promises": [
+"P1"
+],
+"text": "F264"
+},
+{
+"id": "E2",
+"lacuna": "F267",
+"promises": [
+"P2"
+],
+"text": "F266"
+},
+{
+"id": "E3",
+"lacuna": "F269",
+"promises": [
+"P3"
+],
+"text": "F268"
+},
+{
+"id": "E4",
+"lacuna": "F271",
+"promises": [
+"P4"
+],
+"text": "F270"
+},
+{
+"id": "E5",
+"lacuna": "F273",
+"promises": [
+"P5"
+],
+"text": "F272"
+},
+{
+"id": "E6",
+"lacuna": "F275",
+"promises": [
+"P6"
+],
+"text": "F274"
+},
+{
+"id": "E7",
+"lacuna": "F277",
+"promises": [
+"P7"
+],
+"text": "F276"
+},
+{
+"id": "E8",
+"lacuna": "F279",
+"promises": [
+"P8"
+],
+"text": "F278"
+},
+{
+"id": "E9",
+"lacuna": "F281",
+"promises": [
+"P9"
+],
+"text": "F280"
+},
+{
+"id": "E10",
+"lacuna": "F283",
+"promises": [
+"P10"
+],
+"text": "F282"
+}
+]
+},
 "facts": {
 "F1": "ADO Story 6711 \"Improve Search on Feature List\": It is not obvious that you have to click on the \"...\" in a column and then get the filter. At least to filter: Feature Reference ID; Feature Name; Parent ID & Reference. A textbox on top would be nice. This applies everywhere we have the feature list. Also right now we only search for the \"name\" and not the \"Reference ID\" if we filter on Feature Name (which is confusing).",
 "F10": "a Feature has a parent shown as 'PROJ-3: Checkout'",
@@ -1205,8 +1290,28 @@
 "F261": "Backend enum gains the name",
 "F262": "Frontend name map gains the same name",
 "F263": "Reporter is name-driven and unchanged",
+"F264": "A user finds a Feature by typing part of any value shown in the list, into the one search box above the list; case does not matter.",
+"F265": "Does not show that every column's shown value is searched, only that the listed values are; no check for values shown only on hover.",
+"F266": "A user finds a Feature by its reference ID typed into the Name column filter, because that filter matches the same 'ID: name' text the cell shows.",
+"F267": "Does not check a Feature whose name is empty, or an ID typed with different case or spacing than the cell shows.",
+"F268": "Typing 'proj-12' in the search box shows only Features whose shown values contain 'proj-12', and includes the Feature with reference ID PROJ-12.",
+"F269": "Does not show that no other matching Feature is left out when the list spans more than one page.",
 "F27": "the user types a search",
+"F270": "Typing 'checkout' in the search box shows a Feature whose parent is shown as 'PROJ-3: Checkout'.",
+"F271": "Does not cover a parent shown in a different case or only on a second line of the cell.",
+"F272": "When no Feature matches the search 'zzz', the list says in words that no Feature matches, which differs from the message for a list with no Features at all.",
+"F273": "Does not prove the two messages differ in every locale, or that the empty-search message is not shown in the same case.",
+"F274": "After the user clears the search box, every Feature of the list is shown again.",
+"F275": "Does not show whether a column filter still narrows the list after the search is cleared.",
+"F276": "With a column filter set and text in the search box, the list shows only Features that meet both the column filter and the search.",
+"F277": "Does not show the result when the column filter is later cleared while the search stays.",
+"F278": "When the user is on page 2 and types a new search, the list shows the first page of the results.",
+"F279": "Does not cover a search whose results fit on one page, or a search typed while a page change is still pending.",
 "F28": "the list shows the first page of the results",
+"F280": "The Portfolio Features, Team Features and Delivery Work Items tabs each show the same search box above their list, and the box finds a Feature by its reference ID.",
+"F281": "Does not show the search box while the tab's list is still loading, and does not check Delivery Work Items beyond a Feature reference ID.",
+"F282": "Typing 'PROJ-12' in the Name column filter lists the Feature with reference ID PROJ-12 and name 'Checkout'.",
+"F283": "Does not check a Feature whose name alone contains the typed text.",
 "F29": "The search box is found on every full feature list",
 "F3": "A user finds a Feature in a feature list by typing part of any value shown in the list (reference ID, name, parent ID or name, or any other column) into one search box above the list; case does not matter and part of a word is enough.",
 "F30": "the Portfolio Features tab, the Team Features tab and the Delivery Work Items tab",
