@@ -15,6 +15,7 @@ export default defineConfig({
 			"src/components/Common/FeatureListDataGrid/**/*.test.{ts,tsx}",
 			"src/pages/Common/featureListSearch.everyList.test.tsx",
 			"src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.test.tsx",
+			"src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.teamText.test.tsx",
 			"src/pages/Teams/Detail/TeamFeatureList*.test.tsx",
 			"src/pages/Features/**/*.test.{ts,tsx}",
 		],
