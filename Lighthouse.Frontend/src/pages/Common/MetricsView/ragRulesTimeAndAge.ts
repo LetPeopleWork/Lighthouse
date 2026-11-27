@@ -153,13 +153,11 @@ export function computeWithinSleRag(
 		};
 	}
 
-	const share = info.sharePercent ?? 0;
-	const target = info.slePercentile ?? 0;
-	const status = statusAgainstTarget(share, target);
+	const status = statusAgainstTarget(info.sharePercent, info.slePercentile);
 
 	return {
 		ragStatus: status,
-		tipText: `${share}% of closed ${terms.workItems} finished within ${info.sleDays} days or less, against a target of ${target}%.`,
+		tipText: `${info.sharePercent}% of closed ${terms.workItems} finished within ${info.sleDays} days or less, against a target of ${info.slePercentile}%.`,
 	};
 }
 
