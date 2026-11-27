@@ -77,7 +77,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "ForecastRoundFinishedRefreshLogHandler",
         ];
 
-        private const string ForecastRoundFinishedEvent = "Lighthouse.Backend.Modules.Forecasting.Contracts.ForecastRoundFinished";
+        private static string ForecastRoundFinishedEvent => string.Join('.', ContextContractsMembership.ContractsOf("Forecasting"), "ForecastRoundFinished");
 
         private StartUpDomainEventHandlers handlers = null!;
 
