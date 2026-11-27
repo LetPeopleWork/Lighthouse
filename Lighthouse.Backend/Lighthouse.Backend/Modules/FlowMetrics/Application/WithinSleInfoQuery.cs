@@ -9,32 +9,10 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
     public sealed class WithinSleInfoQuery(ITeamMetricsService teamMetrics, IPortfolioMetricsService portfolioMetrics, ILighthouseClock clock) : IWithinSleInfoQuery
     {
         public WithinSleInfoDto GetForTeam(Team team, DateTime startDate, DateTime endDate)
-        {
-            var (previousStart, previousEnd) = PrecedingPeriod(startDate, endDate);
-
-            return Answer(
-                team,
-                CycleTimesOfTeam(team, startDate, endDate),
-                CycleTimesOfTeam(team, previousStart, previousEnd),
-                startDate, endDate, previousStart, previousEnd);
-        }
+            => Answer(WithinSleFamilies.For(team, teamMetrics, clock), startDate, endDate);
 
         public WithinSleInfoDto GetForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
-        {
-            var (previousStart, previousEnd) = PrecedingPeriod(startDate, endDate);
-
-            return Answer(
-                portfolio,
-                CycleTimesOfPortfolio(portfolio, startDate, endDate),
-                CycleTimesOfPortfolio(portfolio, previousStart, previousEnd),
-                startDate, endDate, previousStart, previousEnd);
-        }
-
-        private IEnumerable<int> CycleTimesOfTeam(Team team, DateTime startDate, DateTime endDate)
-            => teamMetrics.GetCycleTimeDataForTeam(team, startDate, endDate).Select(item => item.WorkItem.CycleTime(clock.Zone));
-
-        private IEnumerable<int> CycleTimesOfPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
-            => portfolioMetrics.GetCycleTimeDataForPortfolio(portfolio, startDate, endDate).Select(feature => feature.CycleTime(clock.Zone));
+            => Answer(WithinSleFamilies.For(portfolio, portfolioMetrics, clock), startDate, endDate);
 
         private static (DateTime Start, DateTime End) PrecedingPeriod(DateTime startDate, DateTime endDate)
         {
@@ -44,20 +22,18 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             return (previousEnd.AddDays(-(periodDays - 1)), previousEnd);
         }
 
-        private static WithinSleInfoDto Answer(
-            WorkTrackingSystemOptionsOwner owner,
-            IEnumerable<int> currentCycleTimes,
-            IEnumerable<int> previousCycleTimes,
-            DateTime currentStart, DateTime currentEnd, DateTime previousStart, DateTime previousEnd)
+        private static WithinSleInfoDto Answer(WithinSleFamilyReader family, DateTime currentStart, DateTime currentEnd)
         {
-            var sle = ServiceLevelExpectation.For(owner);
-            var current = WithinSleShare.Of(Closed(currentCycleTimes), sle);
-            var previous = WithinSleShare.Of(Closed(previousCycleTimes), sle);
+            var (previousStart, previousEnd) = PrecedingPeriod(currentStart, currentEnd);
+            var sle = family.CurrentSle();
+            var current = WithinSleShare.Of(ClosedIn(family, currentStart, currentEnd), sle);
+            var previous = WithinSleShare.Of(ClosedIn(family, previousStart, previousEnd), sle);
 
             return AnswerOf(current, ComparisonOf(current, previous, currentStart, currentEnd, previousStart, previousEnd));
         }
 
-        private static List<int> Closed(IEnumerable<int> cycleTimes) => cycleTimes.Where(cycleTime => cycleTime > 0).ToList();
+        private static IReadOnlyList<int> ClosedIn(WithinSleFamilyReader family, DateTime windowStart, DateTime windowEnd)
+            => family.ReadClosedCycleTimes(windowStart, windowEnd) ?? [];
 
         private static InfoWidgetComparisonDto ComparisonOf(
             WithinSleShare current, WithinSleShare previous,
