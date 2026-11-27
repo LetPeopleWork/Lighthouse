@@ -3854,14 +3854,6 @@ Create
 the event: PortfolioId, PortfolioName, ItemCount, DurationMs, FinishedAt, Outcome
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Forecasting\/Contracts\/ForecastRoundOutcome\.cs
-
-Create
-
-```text
-closed choice Succeeded | Failed | Cancelled | Skipped, one type per file
-```
-
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Application\/Policies\/ForecastRoundFinishedRefreshLogHandler\.cs
 
 Create
@@ -3910,6 +3902,54 @@ Extend
 only if its placement list names the Work Items handlers
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModuleRules\.cs
+
+Extend
+
+```text
+WithoutTheEvents also exempts types nested in an event
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ContextContractsMembership\.cs
+
+Extend
+
+```text
+Event row for ForecastRoundFinished; IRefreshLogService seed removed (no longer reached by another context)
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/EventTypesTheCompositionRootNames\.cs
+
+Extend
+
+```text
+Program names ForecastRoundFinished in its handler block
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ProgramNamesModulesOnlyArchUnitTest\.cs
+
+Extend
+
+```text
+Program names the new handler
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest\.cs
+
+Extend
+
+```text
+composition root names the new handler
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsMembershipArchUnitTest\.cs
+
+Extend
+
+```text
+Work Items membership gains the handler
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/Forecasting\/ForecastRoundsKeepTheirRefreshLogEntryTest\.cs
 
 #### Verification
@@ -3956,11 +3996,11 @@ None.
 ##### Decisions
 
 ```text
-ForecastUpdater keeps the round's flags and, in the same finally and at the same point, publishes ForecastRoundFinished(portfolio.Id, portfolio.Name, itemCount, stopwatch ms, CurrentInstant, outcome) through IDomainEventDispatcher with CancellationToken.None, so a cancelled round still writes its row. Outcome: Cancelled when cancelled, Failed when not successful, Skipped when successful and skipped, else Succeeded; Forecasting owns that decision: a static factory ForecastRoundFinished.For(portfolio, itemCount, durationMs, finishedAt, success, cancelled, skipped) on the event record derives the outcome, replacing ForecastUpdater's private LogForecastRefresh.
+ForecastUpdater keeps the round's flags and, in the same finally and at the same point, publishes ForecastRoundFinished through IDomainEventDispatcher with CancellationToken.None, so a cancelled round still writes its row. The event's static factory ForecastRoundFinished.For(portfolio, itemCount, durationMs, finishedAt, success, cancelled, skipped) derives RoundOutcome: Cancelled when cancelled, Failed when not successful, Skipped when successful and skipped, else Succeeded; it replaces ForecastUpdater's private LogForecastRefresh.
 ```
 
 ```text
-ForecastRoundFinishedRefreshLogHandler (Work Items, Application/Policies, IDomainEventHandler<ForecastRoundFinished>) translates the event into today's RefreshLog row: Type Forecast, EntityId, EntityName, ItemCount, SyncOutcome.None's Mode/RecordsScanned/RecordsFetched, DurationMs, ExecutedAt = FinishedAt, Success = Succeeded or Skipped, Cancelled = Cancelled, Skipped = Skipped; a total switch over ForecastRoundOutcome (CS8524 pragma per the repository idiom). It is the anti-corruption translation of Work Items' own record and holds no other rule. Registered Scoped in Program's handler block; it is the only handler of the event.
+ForecastRoundFinishedRefreshLogHandler (Work Items, Application/Policies, IDomainEventHandler<ForecastRoundFinished>) translates the event into today's RefreshLog row: Type Forecast, EntityId, EntityName, ItemCount, SyncOutcome.None's Mode/RecordsScanned/RecordsFetched, DurationMs, ExecutedAt = FinishedAt, Success = Succeeded or Skipped, Cancelled = Cancelled, Skipped = Skipped; a total switch over ForecastRoundFinished.RoundOutcome (CS8524 pragma per the repository idiom). It is the anti-corruption translation of Work Items' own record and holds no other rule. Registered Scoped in Program's handler block; the only handler.
 ```
 
 ```text
@@ -3969,6 +4009,18 @@ Work Items' handler names Forecasting.Contracts.ForecastRoundFinished under S1's
 
 ```text
 The S2 oracle is one file at the port: a ServicePortHarness registering the forecast round as Program builds it (real ForecastUpdater, DomainEventDispatcher, RefreshLogService, the handler through the start-up registration), doubles only for IForecastService outcomes (computed, confirmed unchanged, throws) and the operator stop; four rows (succeeded, failed, cancelled, skipped) read the row through IRefreshLogService.GetRefreshLogs against today's expected fields; one row with a throwing IRefreshLogService observes the dispatcher's error log and the round's completion; one IL row asserts ForecastUpdater names no IRefreshLogService. The order pin (support) reads ForecastRoundFinished and pins [ForecastRoundFinishedRefreshLogHandler].
+```
+
+```text
+The round's outcome is the event's own nested choice, ForecastRoundFinished.RoundOutcome { Succeeded, Failed, Cancelled, Skipped }, in ForecastRoundFinished.cs; there is no top-level ForecastRoundOutcome. Reason: the outcome has no meaning apart from the event, the closed choice stays (the four impossible flag rows stay unrepresentable), and the published set stays one type: the membership closure (ContextContractsMembershipArchUnitTest) attributes a nested type to its outermost type, which the map already lists. Rejected: (a) widening the event exemption to every type an event's signature names (a second closure next to the membership's Closure admission); (b) a membership row kind for a type born in Contracts (changes the namespace-move law's model, which feature A owns); (c) carrying three flags (makes Success with Cancelled representable again).
+```
+
+```text
+The event exemption covers an event's nested types: ModuleRules.WithoutTheEvents excludes each event's full name and every name nested in it (the lookahead ends in (?:[+/].*)?$ instead of $), so Work Items' handler naming ForecastRoundFinished.RoundOutcome passes Forecasting's front-door rule with no widened caller pattern. ForecastRoundFinished is listed in ContextContractsMembership as Event("ForecastRoundFinished", "Forecasting"): for an event born in Contracts the row's old namespace is the kernel's event namespace by convention, which is what the S1 oracle reads to know the context map owns it; the existence check accepts old-or-new and the rename sweep has nothing to rename.
+```
+
+```text
+Oracle impact. S1 oracle (DomainEventsLiveWithTheirPublisherArchUnitTest.cs): unchanged. S2 oracle (ForecastRoundsKeepTheirRefreshLogEntryTest.cs): unchanged, it names no outcome type. S2 support DomainEventHandlerOrderPinTest.cs changes and needs re-approval: its const ForecastRoundFinishedEvent becomes a static get-only property (=> "..." built with string.Join, as ContextContractsMembership.TheModulesRoot does), because the namespace-move law reads every constant string of the test assembly as a rule pattern and a full name seeing only the new location fits no role. Its value and every assertion stay the same.
 ```
 
 ##### Constraints
@@ -4047,16 +4099,6 @@ CreateNew
 new type, no existing owner (see the slice's CreateNew rows)
 ```
 
-ForecastRoundOutcome
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Forecasting\/Contracts\/ForecastRoundOutcome\.cs\:1
-
-CreateNew
-
-```text
-new type, no existing owner (see the slice's CreateNew rows)
-```
-
 ForecastRoundFinishedRefreshLogHandler
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Application\/Policies\/ForecastRoundFinishedRefreshLogHandler\.cs\:1
@@ -4105,6 +4147,66 @@ Extend
 
 ```text
 existing owner edited in place: list entries, a pattern or a registration only
+```
+
+ModuleRules
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModuleRules\.cs\:69
+
+Extend
+
+```text
+owns the event exemption (S1); widened to nested types, no second owner
+```
+
+ContextContractsMembership
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ContextContractsMembership\.cs\:40
+
+Extend
+
+```text
+the one map of what each context publishes
+```
+
+EventTypesTheCompositionRootNames
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/EventTypesTheCompositionRootNames\.cs\:1
+
+Extend
+
+```text
+existing list of event types Program may name
+```
+
+ProgramNamesModulesOnlyArchUnitTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ProgramNamesModulesOnlyArchUnitTest\.cs\:1
+
+Extend
+
+```text
+existing R-C4 list
+```
+
+CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest\.cs\:1
+
+Extend
+
+```text
+existing list of handlers the root names
+```
+
+WorkItemsMembershipArchUnitTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsMembershipArchUnitTest\.cs\:1
+
+Extend
+
+```text
+existing membership list
 ```
 
 ##### Impact
@@ -4181,16 +4283,6 @@ new file of the RX1 path
 
 production
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Forecasting\/Contracts\/ForecastRoundOutcome\.cs\:1
-
-Changed
-
-```text
-new file of the RX1 path
-```
-
-production
-
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Application\/Policies\/ForecastRoundFinishedRefreshLogHandler\.cs\:1
 
 Changed
@@ -4207,6 +4299,66 @@ Changed
 
 ```text
 edited for this slice's law
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModuleRules\.cs\:69
+
+Changed
+
+```text
+WithoutTheEvents also exempts types nested in an event
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ContextContractsMembership\.cs\:40
+
+Changed
+
+```text
+Event row for ForecastRoundFinished; IRefreshLogService seed removed (no longer reached by another context)
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/EventTypesTheCompositionRootNames\.cs\:1
+
+Changed
+
+```text
+Program names ForecastRoundFinished in its handler block
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ProgramNamesModulesOnlyArchUnitTest\.cs\:1
+
+Changed
+
+```text
+Program names the new handler
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest\.cs\:1
+
+Changed
+
+```text
+composition root names the new handler
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsMembershipArchUnitTest\.cs\:1
+
+Changed
+
+```text
+Work Items membership gains the handler
 ```
 
 ##### Agreement
@@ -4313,11 +4465,11 @@ None.
 
 ForecastRoundFinished
 
-sealed record ForecastRoundFinished\(int PortfolioId\, string PortfolioName\, int ItemCount\, long DurationMs\, DateTime FinishedAt\, ForecastRoundOutcome Outcome\) \: IDomainEvent
+sealed record ForecastRoundFinished\(int PortfolioId\, string PortfolioName\, int ItemCount\, long DurationMs\, DateTime FinishedAt\, ForecastRoundFinished\.RoundOutcome Outcome\) \: IDomainEvent
 
-ForecastRoundOutcome
+ForecastRoundFinished\.RoundOutcome
 
-enum ForecastRoundOutcome \{ Succeeded\, Failed\, Cancelled\, Skipped \}
+public enum RoundOutcome \{ Succeeded\, Failed\, Cancelled\, Skipped \} nested in ForecastRoundFinished
 
 ##### Laws
 

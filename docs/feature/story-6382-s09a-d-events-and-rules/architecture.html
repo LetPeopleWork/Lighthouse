@@ -3581,13 +3581,6 @@ pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1
 <pre><code>the event: PortfolioId, PortfolioName, ItemCount, DurationMs, FinishedAt, Outcome
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundOutcome.cs</p>
-
-<p>Create</p>
-
-<pre><code>closed choice Succeeded | Failed | Cancelled | Skipped, one type per file
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ForecastRoundFinishedRefreshLogHandler.cs</p>
 
 <p>Create</p>
@@ -3628,6 +3621,48 @@ pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1
 <p>Extend</p>
 
 <pre><code>only if its placement list names the Work Items handlers
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs</p>
+
+<p>Extend</p>
+
+<pre><code>WithoutTheEvents also exempts types nested in an event
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembership.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Event row for ForecastRoundFinished; IRefreshLogService seed removed (no longer reached by another context)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EventTypesTheCompositionRootNames.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Program names ForecastRoundFinished in its handler block
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProgramNamesModulesOnlyArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Program names the new handler
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>composition root names the new handler
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Work Items membership gains the handler
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/ForecastRoundsKeepTheirRefreshLogEntryTest.cs</p>
@@ -3671,16 +3706,25 @@ pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1
 
 <h5>Decisions</h5>
 
-<pre><code>ForecastUpdater keeps the round&#x27;s flags and, in the same finally and at the same point, publishes ForecastRoundFinished(portfolio.Id, portfolio.Name, itemCount, stopwatch ms, CurrentInstant, outcome) through IDomainEventDispatcher with CancellationToken.None, so a cancelled round still writes its row. Outcome: Cancelled when cancelled, Failed when not successful, Skipped when successful and skipped, else Succeeded; Forecasting owns that decision: a static factory ForecastRoundFinished.For(portfolio, itemCount, durationMs, finishedAt, success, cancelled, skipped) on the event record derives the outcome, replacing ForecastUpdater&#x27;s private LogForecastRefresh.
+<pre><code>ForecastUpdater keeps the round&#x27;s flags and, in the same finally and at the same point, publishes ForecastRoundFinished through IDomainEventDispatcher with CancellationToken.None, so a cancelled round still writes its row. The event&#x27;s static factory ForecastRoundFinished.For(portfolio, itemCount, durationMs, finishedAt, success, cancelled, skipped) derives RoundOutcome: Cancelled when cancelled, Failed when not successful, Skipped when successful and skipped, else Succeeded; it replaces ForecastUpdater&#x27;s private LogForecastRefresh.
 </code></pre>
 
-<pre><code>ForecastRoundFinishedRefreshLogHandler (Work Items, Application/Policies, IDomainEventHandler&lt;ForecastRoundFinished&gt;) translates the event into today&#x27;s RefreshLog row: Type Forecast, EntityId, EntityName, ItemCount, SyncOutcome.None&#x27;s Mode/RecordsScanned/RecordsFetched, DurationMs, ExecutedAt = FinishedAt, Success = Succeeded or Skipped, Cancelled = Cancelled, Skipped = Skipped; a total switch over ForecastRoundOutcome (CS8524 pragma per the repository idiom). It is the anti-corruption translation of Work Items&#x27; own record and holds no other rule. Registered Scoped in Program&#x27;s handler block; it is the only handler of the event.
+<pre><code>ForecastRoundFinishedRefreshLogHandler (Work Items, Application/Policies, IDomainEventHandler&lt;ForecastRoundFinished&gt;) translates the event into today&#x27;s RefreshLog row: Type Forecast, EntityId, EntityName, ItemCount, SyncOutcome.None&#x27;s Mode/RecordsScanned/RecordsFetched, DurationMs, ExecutedAt = FinishedAt, Success = Succeeded or Skipped, Cancelled = Cancelled, Skipped = Skipped; a total switch over ForecastRoundFinished.RoundOutcome (CS8524 pragma per the repository idiom). It is the anti-corruption translation of Work Items&#x27; own record and holds no other rule. Registered Scoped in Program&#x27;s handler block; the only handler.
 </code></pre>
 
 <pre><code>Work Items&#x27; handler names Forecasting.Contracts.ForecastRoundFinished under S1&#x27;s event rule: Forecasting&#x27;s Application rule targets ModuleRules.WithoutTheEvents(ForecastingApplication, &quot;Forecasting&quot;), whose EventsOf reads ForecastRoundFinished as soon as it exists, so Forecasting&#x27;s legal callers stay the API and Refinement and no Work Items namespace is admitted. S2 does not edit ForecastingModuleBoundariesArchUnitTest.cs.
 </code></pre>
 
 <pre><code>The S2 oracle is one file at the port: a ServicePortHarness registering the forecast round as Program builds it (real ForecastUpdater, DomainEventDispatcher, RefreshLogService, the handler through the start-up registration), doubles only for IForecastService outcomes (computed, confirmed unchanged, throws) and the operator stop; four rows (succeeded, failed, cancelled, skipped) read the row through IRefreshLogService.GetRefreshLogs against today&#x27;s expected fields; one row with a throwing IRefreshLogService observes the dispatcher&#x27;s error log and the round&#x27;s completion; one IL row asserts ForecastUpdater names no IRefreshLogService. The order pin (support) reads ForecastRoundFinished and pins [ForecastRoundFinishedRefreshLogHandler].
+</code></pre>
+
+<pre><code>The round&#x27;s outcome is the event&#x27;s own nested choice, ForecastRoundFinished.RoundOutcome { Succeeded, Failed, Cancelled, Skipped }, in ForecastRoundFinished.cs; there is no top-level ForecastRoundOutcome. Reason: the outcome has no meaning apart from the event, the closed choice stays (the four impossible flag rows stay unrepresentable), and the published set stays one type: the membership closure (ContextContractsMembershipArchUnitTest) attributes a nested type to its outermost type, which the map already lists. Rejected: (a) widening the event exemption to every type an event&#x27;s signature names (a second closure next to the membership&#x27;s Closure admission); (b) a membership row kind for a type born in Contracts (changes the namespace-move law&#x27;s model, which feature A owns); (c) carrying three flags (makes Success with Cancelled representable again).
+</code></pre>
+
+<pre><code>The event exemption covers an event&#x27;s nested types: ModuleRules.WithoutTheEvents excludes each event&#x27;s full name and every name nested in it (the lookahead ends in (?:[+/].*)?$ instead of $), so Work Items&#x27; handler naming ForecastRoundFinished.RoundOutcome passes Forecasting&#x27;s front-door rule with no widened caller pattern. ForecastRoundFinished is listed in ContextContractsMembership as Event(&quot;ForecastRoundFinished&quot;, &quot;Forecasting&quot;): for an event born in Contracts the row&#x27;s old namespace is the kernel&#x27;s event namespace by convention, which is what the S1 oracle reads to know the context map owns it; the existence check accepts old-or-new and the rename sweep has nothing to rename.
+</code></pre>
+
+<pre><code>Oracle impact. S1 oracle (DomainEventsLiveWithTheirPublisherArchUnitTest.cs): unchanged. S2 oracle (ForecastRoundsKeepTheirRefreshLogEntryTest.cs): unchanged, it names no outcome type. S2 support DomainEventHandlerOrderPinTest.cs changes and needs re-approval: its const ForecastRoundFinishedEvent becomes a static get-only property (=&gt; &quot;...&quot; built with string.Join, as ContextContractsMembership.TheModulesRoot does), because the namespace-move law reads every constant string of the test assembly as a rule pattern and a full name seeing only the new location fits no role. Its value and every assertion stay the same.
 </code></pre>
 
 <h5>Constraints</h5>
@@ -3752,15 +3796,6 @@ pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1
 <pre><code>new type, no existing owner (see the slice&#x27;s CreateNew rows)
 </code></pre>
 
-<p>ForecastRoundOutcome</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundOutcome.cs:1</p>
-
-<p>CreateNew</p>
-
-<pre><code>new type, no existing owner (see the slice&#x27;s CreateNew rows)
-</code></pre>
-
 <p>ForecastRoundFinishedRefreshLogHandler</p>
 
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ForecastRoundFinishedRefreshLogHandler.cs:1</p>
@@ -3804,6 +3839,60 @@ pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1
 <p>Extend</p>
 
 <pre><code>existing owner edited in place: list entries, a pattern or a registration only
+</code></pre>
+
+<p>ModuleRules</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:69</p>
+
+<p>Extend</p>
+
+<pre><code>owns the event exemption (S1); widened to nested types, no second owner
+</code></pre>
+
+<p>ContextContractsMembership</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembership.cs:40</p>
+
+<p>Extend</p>
+
+<pre><code>the one map of what each context publishes
+</code></pre>
+
+<p>EventTypesTheCompositionRootNames</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EventTypesTheCompositionRootNames.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>existing list of event types Program may name
+</code></pre>
+
+<p>ProgramNamesModulesOnlyArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProgramNamesModulesOnlyArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>existing R-C4 list
+</code></pre>
+
+<p>CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>existing list of handlers the root names
+</code></pre>
+
+<p>WorkItemsMembershipArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>existing membership list
 </code></pre>
 
 <h5>Impact</h5>
@@ -3873,15 +3962,6 @@ pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1
 
 <p>production</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundOutcome.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>new file of the RX1 path
-</code></pre>
-
-<p>production</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ForecastRoundFinishedRefreshLogHandler.cs:1</p>
 
 <p>Changed</p>
@@ -3896,6 +3976,60 @@ pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1
 <p>Changed</p>
 
 <pre><code>edited for this slice&#x27;s law
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:69</p>
+
+<p>Changed</p>
+
+<pre><code>WithoutTheEvents also exempts types nested in an event
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembership.cs:40</p>
+
+<p>Changed</p>
+
+<pre><code>Event row for ForecastRoundFinished; IRefreshLogService seed removed (no longer reached by another context)
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EventTypesTheCompositionRootNames.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Program names ForecastRoundFinished in its handler block
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProgramNamesModulesOnlyArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Program names the new handler
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>composition root names the new handler
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Work Items membership gains the handler
 </code></pre>
 
 <h5>Agreement</h5>
@@ -3991,11 +4125,11 @@ pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1
 
 <p>ForecastRoundFinished</p>
 
-<p>sealed record ForecastRoundFinished(int PortfolioId, string PortfolioName, int ItemCount, long DurationMs, DateTime FinishedAt, ForecastRoundOutcome Outcome) : IDomainEvent</p>
+<p>sealed record ForecastRoundFinished(int PortfolioId, string PortfolioName, int ItemCount, long DurationMs, DateTime FinishedAt, ForecastRoundFinished.RoundOutcome Outcome) : IDomainEvent</p>
 
-<p>ForecastRoundOutcome</p>
+<p>ForecastRoundFinished.RoundOutcome</p>
 
-<p>enum ForecastRoundOutcome { Succeeded, Failed, Cancelled, Skipped }</p>
+<p>public enum RoundOutcome { Succeeded, Failed, Cancelled, Skipped } nested in ForecastRoundFinished</p>
 
 <h5>Laws</h5>
 

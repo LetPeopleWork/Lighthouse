@@ -220,7 +220,7 @@
 "C": 1,
 "D": 8,
 "E": 4,
-"F": 281,
+"F": 298,
 "K": 7,
 "L": 6,
 "P": 3,
@@ -2547,18 +2547,21 @@
 "constructors": [
 {
 "name": "ForecastRoundFinished",
-"signature": "sealed record ForecastRoundFinished(int PortfolioId, string PortfolioName, int ItemCount, long DurationMs, DateTime FinishedAt, ForecastRoundOutcome Outcome) : IDomainEvent"
+"signature": "sealed record ForecastRoundFinished(int PortfolioId, string PortfolioName, int ItemCount, long DurationMs, DateTime FinishedAt, ForecastRoundFinished.RoundOutcome Outcome) : IDomainEvent"
 },
 {
-"name": "ForecastRoundOutcome",
-"signature": "enum ForecastRoundOutcome { Succeeded, Failed, Cancelled, Skipped }"
+"name": "ForecastRoundFinished.RoundOutcome",
+"signature": "public enum RoundOutcome { Succeeded, Failed, Cancelled, Skipped } nested in ForecastRoundFinished"
 }
 ],
 "decisions": [
-"F84",
-"F85",
+"F288",
+"F289",
 "F254",
-"F87"
+"F87",
+"F290",
+"F291",
+"F292"
 ],
 "impact": [
 {
@@ -2606,12 +2609,6 @@
 {
 "decision": "Changed",
 "kind": "production",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundOutcome.cs:1",
-"reason": "F101"
-},
-{
-"decision": "Changed",
-"kind": "production",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ForecastRoundFinishedRefreshLogHandler.cs:1",
 "reason": "F101"
 },
@@ -2620,6 +2617,42 @@
 "kind": "test",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs:20",
 "reason": "F102"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:69",
+"reason": "F282"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembership.cs:40",
+"reason": "F283"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EventTypesTheCompositionRootNames.cs:1",
+"reason": "F284"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProgramNamesModulesOnlyArchUnitTest.cs:1",
+"reason": "F285"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest.cs:1",
+"reason": "F286"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs:1",
+"reason": "F287"
 }
 ],
 "laws": [
@@ -2734,12 +2767,6 @@
 },
 {
 "decision": "CreateNew",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundOutcome.cs:1",
-"reason": "F94",
-"symbol": "ForecastRoundOutcome"
-},
-{
-"decision": "CreateNew",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ForecastRoundFinishedRefreshLogHandler.cs:1",
 "reason": "F94",
 "symbol": "ForecastRoundFinishedRefreshLogHandler"
@@ -2767,6 +2794,42 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs:20",
 "reason": "F95",
 "symbol": "WorkItemsPoliciesLayoutArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:69",
+"reason": "F293",
+"symbol": "ModuleRules"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembership.cs:40",
+"reason": "F294",
+"symbol": "ContextContractsMembership"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EventTypesTheCompositionRootNames.cs:1",
+"reason": "F295",
+"symbol": "EventTypesTheCompositionRootNames"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProgramNamesModulesOnlyArchUnitTest.cs:1",
+"reason": "F296",
+"symbol": "ProgramNamesModulesOnlyArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest.cs:1",
+"reason": "F297",
+"symbol": "CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs:1",
+"reason": "F298",
+"symbol": "WorkItemsMembershipArchUnitTest"
 }
 ]
 },
@@ -2778,11 +2841,6 @@
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundFinished.cs",
 "reason": "F73"
-},
-{
-"change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundOutcome.cs",
-"reason": "F74"
 },
 {
 "change": "Create",
@@ -2813,6 +2871,36 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs",
 "reason": "F80"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs",
+"reason": "F282"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembership.cs",
+"reason": "F283"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EventTypesTheCompositionRootNames.cs",
+"reason": "F284"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProgramNamesModulesOnlyArchUnitTest.cs",
+"reason": "F285"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CompositionRootNamesTheOtherModulesOnlyThroughTheirModuleArchUnitTest.cs",
+"reason": "F286"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs",
+"reason": "F287"
 }
 ],
 "verification": [
@@ -3435,7 +3523,24 @@
 "F28": "Every producer and consumer of the touched contracts (the 15 event types, ForecastRoundFinished, IRefreshLogService, RefreshLog) lives in the one backend deployable and changes in the same commit; nothing is serialised, persisted in a new shape or sent on a wire. The S2 oracle runs the real producer through the real consumer at the service port.",
 "F280": "Every forecast round has exactly one reaction that writes its entry",
 "F281": "the reaction were registered with a lifetime other than scoped",
+"F282": "WithoutTheEvents also exempts types nested in an event",
+"F283": "Event row for ForecastRoundFinished; IRefreshLogService seed removed (no longer reached by another context)",
+"F284": "Program names ForecastRoundFinished in its handler block",
+"F285": "Program names the new handler",
+"F286": "composition root names the new handler",
+"F287": "Work Items membership gains the handler",
+"F288": "ForecastUpdater keeps the round's flags and, in the same finally and at the same point, publishes ForecastRoundFinished through IDomainEventDispatcher with CancellationToken.None, so a cancelled round still writes its row. The event's static factory ForecastRoundFinished.For(portfolio, itemCount, durationMs, finishedAt, success, cancelled, skipped) derives RoundOutcome: Cancelled when cancelled, Failed when not successful, Skipped when successful and skipped, else Succeeded; it replaces ForecastUpdater's private LogForecastRefresh.",
+"F289": "ForecastRoundFinishedRefreshLogHandler (Work Items, Application/Policies, IDomainEventHandler<ForecastRoundFinished>) translates the event into today's RefreshLog row: Type Forecast, EntityId, EntityName, ItemCount, SyncOutcome.None's Mode/RecordsScanned/RecordsFetched, DurationMs, ExecutedAt = FinishedAt, Success = Succeeded or Skipped, Cancelled = Cancelled, Skipped = Skipped; a total switch over ForecastRoundFinished.RoundOutcome (CS8524 pragma per the repository idiom). It is the anti-corruption translation of Work Items' own record and holds no other rule. Registered Scoped in Program's handler block; the only handler.",
 "F29": "Architecture rules: the compiled production assembly read through LighthouseArchitecture.Production / IlDependencies (in-process; nearest argv: dotnet test ... --filter FullyQualifiedName~Architecture). RX1: IForecastUpdater.TriggerImmediateUpdate over a ServicePortHarness scope factory, no host.",
+"F290": "The round's outcome is the event's own nested choice, ForecastRoundFinished.RoundOutcome { Succeeded, Failed, Cancelled, Skipped }, in ForecastRoundFinished.cs; there is no top-level ForecastRoundOutcome. Reason: the outcome has no meaning apart from the event, the closed choice stays (the four impossible flag rows stay unrepresentable), and the published set stays one type: the membership closure (ContextContractsMembershipArchUnitTest) attributes a nested type to its outermost type, which the map already lists. Rejected: (a) widening the event exemption to every type an event's signature names (a second closure next to the membership's Closure admission); (b) a membership row kind for a type born in Contracts (changes the namespace-move law's model, which feature A owns); (c) carrying three flags (makes Success with Cancelled representable again).",
+"F291": "The event exemption covers an event's nested types: ModuleRules.WithoutTheEvents excludes each event's full name and every name nested in it (the lookahead ends in (?:[+/].*)?$ instead of $), so Work Items' handler naming ForecastRoundFinished.RoundOutcome passes Forecasting's front-door rule with no widened caller pattern. ForecastRoundFinished is listed in ContextContractsMembership as Event(\"ForecastRoundFinished\", \"Forecasting\"): for an event born in Contracts the row's old namespace is the kernel's event namespace by convention, which is what the S1 oracle reads to know the context map owns it; the existence check accepts old-or-new and the rename sweep has nothing to rename.",
+"F292": "Oracle impact. S1 oracle (DomainEventsLiveWithTheirPublisherArchUnitTest.cs): unchanged. S2 oracle (ForecastRoundsKeepTheirRefreshLogEntryTest.cs): unchanged, it names no outcome type. S2 support DomainEventHandlerOrderPinTest.cs changes and needs re-approval: its const ForecastRoundFinishedEvent becomes a static get-only property (=> \"...\" built with string.Join, as ContextContractsMembership.TheModulesRoot does), because the namespace-move law reads every constant string of the test assembly as a rule pattern and a full name seeing only the new location fits no role. Its value and every assertion stay the same.",
+"F293": "owns the event exemption (S1); widened to nested types, no second owner",
+"F294": "the one map of what each context publishes",
+"F295": "existing list of event types Program may name",
+"F296": "existing R-C4 list",
+"F297": "existing list of handlers the root names",
+"F298": "existing membership list",
 "F3": "Each of the 15 domain event types lives in the Contracts of the context that publishes it, and no event type but IDomainEvent is left in Models.Events; behaviour unchanged.",
 "F30": "IDomainEventDispatcher (platform lane, unchanged)",
 "F31": "IRefreshLogService (Work Items Contracts, unchanged)",
@@ -3485,7 +3590,6 @@
 "F71": "R-C1-R-C3 stay green with the residue list; every Architecture rule passes after each slice",
 "F72": "Domain-event handler order is pinned per event, ForecastRoundFinished included after S2",
 "F73": "the event: PortfolioId, PortfolioName, ItemCount, DurationMs, FinishedAt, Outcome",
-"F74": "closed choice Succeeded | Failed | Cancelled | Skipped, one type per file",
 "F75": "writes the same RefreshLog row through IRefreshLogService",
 "F76": "publishes ForecastRoundFinished where LogForecastRefresh was called; drops IRefreshLogService",
 "F77": "registers the handler Scoped in the one ordered handler block",
@@ -3495,8 +3599,6 @@
 "F81": "IForecastUpdater.TriggerImmediateUpdate(portfolioId) on a ServicePortHarness built as Program builds the round, once per outcome (succeeded, failed, cancelled, skipped) and once with a throwing refresh-log write; plus the IL of ForecastUpdater",
 "F82": "Each round leaves exactly one Forecast row equal to today's row for its outcome, written by the handler; the throwing write is logged by the dispatcher and the round completes; ForecastUpdater names no IRefreshLogService; the order pin lists ForecastRoundFinishedRefreshLogHandler. RED before craft: ForecastRoundFinished does not exist / ForecastUpdater still names IRefreshLogService.",
 "F83": "Publishing with the round's token (cancelled row missing), a wrong flag mapping (skipped row with Success false), a missing registration (no row), or ForecastUpdater still writing the row directly each fails a named row.",
-"F84": "ForecastUpdater keeps the round's flags and, in the same finally and at the same point, publishes ForecastRoundFinished(portfolio.Id, portfolio.Name, itemCount, stopwatch ms, CurrentInstant, outcome) through IDomainEventDispatcher with CancellationToken.None, so a cancelled round still writes its row. Outcome: Cancelled when cancelled, Failed when not successful, Skipped when successful and skipped, else Succeeded; Forecasting owns that decision: a static factory ForecastRoundFinished.For(portfolio, itemCount, durationMs, finishedAt, success, cancelled, skipped) on the event record derives the outcome, replacing ForecastUpdater's private LogForecastRefresh.",
-"F85": "ForecastRoundFinishedRefreshLogHandler (Work Items, Application/Policies, IDomainEventHandler<ForecastRoundFinished>) translates the event into today's RefreshLog row: Type Forecast, EntityId, EntityName, ItemCount, SyncOutcome.None's Mode/RecordsScanned/RecordsFetched, DurationMs, ExecutedAt = FinishedAt, Success = Succeeded or Skipped, Cancelled = Cancelled, Skipped = Skipped; a total switch over ForecastRoundOutcome (CS8524 pragma per the repository idiom). It is the anti-corruption translation of Work Items' own record and holds no other rule. Registered Scoped in Program's handler block; it is the only handler of the event.",
 "F87": "The S2 oracle is one file at the port: a ServicePortHarness registering the forecast round as Program builds it (real ForecastUpdater, DomainEventDispatcher, RefreshLogService, the handler through the start-up registration), doubles only for IForecastService outcomes (computed, confirmed unchanged, throws) and the operator stop; four rows (succeeded, failed, cancelled, skipped) read the row through IRefreshLogService.GetRefreshLogs against today's expected fields; one row with a throwing IRefreshLogService observes the dispatcher's error log and the round's completion; one IL row asserts ForecastUpdater names no IRefreshLogService. The order pin (support) reads ForecastRoundFinished and pins [ForecastRoundFinishedRefreshLogHandler].",
 "F88": "existing transport (ADR-027 D7); its log-and-continue policy is the accepted degradation",
 "F89": "owns the round and its outcome flags; LogForecastRefresh becomes the publish",
