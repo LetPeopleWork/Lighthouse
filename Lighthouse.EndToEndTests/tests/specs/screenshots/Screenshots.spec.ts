@@ -42,6 +42,8 @@ import {
 	PercentilesOverTimeWidget,
 } from "../../models/metrics/PercentilesOverTimeWidget";
 import { WaitStatesEditor } from "../../models/metrics/WaitStatesEditor";
+import { WithinSleOverTimeWidget } from "../../models/metrics/WithinSleOverTimeWidget";
+import { WithinSleWidget } from "../../models/metrics/WithinSleWidget";
 import { WorkItemAgingChart } from "../../models/metrics/WorkItemAgingChart";
 import { DeliveryMetricsTab } from "../../models/portfolios/Deliveries/DeliveryMetricsTab";
 import { DeliveryTimelineTab } from "../../models/portfolios/Deliveries/DeliveryTimelineTab";
@@ -1652,6 +1654,60 @@ testWithDemo(
 		await takeElementScreenshot(
 			cumulativeWidget.Widget,
 			"features/metrics/stateTimeCumulative_filtered.png",
+		);
+	},
+);
+
+testWithDemo(
+	"Take @screenshot of the Within SLE widget on the Flow Overview",
+	async ({ page, testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
+		const metricsPage = await teamDetailPage.goToMetrics();
+
+		await metricsPage.switchCategory(MetricsCategories.FlowOverview);
+
+		const withinSle = new WithinSleWidget(page);
+		await withinSle.waitUntilLoaded();
+		await expect(withinSle.share).toBeVisible();
+		await expect(withinSle.sentence).toBeVisible();
+		await expect(withinSle.target).toBeVisible();
+
+		await takeElementScreenshot(
+			withinSle.widget,
+			"features/metrics/withinSle.png",
+		);
+	},
+);
+
+testWithDemo(
+	"Take @screenshot of the Within SLE Over Time chart in Predictability",
+	async ({ page, testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
+		const metricsPage = await teamDetailPage.goToMetrics();
+
+		await metricsPage.switchCategory(MetricsCategories.Predictability);
+
+		const withinSleOverTime = new WithinSleOverTimeWidget(page);
+		// The first visit starts filling in the past days in the background, and they appear the next
+		// time the chart is opened, so open it again until the line spans more than one day.
+		await expect(async () => {
+			await metricsPage.switchCategory(MetricsCategories.FlowOverview);
+			await metricsPage.switchCategory(MetricsCategories.Predictability);
+			expect(await withinSleOverTime.countPlottedDays()).toBeGreaterThan(1);
+		}).toPass({ timeout: 60_000 });
+		await withinSleOverTime.waitUntilLoaded();
+		await withinSleOverTime.widget.scrollIntoViewIfNeeded();
+		await expect(withinSleOverTime.title).toBeVisible();
+		await expect.poll(() => withinSleOverTime.isHorizonSelected(30)).toBe(true);
+		await expect
+			.poll(() => withinSleOverTime.countChartLines())
+			.toBeGreaterThan(0);
+
+		await takeElementScreenshot(
+			withinSleOverTime.widget,
+			"features/metrics/withinSleOverTime.png",
 		);
 	},
 );
