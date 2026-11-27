@@ -4,8 +4,6 @@ using Lighthouse.Backend.Models.Metrics;
 
 namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
-    public sealed record CycleTimeFeature(Feature Feature, IReadOnlyList<NamedCycleTimeValue> NamedCycleTimes);
-
     public interface IPortfolioMetricsService
     {
         ProcessBehaviourChart GetThroughputProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate, DateOnly? asOf = null);

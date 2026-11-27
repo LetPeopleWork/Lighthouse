@@ -4,10 +4,6 @@ using Lighthouse.Backend.Models.Metrics;
 
 namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
-    public sealed record ForecastThroughputStatus(RunChartData Throughput, bool FilterApplied, string? ExcludedSummary, bool HasSufficientData = true);
-
-    public sealed record CycleTimeWorkItem(WorkItem WorkItem, IReadOnlyList<NamedCycleTimeValue> NamedCycleTimes);
-
     public interface ITeamMetricsService
     {
         IReadOnlyList<CycleTimeWorkItem> GetCycleTimeDataForTeam(Team team, DateTime startDate, DateTime endDate, int? definitionId = null);

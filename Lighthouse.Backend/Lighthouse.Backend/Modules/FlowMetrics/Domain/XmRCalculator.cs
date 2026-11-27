@@ -2,28 +2,6 @@ using Lighthouse.Backend.Models.Metrics;
 
 namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
 {
-    public record XmRResult(
-        int Average,
-        int UpperNaturalProcessLimit,
-        int LowerNaturalProcessLimit,
-        IReadOnlyList<IReadOnlyList<SpecialCauseType>> SpecialCauseClassifications);
-
-    /// <summary>
-    /// The upper natural process limit of a baseline, unrounded. A value above it is a large change on the process
-    /// behaviour chart and an outlier on the Cycle Time scatterplot, so both ask this one object.
-    /// </summary>
-    public sealed record UpperNaturalProcessLimit
-    {
-        internal UpperNaturalProcessLimit(double days)
-        {
-            Days = days;
-        }
-
-        public double Days { get; }
-
-        public bool IsExceededBy(int days) => days > Days;
-    }
-
     public static class XmRCalculator
     {
         private const double MovingRangeMultiplier = 2.66;
