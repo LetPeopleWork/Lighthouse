@@ -80,7 +80,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 $"{TheModulesRoot}.Forecasting.Application.Policies.FeatureRankChangedForecastTriggerHandler",
                 $"{TheModulesRoot}.Forecasting.Application.Policies.TeamDataRefreshedForecastTriggerHandler",
                 $"{TheModulesRoot}.Forecasting.Application.Policies.TeamDeletedForecastRetriggerHandler",
-                $"{TheModulesRoot}.Forecasting.Contracts.PortfolioForecastsUpdated",
             ],
             ["Licensing"] = [],
             ["Promises"] =

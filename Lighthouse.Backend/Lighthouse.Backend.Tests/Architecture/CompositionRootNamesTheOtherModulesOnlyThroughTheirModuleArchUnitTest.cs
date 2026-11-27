@@ -59,15 +59,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         // they stay in the composition root's one ordered block rather than moving into each context's module.
         private static Dictionary<string, IReadOnlyList<string>> RegisteredByTheHandlerBlock => new(StringComparer.Ordinal)
         {
-            ["OrganisationSetup"] =
-            [
-                $"{TheModulesRoot}.OrganisationSetup.Contracts.BlackoutConfigurationChanged",
-                $"{TheModulesRoot}.OrganisationSetup.Contracts.ConnectionFetchShapeChanged",
-                $"{TheModulesRoot}.OrganisationSetup.Contracts.FeatureOrderingPolicyChanged",
-                $"{TheModulesRoot}.OrganisationSetup.Contracts.FeatureRankChanged",
-                $"{TheModulesRoot}.OrganisationSetup.Contracts.PortfolioDeleted",
-                $"{TheModulesRoot}.OrganisationSetup.Contracts.TeamDeleted",
-            ],
+            ["OrganisationSetup"] = [],
             ["Refinement"] = [],
             ["Reports"] = [],
             ["TrackerIntegration"] = [],
@@ -80,12 +72,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 $"{TheModulesRoot}.WorkItems.Application.Policies.TeamDeletedRefreshLogCleanupHandler",
                 $"{TheModulesRoot}.WorkItems.Application.Policies.WorkItemBlockedTransitionCaptureHandler",
                 $"{TheModulesRoot}.WorkItems.Application.Policies.WorkItemBlockedTransitionCloseHandler",
-                $"{TheModulesRoot}.WorkItems.Contracts.FeatureBlocked",
-                $"{TheModulesRoot}.WorkItems.Contracts.FeatureUnblocked",
-                $"{TheModulesRoot}.WorkItems.Contracts.PortfolioFeaturesRefreshed",
-                $"{TheModulesRoot}.WorkItems.Contracts.TeamDataRefreshed",
-                $"{TheModulesRoot}.WorkItems.Contracts.WorkItemBlocked",
-                $"{TheModulesRoot}.WorkItems.Contracts.WorkItemUnblocked",
             ],
         };
 
