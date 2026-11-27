@@ -4857,6 +4857,14 @@ Extend
 prose: section 4 Context contracts bullet (layer, rule, enumerator, residue) and the CI test-selection payoff note (D-13); section 5 names ForecastRoundFinished
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRoundBoundariesArchUnitTest\.cs
+
+Extend
+
+```text
+edge list replaced by an empty-list placement rule: nothing in Forecasting outside the round reaches Tracker integration
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/EachCrossContextEdgeHasOneOwningRuleArchUnitTest\.cs
 
 #### Verification
@@ -4910,6 +4918,18 @@ A module-to-module edge into another context's Contracts leaves every list: R-C1
 
 ```text
 OrganisationSetupIsAnOpenHostArchUnitTest (support, acceptance designer): TrackerIntegrationsList_HoldsExactlyTheCadenceEdgeIntoTheSettings becomes "Tracker integration's list names no edge into set-up", and AMadeUpTrackerIntegrationTypeAskingTheSettings_IsNamedByTrackerIntegrationsRule becomes "a made-up Tracker integration type asking set-up's Contracts passes Tracker integration's rule" (set-up is the open host). Nothing else in that file changes; its Contracts narrowing is feature C's.
+```
+
+```text
+Tracker integration and set-up. Set-up is the open host of every packaged context, Tracker integration included, so Tracker integration's OtherContexts pattern reads set-up only behind its Contracts: it composes ModuleRules.SetUpBehindItsContracts for set-up instead of the whole set-up module, and the cadence edge ConnectionHealthCadence -> IAppSettingService leaves EdgesOfTheModuleIntoOtherContexts. Every other context stays foreign to Tracker integration (it is still a leaf towards Work Items, Forecasting, Flow metrics, Promises, Refinement, Reports). Consequently the S3 support OrganisationSetupIsAnOpenHostArchUnitTest.cs changes three Tracker integration assertions, not two: TrackerIntegrationsRule_StillReadsSetUpAsAnotherContext becomes a test that Tracker integration's OtherContexts does not read set-up's Contracts (SetUpNamespacesOpenToDownstreamModules) as another context and still reads set-up's Application, Domain and Adapters as another context; its failure message says set-up is the open host and only its Contracts are open.
+```
+
+```text
+The write-back round's list. WriteBackRoundBoundariesArchUnitTest.TheEdgesOfTheRoundIntoTrackerIntegration names three Forecasting -> Tracker integration Contracts edges, so it is a module-to-module list and must go. Its law is which Forecasting code may reach Tracker integration, not surface, so it becomes a placement rule with no edge list: no Forecasting type outside the round (the existing ForecastingOutsideTheRound pattern) reaches Tracker integration, checked by ModuleRules.OutboundEdges with an empty list. The round as a whole may reach Tracker integration's Contracts (legal by R-C1 and by Tracker integration being the supplier). The per-type pin (only WriteBackService inside the round) is given up. Its made-up-type falsifier stays on fixture roots, outside the law.
+```
+
+```text
+Refinement and set-up's Domain. RefinementCadenceCalendar -> WeeklyRecurrence is a non-Contracts edge already in R-C1's list, so it leaves Refinement's EdgesOfTheApplicationIntoForbiddenCode, and Refinement's forbidden pattern stops composing SetUpBehindItsContracts: surface into another module is R-C1's alone. OrganisationSetupIsAnOpenHostArchUnitTest.TheEdgesRefinementListsIntoSetUpsDomain is derived from that list, so it becomes empty by itself once the entry leaves; the acceptance designer deletes it and the Except that reads it in ADownstreamModulesOutboundList_NamesNoEdgeIntoSetUp, because an empty exception has no reader. The same holds for any downstream rule: a per-module pattern stops reading another module's non-Contracts code once R-C1 owns those edges; an open-host assertion that requires a downstream pattern to read set-up's non-Contracts as foreign is rewritten by the acceptance designer to rely on R-C1.
 ```
 
 ##### Constraints
@@ -5088,6 +5108,16 @@ Extend
 the existing authority document is amended (D-11), no second document
 ```
 
+ForecastingOutsideTheRound
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRoundBoundariesArchUnitTest\.cs\:36
+
+Extend
+
+```text
+existing pattern of Forecasting outside the round becomes the source of the placement rule
+```
+
 ##### Impact
 
 architecture\-tests
@@ -5238,6 +5268,16 @@ Changed
 
 ```text
 edited for this slice's law
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackRoundBoundariesArchUnitTest\.cs\:38
+
+Changed
+
+```text
+TheEdgesOfTheRoundIntoTrackerIntegration removed; InsideForecastingOnlyTheWriteBackServiceReachesTrackerIntegration_AlongTheListedEdges becomes the placement rule
 ```
 
 ##### Agreement

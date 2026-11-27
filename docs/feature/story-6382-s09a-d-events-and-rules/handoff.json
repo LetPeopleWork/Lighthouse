@@ -213,6 +213,94 @@
 "stimulus": "F278",
 "user_result": "F280"
 }
+],
+"S3": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3",
+"L5/F158"
+],
+"still_passes_if": "F302",
+"test": "NoPerModuleBoundaryListNamesAnEdgeFromOneContextIntoAnother",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EachCrossContextEdgeHasOneOwningRuleArchUnitTest.cs"
+},
+"expected": "F300",
+"stimulus": "F299",
+"user_result": "F301"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F159"
+],
+"still_passes_if": "F306",
+"test": "AMadeUpListNamingAnEdgeFromRefinementIntoAccess_IsNamedWithItsListItsEntryAndTheContractsRuleAsOwner",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EachCrossContextEdgeHasOneOwningRuleArchUnitTest.cs"
+},
+"expected": "F304",
+"stimulus": "F303",
+"user_result": "F305"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F160"
+],
+"still_passes_if": "F310",
+"test": "TheListsLeftOutByName_StillExistAndStillNameAnEdgeBetweenContexts",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EachCrossContextEdgeHasOneOwningRuleArchUnitTest.cs"
+},
+"expected": "F308",
+"stimulus": "F307",
+"user_result": "F309"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F314",
+"test": "TrackerIntegrationsList_NamesNoEdgeIntoSetUp",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs"
+},
+"expected": "F312",
+"stimulus": "F311",
+"user_result": "F313"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F318",
+"test": "AMadeUpTrackerIntegrationTypeAskingSetUpsContracts_PassesTrackerIntegrationsRule",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs"
+},
+"expected": "F316",
+"stimulus": "F315",
+"user_result": "F317"
+}
 ]
 },
 "counters": {
@@ -220,7 +308,7 @@
 "C": 1,
 "D": 8,
 "E": 4,
-"F": 298,
+"F": 324,
 "K": 7,
 "L": 6,
 "P": 3,
@@ -2962,7 +3050,10 @@
 "decisions": [
 "F144",
 "F145",
-"F146"
+"F146",
+"F320",
+"F321",
+"F322"
 ],
 "impact": [
 {
@@ -3054,6 +3145,12 @@
 "kind": "test",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs:23",
 "reason": "F102"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs:38",
+"reason": "F324"
 }
 ],
 "laws": [
@@ -3186,6 +3283,12 @@
 "locator": "ARCHITECTURE.md:1",
 "reason": "F150",
 "symbol": "Lighthouse"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs:36",
+"reason": "F323",
+"symbol": "ForecastingOutsideTheRound"
 }
 ]
 },
@@ -3267,6 +3370,11 @@
 "change": "Extend",
 "path": "ARCHITECTURE.md",
 "reason": "F140"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs",
+"reason": "F319"
 }
 ],
 "verification": [
@@ -3541,10 +3649,36 @@
 "F296": "existing R-C4 list",
 "F297": "existing list of handlers the root names",
 "F298": "existing membership list",
+"F299": "Every list of edges in the architecture tests is read by value and checked for an entry from one context into another",
 "F3": "Each of the 15 domain event types lives in the Contracts of the context that publishes it, and no event type but IDomainEvent is left in Models.Events; behaviour unchanged.",
 "F30": "IDomainEventDispatcher (platform lane, unchanged)",
+"F300": "No list other than the contracts rule's own names such an entry; each one found is named with its list, the entry and the contracts rule as owner",
+"F301": "Each cross-context edge has exactly one owning rule",
+"F302": "a list that names only edges into another context's Contracts, or a list outside the Architecture namespace",
+"F303": "A made-up list names an edge from Refinement into Access, an edge inside Refinement, an API edge and an edge between made-up fixture roots",
+"F304": "Only the Refinement to Access edge is named, with list, entry and the contracts rule as owner",
+"F305": "A planted second owner of an edge is reported with where to fix it",
+"F306": "a check that names every edge or skips the made-up list",
+"F307": "The two lists left out by name are looked up among the lists read",
+"F308": "Both exist and each still names an edge between contexts",
+"F309": "An exclusion cannot silently hide a new edge",
 "F31": "IRefreshLogService (Work Items Contracts, unchanged)",
+"F310": "an exclusion that points at a renamed or emptied list",
+"F311": "Tracker integration's boundary list is read for entries into Organisation set-up",
+"F312": "It names no edge into set-up",
+"F313": "Tracker integration reaches set-up only through the open host",
+"F314": "a list that keeps the cadence edge under another target",
+"F315": "A made-up Tracker integration type asks set-up's Contracts and Tracker integration's rule is applied",
+"F316": "The rule names no edge for it",
+"F317": "Set-up's Contracts are open to Tracker integration without a second owner",
+"F318": "a rule that reads every set-up namespace as foreign",
+"F319": "edge list replaced by an empty-list placement rule: nothing in Forecasting outside the round reaches Tracker integration",
 "F32": "Module types reach another module only through its Contracts (R-C1) and only where the target's per-module direction rule admits the caller's namespace; Contracts reach only the kernel, the BCL, abstractions and other Contracts (R-C2); the kernel and the platform lane reach no module.",
+"F320": "Tracker integration and set-up. Set-up is the open host of every packaged context, Tracker integration included, so Tracker integration's OtherContexts pattern reads set-up only behind its Contracts: it composes ModuleRules.SetUpBehindItsContracts for set-up instead of the whole set-up module, and the cadence edge ConnectionHealthCadence -> IAppSettingService leaves EdgesOfTheModuleIntoOtherContexts. Every other context stays foreign to Tracker integration (it is still a leaf towards Work Items, Forecasting, Flow metrics, Promises, Refinement, Reports). Consequently the S3 support OrganisationSetupIsAnOpenHostArchUnitTest.cs changes three Tracker integration assertions, not two: TrackerIntegrationsRule_StillReadsSetUpAsAnotherContext becomes a test that Tracker integration's OtherContexts does not read set-up's Contracts (SetUpNamespacesOpenToDownstreamModules) as another context and still reads set-up's Application, Domain and Adapters as another context; its failure message says set-up is the open host and only its Contracts are open.",
+"F321": "The write-back round's list. WriteBackRoundBoundariesArchUnitTest.TheEdgesOfTheRoundIntoTrackerIntegration names three Forecasting -> Tracker integration Contracts edges, so it is a module-to-module list and must go. Its law is which Forecasting code may reach Tracker integration, not surface, so it becomes a placement rule with no edge list: no Forecasting type outside the round (the existing ForecastingOutsideTheRound pattern) reaches Tracker integration, checked by ModuleRules.OutboundEdges with an empty list. The round as a whole may reach Tracker integration's Contracts (legal by R-C1 and by Tracker integration being the supplier). The per-type pin (only WriteBackService inside the round) is given up. Its made-up-type falsifier stays on fixture roots, outside the law.",
+"F322": "Refinement and set-up's Domain. RefinementCadenceCalendar -> WeeklyRecurrence is a non-Contracts edge already in R-C1's list, so it leaves Refinement's EdgesOfTheApplicationIntoForbiddenCode, and Refinement's forbidden pattern stops composing SetUpBehindItsContracts: surface into another module is R-C1's alone. OrganisationSetupIsAnOpenHostArchUnitTest.TheEdgesRefinementListsIntoSetUpsDomain is derived from that list, so it becomes empty by itself once the entry leaves; the acceptance designer deletes it and the Except that reads it in ADownstreamModulesOutboundList_NamesNoEdgeIntoSetUp, because an empty exception has no reader. The same holds for any downstream rule: a per-module pattern stops reading another module's non-Contracts code once R-C1 owns those edges; an open-host assertion that requires a downstream pattern to read set-up's non-Contracts as foreign is rewritten by the acceptance designer to rely on R-C1.",
+"F323": "existing pattern of Forecasting outside the round becomes the source of the placement rule",
+"F324": "TheEdgesOfTheRoundIntoTrackerIntegration removed; InsideForecastingOnlyTheWriteBackServiceReachesTrackerIntegration_AlongTheListedEdges becomes the placement rule",
 "F33": "The refresh-log rows after a forecast round, read through Work Items' IRefreshLogService.GetRefreshLogs in a fresh harness scope",
 "F34": "which type wrote the row; that is observed separately on the IL (ForecastUpdater names no IRefreshLogService)",
 "F35": "Architecture test verdict: exit code and the failure message naming WHAT (source, target, list), WHY and HOW",
