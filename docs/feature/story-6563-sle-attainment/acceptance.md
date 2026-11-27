@@ -1138,11 +1138,11 @@ a migration that adds the table without its unique index; the two-copies row obs
 P6
 
 ```text
-The chart endpoint is asked for a horizon of 45 days
+The chart endpoint of a Team or a Portfolio is asked for a horizon of 45 days
 ```
 
 ```text
-refused with 400 naming the allowed horizons 30, 60 and 90
+refused with 400 and the message Horizon must be one of 30, 60 or 90 days.
 ```
 
 ```text
@@ -1154,10 +1154,10 @@ Only the 30, 60 and 90 day horizons are served
 NotTested
 
 ```text
-The refusal is an HTTP status of the controller action; the design declares the application-service port but no wire-contract locator and no action member for within-sle-over-time, so the status cannot be observed without inventing the action signature
+Declared as a controller unit test in TeamMetricsControllerTest and PortfolioMetricsControllerTests, but GetWithinSleOverTime is not in the skeleton; adding the tests now would stop the whole test project compiling. The two tests are handed to craft as written in the acceptance designer report.
 ```
 
-design
+craft\: add with the action
 
 ##### Covers
 

@@ -1147,10 +1147,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P6</p>
 
-<pre><code>The chart endpoint is asked for a horizon of 45 days
+<pre><code>The chart endpoint of a Team or a Portfolio is asked for a horizon of 45 days
 </code></pre>
 
-<pre><code>refused with 400 naming the allowed horizons 30, 60 and 90
+<pre><code>refused with 400 and the message Horizon must be one of 30, 60 or 90 days.
 </code></pre>
 
 <pre><code>Only the 30, 60 and 90 day horizons are served
@@ -1160,10 +1160,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>NotTested</p>
 
-<pre><code>The refusal is an HTTP status of the controller action; the design declares the application-service port but no wire-contract locator and no action member for within-sle-over-time, so the status cannot be observed without inventing the action signature
+<pre><code>Declared as a controller unit test in TeamMetricsControllerTest and PortfolioMetricsControllerTests, but GetWithinSleOverTime is not in the skeleton; adding the tests now would stop the whole test project compiling. The two tests are handed to craft as written in the acceptance designer report.
 </code></pre>
 
-<p>design</p>
+<p>craft: add with the action</p>
 
 <h5>Covers</h5>
 

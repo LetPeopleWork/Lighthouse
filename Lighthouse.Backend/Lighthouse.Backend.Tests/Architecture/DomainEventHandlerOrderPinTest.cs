@@ -25,6 +25,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "BlockedCountSnapshotRecordingHandler",
             "PercentilesOverTimeRecordingHandler",
             "ProcessBehaviorRecordingHandler",
+            "WithinSleRecordingHandler",
             "DemoBlockedHistoryBackfillHandler",
             "DemoPercentilesBackfillHandler",
         ];
@@ -36,6 +37,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "BlockedCountSnapshotRecordingHandler",
             "PercentilesOverTimeRecordingHandler",
             "ProcessBehaviorRecordingHandler",
+            "WithinSleRecordingHandler",
             "DemoBlockedHistoryBackfillHandler",
             "DemoPercentilesBackfillHandler",
         ];

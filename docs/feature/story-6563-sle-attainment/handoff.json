@@ -610,11 +610,11 @@
 ],
 "disposition": {
 "kind": "NotTested",
-"owner": "design",
-"reason": "F653"
+"owner": "craft: add with the action",
+"reason": "F671"
 },
-"expected": "F651",
-"stimulus": "F650",
+"expected": "F670",
+"stimulus": "F669",
 "user_result": "F652"
 },
 {
@@ -680,7 +680,7 @@
 "C": 2,
 "D": 25,
 "E": 15,
-"F": 668,
+"F": 671,
 "K": 26,
 "L": 7,
 "N": 4,
@@ -3693,10 +3693,7 @@
 "F648": "An upgrade or a restored backup keeps every existing row",
 "F649": "a migration that adds the table without its unique index; the two-copies row observes the index",
 "F65": "The SLE widget on a Team's and a Portfolio's Flow Overview shows the share within the SLE over the selected range, with the count and the target, and is shown without a Premium licence.",
-"F650": "The chart endpoint is asked for a horizon of 45 days",
-"F651": "refused with 400 naming the allowed horizons 30, 60 and 90",
 "F652": "Only the 30, 60 and 90 day horizons are served",
-"F653": "The refusal is an HTTP status of the controller action; the design declares the application-service port but no wire-contract locator and no action member for within-sle-over-time, so the status cannot be observed without inventing the action signature",
 "F654": "A Team or Portfolio with SLE 70 % within 10 days and 11 Work Items closed early in November is refreshed on 20 November; the SLE is changed to 85 % within 14 days; it is refreshed on 21 November; the chart asks for the trailing 30 days from 20 to 22 November",
 "F655": "20 November recorded 8 of 11 at 70 % within 10 days, share 72.7; 21 November recorded 10 of 11 at 85 % within 14 days, share 90.9; no day for 22 November; current SLE 85 % within 14 days",
 "F656": "Past days keep the share and target they were measured with; only later days use the new SLE",
@@ -3713,6 +3710,9 @@
 "F666": "S7 member contracts close the design hole the S7 acceptance designer reported. Accepted as assumed: IWithinSleOverTimeSeriesQuery.GetSeries(int ownerId, OwnerType ownerType, int horizon, DateOnly? from, DateOnly? to) returning WithinSleOverTimeDto; WithinSleFamilyReader positional record (ReadClosedCycleTimes, CurrentSle); IWithinSleSnapshotWriter.SaveFilledDay() Task with one FillDayIfAbsent call working out all three horizons; LighthouseAppContext.WithinSleSnapshots; WithinSleRecordingHandler resolvable as IDomainEventHandler of TeamDataRefreshed and PortfolioFeaturesRefreshed; Origin (WithinSleSnapshotOrigin) and Verdict (WithinSleVerdict, reused from S5) are enums read by name; frontend getWithinSleOverTime(id, horizon, startDate, endDate) with camelCase fields, widget titled Within SLE Over Time in a WidgetShell, toggle buttons 30 days, 60 days, 90 days, too-few note containing fewer than 5 closed Work Items. Refinements, none renaming an oracle member: RecordToday returns Task and saves (the writer is the one owner of persistence, so the handler stays at seven collaborators under S107 and holds no repository); the set of horizons has one owner, WithinSleSnapshot.Horizons [30, 60, 90], read by the writer and by the controller guard; a stored row derives its verdict and share through a new count-based factory WithinSleShare.Counted(within, closed, sle) so the minimum of 5 keeps one owner. The horizon refusal is a controller guard observed by a controller unit test that constructs the controller directly (no host): TeamMetricsControllerTest and PortfolioMetricsControllerTest assert BadRequestObjectResult naming 30, 60 and 90 for horizon 45.",
 "F667": "Before any behaviour, in a separate refactor commit (skeleton of the Within SLE daily record, wired to nothing), add the declared public surface of S7 as behaviour-free skeletons: WithinSleSnapshot (complete entity, Horizons) and WithinSleSnapshotOrigin (complete enum) in Models; LighthouseAppContext.WithinSleSnapshots with its unique index; IWithinSleSnapshotRepository and WithinSleSnapshotRepository (GetSeries throws); WithinSleFamilyReader (complete record); WithinSleFamilies (For throws); IWithinSleSnapshotWriter and WithinSleSnapshotWriter (members throw); IWithinSleOverTimeSeriesQuery and WithinSleOverTimeSeriesQuery (GetSeries throws); WithinSleRecordingHandler (HandleAsync throws); WithinSleOverTimeDto (complete) and WithinSleDayDto (From throws); frontend WithinSleOverTime.ts model, getWithinSleOverTime on IMetricsService and BaseMetricsService rejecting, the member on the shared mocks MockApiServiceProvider.ts, HeldMetricsService.ts, useMetricsData.test.ts and BaseMetricsView.test.tsx, and the default export WithinSleOverTimeWidget whose body throws. No migration, no Program.cs or FlowMetricsModule registration, no controller action, no categoryMetadata, widgetNodes or widgetInfoMetadata entry. The crafter adds the migration with the CreateMigration script in the behaviour work. Per touched file: every new file holds one type; MetricsService.ts holds the service interface family -> not-applicable as in S5; LighthouseAppContext.cs holds one type -> not-applicable. Follow-up made easier: the behaviour work fills the members and wires registration, actions, migration and placement.",
 "F668": "Every existing metrics behaviour, the frontend build and every architecture rule except the two this slice reddens on purpose: the surface has no caller, no registration, no route and is not rendered. NoPendingModelChangesTest is red between the skeleton and the migration the crafter adds, and DomainEventHandlerOrderPinTest is red until Program.cs registers the handler; both are S7 behaviour work.",
+"F669": "The chart endpoint of a Team or a Portfolio is asked for a horizon of 45 days",
+"F670": "refused with 400 and the message Horizon must be one of 30, 60 or 90 days.",
+"F671": "Declared as a controller unit test in TeamMetricsControllerTest and PortfolioMetricsControllerTests, but GetWithinSleOverTime is not in the skeleton; adding the tests now would stop the whole test project compiling. The two tests are handed to craft as written in the acceptance designer report.",
 "F69": "A reader of a Team's or Portfolio's Flow Overview sees a widget of its own, titled Within SLE, that states the share of the Work Items closed in the selected date range that finished within the SLE as a large number with the count, then the sentence in smaller text, then the target, for example \"72.7 % (8 / 11)\", \"of Work Items closed within 10 days or less\", \"Target 70 %\".",
 "F7": "Then the widget's status is Sustain when the share is at or above the target, Observe when it is below by up to 20 percentage points, and Act when it is more than 20 points below; the status of Cycle Time Percentiles is unchanged.",
 "F70": "Maintainer, sketch review of the SLE widget, 2026-11-27",
