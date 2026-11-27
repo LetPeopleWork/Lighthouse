@@ -490,6 +490,198 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Every list of edges in the architecture tests is read by value and checked for an entry from one context into another
+</code></pre>
+
+<pre><code>No list other than the contracts rule&#x27;s own names such an entry; each one found is named with its list, the entry and the contracts rule as owner
+</code></pre>
+
+<pre><code>Each cross-context edge has exactly one owning rule
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EachCrossContextEdgeHasOneOwningRuleArchUnitTest.cs</p>
+
+<p>NoPerModuleBoundaryListNamesAnEdgeFromOneContextIntoAnother</p>
+
+<pre><code>a list that names only edges into another context&#x27;s Contracts, or a list outside the Architecture namespace
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>A made-up list names an edge from Refinement into Access, an edge inside Refinement, an API edge and an edge between made-up fixture roots
+</code></pre>
+
+<pre><code>Only the Refinement to Access edge is named, with list, entry and the contracts rule as owner
+</code></pre>
+
+<pre><code>A planted second owner of an edge is reported with where to fix it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EachCrossContextEdgeHasOneOwningRuleArchUnitTest.cs</p>
+
+<p>AMadeUpListNamingAnEdgeFromRefinementIntoAccess_IsNamedWithItsListItsEntryAndTheContractsRuleAsOwner</p>
+
+<pre><code>a check that names every edge or skips the made-up list
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The two lists left out by name are looked up among the lists read
+</code></pre>
+
+<pre><code>Both exist and each still names an edge between contexts
+</code></pre>
+
+<pre><code>An exclusion cannot silently hide a new edge
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EachCrossContextEdgeHasOneOwningRuleArchUnitTest.cs</p>
+
+<p>TheListsLeftOutByName_StillExistAndStillNameAnEdgeBetweenContexts</p>
+
+<pre><code>an exclusion that points at a renamed or emptied list
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Tracker integration&#x27;s boundary list is read for entries into Organisation set-up
+</code></pre>
+
+<pre><code>It names no edge into set-up
+</code></pre>
+
+<pre><code>Tracker integration reaches set-up only through the open host
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs</p>
+
+<p>TrackerIntegrationsList_NamesNoEdgeIntoSetUp</p>
+
+<pre><code>a list that keeps the cadence edge under another target
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>A made-up Tracker integration type asks set-up&#x27;s Contracts and Tracker integration&#x27;s rule is applied
+</code></pre>
+
+<pre><code>The rule names no edge for it
+</code></pre>
+
+<pre><code>Set-up&#x27;s Contracts are open to Tracker integration without a second owner
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs</p>
+
+<p>AMadeUpTrackerIntegrationTypeAskingSetUpsContracts_PassesTrackerIntegrationsRule</p>
+
+<pre><code>a rule that reads every set-up namespace as foreign
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Tracker integration&#x27;s rule is applied to set-up&#x27;s Contracts, Application, Domain and Adapters
+</code></pre>
+
+<pre><code>Set-up&#x27;s Contracts are not read as another context; Application, Domain and Adapters still are
+</code></pre>
+
+<pre><code>Set-up is an open host through its Contracts only
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs</p>
+
+<p>TrackerIntegrationsRule_ReadsSetUpsApplicationDomainAndAdaptersAsAnotherContext_ButNotItsContracts</p>
+
+<pre><code>a rule that reads no set-up namespace as foreign
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Each downstream module&#x27;s boundary list is read for entries into Organisation set-up
+</code></pre>
+
+<pre><code>No list names an edge into set-up, Refinement&#x27;s included
+</code></pre>
+
+<pre><code>Edges into set-up are owned by the contracts rule alone
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs</p>
+
+<p>ADownstreamModulesOutboundList_NamesNoEdgeIntoSetUp</p>
+
+<pre><code>a list that keeps only Domain edges into set-up
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

@@ -13,8 +13,8 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// it, so they reach its Application and Domain by right: none of their outbound rules reads those namespaces as
     /// foreign, and none of their outbound lists names an edge into set-up. Each of those rules still reads a foreign
     /// namespace that is not set-up, so the allowance is set-up's and nobody else's. Tracker integration does not build on
-    /// set-up: its rule still reads set-up as another context, and its list holds exactly the one edge its connection-health
-    /// cadence takes into the settings, so a made-up Tracker integration type asking the settings is named. Set-up's events
+    /// set-up: its rule still reads set-up as another context, and its list names no edge into set-up, so a made-up
+    /// Tracker integration type asking set-up's Contracts passes its rule. Set-up's events
     /// are constructed only in set-up's Application, except where the Team controller still publishes that a Team was
     /// deleted, so a made-up controller publishing a blackout change is named. The rules and lists are read from the rule
     /// classes that apply them, the edges and constructions from the compiled assemblies.
@@ -52,19 +52,17 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.API.TeamController -> Lighthouse.Backend.Modules.OrganisationSetup.Contracts.TeamDeleted",
         ];
 
-        private static string TheCadenceEdgeIntoTheSettings =>
-            "Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth.ConnectionHealthCadence -> Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService";
-
         private static readonly string[] SetUpNamespacesOpenToDownstreamModules =
         [
             ContextContractsMembership.ContractsOf("OrganisationSetup"),
         ];
 
-        // Refinement's own list names the edges its Application still takes into set-up's Domain, which set-up does not
-        // publish; those listed entries are allowed here and any other listed edge into set-up is not.
-        private static string[] TheEdgesRefinementListsIntoSetUpsDomain =>
-            [.. GivenTheEntriesOfTheList(typeof(RefinementModuleBoundariesArchUnitTest), "EdgesOfTheApplicationIntoForbiddenCode")
-                .Where(entry => entry.Contains($" -> {SetUpModule}.Domain.", StringComparison.Ordinal))];
+        private static readonly string[] SetUpNamespacesBehindItsContracts =
+        [
+            SetUpModule + ".Application",
+            SetUpModule + ".Domain",
+            SetUpModule + ".Adapters",
+        ];
 
         // Work Items' Application reaches set-up along these edges in the compiled code; once set-up is open to Work Items
         // they are legal by namespace and no list names them.
@@ -79,14 +77,14 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly (Type RuleClass, string Module, string Rule, string ForeignNamespace)[] DownstreamOutboundRules =
         [
             (typeof(WorkItemsModuleBoundariesArchUnitTest), "Work Items", "AccessLicensingOrganisationSetUpAndTheUpdateQueue", "Lighthouse.Backend.Modules.Licensing.Application"),
-            (typeof(WorkItemsModuleBoundariesArchUnitTest), "Work Items", "TheLayersBelowTheApplication", SetUpModule + ".Adapters"),
+            (typeof(WorkItemsModuleBoundariesArchUnitTest), "Work Items", "TheLayersBelowTheApplication", "Lighthouse.Backend.Modules.Access.Adapters"),
             (typeof(FlowMetricsApplicationOutboundArchUnitTest), "Flow metrics", "TheLayersBelowTheApplication", "Lighthouse.Backend.Data"),
             (typeof(ForecastingModuleBoundariesArchUnitTest), "Forecasting", "TheLayersBelowTheApplicationAndTheLicence", "Lighthouse.Backend.Modules.Licensing.Application"),
             (typeof(PromisesModuleBoundariesArchUnitTest), "Promises", "TheLayersBelowTheApplicationAndThePlatform", TheLooseServices),
             (typeof(PromisesModuleBoundariesArchUnitTest), "Promises", "TheNamespacedUpstreamCodeAndSetUpBehindItsContracts", "Lighthouse.Backend.Modules.Licensing.Application"),
-            (typeof(RefinementModuleBoundariesArchUnitTest), "Refinement", "TheForbiddenCodeAndSetUpBehindItsContracts", SetUpModule + ".Adapters"),
+            (typeof(RefinementModuleBoundariesArchUnitTest), "Refinement", "TheForbiddenCodeAndSetUpBehindItsContracts", "Lighthouse.Backend.Modules.Access.Adapters"),
             (typeof(RefinementModuleBoundariesArchUnitTest), "Refinement", "AccessSetUpPlatformAndRepositories", TheLooseServices),
-            (typeof(ReportsModuleBoundariesArchUnitTest), "Reports", "TheForbiddenCode", SetUpModule + ".Adapters"),
+            (typeof(ReportsModuleBoundariesArchUnitTest), "Reports", "TheForbiddenCode", "Lighthouse.Backend.Modules.Access.Adapters"),
             (typeof(ReportsModuleBoundariesArchUnitTest), "Reports", "FlowMetricsLicensingSetUpAndPlatform", TheLooseServices),
             (typeof(AccessModuleBoundariesArchUnitTest), "Access", "TheOtherContexts", "Lighthouse.Backend.Modules.WorkItems.Application"),
             (typeof(AccessModuleBoundariesArchUnitTest), "Access", "TheLayersBelowTheApplicationAndThePlatform", TheLooseServices),
@@ -154,7 +152,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var entries = GivenTheEntriesOfTheList(ruleClass, list);
 
-            var entriesIntoSetUp = WhenTheEntriesIntoSetUpAreTaken(entries).Except(TheEdgesRefinementListsIntoSetUpsDomain).ToList();
+            var entriesIntoSetUp = WhenTheEntriesIntoSetUpAreTaken(entries);
 
             ThenNoEntryLeadsIntoSetUp(module, list, entriesIntoSetUp);
         }
@@ -170,34 +168,35 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void TrackerIntegrationsRule_StillReadsSetUpAsAnotherContext()
+        public void TrackerIntegrationsRule_ReadsSetUpsApplicationDomainAndAdaptersAsAnotherContext_ButNotItsContracts()
         {
             var target = GivenTheTargetThatTheRuleReads(typeof(TrackerIntegrationModuleBoundariesArchUnitTest), "OtherContexts");
 
-            var setUpNamespacesReadAsForeign = WhenTheTargetIsAppliedTo(target, SetUpNamespacesOpenToDownstreamModules);
+            var contractsReadAsForeign = WhenTheTargetIsAppliedTo(target, SetUpNamespacesOpenToDownstreamModules);
+            var behindContractsReadAsForeign = WhenTheTargetIsAppliedTo(target, SetUpNamespacesBehindItsContracts);
 
-            ThenEverySetUpNamespaceIsReadAsAnotherContextByTrackerIntegration(setUpNamespacesReadAsForeign);
+            ThenOnlySetUpsContractsAreOpenToTrackerIntegration(contractsReadAsForeign, behindContractsReadAsForeign);
         }
 
         [Test]
-        public void TrackerIntegrationsList_HoldsExactlyTheCadenceEdgeIntoTheSettings()
+        public void TrackerIntegrationsList_NamesNoEdgeIntoSetUp()
         {
             var entries = GivenTheEntriesOfTheList(typeof(TrackerIntegrationModuleBoundariesArchUnitTest), "EdgesOfTheModuleIntoOtherContexts");
 
             var entriesIntoSetUp = WhenTheEntriesIntoSetUpAreTaken(entries);
 
-            ThenTrackerIntegrationListsExactlyTheCadenceEdge(entries, entriesIntoSetUp);
+            ThenNoEntryLeadsIntoSetUp("Tracker integration", "EdgesOfTheModuleIntoOtherContexts", entriesIntoSetUp);
         }
 
         [Test]
-        public void AMadeUpTrackerIntegrationTypeAskingTheSettings_IsNamedByTrackerIntegrationsRule()
+        public void AMadeUpTrackerIntegrationTypeAskingSetUpsContracts_PassesTrackerIntegrationsRule()
         {
             var target = GivenTheTargetThatTheRuleReads(typeof(TrackerIntegrationModuleBoundariesArchUnitTest), "OtherContexts");
             var listed = GivenTheEntriesOfTheList(typeof(TrackerIntegrationModuleBoundariesArchUnitTest), "EdgesOfTheModuleIntoOtherContexts");
 
             var unlistedEdges = WhenTheRuleReadsTheMadeUpTrackerIntegration(target, listed);
 
-            ThenTheMadeUpTrackerIntegrationTypeIsNamed(unlistedEdges);
+            ThenTheMadeUpTrackerIntegrationTypePasses(unlistedEdges);
         }
 
         [Test]
@@ -319,17 +318,25 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "compiled, an emptied list passes only when the rule admits set-up. Keep the services' calls into set-up as they are; the move " +
                 "changes no behaviour.");
 
-        private static void ThenEverySetUpNamespaceIsReadAsAnotherContextByTrackerIntegration(List<string> setUpNamespacesReadAsForeign)
-            => Assert.That(setUpNamespacesReadAsForeign, Is.EquivalentTo(SetUpNamespacesOpenToDownstreamModules),
-                $"Tracker integration's rule OtherContexts reads only {string.Join(", ", setUpNamespacesReadAsForeign)} of set-up's namespaces " +
-                "as another context. Tracker integration is a leaf that translates what the trackers send; it does not build on set-up, so a " +
-                "new Tracker integration type reaching set-up must be named. Keep set-up in Tracker integration's other contexts.");
+        private static void ThenOnlySetUpsContractsAreOpenToTrackerIntegration(List<string> contractsReadAsForeign, List<string> behindContractsReadAsForeign)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(contractsReadAsForeign, Is.Empty,
+                    $"Tracker integration's rule OtherContexts still reads {string.Join(", ", contractsReadAsForeign)} as another context. Set-up is the open host, so " +
+                    "every context reaches its Contracts by right and the contracts rule owns the edge. Let the rule leave set-up's Contracts out of what it reads as foreign.");
+                Assert.That(behindContractsReadAsForeign, Is.EquivalentTo(SetUpNamespacesBehindItsContracts),
+                    $"Tracker integration's rule OtherContexts reads only {string.Join(", ", behindContractsReadAsForeign)} of set-up's Application, Domain and Adapters " +
+                    "as another context. Only set-up's Contracts are open, so a Tracker integration type reaching anything behind them must still be named. " +
+                    "Keep set-up's Application, Domain and Adapters in Tracker integration's other contexts.");
+            }
+        }
 
-        private static void ThenTheMadeUpTrackerIntegrationTypeIsNamed(List<string> unlistedEdges)
-            => Assert.That(unlistedEdges, Is.EqualTo(new[] { $"{typeof(AConnectorAskingTheSettings).FullName} -> {typeof(global::Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService).FullName}" }),
-                $"Tracker integration's rule named {string.Join("; ", unlistedEdges)} for a made-up Tracker integration type that asks the settings. " +
-                "Tracker integration reaches set-up only along its one listed edge, so any other type of it reaching set-up must be named. Keep " +
-                "set-up among Tracker integration's other contexts and keep its list to the cadence edge.");
+        private static void ThenTheMadeUpTrackerIntegrationTypePasses(List<string> unlistedEdges)
+            => Assert.That(unlistedEdges, Is.Empty,
+                $"Tracker integration's rule named {string.Join("; ", unlistedEdges)} for a made-up Tracker integration type that asks set-up's Contracts. " +
+                "Set-up is the open host: every context reaches its Contracts by right, and the contracts rule owns the edge. Why it matters: " +
+                "a second rule naming the edge gives it two owners. How to fix: let Tracker integration's rule leave set-up's Contracts out of what it reads as foreign.");
 
         private static void ThenTheConstructionsOutsideSetUpAreExactlyTheList(List<string> constructionsOutsideSetUp)
             => Assert.That(constructionsOutsideSetUp, Is.EqualTo(SetUpEventsConstructedOutsideSetUpsApplication),
@@ -345,12 +352,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "blackout change unseen. Keep reading every construction outside set-up's Application, including those inside lambdas and " +
                 "async methods.");
 
-        private static void ThenTrackerIntegrationListsExactlyTheCadenceEdge(string[] entries, List<string> entriesIntoSetUp)
-            => Assert.That(entriesIntoSetUp, Is.EqualTo(new[] { TheCadenceEdgeIntoTheSettings }),
-                $"Tracker integration's list EdgesOfTheModuleIntoOtherContexts names {entriesIntoSetUp.Count} edges into set-up " +
-                $"({string.Join("; ", entriesIntoSetUp)}) out of its {entries.Length} entries; it must name exactly {TheCadenceEdgeIntoTheSettings}. " +
-                "The connection-health cadence reads its interval from the settings, and that is the one edge Tracker integration may take " +
-                "into set-up. Remove any other set-up edge from the code, or bring a new one to the design first.");
     }
 }
 

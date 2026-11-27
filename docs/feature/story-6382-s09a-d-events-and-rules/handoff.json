@@ -300,6 +300,40 @@
 "expected": "F316",
 "stimulus": "F315",
 "user_result": "F317"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F328",
+"test": "TrackerIntegrationsRule_ReadsSetUpsApplicationDomainAndAdaptersAsAnotherContext_ButNotItsContracts",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs"
+},
+"expected": "F326",
+"stimulus": "F325",
+"user_result": "F327"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F332",
+"test": "ADownstreamModulesOutboundList_NamesNoEdgeIntoSetUp",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs"
+},
+"expected": "F330",
+"stimulus": "F329",
+"user_result": "F331"
 }
 ]
 },
@@ -308,7 +342,7 @@
 "C": 1,
 "D": 8,
 "E": 4,
-"F": 324,
+"F": 332,
 "K": 7,
 "L": 6,
 "P": 3,
@@ -3679,7 +3713,15 @@
 "F322": "Refinement and set-up's Domain. RefinementCadenceCalendar -> WeeklyRecurrence is a non-Contracts edge already in R-C1's list, so it leaves Refinement's EdgesOfTheApplicationIntoForbiddenCode, and Refinement's forbidden pattern stops composing SetUpBehindItsContracts: surface into another module is R-C1's alone. OrganisationSetupIsAnOpenHostArchUnitTest.TheEdgesRefinementListsIntoSetUpsDomain is derived from that list, so it becomes empty by itself once the entry leaves; the acceptance designer deletes it and the Except that reads it in ADownstreamModulesOutboundList_NamesNoEdgeIntoSetUp, because an empty exception has no reader. The same holds for any downstream rule: a per-module pattern stops reading another module's non-Contracts code once R-C1 owns those edges; an open-host assertion that requires a downstream pattern to read set-up's non-Contracts as foreign is rewritten by the acceptance designer to rely on R-C1.",
 "F323": "existing pattern of Forecasting outside the round becomes the source of the placement rule",
 "F324": "TheEdgesOfTheRoundIntoTrackerIntegration removed; InsideForecastingOnlyTheWriteBackServiceReachesTrackerIntegration_AlongTheListedEdges becomes the placement rule",
+"F325": "Tracker integration's rule is applied to set-up's Contracts, Application, Domain and Adapters",
+"F326": "Set-up's Contracts are not read as another context; Application, Domain and Adapters still are",
+"F327": "Set-up is an open host through its Contracts only",
+"F328": "a rule that reads no set-up namespace as foreign",
+"F329": "Each downstream module's boundary list is read for entries into Organisation set-up",
 "F33": "The refresh-log rows after a forecast round, read through Work Items' IRefreshLogService.GetRefreshLogs in a fresh harness scope",
+"F330": "No list names an edge into set-up, Refinement's included",
+"F331": "Edges into set-up are owned by the contracts rule alone",
+"F332": "a list that keeps only Domain edges into set-up",
 "F34": "which type wrote the row; that is observed separately on the IL (ForecastUpdater names no IRefreshLogService)",
 "F35": "Architecture test verdict: exit code and the failure message naming WHAT (source, target, list), WHY and HOW",
 "F36": "code reached only by reflection or by string (no IL edge)",
