@@ -1,0 +1,39 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Modules/FlowMetrics/Domain/ServiceLevelExpectation.cs",
+      "**/Modules/FlowMetrics/Domain/WithinSleShare.cs",
+      "**/Modules/FlowMetrics/Application/WithinSleFamilies.cs",
+      "**/Modules/FlowMetrics/Application/WithinSleFamilyReader.cs",
+      "**/Modules/FlowMetrics/Application/WithinSleInfoQuery.cs",
+      "**/Modules/FlowMetrics/Application/WithinSleOverTimeSeriesQuery.cs",
+      "**/Modules/FlowMetrics/Application/GapAskingWithinSleOverTimeSeriesQuery.cs",
+      "**/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs",
+      "**/Modules/FlowMetrics/Application/Policies/WithinSleRecordingHandler.cs",
+      "**/Modules/FlowMetrics/Application/OverTimeFillTarget.cs",
+      "**/Modules/FlowMetrics/Application/RetentionEdge.cs",
+      "**/Modules/FlowMetrics/Adapters/Persistence/WithinSleSnapshotRepository.cs",
+      "**/Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFiller.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Tests.Acceptance.WithinSle|FullyQualifiedName~Tests.Modules.FlowMetrics)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
