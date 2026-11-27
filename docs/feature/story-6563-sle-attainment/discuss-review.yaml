@@ -1,0 +1,226 @@
+review_id: "discuss-review-story-6563-sle-attainment"
+reviewer: "nw-product-owner-reviewer (Eclipse), read-only"
+artifacts_reviewed:
+  - "docs/feature/story-6563-sle-attainment/brief.md"
+  - "docs/feature/story-6563-sle-attainment/feature-delta.md"
+  - "docs/feature/story-6563-sle-attainment/handoff.json (source of brief.md, read for slice and decision fields)"
+  - "docs/feature/story-6563-sle-attainment/diverge/request.md"
+  - "docs/feature/story-6563-sle-attainment/diverge/recommendation.md (## For the requester)"
+  - ".claude/skills/feature-checklists/SKILL.md (DISCUSS checklist)"
+  - "docs/product/architecture/adr-271-ui-surfaces-follow-units-and-levels-and-settings-split-by-audience.md"
+  - "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md (Flow metrics row, lines 60-70; Flow metrics glossary, lines 834-842)"
+  - "docs/metrics/predictability.md (Percentiles Over Time, lines 52-110)"
+  - "docs/metrics/flow-overview.md (Cycle Time Percentiles, lines 219-268)"
+  - "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts (trend policies, lines 100-145)"
+  - "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.ts (calculateSLEStats, lines 3-14; thresholds, lines 83-110)"
+
+verdict: NEEDS_REVISION
+
+findings:
+  - id: F1
+    severity: blocking
+    rule: "6 (every Confirmed decision traces to a recorded maintainer answer; no Proposed or Open item shown as agreed)"
+    where: "brief.md:351 (Decision Q4, status Confirmed); feature-delta.md:31-33 (answer 4); brief.md P8 (lines 179-200) and S4 (lines 576-584) rely on it"
+    defect: >
+      The only words the maintainer recorded for Q4 are "Record SLE per day". The clause that follows the dash,
+      "filled-in past days use the SLE set when they are filled, and the chart says so", is DISCUSS wording
+      without quotes or a recorded answer. It is nevertheless Confirmed, and P8 and S4 are built on it. It is also
+      the restatement case that DIVERGE said DISCUSS must decide ("If the target changed during the period, the
+      past restates ... DISCUSS must say whether that is acceptable"). The real choice is for filled days, where the
+      SLE in force that day is unknown: use the SLE at fill time (past days restate), or mark the SLE for those
+      days as unknown on the chart.
+    fix: >
+      Either quote the maintainer's answer to this exact choice into feature-delta.md under DISCUSS maintainer
+      decisions, or set the fill-time rule to Proposed in brief.md, keep P8's Then and S4 pending on it, and ask the
+      maintainer one question with the two options above and their consequence. Do not present Q4's fill-time
+      clause as Confirmed until the answer exists.
+
+  - id: F2
+    severity: major
+    rule: "1 (nothing in scope the request or a recorded answer does not state) and 6 (every decision has a status)"
+    where: "brief.md:302 (An SLE panel in a Then & Now report), brief.md:310 (Named Cycle Times), brief.md Scope exclusion on Cycle Time Percentiles status (around line 326), brief.md:318 (The history of the SLE before this Story ships)"
+    defect: >
+      Four scope exclusions carry no recorded maintainer answer and no status. They sit in the same list as the
+      recorded answers Q9 and Q10, so they read as agreed. The Then & Now panel is an explored DIVERGE option that
+      was not chosen; under the self-check it is a Suggestion, not a scope boundary. "Named Cycle Times" restates
+      existing behaviour (flow-overview.md:250) but was not answered. The history exclusion is the DIVERGE item that
+      DISCUSS had to decide, and it is unanswered. Its wording also reads as if it excludes the filled-in past days
+      that P8 and F38 promise, so the two statements look contradictory.
+    fix: >
+      Move the Then & Now panel to Suggestions. Mark the Named Cycle Times exclusion as Proposed with the existing
+      behaviour cited, or record the maintainer's answer. Mark the history exclusion as Open (Product) and ask the
+      maintainer whether a Team with no recorded SLE history gets filled-in days against the current SLE or shows
+      the SLE as unknown; state that the exclusion covers SLE target history only, not filled share days (P8). Mark the
+      Cycle Time Percentiles status exclusion with its source, Q7.
+
+  - id: F3
+    severity: major
+    rule: "Slicing: one walking skeleton per feature, extended by every later slice (nw-product-value-slicing)"
+    where: "brief.md S1 (lines 486-512); no skeleton is named anywhere in brief.md, feature-delta.md or handoff.json (grep for skeleton and walking returns nothing)"
+    defect: >
+      The feature has no walking skeleton. S1 is the natural first slice, but it is not named as the skeleton, and the
+      brief does not say which end-to-end path it proves. Today the share is computed in the frontend
+      (ragRulesTimeAndAge.ts:3-14), so an S1 that stays frontend-only is not an end-to-end path through the system. S3
+      then adds a backend-recorded path that the skeleton must already cover. The open design point F62 decides
+      whether the share moves to the backend, so the skeleton's scope depends on it.
+    fix: >
+      Name S1 as the one walking skeleton. State the path it proves (the Flow Overview read through the same query
+      that S3 will extend, or a stated frontend-only exception), and say that S2 to S4 extend it. Link the choice
+      to open item F62 so DESIGN decides it.
+
+  - id: F4
+    severity: major
+    rule: "Slicing: each slice is one user-observable behaviour"
+    where: "brief.md S2 (lines 514-544: promises P2, P3, P4, P5); brief.md S4 (lines 576-604: promises P8, P9, P10); the S2 and S4 observation sentences"
+    defect: >
+      S2 delivers four separate observable behaviours: the status by the percentiles rule, the header trend, the 'no
+      SLE set' state with Act, and the 'too few to judge' state below 5. S4 delivers four: the fill-in of past days,
+      the label on filled days, the suppressed point on days below 5, and the 'no SLE' message on the chart. Each is
+      its own promise with its own test, so the slices do not meet the one-behaviour rule.
+    fix: >
+      Split S2 into at least two slices (the status with the no-SLE state; the too-few state with the header trend),
+      or state for each grouping why it is one observable behaviour. Split S4 into the fill-in (P8) and the
+      state messages (P9, P10), or justify the grouping in the same way. Re-check the dependency order after the split.
+
+  - id: F5
+    severity: major
+    rule: "Slicing and decisions: an intermediate slice must not show a Confirmed decision wrongly; promise mapping must be complete for what S3 draws"
+    where: "brief.md S3 (lines 546-574: P6, P7, P11); brief.md S4 (P9, P10); brief.md:352 (Q5, status Confirmed); brief.md P9 (lines 203-225), P10 (lines 227-249)"
+    defect: >
+      S3 draws the daily chart. Its promises do not include the rule that a day with fewer than 5 closed Work Items
+      draws no point (P9, Q5 Confirmed) or the rule for a chart with no SLE (P10). Both sit in S4. As S3 ships
+      alone, it draws points on under-5 days, which Q5 forbids, and it draws a line or nothing with no SLE, which
+      P10 forbids. The slice map leaves a Confirmed decision unmapped at the first slice that could break it.
+    fix: >
+      Move P9 and P10 into S3, since the first chart must carry them. Or state that S3 is not releasable alone, and
+      that the chart's first version is internal until S4. The second option needs a maintainer decision; the first
+      is the default.
+
+  - id: F6
+    severity: major
+    rule: "2 (each stated sad path is a promise) and 6 (unanswered cases are Open, not implied)"
+    where: "brief.md P8 (lines 179-200: Given a Team or Portfolio whose stored history reaches back before the first recorded day); brief.md scope line 'filled in ... like Percentiles Over Time' (around line 286)"
+    defect: >
+      The chart's sad paths for history that the stored data does not reach are not stated. P8 says the missing days
+      'are worked out from stored history in the same way as Percentiles Over Time'. That is a reference to another
+      page, not a promise. The prior art (predictability.md:96-99 and 86) leaves days before the first Work Item empty,
+      and it shows a "Nothing to show for the selected range" sentence on the first open of a range that can be
+      filled. P8's Then does not say that the first view may show gaps that fill in on the next open. Nothing says
+      what the chart shows when there is nothing to show at all.
+    fix: >
+      State in P8's Then, or in a new promise, that days the stored history does not reach stay empty and the chart
+      says so, that the first open may show gaps and filled days appear on the next open, and what the chart shows
+      with no closed Work Items at all. Alternatively mark these as Open (Design) with a stated default. Do not rely on
+      the words 'in the same way' as the promise.
+
+  - id: F7
+    severity: minor
+    rule: "6 (no Proposed item presented as agreed)"
+    where: "brief.md P3 (lines 71-93); brief.md:437 (Proposed decision: header trend shows no comparison below 5); brief.md S2 (lines 514-544)"
+    defect: >
+      P3 states the trend unconditionally. The Proposed rule that no comparison is shown when either period has fewer
+      than 5 closed Work Items is not referenced by P3 or S2, so the promise reads as agreed without its exception.
+    fix: >
+      Add a line to P3 that refers to the Proposed exception, or mark the exception as Open in P3, so the reader sees
+      the status of the rule where the promise is stated.
+
+  - id: F8
+    severity: minor
+    rule: "6 (status labels match what was decided) and checklist owner fields"
+    where: "brief.md:~370 (Q12, status Confirmed); brief.md:478 (usage-data decision, owner Product); feature-delta.md:56 (usage-data question marked DEVOPS)"
+    defect: >
+      Q12 is a deferral ('Decide at finalize'), not a decision, but it is labelled Confirmed. The usage-data open item
+      is owned by 'Product' in brief.md while feature-delta.md names it a DEVOPS question.
+    fix: >
+      Label Q12 as Deferred (to finalize), not Confirmed. Set the usage-data owner to DEVOPS, as feature-delta.md
+      says.
+
+  - id: F9
+    severity: minor
+    rule: "Context map: which domain events the feature publishes or reacts to (feature-checklists, DISCUSS)"
+    where: "feature-delta.md:96-97 (Domain events: none published; written in reaction to the same refresh events, to be confirmed at DESIGN)"
+    defect: >
+      The checklist asks which domain events the feature reacts to. The answer names no event ("the same refresh
+      events that record the percentile snapshots"), so the reader cannot tell which events.
+    fix: >
+      Name the existing refresh events that record the percentile snapshots today, and mark the reaction as Open
+      (Design) with the owner, so the reader sees what is being confirmed.
+
+  - id: F10
+    severity: minor
+    rule: "ADR-270 update in the same feature when a concept or term is added (feature-checklists, context map)"
+    where: "feature-delta.md:74-78 (new terms, 'to be named at DESIGN and added to the Flow metrics glossary'; new concept 'the SLE in force on a day'); adr-270 Flow metrics row (lines 60-70)"
+    defect: >
+      The new terms are to be added to the glossary, but the DISCUSS answer does not state that the Flow metrics row
+      of ADR-270 and ARCHITECTURE.md section 4 will be updated in this feature. The new concept (SLE in force on a day)
+      is not placed in any ADR-270 row.
+    fix: >
+      State that ADR-270 (Flow metrics row and glossary) and ARCHITECTURE.md section 4 are updated in this feature,
+      and say where the SLE-in-force history is owned.
+
+  - id: F11
+    severity: minor
+    rule: "CLAUDE.md: /continuous-improvement before <epic> is presented to the maintainer; unchecked evidence is named as open"
+    where: "feature-delta.md:59-71 (improvement backlog check, 'Before, optional' and 'Before, only if DESIGN moves the share'); feature-delta.md:57 ('Not checked yet: the transcript gap 39:46-40:35'); brief.md Open list (lines 437-478)"
+    defect: >
+      The improvement marks are recommendations. No maintainer choice is recorded for S12a or S07b. The unchecked
+      transcript gap is recorded in feature-delta.md but is missing from the brief's open list, so a reader of the
+      brief does not see it.
+    fix: >
+      Record the maintainer's choice on the S12a and S07b marks, or mark them Open with the recommendation. Add the
+      transcript gap to the brief's open list as Open (maintainer).
+
+  - id: F12
+    severity: minor
+    rule: "1 (each stated request outcome is covered or explicitly not covered)"
+    where: "brief.md request block (bullets: prominence instead of toggles; over time; 'or less' wording); brief.md:294 (Q9 out of scope)"
+    defect: >
+      The request asks to stop hiding the SLE behind chart toggles. The Work Item Aging SLE line toggle stays, because
+      Q9 is out of scope. The 'or less' wording is met only in the new widget (P1), because the tooltip wording is
+      out too. The brief does not say these two bullets are partly covered.
+    fix: >
+      Add a coverage line per request bullet: covered by P1 and P6-P9, partly covered (Aging toggle and tooltip
+      wording out by Q9), with the maintainer's answer cited.
+
+  - id: F13
+    severity: minor
+    rule: "6 (answers are quoted or marked as a reading of the answer)"
+    where: "feature-delta.md answers 1 (filters apply), 5 (no point on the chart), 10 ('prompting to define an SLE'); brief.md Q1, Q5, Q10"
+    defect: >
+      These Confirmed texts add DISCUSS wording to the maintainer's labels, such as 'filters apply', 'no point on the
+      chart' and 'prompting to define an SLE'. The maintainer's recorded labels are 'Selected range', 'Min 5, else no
+      verdict' and 'Say so, status Act'.
+    fix: >
+      Quote the maintainer's label, then mark each added clause as 'reading of the answer' or confirm it with the
+      maintainer.
+
+  - id: F14
+    severity: minor
+    rule: "Checklist: no silent N/A, and deferrals state what is open"
+    where: "feature-delta.md:81 (Lighthouse-Clients: 'S3 adds a new read endpoint (or extends the over-time one)'); feature-delta.md:82 (website: 'once the widget has a screenshot')"
+    defect: >
+      The API route choice ('new endpoint, or extend') is left unresolved without an Open status. The website condition
+      'once the widget has a screenshot' is not in the maintainer's Q12 answer ('Decide at finalize').
+    fix: >
+      Mark the endpoint choice as Open (Design). Quote Q12 as the maintainer gave it and keep the screenshot condition as
+      a note, not as part of the answer.
+
+checks_passed:
+  - "Rule 2 (promise form): P1-P11 each have an actor and an observable result; P2, P5, P9 and P10 name concrete thresholds (5 Work Items, 20 points, 70% target) that match the Confirmed Q5 and Q7 answers."
+  - "Status rule (P2, Q7) matches the existing rule in ragRulesTimeAndAge.ts:104 (above 20 points: red) and flow-overview.md:263-267 (Act, Observe, Sustain)."
+  - "Trend policy (P3, Q2) matches categoryMetadata.ts: percentiles and workItemAgePercentiles use previous-period, and sleRisk uses none."
+  - "Fill-in pattern (P8) matches predictability.md:88-107 in its mechanism (background, bounded per visit, missing days only, stored history only). Only the SLE-target half is new, and it is F1."
+  - "Premium (P11, Q8): predictability.md:92 says the fill is free, and BaseMetricsView gates only named Cycle Times on Premium, so no existing gate on the Predictability category conflicts with Q8."
+  - "UI surface (ADR-271): Metrics is the Flow metrics tab of a unit (adr-271 line 42), which matches the feature-delta context map."
+  - "Traceability: Q1 to Q3, Q6 to Q8, Q10 (the status part) and Q11 trace to the recorded answers in feature-delta.md; no Confirmed decision is missing its answer except Q4's fill-time clause (F1)."
+  - "RBAC checklist answer is explicit (no new permission; existing read permission through useRbac)."
+  - "Open items are labelled with an owner (Design, Product) and are left for DESIGN or DEVOPS, as expected for DISCUSS."
+
+recommendations:
+  critical: []
+  high: ["F1: quote or re-status the Q4 fill-time rule, and ask the maintainer if no answer exists."]
+  medium: ["F2 to F6: resolve the scope exclusions, name the walking skeleton, split the multi-behaviour slices, move P9 and P10 into S3, and state the sad paths of the chart over history that is not stored."]
+  low: ["F7 to F14: label and wording fixes in brief.md and feature-delta.md."]
+
+approval_status: "rejected_pending_revisions"
+approval_conditions: "Resolve F1 (record the answer to the Q4 fill-time choice or re-status it as Proposed, and ask the maintainer) and F2 (re-status the four scope exclusions). Resolve F3 to F6 by revising the slices and promises. F7 to F14 may be handled in the same revision. Then re-review the brief."

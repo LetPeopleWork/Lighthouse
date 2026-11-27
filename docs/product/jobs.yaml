@@ -9171,6 +9171,11 @@ jobs:
       do not settle scope: the maintainer chooses at DISCUSS. Reports do not reuse dashboard widgets today; the
       maintainer plans flow metric reports. The SLE is held as two current values, so any over-time view measures
       past days against today's SLE. Job wording unchanged. See docs/feature/story-6563-sle-attainment/diverge/.
+      2026-11-27 - DISCUSS of story-6563-sle-attainment: promises P1-P15 in four slices; maintainer chose "Mix + daily
+      record" (a Within SLE widget on the Flow Overview plus a daily record in Predictability, trailing 30/60/90 days,
+      each day storing the SLE in force); selected range, Teams and Portfolios, free, the Cycle Time Percentiles status
+      rule reused, no verdict below 5 closed Work Items; tooltip wording and the Aging chart line default out; clients
+      later. Job wording unchanged.
     job_story: >
       When I review my team's or portfolio's flow, in a retro or in front of a stakeholder,
       I want to see how many closed Work Items finished within the SLE we published, against its target, and how

@@ -1,0 +1,480 @@
+{
+"counters": {
+"F": 99,
+"P": 15,
+"S": 8
+},
+"facts": {
+"F1": "[the customer] could not find where the SLE is shown. [the informant] looked on the Flow Metrics tab and did not see it until he found the toggle. Benjamin agreed: \"where is it actually? We should have that somewhere.\"\n\nThe SLE is a goal, so the point is to see it next to how the Team actually performs, for example 72.7% of items within 10 days against a target of 70%.\n\nRaised by [the customer]\n\n- Make the SLE more prominent instead of hiding it behind chart toggles and a small header indicator.\n- See how actual performance against the SLE develops over time. [the informant]: tracking this over time is key.\n- Use wording like \"or less\" so it is clear to people new to flow.\n\nDetails to be worked out when we start on it.\n\n(ADO Story #6563 description; customer and informant names replaced because customer identifiers are not committed. Maintainer's scope choice after DIVERGE, 2026-11-27: \"Mix + daily record\" - one new dedicated SLE widget in the overview, plus the SLE over time in Predictability as a persisted daily record.)",
+"F10": "Then the widget's header trend indicator compares the share with the share in the preceding period of the same length, as the other Flow Overview widgets do; the widget body shows no change of its own.",
+"F11": "No SLE set",
+"F12": "Given the Team or Portfolio has no SLE set",
+"F13": "Then the widget reads that no SLE is set and its status is Act, prompting to define an SLE.",
+"F14": "Too few closed Work Items in the range",
+"F15": "Given an SLE is set and fewer than 5 Work Items closed in the selected range",
+"F16": "Then the widget shows how many closed and that this is too few to judge, and gives no pass or fail status.",
+"F17": "A reader of a Team's or Portfolio's Predictability category sees a chart of the share within the SLE day by day, against that day's SLE target, for the Work Items closed in the trailing 30, 60 or 90 days, chosen with a toggle, over the days inside the selected date range.",
+"F18": "Each day keeps its own SLE",
+"F19": "Given days were recorded while the SLE was 70% within 10 days",
+"F2": "A person reading a Team's or Portfolio's metrics sees, without a toggle, how many closed Work Items finished within the SLE against its target, and how that share has moved day by day, so they can say whether the SLE is kept and whether it is getting better or worse.",
+"F20": "When the SLE is changed",
+"F21": "Then those recorded days keep their share and target as recorded, and only later days use the new SLE.",
+"F22": "Past days are filled in",
+"F23": "Given a Team or Portfolio whose stored history reaches back before the first recorded day",
+"F24": "When the reader opens the chart for a range with missing days",
+"F25": "Then the missing days are worked out from stored history in the same way as Percentiles Over Time, measured against the SLE set when they are filled in, and the chart says that filled-in days use that SLE.",
+"F26": "Too few closed Work Items on a day",
+"F27": "Given a day whose trailing window holds fewer than 5 closed Work Items",
+"F28": "When the chart is drawn",
+"F29": "Then that day draws no point, and the chart says why.",
+"F30": "No SLE set for the chart",
+"F31": "When the reader opens the chart",
+"F32": "Then the chart says that no SLE is set instead of drawing a line.",
+"F33": "Free",
+"F34": "Given an instance without a Premium licence",
+"F35": "When a reader opens the Flow Overview or the Predictability category",
+"F36": "Then the widget and the chart are shown.",
+"F37": "A new SLE widget on the Flow Overview of Teams and Portfolios: the share within the SLE over the selected range, the count and the target; status and header trend indicator.",
+"F38": "A persisted daily record of the share within the SLE for trailing 30, 60 and 90 days, storing the SLE in force that day, filled in for past days like Percentiles Over Time.",
+"F39": "A chart of that daily record in the Predictability category of Teams and Portfolios.",
+"F4": "Status follows the percentiles rule",
+"F40": "Docs for both, in the configurable terms, at finalize.",
+"F41": "The status tooltips' wording ('@ 10 days' to 'or less') and the Work Item Aging chart's SLE line default: maintainer answered Neither (2026-11-27).",
+"F42": "Readouts in the Quick Settings header and a configurable info bar: maintainer called it too much for now.",
+"F43": "An SLE panel in a Then & Now report; flow metric reports are planned separately.",
+"F44": "Lighthouse-Clients CLI and MCP: a follow-up Story once the API is settled; no client version bump here.",
+"F45": "Named Cycle Times: the SLE targets the default Cycle Time only.",
+"F46": "Any change to SLE Risk or to the Cycle Time Percentiles widget and its status.",
+"F48": "Q1: the widget counts the Work Items closed in the selected date range, like its sibling widgets; filters apply.",
+"F49": "Q2: the change against the preceding period lives in the widget's header trend indicator (previous-period policy), not in the widget body.",
+"F5": "Given an SLE is set and at least 5 Work Items closed in the selected range",
+"F50": "Q3: the daily record has trailing 30, 60 and 90 day horizons with a toggle, like Percentiles Over Time.",
+"F52": "Q5: fewer than 5 closed Work Items gives no verdict on the widget and no point on the chart.",
+"F53": "Q6: both the widget and the chart appear for Teams and Portfolios.",
+"F54": "Q7: the widget reuses the Cycle Time Percentiles status rule (Sustain at or above target, Observe up to 20 points below, Act beyond or no SLE); Cycle Time Percentiles keeps its own status.",
+"F55": "Q8: free, no Premium gate.",
+"F56": "Q9: the tooltip wording and the Aging chart line default are out of this Story.",
+"F57": "Q10: with no SLE set the widget says so and its status is Act.",
+"F58": "Q11: Lighthouse-Clients follow in a later Story.",
+"F6": "When the reader opens the Flow Overview",
+"F60": "The header trend indicator shows no comparison when either the selected or the preceding period has fewer than 5 closed Work Items.",
+"F61": "The loading and the could-not-load looks of the widget and the chart (DESIGN, WidgetShell status).",
+"F62": "Whether the share is computed in the backend for both surfaces; today it is computed twice in the frontend (ragRulesTimeAndAge.ts).",
+"F63": "Where the widget sits in the Flow Overview order and what it is called; the sketch is reviewed at the start of DELIVER.",
+"F65": "The SLE widget on a Team's and a Portfolio's Flow Overview shows the share within the SLE over the selected range, with the count and the target, and is shown without a Premium licence.",
+"F66": "The SLE widget shows its status by the percentiles rule, its header trend against the preceding period, 'no SLE set' with Act, and 'too few to judge' below 5 closed Work Items.",
+"F69": "A reader of a Team's or Portfolio's Flow Overview sees a widget of its own, titled Within SLE, that states the share of the Work Items closed in the selected date range that finished within the SLE as a large number with the count, then the sentence in smaller text, then the target, for example \"72.7 % (8 / 11)\", \"of Work Items closed within 10 days or less\", \"Target 70 %\".",
+"F7": "Then the widget's status is Sustain when the share is at or above the target, Observe when it is below by up to 20 percentage points, and Act when it is more than 20 points below; the status of Cycle Time Percentiles is unchanged.",
+"F70": "Maintainer, sketch review of the SLE widget, 2026-11-27",
+"F71": "Maintainer's words: \"the initial percentage number should be big, then \"of work items close ...\" smaller text. also it should be 72.7 % (8 / 11). then below: \"Target 70%\". also the number on top should be colored accordingly (green if we above or at, amber slightly below, red if much below).\"",
+"F72": "Status colours the share",
+"F73": "Then the large share is green when the widget's status is Sustain, amber when Observe and red when Act, and the status word in the header says the same.",
+"F74": "View Data lists the Work Items behind the share",
+"F75": "Given Work Items closed in the selected range",
+"F76": "When the reader selects View Data in the widget's header",
+"F77": "Then the closed-items dialog of Cycle Time Percentiles opens with those Work Items, each with its close day and Cycle Time coloured against the SLE, longest first.",
+"F78": "Days the stored history does not reach",
+"F79": "Given a range that reaches before the first Work Item the Team or Portfolio finished, or after its last successful sync",
+"F8": "Change against the preceding period",
+"F80": "Then those days draw no point, and a range with nothing recorded shows the same sentence as Percentiles Over Time.",
+"F81": "Filled-in days look different",
+"F82": "Given a range with days filled in from stored history",
+"F83": "Then filled-in days draw as open markers and recorded days as filled markers, and a note under the chart says filled-in days are measured against today's SLE.",
+"F84": "ADR-270's Flow metrics glossary and ARCHITECTURE.md section 4 updated for the new concepts.",
+"F85": "Knowing which SLE was set on a day before the daily record starts; filled-in days use today's SLE (Q4).",
+"F86": "Q4: answer 'Record SLE per day', whose option read: 'Each recorded day stores the SLE in force that day, so changing the SLE does not rewrite history. Filled-in past days (before recording) use today's SLE and the chart says so.'",
+"F87": "Q12: answer 'Decide at finalize' - a deferral: whether the website gets a line is decided at finalize.",
+"F88": "Sketch review: the widget is titled 'Within SLE'; View Data reuses the Cycle Time Percentiles closed-items dialog; View Data, the trend and the status sit in the WidgetShell header, not in the widget body.",
+"F89": "Sketch review: the chart has a fixed 0-100 axis 'Within SLE (%)', one accent line, a dashed grey target line labelled at its right end that steps on the day the SLE changed, the 30/60/90 day toggle, and a tooltip with day, share, count, horizon and target.",
+"F9": "Given an SLE is set",
+"F90": "Scope: no SLE panel in a Then & Now report, and no change to Cycle Time Percentiles' status - from the maintainer's DIVERGE scope choice 'Mix + daily record' and the Q7 option 'Cycle Time Percentiles keeps its own status unchanged'.",
+"F91": "Named Cycle Times are out: the SLE targets the default Cycle Time, as the Cycle Time Percentiles docs already say.",
+"F92": "S1 is the walking skeleton: the widget on the Flow Overview reads real closed Work Items and the owner's real SLE through the running app, end to end, whatever DESIGN decides on where the share is computed.",
+"F93": "S2 groups the widget's four verdict states (status, trend, no SLE, too few) and S3 carries the chart's no-SLE and too-few states, so every slice ships without breaking Q5 or Q10.",
+"F94": "ADR-270 (Flow metrics glossary: the share within the SLE, the SLE in force on a day) and ARCHITECTURE.md section 4 are updated in this Story.",
+"F95": "Which usage-data event shows the feature is used; asked in the DEVOPS wave.",
+"F96": "Which refresh events record the daily record, and whether S3 adds a new read endpoint or extends the over-time one.",
+"F97": "The workshop transcript gap 39:46-40:35 is not yet checked against the recording (maintainer).",
+"F98": "The Predictability category shows the share within the SLE day by day for trailing 30, 60 and 90 days, from days recorded as they happen, each day against the SLE in force that day, with no point on a day with fewer than 5 closed Work Items, a 'no SLE set' message, and no point on days the stored history does not reach.",
+"F99": "The daily chart fills in past days from stored history, draws them as open markers, and says that filled-in days are measured against today's SLE."
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F48"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F49"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F50"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F52"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F53"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F54"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F55"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F56"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F57"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F58"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F60"
+},
+{
+"status": {
+"kind": "Open",
+"owner": "Design"
+},
+"text": "F61"
+},
+{
+"status": {
+"kind": "Open",
+"owner": "Design"
+},
+"text": "F62"
+},
+{
+"status": {
+"kind": "Open",
+"owner": "Design"
+},
+"text": "F63"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F86"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F87"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F88"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F89"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F90"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F91"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F92"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F93"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F94"
+},
+{
+"status": {
+"kind": "Open",
+"owner": "Product"
+},
+"text": "F95"
+},
+{
+"status": {
+"kind": "Open",
+"owner": "Design"
+},
+"text": "F96"
+},
+{
+"status": {
+"kind": "Open",
+"owner": "Product"
+},
+"text": "F97"
+}
+],
+"promises": [
+{
+"amendment": {
+"authority": "F70",
+"reason": "F71"
+},
+"id": "P1",
+"kind": "Outcome",
+"text": "F69"
+},
+{
+"given": "F5",
+"id": "P2",
+"kind": "Scenario",
+"then": "F7",
+"title": "F4",
+"when": "F6"
+},
+{
+"given": "F9",
+"id": "P3",
+"kind": "Scenario",
+"then": "F10",
+"title": "F8",
+"when": "F6"
+},
+{
+"given": "F12",
+"id": "P4",
+"kind": "Scenario",
+"then": "F13",
+"title": "F11",
+"when": "F6"
+},
+{
+"given": "F15",
+"id": "P5",
+"kind": "Scenario",
+"then": "F16",
+"title": "F14",
+"when": "F6"
+},
+{
+"id": "P6",
+"kind": "Outcome",
+"text": "F17"
+},
+{
+"given": "F19",
+"id": "P7",
+"kind": "Scenario",
+"then": "F21",
+"title": "F18",
+"when": "F20"
+},
+{
+"given": "F23",
+"id": "P8",
+"kind": "Scenario",
+"then": "F25",
+"title": "F22",
+"when": "F24"
+},
+{
+"given": "F27",
+"id": "P9",
+"kind": "Scenario",
+"then": "F29",
+"title": "F26",
+"when": "F28"
+},
+{
+"given": "F12",
+"id": "P10",
+"kind": "Scenario",
+"then": "F32",
+"title": "F30",
+"when": "F31"
+},
+{
+"given": "F34",
+"id": "P11",
+"kind": "Scenario",
+"then": "F36",
+"title": "F33",
+"when": "F35"
+},
+{
+"given": "F5",
+"id": "P12",
+"kind": "Scenario",
+"then": "F73",
+"title": "F72",
+"when": "F6"
+},
+{
+"given": "F75",
+"id": "P13",
+"kind": "Scenario",
+"then": "F77",
+"title": "F74",
+"when": "F76"
+},
+{
+"given": "F79",
+"id": "P14",
+"kind": "Scenario",
+"then": "F80",
+"title": "F78",
+"when": "F31"
+},
+{
+"given": "F82",
+"id": "P15",
+"kind": "Scenario",
+"then": "F83",
+"title": "F81",
+"when": "F28"
+}
+],
+"scope_in": [
+"F37",
+"F38",
+"F39",
+"F40",
+"F84"
+],
+"scope_out": [
+"F41",
+"F42",
+"F43",
+"F44",
+"F45",
+"F46",
+"F85"
+],
+"slices": [
+{
+"id": "S5",
+"observation": "F65",
+"promises": [
+"P1",
+"P11",
+"P13"
+],
+"work": {
+"size": "M",
+"value": "F65"
+}
+},
+{
+"depends_on": [
+"S5"
+],
+"id": "S6",
+"observation": "F66",
+"promises": [
+"P2",
+"P3",
+"P4",
+"P5",
+"P12"
+],
+"work": {
+"size": "S",
+"value": "F66"
+}
+},
+{
+"depends_on": [
+"S5"
+],
+"id": "S7",
+"observation": "F98",
+"promises": [
+"P6",
+"P7",
+"P9",
+"P10",
+"P14"
+],
+"work": {
+"size": "L",
+"value": "F98"
+}
+},
+{
+"depends_on": [
+"S7"
+],
+"id": "S8",
+"observation": "F99",
+"promises": [
+"P8",
+"P15"
+],
+"work": {
+"size": "M",
+"value": "F99"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6563-sle-attainment",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "L",
+"value": "F2"
+}
+}
