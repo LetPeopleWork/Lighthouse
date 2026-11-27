@@ -2,7 +2,263 @@
 
 ## Slices
 
+### S5
+
+##### Covers
+
+P1
+
+P11
+
+```text
+A Team or Portfolio with SLE 70 % within 10 days, 11 Work Items closed in November (8 within 10 days, one at exactly 10), others closed in October, December or still open, no Premium licence; ask the Within SLE read for November
+```
+
+```text
+Measured, 11 closed, 8 within, share 72.7, target 70 % within 10 days, answered with no licence
+```
+
+```text
+The reader sees 72.7 % (8 / 11) against a target of 70 % without Premium
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/WithinSle\/WithinSleInfoAtTheServicePortTest\.cs
+
+The\_widget\_shows\_the\_share\_within\_the\_SLE\_with\_its\_counts\_and\_target\_without\_a\_Premium\_licence
+
+```text
+items closed outside the range were counted only if the closed count were not asserted as 11
+```
+
+###### Obligations
+
 None.
+
+##### Covers
+
+P1
+
+```text
+Five Work Items closed in November in exactly the SLE days; four closed of 3 days; no SLE set
+```
+
+```text
+Exactly-SLE items are within (100 %); 4 closed is TooFew with no share; no SLE is NoSle with no share
+```
+
+```text
+A Work Item finishing on the SLE day counts as within; too few or no SLE are not judged
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/WithinSle\/WithinSleInfoAtTheServicePortTest\.cs
+
+A\_Work\_Item\_finished\_in\_exactly\_the\_SLE\_days\_is\_within
+
+```text
+a minimum of 4 or 6 would pass only if the 4-closed case were not asserted; it is
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Generated lists of 0 to 40 Cycle Times against SLE days 1 to 60, including 4 and 5 closed and a Cycle Time equal to the SLE days
+```
+
+```text
+Counts and share equal a direct loop count, TooFew below 5
+```
+
+```text
+The share always matches the Work Items that finished within the SLE
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/WithinSle\/WithinSleInfoAtTheServicePortTest\.cs
+
+The\_share\_within\_the\_SLE\_follows\_a\_direct\_count\_of\_the\_Cycle\_Times\_whatever\_their\_order
+
+```text
+a share over all items instead of closed ones passes only without open or out-of-range items; the November example covers that
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+P11
+
+```text
+Render the widget with no licence context from a server answer of 8 of 11 within 10 days, then with a renamed Work Items term, then with counts that disagree with the share
+```
+
+```text
+72.7 % (8 / 11), of Work Items closed within 10 days or less, Target 70 %; renamed term shown; the server share shown not recounted
+```
+
+```text
+The widget reads as agreed and in the reader's own words
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/WithinSleWidget\.test\.tsx
+
+WithinSleWidget
+
+```text
+a widget that recounts passes the first case but not the disagreeing-counts case
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P13
+
+```text
+On a Team's Flow Overview select View Data on the Within SLE widget
+```
+
+```text
+The closed-items dialog opens listing as many Work Items as the share counts, with a Cycle Time column
+```
+
+```text
+The reader can list the Work Items behind the share
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.EndToEndTests\/tests\/specs\/metrics\/WithinSle\.spec\.ts
+
+a delivery lead sees the share of closed Work Items within the SLE next to its target and can list those Work Items
+
+```text
+a dialog with the wrong population passes only if its row count is not compared with the widget's closed count; it is
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Inspect where the share rule, the SLE value, the read port and its implementation live
+```
+
+```text
+Domain types stay pure in FlowMetrics Domain; the port and its implementation sit in Application
+```
+
+```text
+none: structure that keeps the share owned in one place
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsModuleLayoutArchUnitTest\.cs
+
+FlowMetricsModuleLayoutArchUnitTest
+
+```text
+a domain type reaching an application type would pass if the layout test did not cover new types
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Inspect every backend acceptance test for a started web host
+```
+
+```text
+No new acceptance test starts a host
+```
+
+```text
+none: keeps scenarios fast at the service port
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TestHostUseGuardTest\.cs
+
+TestHostUseGuardTest
+
+```text
+a host-starting scenario passes only if absent from the guard's list
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Inspect the widget registry for every dashboard widget
+```
+
+```text
+Each widget, including Within SLE, has a fetch requirement and a trend policy
+```
+
+```text
+none: the widget loads its data and shows its trend
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/categoryMetadata\.test\.ts
+
+categoryMetadata
+
+```text
+a widget without entries passes if the test does not enumerate the registry
+```
+
+###### Obligations
+
 
 ## Expectations
 

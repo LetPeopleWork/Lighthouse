@@ -1523,6 +1523,14 @@ Extend
 View Data reuses the closed-items dialog
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Metrics\/WithinSleVerdict\.cs
+
+Create
+
+```text
+verdict enum, one type per file
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/WithinSle\/WithinSleInfoAtTheServicePortTest\.cs
 
 #### Verification
@@ -1570,13 +1578,33 @@ P13
 
 #### Prefactoring
 
-None.
+```text
+Before any behaviour, in a separate refactor commit (refactor(metrics): skeleton of the Within SLE widget surface, wired to nothing), add the declared public surface of S5 as behaviour-free skeletons: C# ServiceLevelExpectation (Of and For throw NotImplementedException), WithinSleShare with its three nested records and MinimumClosed (Of and Measured.SharePercent throw), WithinSleVerdict (complete enum), WithinSleInfoDto (record complete, From throws), IWithinSleInfoQuery, WithinSleInfoQuery with its declared constructor (GetForTeam and GetForPortfolio throw); TypeScript IWithinSleInfo and WithinSleVerdict (complete types), getWithinSleInfo on IMetricsService and BaseMetricsService throwing, the same member on the shared mocks MockApiServiceProvider.ts and HeldMetricsService.ts, and the default export WithinSleWidget whose body throws. Nothing is registered in FlowMetricsModule or Program.cs, no controller action, no metricsFetchKeys entry (adding it forces a query entry in the total queriesByFetchKey record of useMetricsData, which is wiring), no categoryMetadata, widgetNodes or widgetInfoMetadata entry, nothing routed or rendered. FlowMetricsModuleLayoutArchUnitTest lists the new types in PureCalculations, ContractTypes and Implementations (and their file lists) so T1 stays GREEN. Where an analyser flags NotImplementedException the skeleton carries a narrow inline suppression with its reason. The S5 oracle then compiles and fails on behaviour (NotImplementedException, missing text, missing widget), a semantic RED. Per touched file (nw-design step 3): every new file holds one type, WithinSleShare.cs holds one sum type with its variants (sum-type); MetricsService.ts holds IMetricsService, IFeatureSizeMetricsService, ITeamMetricsService, IProjectMetricsService and BaseMetricsService -> not-applicable in this slice, the interfaces describe the one service class family, every frontend import goes through this module and the frontend convention keeps a service interface beside its implementation, so a split is a separate improvement item; MockApiServiceProvider.ts, HeldMetricsService.ts and FlowMetricsModuleLayoutArchUnitTest.cs each hold one type -> not-applicable; TeamMetricsController.cs, PortfolioMetricsController.cs, FlowMetricsModule.cs, metricsFetchKeys.ts, useMetricsData.ts, categoryMetadata.ts, widgetNodes.tsx, widgetInfoMetadata.ts and BaseMetricsView.tsx are untouched by the skeleton and touched by behaviour only; they hold one type or supporting types of one module -> not-applicable. Follow-up made easier: the S5 behaviour commit fills the declared members and wires registration, actions, fetch key and placement.
+```
+
+```text
+Every existing metrics behaviour, the frontend build and every architecture rule: the surface has no caller, no registration, no route and is not rendered; FlowMetricsModuleLayoutArchUnitTest and categoryMetadata.test stay GREEN
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsModuleLayoutArchUnitTest\.cs
+
+##### Verification
+
+```text
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest
+pnpm --dir Lighthouse.Frontend build
+pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/categoryMetadata.test.ts
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.WithinSle.WithinSleInfoAtTheServicePortTest
+pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/WithinSleWidget.test.tsx
+```
 
 #### Records
 
 ##### Decisions
 
-None.
+```text
+S5 member contracts close the design hole the S5 acceptance designer reported: every oracle assumption is accepted as declared (IWithinSleInfoQuery.GetForTeam(Team, DateTime, DateTime) and GetForPortfolio(Portfolio, DateTime, DateTime) returning WithinSleInfoDto; WithinSleInfoQuery constructible from the registered ITeamMetricsService, IPortfolioMetricsService and ILighthouseClock; Verdict an enum read via ToString as NoSle, TooFew or Measured; SharePercent double? rounded to one decimal, null for TooFew and NoSle; default export WithinSleWidget taking { info: IWithinSleInfo } with camelCase fields and verdict a string). Two facts are added, none renamed: the verdict enum WithinSleVerdict lives in its own file Models/Metrics/WithinSleVerdict.cs (one type per file), and WithinSleInfoQuery also needs ILighthouseClock for CycleTime(zone), which the oracle harness already registers. NoSle carries the closed count so the DTO ClosedCount stays truthful; D2 is refined, not changed.
+```
 
 ##### Constraints
 
@@ -1834,6 +1862,26 @@ Extend
 existing metrics API client gains getWithinSleInfo beside the sibling info call
 ```
 
+WithinSleVerdict
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Metrics\/WithinSleVerdict\.cs
+
+CreateNew
+
+```text
+no closed verdict of a share exists; SleRiskCalculator levels answer risk of open items, a different question
+```
+
+FlowMetricsModuleLayoutArchUnitTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsModuleLayoutArchUnitTest\.cs\:22
+
+Extend
+
+```text
+PureCalculations and PureCalculationFiles gain WithinSleShare and ServiceLevelExpectation; ContractTypes and ContractFiles gain IWithinSleInfoQuery; Implementations gains WithinSleInfoQuery, so T1 covers the new types
+```
+
 ##### Impact
 
 http\-endpoint
@@ -2016,6 +2064,46 @@ Changed
 new
 ```
 
+enum
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Metrics\/WithinSleVerdict\.cs
+
+Changed
+
+```text
+new
+```
+
+architecture\-test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsModuleLayoutArchUnitTest\.cs
+
+Changed
+
+```text
+membership lists name the new FlowMetrics types, in the skeleton commit
+```
+
+test\-helper
+
+Lighthouse\.Frontend\/src\/tests\/MockApiServiceProvider\.ts
+
+Changed
+
+```text
+shared IMetricsService mock gains getWithinSleInfo so the frontend build stays green
+```
+
+test\-helper
+
+Lighthouse\.Frontend\/src\/tests\/HeldMetricsService\.ts
+
+Changed
+
+```text
+shared held IMetricsService gains getWithinSleInfo
+```
+
 ##### Agreement
 
 GET withinSleInfo \-\> WithinSleInfoDto
@@ -2062,12 +2150,6 @@ contract_tests
 producer and consumer ship in one deployable in the same commit; the primary oracle and the frontend test cover them; no external consumer until the Lighthouse-Clients Story
 ```
 
-prefactoring
-
-```text
-Per touched file: TeamMetricsController.cs, PortfolioMetricsController.cs and FlowMetricsModule.cs each hold one type -> not-applicable; WithinSleShare.cs, ServiceLevelExpectation.cs, IWithinSleInfoQuery.cs, WithinSleInfoQuery.cs, WithinSleInfoDto.cs, WithinSleInfo.ts, WithinSleWidget.tsx are new -> not-applicable; MetricsService.ts holds IMetricsService, IFeatureSizeMetricsService, ITeamMetricsService, IProjectMetricsService and BaseMetricsService -> not-applicable in this slice: the interfaces describe the one service class family, every frontend import goes through this module, and the frontend convention keeps a service interface beside its implementation, so a split is a separate frontend improvement item, not a move this slice needs; metricsFetchKeys.ts, useMetricsData.ts, categoryMetadata.ts, widgetNodes.tsx, widgetInfoMetadata.ts, BaseMetricsView.tsx hold supporting types of one module (props and key unions) -> not-applicable, no type is touched
-```
-
 ##### Boundaries
 
 None.
@@ -2082,7 +2164,49 @@ None.
 
 ##### Constructors
 
-None.
+ServiceLevelExpectation
+
+namespace Lighthouse\.Backend\.Modules\.FlowMetrics\.Domain\. public sealed class ServiceLevelExpectation with private constructor\; int Percentile \(1\.\.100\)\, int Days \(\>\= 1\)\; public static ServiceLevelExpectation\? Of\(int percentile\, int days\) answers null when percentile is outside 1\.\.100 or days below 1\; public static ServiceLevelExpectation\? For\(WorkTrackingSystemOptionsOwner owner\) \=\> Of\(owner\.ServiceLevelExpectationProbability\, owner\.ServiceLevelExpectationRange\)\; value equality on Percentile and Days
+
+WithinSleShare
+
+namespace Lighthouse\.Backend\.Modules\.FlowMetrics\.Domain\. public abstract record WithinSleShare with private protected constructor\, public const int MinimumClosed \= 5\, and three public nested sealed records in the same file\: NoSle\(int Closed\)\, TooFew\(int Closed\, ServiceLevelExpectation Sle\)\, Measured\(int Within\, int Closed\, ServiceLevelExpectation Sle\) with double SharePercent \=\> Math\.Round\(Within \* 100\.0 \/ Closed\, 1\, MidpointRounding\.AwayFromZero\)\. Built only by public static WithinSleShare Of\(IReadOnlyCollection\<int\> cycleTimesInDays\, ServiceLevelExpectation\? sle\)\: null sle gives NoSle\(count\)\; count below MinimumClosed gives TooFew\(count\, sle\)\; else Measured\(count of days \<\= sle\.Days\, count\, sle\)
+
+WithinSleVerdict
+
+namespace Lighthouse\.Backend\.Models\.Metrics\, own file Models\/Metrics\/WithinSleVerdict\.cs\. public enum WithinSleVerdict \{ NoSle\, TooFew\, Measured \}\; read by the oracle through ToString\(\) and serialised as its name on the wire \(the app enum string converter\)\, so the frontend receives NoSle\, TooFew or Measured
+
+WithinSleInfoDto
+
+namespace Lighthouse\.Backend\.Models\.Metrics\. public sealed record WithinSleInfoDto\(WithinSleVerdict Verdict\, int ClosedCount\, int WithinCount\, int\? SlePercentile\, int\? SleDays\, double\? SharePercent\, InfoWidgetComparisonDto Comparison\) with public static WithinSleInfoDto From\(WithinSleShare share\, InfoWidgetComparisonDto comparison\)\: Measured \-\> Verdict Measured\, counts\, SLE percentile and days\, SharePercent from the share \(one decimal\)\; TooFew \-\> Verdict TooFew\, ClosedCount\, WithinCount 0\, SLE percentile and days\, SharePercent null\; NoSle \-\> Verdict NoSle\, ClosedCount\, WithinCount 0\, SlePercentile\, SleDays and SharePercent null
+
+IWithinSleInfoQuery
+
+namespace Lighthouse\.Backend\.Modules\.FlowMetrics\.Application\. public interface IWithinSleInfoQuery \{ WithinSleInfoDto GetForTeam\(Team team\, DateTime startDate\, DateTime endDate\)\; WithinSleInfoDto GetForPortfolio\(Portfolio portfolio\, DateTime startDate\, DateTime endDate\)\; \}\. startDate and endDate are inclusive days as for cycleTimePercentilesInfo\; synchronous like the sibling info reads
+
+WithinSleInfoQuery
+
+namespace Lighthouse\.Backend\.Modules\.FlowMetrics\.Application\. public sealed class WithinSleInfoQuery\(ITeamMetricsService teamMetrics\, IPortfolioMetricsService portfolioMetrics\, ILighthouseClock clock\) \: IWithinSleInfoQuery\. GetForTeam reads teamMetrics\.GetCycleTimeDataForTeam\(team\, startDate\, endDate\) \(default Cycle Time\, no definitionId\)\, GetForPortfolio reads portfolioMetrics\.GetCycleTimeDataForPortfolio\(portfolio\, startDate\, endDate\)\; both take CycleTime\(clock\.Zone\) of each item\, keep values above 0 as Cycle Time Percentiles does\, and answer WithinSleInfoDto\.From\(WithinSleShare\.Of\(days\, ServiceLevelExpectation\.For\(owner\)\)\, comparison\)\. In S5 the comparison is new InfoWidgetComparisonDto\(\"none\"\, \"Within SLE\"\, null\, null\, null\, null\, null\, \[\]\)\; S6 replaces it with the previous\-period comparison \(D7\)
+
+withinSleInfo\-actions
+
+TeamMetricsController and PortfolioMetricsController gain \[HttpGet\(\"withinSleInfo\"\)\] public ActionResult\<WithinSleInfoDto\> GetWithinSleInfo\(int teamId\|portfolioId\, \[FromQuery\] DateTime startDate\, \[FromQuery\] DateTime endDate\)\: 400 with StartDateMustBeBeforeEndDateErrorMessage when startDate\.Date \> endDate\.Date\, 404 when the owner is unknown\, else Ok\(query\.GetForTeam\|GetForPortfolio\(owner\, startDate\, endDate\)\)\; IWithinSleInfoQuery injected through the constructor beside IPercentilesOverTimeSeriesQuery\; FlowMetricsModule adds AddScoped\<IWithinSleInfoQuery\, WithinSleInfoQuery\>\(\)
+
+IWithinSleInfo
+
+Lighthouse\.Frontend\/src\/models\/Metrics\/WithinSleInfo\.ts\: export type WithinSleVerdict \= \"NoSle\" \| \"TooFew\" \| \"Measured\"\; export interface IWithinSleInfo \{ verdict\: WithinSleVerdict\; closedCount\: number\; withinCount\: number\; slePercentile\?\: number \| null\; sleDays\?\: number \| null\; sharePercent\?\: number \| null\; comparison\: IInfoWidgetComparison \} \(camelCase wire names\)
+
+getWithinSleInfo
+
+IMetricsService and BaseMetricsService \(Lighthouse\.Frontend\/src\/services\/Api\/MetricsService\.ts\) gain getWithinSleInfo\(id\: number\, startDate\: Date\, endDate\: Date\)\: Promise\<IWithinSleInfo\>\, GET \{teams\|portfolios\}\/\{id\}\/metrics\/withinSleInfo\?startDate\&endDate formatted like getCycleTimePercentilesInfo\; the shared mocks in src\/tests\/MockApiServiceProvider\.ts and src\/tests\/HeldMetricsService\.ts gain the member
+
+withinSleInfo\-fetch\-key
+
+metricsFetchKeys gains \"withinSleInfo\"\; useMetricsData gains withinSleInfo\: IWithinSleInfo \| null from useMetricsQuery\(\"getWithinSleInfo\"\, selectedWindow\, \(\{ ownerId\, from\, to \}\) \=\> metricsService\.getWithinSleInfo\(ownerId\, dayOf\(from\)\, dayOf\(to\)\)\, isAsked\(\"withinSleInfo\"\)\, \"Error fetching within SLE info\:\"\) and queriesByFetchKey\.withinSleInfo\; categoryMetadata widgetFetchRequirements withinSle \[withinSleInfo\, cycleTimeData\]
+
+WithinSleWidget
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/WithinSleWidget\.tsx\: default export WithinSleWidget\: React\.FC\<Readonly\<\{ info\: IWithinSleInfo \}\>\>\; for Measured renders \"\{sharePercent\} \% \(\{withinCount\} \/ \{closedCount\}\)\"\, \"of \{getTerm\(workItems\)\} closed within \{sleDays\} days or less\" and \"Target \{slePercentile\} \%\"\, showing the server share as answered and never recounting\; NoSle and TooFew bodies arrive in S6\. Mounted by widgetNodes under widgetKey withinSle inside WidgetShell
 
 ##### Laws
 

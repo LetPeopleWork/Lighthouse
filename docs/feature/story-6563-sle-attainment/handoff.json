@@ -1,10 +1,140 @@
 {
+"acceptance": {
+"S5": [
+{
+"covers": [
+"P1",
+"P11"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F477",
+"test": "The_widget_shows_the_share_within_the_SLE_with_its_counts_and_target_without_a_Premium_licence",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoAtTheServicePortTest.cs"
+},
+"expected": "F475",
+"stimulus": "F474",
+"user_result": "F476"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F481",
+"test": "A_Work_Item_finished_in_exactly_the_SLE_days_is_within",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoAtTheServicePortTest.cs"
+},
+"expected": "F479",
+"stimulus": "F478",
+"user_result": "F480"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F485",
+"test": "The_share_within_the_SLE_follows_a_direct_count_of_the_Cycle_Times_whatever_their_order",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoAtTheServicePortTest.cs"
+},
+"expected": "F483",
+"stimulus": "F482",
+"user_result": "F484"
+},
+{
+"covers": [
+"P1",
+"P11"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F489",
+"test": "WithinSleWidget",
+"test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.test.tsx"
+},
+"expected": "F487",
+"stimulus": "F486",
+"user_result": "F488"
+},
+{
+"covers": [
+"P13"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F493",
+"test": "a delivery lead sees the share of closed Work Items within the SLE next to its target and can list those Work Items",
+"test_path": "Lighthouse.EndToEndTests/tests/specs/metrics/WithinSle.spec.ts"
+},
+"expected": "F491",
+"stimulus": "F490",
+"user_result": "F492"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F497",
+"test": "FlowMetricsModuleLayoutArchUnitTest",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs"
+},
+"expected": "F495",
+"stimulus": "F494",
+"user_result": "F496"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F501",
+"test": "TestHostUseGuardTest",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs"
+},
+"expected": "F499",
+"stimulus": "F498",
+"user_result": "F500"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F505",
+"test": "categoryMetadata",
+"test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts"
+},
+"expected": "F503",
+"stimulus": "F502",
+"user_result": "F504"
+}
+]
+},
 "counters": {
 "B": 6,
 "C": 2,
 "D": 23,
 "E": 15,
-"F": 473,
+"F": 514,
 "K": 26,
 "L": 7,
 "N": 4,
@@ -747,6 +877,18 @@
 "slices": {
 "S5": {
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoAtTheServicePortTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs",
+"move": "F507",
+"preserved": "F508",
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest",
+"pnpm --dir Lighthouse.Frontend build",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/categoryMetadata.test.ts",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.WithinSle.WithinSleInfoAtTheServicePortTest",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/WithinSleWidget.test.tsx"
+]
+},
 "public_oracle": {
 "expected": "F281",
 "falsifier": "F282",
@@ -800,6 +942,55 @@
 "obligation": "F326",
 "oracle": "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts"
 }
+],
+"constructors": [
+{
+"name": "ServiceLevelExpectation",
+"signature": "namespace Lighthouse.Backend.Modules.FlowMetrics.Domain. public sealed class ServiceLevelExpectation with private constructor; int Percentile (1..100), int Days (>= 1); public static ServiceLevelExpectation? Of(int percentile, int days) answers null when percentile is outside 1..100 or days below 1; public static ServiceLevelExpectation? For(WorkTrackingSystemOptionsOwner owner) => Of(owner.ServiceLevelExpectationProbability, owner.ServiceLevelExpectationRange); value equality on Percentile and Days"
+},
+{
+"name": "WithinSleShare",
+"signature": "namespace Lighthouse.Backend.Modules.FlowMetrics.Domain. public abstract record WithinSleShare with private protected constructor, public const int MinimumClosed = 5, and three public nested sealed records in the same file: NoSle(int Closed), TooFew(int Closed, ServiceLevelExpectation Sle), Measured(int Within, int Closed, ServiceLevelExpectation Sle) with double SharePercent => Math.Round(Within * 100.0 / Closed, 1, MidpointRounding.AwayFromZero). Built only by public static WithinSleShare Of(IReadOnlyCollection<int> cycleTimesInDays, ServiceLevelExpectation? sle): null sle gives NoSle(count); count below MinimumClosed gives TooFew(count, sle); else Measured(count of days <= sle.Days, count, sle)"
+},
+{
+"name": "WithinSleVerdict",
+"signature": "namespace Lighthouse.Backend.Models.Metrics, own file Models/Metrics/WithinSleVerdict.cs. public enum WithinSleVerdict { NoSle, TooFew, Measured }; read by the oracle through ToString() and serialised as its name on the wire (the app enum string converter), so the frontend receives NoSle, TooFew or Measured"
+},
+{
+"name": "WithinSleInfoDto",
+"signature": "namespace Lighthouse.Backend.Models.Metrics. public sealed record WithinSleInfoDto(WithinSleVerdict Verdict, int ClosedCount, int WithinCount, int? SlePercentile, int? SleDays, double? SharePercent, InfoWidgetComparisonDto Comparison) with public static WithinSleInfoDto From(WithinSleShare share, InfoWidgetComparisonDto comparison): Measured -> Verdict Measured, counts, SLE percentile and days, SharePercent from the share (one decimal); TooFew -> Verdict TooFew, ClosedCount, WithinCount 0, SLE percentile and days, SharePercent null; NoSle -> Verdict NoSle, ClosedCount, WithinCount 0, SlePercentile, SleDays and SharePercent null"
+},
+{
+"name": "IWithinSleInfoQuery",
+"signature": "namespace Lighthouse.Backend.Modules.FlowMetrics.Application. public interface IWithinSleInfoQuery { WithinSleInfoDto GetForTeam(Team team, DateTime startDate, DateTime endDate); WithinSleInfoDto GetForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate); }. startDate and endDate are inclusive days as for cycleTimePercentilesInfo; synchronous like the sibling info reads"
+},
+{
+"name": "WithinSleInfoQuery",
+"signature": "namespace Lighthouse.Backend.Modules.FlowMetrics.Application. public sealed class WithinSleInfoQuery(ITeamMetricsService teamMetrics, IPortfolioMetricsService portfolioMetrics, ILighthouseClock clock) : IWithinSleInfoQuery. GetForTeam reads teamMetrics.GetCycleTimeDataForTeam(team, startDate, endDate) (default Cycle Time, no definitionId), GetForPortfolio reads portfolioMetrics.GetCycleTimeDataForPortfolio(portfolio, startDate, endDate); both take CycleTime(clock.Zone) of each item, keep values above 0 as Cycle Time Percentiles does, and answer WithinSleInfoDto.From(WithinSleShare.Of(days, ServiceLevelExpectation.For(owner)), comparison). In S5 the comparison is new InfoWidgetComparisonDto(\"none\", \"Within SLE\", null, null, null, null, null, []); S6 replaces it with the previous-period comparison (D7)"
+},
+{
+"name": "withinSleInfo-actions",
+"signature": "TeamMetricsController and PortfolioMetricsController gain [HttpGet(\"withinSleInfo\")] public ActionResult<WithinSleInfoDto> GetWithinSleInfo(int teamId|portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate): 400 with StartDateMustBeBeforeEndDateErrorMessage when startDate.Date > endDate.Date, 404 when the owner is unknown, else Ok(query.GetForTeam|GetForPortfolio(owner, startDate, endDate)); IWithinSleInfoQuery injected through the constructor beside IPercentilesOverTimeSeriesQuery; FlowMetricsModule adds AddScoped<IWithinSleInfoQuery, WithinSleInfoQuery>()"
+},
+{
+"name": "IWithinSleInfo",
+"signature": "Lighthouse.Frontend/src/models/Metrics/WithinSleInfo.ts: export type WithinSleVerdict = \"NoSle\" | \"TooFew\" | \"Measured\"; export interface IWithinSleInfo { verdict: WithinSleVerdict; closedCount: number; withinCount: number; slePercentile?: number | null; sleDays?: number | null; sharePercent?: number | null; comparison: IInfoWidgetComparison } (camelCase wire names)"
+},
+{
+"name": "getWithinSleInfo",
+"signature": "IMetricsService and BaseMetricsService (Lighthouse.Frontend/src/services/Api/MetricsService.ts) gain getWithinSleInfo(id: number, startDate: Date, endDate: Date): Promise<IWithinSleInfo>, GET {teams|portfolios}/{id}/metrics/withinSleInfo?startDate&endDate formatted like getCycleTimePercentilesInfo; the shared mocks in src/tests/MockApiServiceProvider.ts and src/tests/HeldMetricsService.ts gain the member"
+},
+{
+"name": "withinSleInfo-fetch-key",
+"signature": "metricsFetchKeys gains \"withinSleInfo\"; useMetricsData gains withinSleInfo: IWithinSleInfo | null from useMetricsQuery(\"getWithinSleInfo\", selectedWindow, ({ ownerId, from, to }) => metricsService.getWithinSleInfo(ownerId, dayOf(from), dayOf(to)), isAsked(\"withinSleInfo\"), \"Error fetching within SLE info:\") and queriesByFetchKey.withinSleInfo; categoryMetadata widgetFetchRequirements withinSle [withinSleInfo, cycleTimeData]"
+},
+{
+"name": "WithinSleWidget",
+"signature": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.tsx: default export WithinSleWidget: React.FC<Readonly<{ info: IWithinSleInfo }>>; for Measured renders \"{sharePercent} % ({withinCount} / {closedCount})\", \"of {getTerm(workItems)} closed within {sleDays} days or less\" and \"Target {slePercentile} %\", showing the server share as answered and never recounting; NoSle and TooFew bodies arrive in S6. Mounted by widgetNodes under widgetKey withinSle inside WidgetShell"
+}
+],
+"decisions": [
+"F509"
 ],
 "impact": [
 {
@@ -909,16 +1100,36 @@
 "kind": "component",
 "locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.tsx",
 "reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "enum",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleVerdict.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "architecture-test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs",
+"reason": "F512"
+},
+{
+"decision": "Changed",
+"kind": "test-helper",
+"locator": "Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts",
+"reason": "F513"
+},
+{
+"decision": "Changed",
+"kind": "test-helper",
+"locator": "Lighthouse.Frontend/src/tests/HeldMetricsService.ts",
+"reason": "F514"
 }
 ],
 "not_applicable": [
 {
 "analysis": "contract_tests",
 "reason": "F322"
-},
-{
-"analysis": "prefactoring",
-"reason": "F323"
 }
 ],
 "reuse": [
@@ -1071,6 +1282,18 @@
 "locator": "Lighthouse.Frontend/src/services/Api/MetricsService.ts:219",
 "reason": "F306",
 "symbol": "getCycleTimePercentilesInfo"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleVerdict.cs",
+"reason": "F510",
+"symbol": "WithinSleVerdict"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs:22",
+"reason": "F511",
+"symbol": "FlowMetricsModuleLayoutArchUnitTest"
 }
 ]
 },
@@ -1158,6 +1381,11 @@
 "change": "Extend",
 "path": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
 "reason": "F279"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleVerdict.cs",
+"reason": "F506"
 }
 ],
 "verification": [
@@ -2511,7 +2739,6 @@
 "F320": "same contract for Portfolios",
 "F321": "only consumer, same commit",
 "F322": "producer and consumer ship in one deployable in the same commit; the primary oracle and the frontend test cover them; no external consumer until the Lighthouse-Clients Story",
-"F323": "Per touched file: TeamMetricsController.cs, PortfolioMetricsController.cs and FlowMetricsModule.cs each hold one type -> not-applicable; WithinSleShare.cs, ServiceLevelExpectation.cs, IWithinSleInfoQuery.cs, WithinSleInfoQuery.cs, WithinSleInfoDto.cs, WithinSleInfo.ts, WithinSleWidget.tsx are new -> not-applicable; MetricsService.ts holds IMetricsService, IFeatureSizeMetricsService, ITeamMetricsService, IProjectMetricsService and BaseMetricsService -> not-applicable in this slice: the interfaces describe the one service class family, every frontend import goes through this module, and the frontend convention keeps a service interface beside its implementation, so a split is a separate frontend improvement item, not a move this slice needs; metricsFetchKeys.ts, useMetricsData.ts, categoryMetadata.ts, widgetNodes.tsx, widgetInfoMetadata.ts, BaseMetricsView.tsx hold supporting types of one module (props and key unions) -> not-applicable, no type is touched",
 "F324": "WithinSleShare and ServiceLevelExpectation live in FlowMetrics Domain (pure), IWithinSleInfoQuery in Application contracts, WithinSleInfoQuery in Application implementations; Domain reaches no Application or Adapter type",
 "F325": "no new acceptance test starts a web host",
 "F326": "every widget has a fetch requirement entry and a trend policy",
@@ -2677,10 +2904,51 @@
 "F471": "Reuse of the exact sentence and edge-day behaviour are not visible without a rendered chart.",
 "F472": "Filled-in days draw as open markers, recorded days as filled markers, and a note under the chart says filled-in days are measured against today's SLE.",
 "F473": "Marker style and note placement are visual facts a data oracle cannot see.",
+"F474": "A Team or Portfolio with SLE 70 % within 10 days, 11 Work Items closed in November (8 within 10 days, one at exactly 10), others closed in October, December or still open, no Premium licence; ask the Within SLE read for November",
+"F475": "Measured, 11 closed, 8 within, share 72.7, target 70 % within 10 days, answered with no licence",
+"F476": "The reader sees 72.7 % (8 / 11) against a target of 70 % without Premium",
+"F477": "items closed outside the range were counted only if the closed count were not asserted as 11",
+"F478": "Five Work Items closed in November in exactly the SLE days; four closed of 3 days; no SLE set",
+"F479": "Exactly-SLE items are within (100 %); 4 closed is TooFew with no share; no SLE is NoSle with no share",
 "F48": "Q1: the widget counts the Work Items closed in the selected date range, like its sibling widgets; filters apply.",
+"F480": "A Work Item finishing on the SLE day counts as within; too few or no SLE are not judged",
+"F481": "a minimum of 4 or 6 would pass only if the 4-closed case were not asserted; it is",
+"F482": "Generated lists of 0 to 40 Cycle Times against SLE days 1 to 60, including 4 and 5 closed and a Cycle Time equal to the SLE days",
+"F483": "Counts and share equal a direct loop count, TooFew below 5",
+"F484": "The share always matches the Work Items that finished within the SLE",
+"F485": "a share over all items instead of closed ones passes only without open or out-of-range items; the November example covers that",
+"F486": "Render the widget with no licence context from a server answer of 8 of 11 within 10 days, then with a renamed Work Items term, then with counts that disagree with the share",
+"F487": "72.7 % (8 / 11), of Work Items closed within 10 days or less, Target 70 %; renamed term shown; the server share shown not recounted",
+"F488": "The widget reads as agreed and in the reader's own words",
+"F489": "a widget that recounts passes the first case but not the disagreeing-counts case",
 "F49": "Q2: the change against the preceding period lives in the widget's header trend indicator (previous-period policy), not in the widget body.",
+"F490": "On a Team's Flow Overview select View Data on the Within SLE widget",
+"F491": "The closed-items dialog opens listing as many Work Items as the share counts, with a Cycle Time column",
+"F492": "The reader can list the Work Items behind the share",
+"F493": "a dialog with the wrong population passes only if its row count is not compared with the widget's closed count; it is",
+"F494": "Inspect where the share rule, the SLE value, the read port and its implementation live",
+"F495": "Domain types stay pure in FlowMetrics Domain; the port and its implementation sit in Application",
+"F496": "none: structure that keeps the share owned in one place",
+"F497": "a domain type reaching an application type would pass if the layout test did not cover new types",
+"F498": "Inspect every backend acceptance test for a started web host",
+"F499": "No new acceptance test starts a host",
 "F5": "Given an SLE is set and at least 5 Work Items closed in the selected range",
 "F50": "Q3: the daily record has trailing 30, 60 and 90 day horizons with a toggle, like Percentiles Over Time.",
+"F500": "none: keeps scenarios fast at the service port",
+"F501": "a host-starting scenario passes only if absent from the guard's list",
+"F502": "Inspect the widget registry for every dashboard widget",
+"F503": "Each widget, including Within SLE, has a fetch requirement and a trend policy",
+"F504": "none: the widget loads its data and shows its trend",
+"F505": "a widget without entries passes if the test does not enumerate the registry",
+"F506": "verdict enum, one type per file",
+"F507": "Before any behaviour, in a separate refactor commit (refactor(metrics): skeleton of the Within SLE widget surface, wired to nothing), add the declared public surface of S5 as behaviour-free skeletons: C# ServiceLevelExpectation (Of and For throw NotImplementedException), WithinSleShare with its three nested records and MinimumClosed (Of and Measured.SharePercent throw), WithinSleVerdict (complete enum), WithinSleInfoDto (record complete, From throws), IWithinSleInfoQuery, WithinSleInfoQuery with its declared constructor (GetForTeam and GetForPortfolio throw); TypeScript IWithinSleInfo and WithinSleVerdict (complete types), getWithinSleInfo on IMetricsService and BaseMetricsService throwing, the same member on the shared mocks MockApiServiceProvider.ts and HeldMetricsService.ts, and the default export WithinSleWidget whose body throws. Nothing is registered in FlowMetricsModule or Program.cs, no controller action, no metricsFetchKeys entry (adding it forces a query entry in the total queriesByFetchKey record of useMetricsData, which is wiring), no categoryMetadata, widgetNodes or widgetInfoMetadata entry, nothing routed or rendered. FlowMetricsModuleLayoutArchUnitTest lists the new types in PureCalculations, ContractTypes and Implementations (and their file lists) so T1 stays GREEN. Where an analyser flags NotImplementedException the skeleton carries a narrow inline suppression with its reason. The S5 oracle then compiles and fails on behaviour (NotImplementedException, missing text, missing widget), a semantic RED. Per touched file (nw-design step 3): every new file holds one type, WithinSleShare.cs holds one sum type with its variants (sum-type); MetricsService.ts holds IMetricsService, IFeatureSizeMetricsService, ITeamMetricsService, IProjectMetricsService and BaseMetricsService -> not-applicable in this slice, the interfaces describe the one service class family, every frontend import goes through this module and the frontend convention keeps a service interface beside its implementation, so a split is a separate improvement item; MockApiServiceProvider.ts, HeldMetricsService.ts and FlowMetricsModuleLayoutArchUnitTest.cs each hold one type -> not-applicable; TeamMetricsController.cs, PortfolioMetricsController.cs, FlowMetricsModule.cs, metricsFetchKeys.ts, useMetricsData.ts, categoryMetadata.ts, widgetNodes.tsx, widgetInfoMetadata.ts and BaseMetricsView.tsx are untouched by the skeleton and touched by behaviour only; they hold one type or supporting types of one module -> not-applicable. Follow-up made easier: the S5 behaviour commit fills the declared members and wires registration, actions, fetch key and placement.",
+"F508": "Every existing metrics behaviour, the frontend build and every architecture rule: the surface has no caller, no registration, no route and is not rendered; FlowMetricsModuleLayoutArchUnitTest and categoryMetadata.test stay GREEN",
+"F509": "S5 member contracts close the design hole the S5 acceptance designer reported: every oracle assumption is accepted as declared (IWithinSleInfoQuery.GetForTeam(Team, DateTime, DateTime) and GetForPortfolio(Portfolio, DateTime, DateTime) returning WithinSleInfoDto; WithinSleInfoQuery constructible from the registered ITeamMetricsService, IPortfolioMetricsService and ILighthouseClock; Verdict an enum read via ToString as NoSle, TooFew or Measured; SharePercent double? rounded to one decimal, null for TooFew and NoSle; default export WithinSleWidget taking { info: IWithinSleInfo } with camelCase fields and verdict a string). Two facts are added, none renamed: the verdict enum WithinSleVerdict lives in its own file Models/Metrics/WithinSleVerdict.cs (one type per file), and WithinSleInfoQuery also needs ILighthouseClock for CycleTime(zone), which the oracle harness already registers. NoSle carries the closed count so the DTO ClosedCount stays truthful; D2 is refined, not changed.",
+"F510": "no closed verdict of a share exists; SleRiskCalculator levels answer risk of open items, a different question",
+"F511": "PureCalculations and PureCalculationFiles gain WithinSleShare and ServiceLevelExpectation; ContractTypes and ContractFiles gain IWithinSleInfoQuery; Implementations gains WithinSleInfoQuery, so T1 covers the new types",
+"F512": "membership lists name the new FlowMetrics types, in the skeleton commit",
+"F513": "shared IMetricsService mock gains getWithinSleInfo so the frontend build stays green",
+"F514": "shared held IMetricsService gains getWithinSleInfo",
 "F52": "Q5: fewer than 5 closed Work Items gives no verdict on the widget and no point on the chart.",
 "F53": "Q6: both the widget and the chart appear for Teams and Portfolios.",
 "F54": "Q7: the widget reuses the Cycle Time Percentiles status rule (Sustain at or above target, Observe up to 20 points below, Act beyond or no SLE); Cycle Time Percentiles keeps its own status.",

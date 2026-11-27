@@ -156,7 +156,231 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S5</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P11</p>
+
+<pre><code>A Team or Portfolio with SLE 70 % within 10 days, 11 Work Items closed in November (8 within 10 days, one at exactly 10), others closed in October, December or still open, no Premium licence; ask the Within SLE read for November
+</code></pre>
+
+<pre><code>Measured, 11 closed, 8 within, share 72.7, target 70 % within 10 days, answered with no licence
+</code></pre>
+
+<pre><code>The reader sees 72.7 % (8 / 11) against a target of 70 % without Premium
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoAtTheServicePortTest.cs</p>
+
+<p>The_widget_shows_the_share_within_the_SLE_with_its_counts_and_target_without_a_Premium_licence</p>
+
+<pre><code>items closed outside the range were counted only if the closed count were not asserted as 11
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Five Work Items closed in November in exactly the SLE days; four closed of 3 days; no SLE set
+</code></pre>
+
+<pre><code>Exactly-SLE items are within (100 %); 4 closed is TooFew with no share; no SLE is NoSle with no share
+</code></pre>
+
+<pre><code>A Work Item finishing on the SLE day counts as within; too few or no SLE are not judged
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoAtTheServicePortTest.cs</p>
+
+<p>A_Work_Item_finished_in_exactly_the_SLE_days_is_within</p>
+
+<pre><code>a minimum of 4 or 6 would pass only if the 4-closed case were not asserted; it is
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Generated lists of 0 to 40 Cycle Times against SLE days 1 to 60, including 4 and 5 closed and a Cycle Time equal to the SLE days
+</code></pre>
+
+<pre><code>Counts and share equal a direct loop count, TooFew below 5
+</code></pre>
+
+<pre><code>The share always matches the Work Items that finished within the SLE
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoAtTheServicePortTest.cs</p>
+
+<p>The_share_within_the_SLE_follows_a_direct_count_of_the_Cycle_Times_whatever_their_order</p>
+
+<pre><code>a share over all items instead of closed ones passes only without open or out-of-range items; the November example covers that
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P11</p>
+
+<pre><code>Render the widget with no licence context from a server answer of 8 of 11 within 10 days, then with a renamed Work Items term, then with counts that disagree with the share
+</code></pre>
+
+<pre><code>72.7 % (8 / 11), of Work Items closed within 10 days or less, Target 70 %; renamed term shown; the server share shown not recounted
+</code></pre>
+
+<pre><code>The widget reads as agreed and in the reader&#x27;s own words
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.test.tsx</p>
+
+<p>WithinSleWidget</p>
+
+<pre><code>a widget that recounts passes the first case but not the disagreeing-counts case
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P13</p>
+
+<pre><code>On a Team&#x27;s Flow Overview select View Data on the Within SLE widget
+</code></pre>
+
+<pre><code>The closed-items dialog opens listing as many Work Items as the share counts, with a Cycle Time column
+</code></pre>
+
+<pre><code>The reader can list the Work Items behind the share
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/metrics/WithinSle.spec.ts</p>
+
+<p>a delivery lead sees the share of closed Work Items within the SLE next to its target and can list those Work Items</p>
+
+<pre><code>a dialog with the wrong population passes only if its row count is not compared with the widget&#x27;s closed count; it is
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Inspect where the share rule, the SLE value, the read port and its implementation live
+</code></pre>
+
+<pre><code>Domain types stay pure in FlowMetrics Domain; the port and its implementation sit in Application
+</code></pre>
+
+<pre><code>none: structure that keeps the share owned in one place
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs</p>
+
+<p>FlowMetricsModuleLayoutArchUnitTest</p>
+
+<pre><code>a domain type reaching an application type would pass if the layout test did not cover new types
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Inspect every backend acceptance test for a started web host
+</code></pre>
+
+<pre><code>No new acceptance test starts a host
+</code></pre>
+
+<pre><code>none: keeps scenarios fast at the service port
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs</p>
+
+<p>TestHostUseGuardTest</p>
+
+<pre><code>a host-starting scenario passes only if absent from the guard&#x27;s list
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Inspect the widget registry for every dashboard widget
+</code></pre>
+
+<pre><code>Each widget, including Within SLE, has a fetch requirement and a trend policy
+</code></pre>
+
+<pre><code>none: the widget loads its data and shows its trend
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts</p>
+
+<p>categoryMetadata</p>
+
+<pre><code>a widget without entries passes if the test does not enumerate the registry
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 
