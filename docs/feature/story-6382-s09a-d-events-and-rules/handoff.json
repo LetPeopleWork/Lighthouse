@@ -1,22 +1,3234 @@
 {
 "counters": {
-"F": 12,
+"B": 1,
+"C": 1,
+"D": 8,
+"E": 4,
+"F": 227,
+"K": 7,
+"L": 6,
 "P": 3,
-"S": 3
+"S": 3,
+"T": 4,
+"Y": 6
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~Architecture\"",
+"id": "T1",
+"obligation": "F71",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs"
+},
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~DomainEventHandlerOrderPinTest\"",
+"id": "T2",
+"obligation": "F72",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F32",
+"driven_ports": [
+"F30",
+"F31"
+],
+"driving_port": "F29"
+},
+"constraints": [
+{
+"id": "K1",
+"text": "F21"
+},
+{
+"id": "K2",
+"text": "F22"
+},
+{
+"id": "K3",
+"text": "F23"
+},
+{
+"id": "K4",
+"text": "F24"
+},
+{
+"id": "K5",
+"text": "F25"
+},
+{
+"id": "K6",
+"text": "F26"
+},
+{
+"id": "K7",
+"text": "F27"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F13"
+},
+{
+"id": "D2",
+"text": "F14"
+},
+{
+"id": "D3",
+"text": "F15"
+},
+{
+"id": "D4",
+"text": "F16"
+},
+{
+"id": "D5",
+"text": "F17"
+},
+{
+"id": "D6",
+"text": "F18"
+},
+{
+"id": "D7",
+"text": "F19"
+},
+{
+"id": "D8",
+"text": "F20"
+}
+],
+"equality": [
+{
+"definition": "F39",
+"under": "refresh-log entry"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F28"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F34",
+"description": "F33",
+"result_type": "IEnumerable<RefreshLog>"
+},
+{
+"cannot_distinguish": "F36",
+"description": "F35",
+"result_type": "NUnit outcome + message"
+},
+{
+"cannot_distinguish": "F38",
+"description": "F37",
+"result_type": "captured ILogger<DomainEventDispatcher> entry"
+}
+],
+"risks": [
+{
+"allowed": "F45",
+"forbidden": "F46",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "Forecasting / Work Items",
+"preserved": "F44",
+"residue": "F47",
+"source": "F43"
+},
+{
+"allowed": "F50",
+"forbidden": "F51",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "Forecasting",
+"preserved": "F49",
+"residue": "F52",
+"source": "F48"
+},
+{
+"allowed": "F55",
+"forbidden": "F56",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "S1 crafter",
+"preserved": "F54",
+"residue": "F57",
+"source": "F53"
+},
+{
+"allowed": "F50",
+"forbidden": "F60",
+"id": "Y4",
+"kind": "SinglePointOfFailure",
+"owner": "S2",
+"preserved": "F59",
+"residue": "F61",
+"source": "F58"
+},
+{
+"allowed": "F50",
+"forbidden": "F64",
+"id": "Y5",
+"kind": "Bypass",
+"owner": "Forecasting (Epic 6474 refresh paths)",
+"preserved": "F63",
+"residue": "F65",
+"source": "F62"
+},
+{
+"allowed": "F68",
+"forbidden": "F69",
+"id": "Y6",
+"kind": "Stressor",
+"owner": "Story 6382",
+"preserved": "F67",
+"residue": "F70",
+"source": "F66"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "Forecasting",
+"state": "F40"
+},
+{
+"kind": "Excluded",
+"owner": "Forecasting",
+"state": "F41"
+},
+{
+"kind": "Unknown",
+"owner": "Forecasting",
+"state": "F42"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventsLiveWithTheirPublisherArchUnitTest.cs",
+"public_oracle": {
+"expected": "F173",
+"falsifier": "F174",
+"promises": [
+"P1"
+],
+"stimulus": "F172"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~Architecture\"",
+"id": "T4",
+"obligation": "F215",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventsLiveWithTheirPublisherArchUnitTest.cs"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F211",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F210"
+},
+{
+"axis": "Inhabitation",
+"basis": "F212",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F210"
+},
+{
+"axis": "PublicReachability",
+"basis": "F213",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F210"
+},
+{
+"axis": "Liveness",
+"basis": "F214",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F210"
+}
+],
+"decisions": [
+"F175",
+"F176"
+],
+"impact": [
+{
+"decision": "Migrated",
+"kind": "production-event-types",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Events/TeamDeleted.cs:1",
+"reason": "F197"
+},
+{
+"decision": "Changed",
+"kind": "production-and-test-consumers",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1418",
+"reason": "F198"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "kernel-dispatch",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/DomainEvents/DomainEventDispatcher.cs:1",
+"reason": "F199"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "schema-wire",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs:1",
+"reason": "F200"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemTransitioned.cs:1",
+"reason": "F201"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemBlocked.cs:1",
+"reason": "F201"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemUnblocked.cs:1",
+"reason": "F201"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemBecameStale.cs:1",
+"reason": "F201"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/FeatureBlocked.cs:1",
+"reason": "F201"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/FeatureUnblocked.cs:1",
+"reason": "F201"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/TeamDataRefreshed.cs:1",
+"reason": "F201"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/PortfolioFeaturesRefreshed.cs:1",
+"reason": "F201"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/PortfolioForecastsUpdated.cs:1",
+"reason": "F201"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/TeamDeleted.cs:1",
+"reason": "F201"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/PortfolioDeleted.cs:1",
+"reason": "F201"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/BlackoutConfigurationChanged.cs:1",
+"reason": "F201"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/FeatureOrderingPolicyChanged.cs:1",
+"reason": "F201"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/FeatureRankChanged.cs:1",
+"reason": "F201"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/ConnectionFetchShapeChanged.cs:1",
+"reason": "F201"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs:33",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs:32",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/BlackoutConfigurationChangedMetricsInvalidationHandler.cs:9",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/BlockedCountSnapshotRecordingHandler.cs:13",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandler.cs:25",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandler.cs:28",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandler.cs:11",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PortfolioFeaturesRefreshedMetricsInvalidationHandler.cs:9",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/ProcessBehaviorRecordingHandler.cs:11",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/TeamDataRefreshedTeamMetricsUpdateHandler.cs:9",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ReconstructionMemo.cs:21",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs:22",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandler.cs:21",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandler.cs:16",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDataRefreshedForecastTriggerHandler.cs:8",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandler.cs:7",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/BlackoutPeriodService.cs:11",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/ConnectionSaveService.cs:12",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankingService.cs:11",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/FeatureOrderingApplier.cs:15",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/RecurringBlackoutRuleService.cs:9",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/Policies/DeliveryForecastPublishingHandler.cs:21",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandler.cs:10",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ConnectionFetchShapeChangedUpdateTriggerHandler.cs:7",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionCaptureHandler.cs:8",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionCloseHandler.cs:7",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandler.cs:7",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandler.cs:8",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCaptureHandler.cs:8",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCloseHandler.cs:7",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/TeamDataService.cs:7",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:23",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs:23",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs:54",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs:60",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs:36",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryArchiveClosurePinIntegrationTest.cs:26",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:49",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:56",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaSpecifications.cs:1",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaSpecifications.cs:1",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/PercentilesOverTimeAcceptanceTest.cs:27",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/ReconstructOverTimeHistoryAcceptanceTest.cs:48",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/SkipUnchangedForecastsAcceptanceTest.cs:45",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01AnnouncedAndDailyScenarios.cs:15",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01StaleSignalSpecifications.cs:1",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/TeamFeatureSizeAcceptanceTest.cs:33",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs:25",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs:30",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectionFetchShapeChangedSinglePublisherArchUnitTest.cs:12",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsStringsTheMoveRenames.cs:8",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs:18",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InstantsUnaffectedByZoneTest.cs:35",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs:23",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs:53",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDoesNotCommandFlowMetricsArchUnitTest.cs:16",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:36",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/BlackoutConfigurationChangedMetricsInvalidationHandlerTest.cs:10",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/BlockedCountSnapshotRecordingHandlerTests.cs:23",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandlerTests.cs:22",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandlerTests.cs:19",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandlerTests.cs:22",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/PortfolioFeaturesRefreshedMetricsInvalidationHandlerTest.cs:10",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/ProcessBehaviorRecordingHandlerTests.cs:23",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/TeamDataRefreshedTeamMetricsUpdateHandlerTest.cs:10",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ReconstructionMemoTest.cs:8",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs:32",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandlerTest.cs:29",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandlerTest.cs:28",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/TeamDataRefreshedForecastTriggerHandlerTest.cs:11",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandlerTest.cs:9",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/AppSettingServiceTest.cs:1",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/BlackoutPeriodServiceTest.cs:12",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Connections/ConnectionSaveServiceTest.cs:17",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/RecurringBlackoutRuleServiceTest.cs:12",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryMetricValuesProjectorTest.cs:18",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryForecastPublishingHandlerTest.cs:22",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandlerTest.cs:29",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/ConnectionFetchShapeChangedUpdateTriggerHandlerTest.cs:10",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionHandlerTests.cs:14",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandlerTest.cs:17",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandlerTest.cs:10",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCaptureTests.cs:16",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/TeamDataServiceTest.cs:10",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:22",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/DomainEvents/DomainEventDispatcherGoldTest.cs:11",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/DomainEvents/DomainEventDispatcherTest.cs:9",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs:32",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/SnapshotRecordedDayInstanceZoneTest.cs:45",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/TeamDataRefreshedGoldTest.cs:12",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/WorkItemDomainEventsGoldTest.cs:18",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/SharedHostCleanup.cs:18",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:44",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs:16",
+"reason": "F202"
+}
+],
+"laws": [
+{
+"id": "L6",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "DomainEventsLiveWithTheirPublisherArchUnitTest",
+"statement": "F205",
+"treatment": {
+"cases": [
+"F206",
+"F207",
+"F208"
+],
+"kind": "Finite",
+"reason": "F209"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F203"
+},
+{
+"analysis": "prefactoring",
+"reason": "F204"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembership.cs:74",
+"reason": "F177",
+"symbol": "ContextContractsMembership"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsStringsTheMoveRenames.cs:12",
+"reason": "F178",
+"symbol": "ContextContractsStringsTheMoveRenames"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Events/IDomainEvent.cs:1",
+"reason": "F179",
+"symbol": "IDomainEvent"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:1",
+"reason": "F180",
+"symbol": "ModuleRules"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemTransitioned.cs:1",
+"reason": "F181",
+"symbol": "WorkItemTransitioned"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemBlocked.cs:1",
+"reason": "F182",
+"symbol": "WorkItemBlocked"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemUnblocked.cs:1",
+"reason": "F183",
+"symbol": "WorkItemUnblocked"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemBecameStale.cs:1",
+"reason": "F184",
+"symbol": "WorkItemBecameStale"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/FeatureBlocked.cs:1",
+"reason": "F185",
+"symbol": "FeatureBlocked"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/FeatureUnblocked.cs:1",
+"reason": "F186",
+"symbol": "FeatureUnblocked"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/TeamDataRefreshed.cs:1",
+"reason": "F187",
+"symbol": "TeamDataRefreshed"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/PortfolioFeaturesRefreshed.cs:1",
+"reason": "F188",
+"symbol": "PortfolioFeaturesRefreshed"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/PortfolioForecastsUpdated.cs:1",
+"reason": "F189",
+"symbol": "PortfolioForecastsUpdated"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/TeamDeleted.cs:1",
+"reason": "F190",
+"symbol": "TeamDeleted"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/PortfolioDeleted.cs:1",
+"reason": "F191",
+"symbol": "PortfolioDeleted"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/BlackoutConfigurationChanged.cs:1",
+"reason": "F192",
+"symbol": "BlackoutConfigurationChanged"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/FeatureOrderingPolicyChanged.cs:1",
+"reason": "F193",
+"symbol": "FeatureOrderingPolicyChanged"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/FeatureRankChanged.cs:1",
+"reason": "F194",
+"symbol": "FeatureRankChanged"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/ConnectionFetchShapeChanged.cs:1",
+"reason": "F195",
+"symbol": "ConnectionFetchShapeChanged"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs:33",
+"reason": "F196",
+"symbol": "PortfolioController"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs:32",
+"reason": "F196",
+"symbol": "TeamController"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/BlackoutConfigurationChangedMetricsInvalidationHandler.cs:9",
+"reason": "F196",
+"symbol": "BlackoutConfigurationChangedMetricsInvalidationHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/BlockedCountSnapshotRecordingHandler.cs:13",
+"reason": "F196",
+"symbol": "BlockedCountSnapshotRecordingHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandler.cs:25",
+"reason": "F196",
+"symbol": "DemoBlockedHistoryBackfillHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandler.cs:28",
+"reason": "F196",
+"symbol": "DemoPercentilesBackfillHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandler.cs:11",
+"reason": "F196",
+"symbol": "PercentilesOverTimeRecordingHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PortfolioFeaturesRefreshedMetricsInvalidationHandler.cs:9",
+"reason": "F196",
+"symbol": "PortfolioFeaturesRefreshedMetricsInvalidationHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/ProcessBehaviorRecordingHandler.cs:11",
+"reason": "F196",
+"symbol": "ProcessBehaviorRecordingHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/TeamDataRefreshedTeamMetricsUpdateHandler.cs:9",
+"reason": "F196",
+"symbol": "TeamDataRefreshedTeamMetricsUpdateHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ReconstructionMemo.cs:21",
+"reason": "F196",
+"symbol": "ReconstructionMemo"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs:22",
+"reason": "F196",
+"symbol": "ForecastUpdater"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandler.cs:21",
+"reason": "F196",
+"symbol": "FeatureOrderingPolicyChangedForecastTriggerHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandler.cs:16",
+"reason": "F196",
+"symbol": "FeatureRankChangedForecastTriggerHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDataRefreshedForecastTriggerHandler.cs:8",
+"reason": "F196",
+"symbol": "TeamDataRefreshedForecastTriggerHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandler.cs:7",
+"reason": "F196",
+"symbol": "TeamDeletedForecastRetriggerHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/BlackoutPeriodService.cs:11",
+"reason": "F196",
+"symbol": "BlackoutPeriodService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/ConnectionSaveService.cs:12",
+"reason": "F196",
+"symbol": "ConnectionSaveService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankingService.cs:11",
+"reason": "F196",
+"symbol": "FeatureRankingService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/FeatureOrderingApplier.cs:15",
+"reason": "F196",
+"symbol": "FeatureOrderingApplier"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/RecurringBlackoutRuleService.cs:9",
+"reason": "F196",
+"symbol": "RecurringBlackoutRuleService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/Policies/DeliveryForecastPublishingHandler.cs:21",
+"reason": "F196",
+"symbol": "DeliveryForecastPublishingHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandler.cs:10",
+"reason": "F196",
+"symbol": "DeliveryMetricSnapshotRecordingHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ConnectionFetchShapeChangedUpdateTriggerHandler.cs:7",
+"reason": "F196",
+"symbol": "ConnectionFetchShapeChangedUpdateTriggerHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionCaptureHandler.cs:8",
+"reason": "F196",
+"symbol": "FeatureBlockedTransitionCaptureHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionCloseHandler.cs:7",
+"reason": "F196",
+"symbol": "FeatureBlockedTransitionCloseHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandler.cs:7",
+"reason": "F196",
+"symbol": "PortfolioDeletedOrphanedFeatureCleanupHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandler.cs:8",
+"reason": "F196",
+"symbol": "TeamDeletedRefreshLogCleanupHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCaptureHandler.cs:8",
+"reason": "F196",
+"symbol": "WorkItemBlockedTransitionCaptureHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCloseHandler.cs:7",
+"reason": "F196",
+"symbol": "WorkItemBlockedTransitionCloseHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/TeamDataService.cs:7",
+"reason": "F196",
+"symbol": "TeamDataService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:23",
+"reason": "F196",
+"symbol": "WorkItemService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:79",
+"reason": "F196",
+"symbol": "Program"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs:23",
+"reason": "F196",
+"symbol": "PortfolioUpdater"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs:54",
+"reason": "F196",
+"symbol": "RefreshesStayTheSameTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs:60",
+"reason": "F196",
+"symbol": "TeamMetricsFollowTheTeamRefreshTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs:36",
+"reason": "F196",
+"symbol": "PortfolioBlockedHistoryAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryArchiveClosurePinIntegrationTest.cs:26",
+"reason": "F196",
+"symbol": "DeliveryArchiveClosurePinIntegrationTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:49",
+"reason": "F196",
+"symbol": "Slice00OneForecastPerBatchScenarios"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:56",
+"reason": "F196",
+"symbol": "FasterUpdatesAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaSpecifications.cs:1",
+"reason": "F196",
+"symbol": "using"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaSpecifications.cs:1",
+"reason": "F196",
+"symbol": "using"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/PercentilesOverTimeAcceptanceTest.cs:27",
+"reason": "F196",
+"symbol": "PercentilesOverTimeAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/ReconstructOverTimeHistoryAcceptanceTest.cs:48",
+"reason": "F196",
+"symbol": "ReconstructOverTimeHistoryAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/SkipUnchangedForecastsAcceptanceTest.cs:45",
+"reason": "F196",
+"symbol": "SkipUnchangedForecastsAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01AnnouncedAndDailyScenarios.cs:15",
+"reason": "F196",
+"symbol": "Slice01AnnouncedAndDailyScenarios"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01StaleSignalSpecifications.cs:1",
+"reason": "F196",
+"symbol": "using"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/TeamFeatureSizeAcceptanceTest.cs:33",
+"reason": "F196",
+"symbol": "TeamFeatureSizeAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs:25",
+"reason": "F196",
+"symbol": "PortfolioControllerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs:30",
+"reason": "F196",
+"symbol": "TeamControllerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectionFetchShapeChangedSinglePublisherArchUnitTest.cs:12",
+"reason": "F196",
+"symbol": "ConnectionFetchShapeChangedSinglePublisherArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs:18",
+"reason": "F196",
+"symbol": "DomainEventHandlerOrderPinTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InstantsUnaffectedByZoneTest.cs:35",
+"reason": "F196",
+"symbol": "InstantsUnaffectedByZoneTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs:23",
+"reason": "F196",
+"symbol": "OrganisationSetupIsAnOpenHostArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs:53",
+"reason": "F196",
+"symbol": "OrganisationSetupMembership"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDoesNotCommandFlowMetricsArchUnitTest.cs:16",
+"reason": "F196",
+"symbol": "WorkItemsDoesNotCommandFlowMetricsArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:36",
+"reason": "F196",
+"symbol": "WorkItemsModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/BlackoutConfigurationChangedMetricsInvalidationHandlerTest.cs:10",
+"reason": "F196",
+"symbol": "BlackoutConfigurationChangedMetricsInvalidationHandlerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/BlockedCountSnapshotRecordingHandlerTests.cs:23",
+"reason": "F196",
+"symbol": "BlockedCountSnapshotRecordingHandlerTests"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandlerTests.cs:22",
+"reason": "F196",
+"symbol": "DemoBlockedHistoryBackfillHandlerTests"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandlerTests.cs:19",
+"reason": "F196",
+"symbol": "DemoPercentilesBackfillHandlerTests"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandlerTests.cs:22",
+"reason": "F196",
+"symbol": "PercentilesOverTimeRecordingHandlerTests"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/PortfolioFeaturesRefreshedMetricsInvalidationHandlerTest.cs:10",
+"reason": "F196",
+"symbol": "PortfolioFeaturesRefreshedMetricsInvalidationHandlerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/ProcessBehaviorRecordingHandlerTests.cs:23",
+"reason": "F196",
+"symbol": "ProcessBehaviorRecordingHandlerTests"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/TeamDataRefreshedTeamMetricsUpdateHandlerTest.cs:10",
+"reason": "F196",
+"symbol": "TeamDataRefreshedTeamMetricsUpdateHandlerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ReconstructionMemoTest.cs:8",
+"reason": "F196",
+"symbol": "ReconstructionMemoTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs:32",
+"reason": "F196",
+"symbol": "ForecastUpdaterTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandlerTest.cs:29",
+"reason": "F196",
+"symbol": "FeatureOrderingPolicyChangedForecastTriggerHandlerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandlerTest.cs:28",
+"reason": "F196",
+"symbol": "FeatureRankChangedForecastTriggerHandlerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/TeamDataRefreshedForecastTriggerHandlerTest.cs:11",
+"reason": "F196",
+"symbol": "TeamDataRefreshedForecastTriggerHandlerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandlerTest.cs:9",
+"reason": "F196",
+"symbol": "TeamDeletedForecastRetriggerHandlerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/AppSettingServiceTest.cs:1",
+"reason": "F196",
+"symbol": "using"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/BlackoutPeriodServiceTest.cs:12",
+"reason": "F196",
+"symbol": "BlackoutPeriodServiceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Connections/ConnectionSaveServiceTest.cs:17",
+"reason": "F196",
+"symbol": "ConnectionSaveServiceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/RecurringBlackoutRuleServiceTest.cs:12",
+"reason": "F196",
+"symbol": "RecurringBlackoutRuleServiceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryMetricValuesProjectorTest.cs:18",
+"reason": "F196",
+"symbol": "DeliveryMetricValuesProjectorTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryForecastPublishingHandlerTest.cs:22",
+"reason": "F196",
+"symbol": "DeliveryForecastPublishingHandlerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandlerTest.cs:29",
+"reason": "F196",
+"symbol": "DeliveryMetricSnapshotRecordingHandlerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/ConnectionFetchShapeChangedUpdateTriggerHandlerTest.cs:10",
+"reason": "F196",
+"symbol": "ConnectionFetchShapeChangedUpdateTriggerHandlerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionHandlerTests.cs:14",
+"reason": "F196",
+"symbol": "FeatureBlockedTransitionHandlerTests"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandlerTest.cs:17",
+"reason": "F196",
+"symbol": "PortfolioDeletedOrphanedFeatureCleanupHandlerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandlerTest.cs:10",
+"reason": "F196",
+"symbol": "TeamDeletedRefreshLogCleanupHandlerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCaptureTests.cs:16",
+"reason": "F196",
+"symbol": "WorkItemBlockedTransitionCaptureTests"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/TeamDataServiceTest.cs:10",
+"reason": "F196",
+"symbol": "TeamDataServiceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:22",
+"reason": "F196",
+"symbol": "WorkItemServiceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/DomainEvents/DomainEventDispatcherGoldTest.cs:11",
+"reason": "F196",
+"symbol": "DomainEventDispatcherGoldTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/DomainEvents/DomainEventDispatcherTest.cs:9",
+"reason": "F196",
+"symbol": "DomainEventDispatcherTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs:32",
+"reason": "F196",
+"symbol": "PortfolioUpdaterTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/SnapshotRecordedDayInstanceZoneTest.cs:45",
+"reason": "F196",
+"symbol": "SnapshotRecordedDayInstanceZoneTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/TeamDataRefreshedGoldTest.cs:12",
+"reason": "F196",
+"symbol": "TeamDataRefreshedGoldTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/WorkItemDomainEventsGoldTest.cs:18",
+"reason": "F196",
+"symbol": "WorkItemDomainEventsGoldTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/SharedHostCleanup.cs:18",
+"reason": "F196",
+"symbol": "SharedHostCleanup"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:44",
+"reason": "F196",
+"symbol": "ForecastingModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs:16",
+"reason": "F196",
+"symbol": "OrganisationSetupModuleBoundariesArchUnitTest"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemTransitioned.cs",
+"reason": "F168"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemBlocked.cs",
+"reason": "F168"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemUnblocked.cs",
+"reason": "F168"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemBecameStale.cs",
+"reason": "F168"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/FeatureBlocked.cs",
+"reason": "F168"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/FeatureUnblocked.cs",
+"reason": "F168"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/TeamDataRefreshed.cs",
+"reason": "F168"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/PortfolioFeaturesRefreshed.cs",
+"reason": "F168"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/PortfolioForecastsUpdated.cs",
+"reason": "F168"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/TeamDeleted.cs",
+"reason": "F168"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/PortfolioDeleted.cs",
+"reason": "F168"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/BlackoutConfigurationChanged.cs",
+"reason": "F168"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/FeatureOrderingPolicyChanged.cs",
+"reason": "F168"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/FeatureRankChanged.cs",
+"reason": "F168"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/ConnectionFetchShapeChanged.cs",
+"reason": "F168"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/BlackoutConfigurationChangedMetricsInvalidationHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/BlockedCountSnapshotRecordingHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PortfolioFeaturesRefreshedMetricsInvalidationHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/ProcessBehaviorRecordingHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/TeamDataRefreshedTeamMetricsUpdateHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ReconstructionMemo.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDataRefreshedForecastTriggerHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/BlackoutPeriodService.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/ConnectionSaveService.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankingService.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/FeatureOrderingApplier.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/RecurringBlackoutRuleService.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/Policies/DeliveryForecastPublishingHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ConnectionFetchShapeChangedUpdateTriggerHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionCaptureHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionCloseHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCaptureHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCloseHandler.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/TeamDataService.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryArchiveClosurePinIntegrationTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaSpecifications.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaSpecifications.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/PercentilesOverTimeAcceptanceTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/ReconstructOverTimeHistoryAcceptanceTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/SkipUnchangedForecastsAcceptanceTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01AnnouncedAndDailyScenarios.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01StaleSignalSpecifications.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/TeamFeatureSizeAcceptanceTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectionFetchShapeChangedSinglePublisherArchUnitTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsStringsTheMoveRenames.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InstantsUnaffectedByZoneTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDoesNotCommandFlowMetricsArchUnitTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/BlackoutConfigurationChangedMetricsInvalidationHandlerTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/BlockedCountSnapshotRecordingHandlerTests.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandlerTests.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandlerTests.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandlerTests.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/PortfolioFeaturesRefreshedMetricsInvalidationHandlerTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/ProcessBehaviorRecordingHandlerTests.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/TeamDataRefreshedTeamMetricsUpdateHandlerTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ReconstructionMemoTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandlerTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandlerTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/TeamDataRefreshedForecastTriggerHandlerTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandlerTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/AppSettingServiceTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/BlackoutPeriodServiceTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Connections/ConnectionSaveServiceTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/RecurringBlackoutRuleServiceTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryMetricValuesProjectorTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryForecastPublishingHandlerTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandlerTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/ConnectionFetchShapeChangedUpdateTriggerHandlerTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionHandlerTests.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandlerTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandlerTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCaptureTests.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/TeamDataServiceTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/DomainEvents/DomainEventDispatcherGoldTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/DomainEvents/DomainEventDispatcherTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/SnapshotRecordedDayInstanceZoneTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/TeamDataRefreshedGoldTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/WorkItemDomainEventsGoldTest.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/SharedHostCleanup.cs",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs",
+"reason": "F170"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs",
+"reason": "F171"
+}
+],
+"verification": [
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~Architecture\"",
+"pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/ForecastRoundsKeepTheirRefreshLogEntryTest.cs",
+"public_oracle": {
+"expected": "F82",
+"falsifier": "F83",
+"promises": [
+"P2"
+],
+"stimulus": "F81"
+},
+"records": {
+"agreement": [
+{
+"contract": "ForecastRoundFinished (Forecasting.Contracts)",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs:226",
+"party": "Producer",
+"reason": "F103"
+},
+{
+"contract": "ForecastRoundFinished (Forecasting.Contracts)",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ForecastRoundFinishedRefreshLogHandler.cs:1",
+"party": "Consumer",
+"reason": "F104"
+},
+{
+"contract": "RefreshLog row of RefreshType.Forecast",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/RefreshLogService.cs:17",
+"party": "Consumer",
+"reason": "F105"
+},
+{
+"contract": "RefreshLog row of RefreshType.Forecast",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/SystemInfoController.cs:22",
+"party": "Consumer",
+"reason": "F106"
+}
+],
+"boundaries": {
+"dependency_direction": "F109",
+"driven_ports": [
+"F30",
+"F31"
+],
+"driving_port": "F108",
+"failures": [
+{
+"condition": "F110",
+"id": "B1",
+"observation": "F111",
+"outcome": "Indeterminate"
+}
+]
+},
+"claims": [
+{
+"admitted_input": "F129",
+"bypass": "F131",
+"constructor": "ForecastRoundFinished",
+"consumer": "ForecastRoundFinishedRefreshLogHandler",
+"harm": "F128",
+"id": "C1",
+"owner": "Forecasting.Contracts.ForecastRoundOutcome",
+"proposition": "F127",
+"public_observation": "F130"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F133",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F132"
+},
+{
+"axis": "Inhabitation",
+"basis": "F134",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F132"
+},
+{
+"axis": "PublicReachability",
+"basis": "F135",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F132"
+},
+{
+"axis": "Liveness",
+"basis": "F136",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F132"
+}
+],
+"constructors": [
+{
+"name": "ForecastRoundFinished",
+"signature": "sealed record ForecastRoundFinished(int PortfolioId, string PortfolioName, int ItemCount, long DurationMs, DateTime FinishedAt, ForecastRoundOutcome Outcome) : IDomainEvent"
+},
+{
+"name": "ForecastRoundOutcome",
+"signature": "enum ForecastRoundOutcome { Succeeded, Failed, Cancelled, Skipped }"
+}
+],
+"decisions": [
+"F84",
+"F85",
+"F86",
+"F87"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs:383",
+"reason": "F96"
+},
+{
+"decision": "Changed",
+"kind": "composition-root",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1433",
+"reason": "F97"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "refresh-log-readers",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/SystemInfoController.cs:22",
+"reason": "F98"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "refresh-log-readers",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateNotificationHub.cs:14",
+"reason": "F98"
+},
+{
+"decision": "Changed",
+"kind": "unit-tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs:1253",
+"reason": "F99"
+},
+{
+"decision": "Changed",
+"kind": "architecture-tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:145",
+"reason": "F100"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundFinished.cs:1",
+"reason": "F101"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundOutcome.cs:1",
+"reason": "F101"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ForecastRoundFinishedRefreshLogHandler.cs:1",
+"reason": "F101"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs:20",
+"reason": "F102"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Refinement",
+"layer": "Application",
+"owner": "ForecastRoundsKeepTheirRefreshLogEntryTest",
+"statement": "F112",
+"treatment": {
+"cases": [
+"F113",
+"F114",
+"F115",
+"F116"
+],
+"kind": "Finite",
+"reason": "F117"
+}
+},
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "ForecastRoundsKeepTheirRefreshLogEntryTest",
+"statement": "F118",
+"treatment": {
+"cases": [
+"F119"
+],
+"kind": "Finite",
+"reason": "F120"
+}
+},
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "ForecastRoundsKeepTheirRefreshLogEntryTest",
+"statement": "F121",
+"treatment": {
+"cases": [
+"F122"
+],
+"kind": "Finite",
+"reason": "F123"
+}
+},
+{
+"id": "L4",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "DomainEventHandlerOrderPinTest",
+"statement": "F124",
+"treatment": {
+"cases": [
+"F125"
+],
+"kind": "Finite",
+"reason": "F126"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F107"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/DomainEvents/DomainEventDispatcher.cs:6",
+"reason": "F88",
+"symbol": "DomainEventDispatcher"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs:22",
+"reason": "F89",
+"symbol": "ForecastUpdater"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRunOutcome.cs:1",
+"reason": "F90",
+"symbol": "ForecastRoundFinished"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandler.cs:8",
+"reason": "F91",
+"symbol": "ForecastRoundFinishedRefreshLogHandler"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ServicePortHarness.cs:21",
+"reason": "F92",
+"symbol": "ServicePortHarness"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/IRefreshLogService.cs:7",
+"reason": "F93",
+"symbol": "LogRefreshAsync"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundFinished.cs:1",
+"reason": "F94",
+"symbol": "ForecastRoundFinished"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundOutcome.cs:1",
+"reason": "F94",
+"symbol": "ForecastRoundOutcome"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ForecastRoundFinishedRefreshLogHandler.cs:1",
+"reason": "F94",
+"symbol": "ForecastRoundFinishedRefreshLogHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:79",
+"reason": "F95",
+"symbol": "Program"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:44",
+"reason": "F95",
+"symbol": "ForecastingModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs:32",
+"reason": "F95",
+"symbol": "ForecastUpdaterTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs:20",
+"reason": "F95",
+"symbol": "WorkItemsPoliciesLayoutArchUnitTest"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundFinished.cs",
+"reason": "F73"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundOutcome.cs",
+"reason": "F74"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ForecastRoundFinishedRefreshLogHandler.cs",
+"reason": "F75"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs",
+"reason": "F76"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F77"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs",
+"reason": "F78"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs",
+"reason": "F79"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs",
+"reason": "F80"
+}
+],
+"verification": [
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~ForecastRoundsKeepTheirRefreshLogEntryTest|FullyQualifiedName~DomainEventHandlerOrderPinTest|FullyQualifiedName~ForecastUpdaterTest\"",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~Architecture\"",
+"pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EachCrossContextEdgeHasOneOwningRuleArchUnitTest.cs",
+"public_oracle": {
+"expected": "F142",
+"falsifier": "F143",
+"promises": [
+"P3"
+],
+"stimulus": "F141"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~Architecture\"",
+"id": "T3",
+"obligation": "F167",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EachCrossContextEdgeHasOneOwningRuleArchUnitTest.cs"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F163",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F162"
+},
+{
+"axis": "Inhabitation",
+"basis": "F164",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F162"
+},
+{
+"axis": "PublicReachability",
+"basis": "F165",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F162"
+},
+{
+"axis": "Liveness",
+"basis": "F166",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F162"
+}
+],
+"decisions": [
+"F144",
+"F145",
+"F146"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "architecture-tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:136",
+"reason": "F151"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "architecture-tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:51",
+"reason": "F152"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:1",
+"reason": "F153"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "ARCHITECTURE.md:1",
+"reason": "F154"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:44",
+"reason": "F102"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs:16",
+"reason": "F102"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs:41",
+"reason": "F102"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs:42",
+"reason": "F102"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:29",
+"reason": "F102"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:36",
+"reason": "F102"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:36",
+"reason": "F102"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:36",
+"reason": "F102"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs:29",
+"reason": "F102"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:21",
+"reason": "F102"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs:23",
+"reason": "F102"
+}
+],
+"laws": [
+{
+"id": "L5",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "EachCrossContextEdgeHasOneOwningRuleArchUnitTest",
+"statement": "F157",
+"treatment": {
+"cases": [
+"F158",
+"F159",
+"F160"
+],
+"kind": "Finite",
+"reason": "F161"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F155"
+},
+{
+"analysis": "prefactoring",
+"reason": "F156"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs:237",
+"reason": "F147",
+"symbol": "GivenTheEntriesOfTheList"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:51",
+"reason": "F148",
+"symbol": "CrossContextEdgesOutsideContracts"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:36",
+"reason": "F149",
+"symbol": "TheTenPackagedContexts"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:44",
+"reason": "F95",
+"symbol": "ForecastingModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:36",
+"reason": "F95",
+"symbol": "LicensingModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs:16",
+"reason": "F95",
+"symbol": "OrganisationSetupModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs:41",
+"reason": "F95",
+"symbol": "RefinementModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs:42",
+"reason": "F95",
+"symbol": "ReportsModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:29",
+"reason": "F95",
+"symbol": "TrackerIntegrationModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:36",
+"reason": "F95",
+"symbol": "WorkItemsModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:36",
+"reason": "F95",
+"symbol": "AccessModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:36",
+"reason": "F95",
+"symbol": "PromisesModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs:29",
+"reason": "F95",
+"symbol": "FlowMetricsApplicationOutboundArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:21",
+"reason": "F95",
+"symbol": "FlowMetricsInboundApplicationArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs:23",
+"reason": "F95",
+"symbol": "FlowMetricsInboundDomainAndAdaptersArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:1",
+"reason": "F150",
+"symbol": "Bounded"
+},
+{
+"decision": "Extend",
+"locator": "ARCHITECTURE.md:1",
+"reason": "F150",
+"symbol": "Lighthouse"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs",
+"reason": "F137"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs",
+"reason": "F137"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs",
+"reason": "F137"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs",
+"reason": "F137"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs",
+"reason": "F137"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs",
+"reason": "F137"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
+"reason": "F137"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs",
+"reason": "F137"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs",
+"reason": "F137"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs",
+"reason": "F137"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs",
+"reason": "F137"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs",
+"reason": "F137"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs",
+"reason": "F138"
+},
+{
+"change": "Extend",
+"path": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md",
+"reason": "F139"
+},
+{
+"change": "Extend",
+"path": "ARCHITECTURE.md",
+"reason": "F140"
+}
+],
+"verification": [
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~Architecture\""
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"blocking": "yes",
+"id": "E1",
+"lacuna": "F217",
+"needs": "F218",
+"promises": [
+"P1"
+],
+"text": "F216"
+},
+{
+"blocking": "yes",
+"id": "E2",
+"lacuna": "F220",
+"needs": "F221",
+"promises": [
+"P2"
+],
+"text": "F219"
+},
+{
+"blocking": "yes",
+"id": "E3",
+"lacuna": "F223",
+"needs": "F224",
+"promises": [
+"P3"
+],
+"text": "F222"
+},
+{
+"blocking": "yes",
+"id": "E4",
+"lacuna": "F226",
+"needs": "F227",
+"promises": [
+"P1",
+"P2",
+"P3"
+],
+"text": "F225"
+}
+]
 },
 "facts": {
 "F1": "Story 6382 S09a feature D, events and rules: the 15 domain event types move from Models/Events into the Contracts of their publishing context (IDomainEvent stays in the kernel); the one cross-context command inside the modules becomes a reaction, Work Items writing a forecast round's refresh-log entry on ForecastRoundFinished (RX1); the per-module boundary rules give up their module-to-module entries to the single contracts rule R-C1, and ADR-270 and ARCHITECTURE.md section 4 describe contracts and the CI test-selection payoff. Behaviour unchanged apart from who writes the refresh-log entry.",
 "F10": "Forecasting no longer commands Work Items; Work Items reacts to an event.",
+"F100": "legal callers widened by Work Items' Application.Policies",
+"F101": "new file of the RX1 path",
+"F102": "edited for this slice's law",
+"F103": "new producer replacing the direct LogRefreshAsync call",
+"F104": "sole consumer, same commit",
+"F105": "receives the same entry fields from the handler",
+"F106": "reads rows equal under the refresh-log entry equality",
+"F107": "Per touched file: ForecastUpdater.cs holds one type (not-applicable); Program.cs one type (not-applicable); ForecastUpdaterTest.cs one type (not-applicable); ForecastingModuleBoundariesArchUnitTest.cs and WorkItemsPoliciesLayoutArchUnitTest.cs hold the rule class plus planted fixture types in made-up namespaces that the falsifiers read from the compiled test assembly; the edit is one pattern, and splitting every rule's fixtures is a whole-folder layout decision for the test-writing skill's owner, not this slice (not-applicable, flagged to the maintainer). The three new files hold one type each.",
+"F108": "IForecastUpdater.TriggerImmediateUpdate over a ServicePortHarness scope factory, no host",
+"F109": "Forecasting publishes ForecastRoundFinished from its Contracts; Work Items' Application.Policies handler depends on Forecasting.Contracts and writes through its own IRefreshLogService; ForecastUpdater names no Work Items type for the log",
 "F11": "The one-owner-per-edge law fails while any per-module boundary list names a module-to-module edge; once those entries live only in R-C1 it and every other Architecture rule pass.",
+"F110": "IRefreshLogService.LogRefreshAsync throws inside the handler",
+"F111": "dispatcher error log naming the handler and event; no row for that round; the round completes",
+"F112": "For each round outcome, the refresh-log row written after the round equals today's row under the refresh-log entry equality.",
+"F113": "succeeded: Success true, Cancelled false, Skipped false, ItemCount = feature count",
+"F114": "failed (forecast throws): Success false, Cancelled false, Skipped false, ItemCount 0",
+"F115": "cancelled (operator stop): Success false, Cancelled true, Skipped false",
+"F116": "skipped (confirmed unchanged): Success true, Cancelled false, Skipped true",
+"F117": "closed four-value domain, every member a row",
+"F118": "A throwing refresh-log write never fails the round: the round completes, the dispatcher logs one error naming ForecastRoundFinishedRefreshLogHandler and ForecastRoundFinished, and no refresh-log row exists for it.",
+"F119": "succeeded round with an IRefreshLogService whose LogRefreshAsync throws",
 "F12": "Each cross-context edge has one owning rule, and the docs describe contracts.",
+"F120": "one failure point, one example (D-16)",
+"F121": "ForecastUpdater has no IL dependency on IRefreshLogService.",
+"F122": "IlDependencies of ForecastUpdater and its nested types exclude Modules.WorkItems.Contracts.IRefreshLogService",
+"F123": "single type, read once",
+"F124": "ForecastRoundFinished's handlers, in registration order, are exactly [ForecastRoundFinishedRefreshLogHandler].",
+"F125": "start-up registrations read without a host",
+"F126": "one event, one list",
+"F127": "A forecast round's refresh-log flags come from one of four outcomes, so Success with Cancelled, or Skipped without Success, cannot be written for a forecast round",
+"F128": "a row the System info page shows as both succeeded and stopped",
+"F129": "the round's success, cancelled and skipped flags in ForecastUpdater",
+"F13": "Feature D adopts the Story DESIGN unchanged (docs/feature/story-6382-s09a-context-contracts/feature-delta.md): D-0 no schema, route, DTO or user-visible change except the RX1 failure path; D-3 R-C1 owns surface, the per-module rules own direction, one owner per edge; D-4 Models is the kernel; D-5 event owners; D-6 RX1 converted, RX2-RX5 stay with their owners; D-9 domain-event handlers stay in the one ordered block in Program; D-11 ADR-270 and ARCHITECTURE.md section 4 amended, no new ADR; D-12 commit per slice, one push for the feature; D-13 payoff note written, nothing implemented; D-15 mutation last, at the end of the Story; D-16 no formal model. Maintainer decision of 2026-11-26 (open question 8): RX1's changed failure path is accepted as behaviour-free.",
+"F130": "the refresh-log row read through IRefreshLogService.GetRefreshLogs",
+"F131": "an undefined enum value cast from an int: the handler's total switch throws and the dispatcher logs it (C# enums are open; construction centralised, not proved)",
+"F132": "RX1",
+"F133": "four-way closed outcome excludes unreachable flag rows; IL row excludes the direct write",
+"F134": "each outcome is constructed by ForecastUpdater from flags the round already computes",
+"F135": "round -> ForecastRoundFinished -> DomainEventDispatcher -> handler -> IRefreshLogService -> GetRefreshLogs at the port",
+"F136": "no liveness claim: the handler runs to completion inside the awaited PublishAsync of the round's finally",
+"F137": "module-to-module entries removed; patterns stop reading other modules as forbidden where R-C1 now owns the edge",
+"F138": "R-C1's list: gains any module-to-module non-Contracts edge found only in a per-module list",
+"F139": "prose: Contracts as fourth layer (D-2 criterion, R-C1-R-C5), event table with owners, Every-edge rows to Contracts, Forecasting -> Work Items by events, ratchet candidates = R-C1 residue with owners, ConnectionFetchShapeChanged owner, context contract term",
+"F14": "Formal verification (D-16, confirmed): no Quint, TLA+ or Agda model. No model for R-C1, R-C5 and the one-owner law: they are relations over finite closed sets (compiled types, contexts, inline lists) executed exhaustively on the IL by the Architecture tests, with no state, protocol, concurrency or crash window. No model for RX1: one in-process publish and handle inside the round's finally, the dispatcher awaiting its handlers one after the other in the same call; the refresh log is append-only, one row per round, no other actor reads or changes that row, and the crash window (process dies after the round, before the row) is the same as today's direct call. The outcome mapping is a total function over a closed four-value domain, checked exhaustively by the S2 oracle's four rows. No liveness claim: nothing is eventual, the handler completes before PublishAsync returns. PBT: not applicable, every domain is closed and finite and enumerated.",
+"F140": "prose: section 4 Context contracts bullet (layer, rule, enumerator, residue) and the CI test-selection payoff note (D-13); section 5 names ForecastRoundFinished",
+"F141": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Architecture over the compiled test and production assemblies",
+"F142": "RED before craft: the law names each module-to-module entry of the per-module lists (e.g. Licensing's ForecastFilterRuleService -> ILicenseService, Tracker integration's ConnectionHealthCadence -> IAppSettingService, Work Items' WorkItemService -> PercentileCalculator). GREEN after: no such entry remains, R-C1 and every other Architecture rule pass.",
+"F143": "Re-adding any module-to-module entry to a per-module list, or a planted fixture list with one, fails the law naming the list, the entry and R-C1 as the owner.",
+"F144": "The one-owner law's population is read, not named: every static string collection member of the test assembly's Architecture types whose entries have the edge shape \"Source -> Target\", read by value from the compiled test assembly (concatenated entries included). It excludes R-C1's own list and an inline, both-ways-compared list of members that record compiled edges rather than allow them (for example the open host's edges-that-became-legal list). Law: no included entry has a source in Lighthouse.Backend.Modules.A and a target in Lighthouse.Backend.Modules.B with A different from B (fixture roots such as *Fixtures excluded as not packaged contexts, per R-C3). Preservation: every module-to-module edge listed anywhere before S3 is in R-C1's list after S3, or targets a Contracts type, or has left the IL.",
+"F145": "A module-to-module edge into another context's Contracts leaves every list: R-C1 makes it legal and the target's direction pattern governs it at context level. This includes Licensing R-L3's module-sourced licence reads (Forecasting ForecastFilterRuleService and WriteBackTriggerService, Work Items DependencyDecision, Reports ReportCommands and ReportQueries) and Work Items' and Access's Contracts edges; R-L3 keeps its non-module readers (the Services updaters, API). The per-edge ratchet on module licence reads is given up for a context-level direction rule, as P3 requires.",
+"F146": "OrganisationSetupIsAnOpenHostArchUnitTest (support, acceptance designer): TrackerIntegrationsList_HoldsExactlyTheCadenceEdgeIntoTheSettings becomes \"Tracker integration's list names no edge into set-up\", and AMadeUpTrackerIntegrationTypeAskingTheSettings_IsNamedByTrackerIntegrationsRule becomes \"a made-up Tracker integration type asking set-up's Contracts passes Tracker integration's rule\" (set-up is the open host). Nothing else in that file changes; its Contracts narrowing is feature C's.",
+"F147": "reading a list's entries by reflection already exists; the oracle uses the same reading over every member instead of named ones",
+"F148": "R-C1 is the one owner; holds all eight non-Contracts edges at HEAD",
+"F149": "the R-C3 enumerator decides which namespace roots are contexts",
+"F15": "Cross-layer algebra. Domain: ForecastRoundOutcome is a closed choice Succeeded | Failed | Cancelled | Skipped (the four flag combinations today's round can produce). Application: Forecasting decides the round's outcome and publishes ForecastRoundFinished; Work Items decides how its refresh log records a forecast round. Adapter: ForecastUpdater (Forecasting.Adapters.Background) publishes through IDomainEventDispatcher; DomainEventDispatcher (platform lane) runs handlers in a new scope and logs and swallows a handler's exception. Infrastructure: RefreshLogService writes the RefreshLog row through its repository, unchanged. Observations: the refresh-log rows read through IRefreshLogService.GetRefreshLogs, the dispatcher's error log, the Architecture test verdicts.",
+"F150": "the existing authority document is amended (D-11), no second document",
+"F151": "module-to-module entries removed (measured at HEAD by literal search: Forecasting, Licensing, Organisation set-up, Refinement, Reports, Tracker integration, Work Items lists; concatenated entries found by the oracle)",
+"F152": "expected unchanged: every non-Contracts module edge of the per-module lists is already in R-C1",
+"F153": "D-11 prose",
+"F154": "D-11, D-13 prose",
+"F155": "Test-side rule lists and prose only; no production contract changes.",
+"F156": "Per touched file: OrganisationSetupModuleBoundariesArchUnitTest.cs, ContextContractsArchUnitTest.cs (rule plus fixtures), and the per-module rule files (Forecasting, Licensing, Refinement, Reports, Tracker integration, Work Items, Access, Promises, the three Flow metrics rules) each hold one rule class plus planted fixture types in made-up namespaces that the falsifiers read from the compiled test assembly; the slice edits list entries and patterns only. Splitting every rule's fixtures is a whole-folder layout decision for the test-writing skill's owner (not-applicable per file, flagged to the maintainer). ADR-270 and ARCHITECTURE.md are prose (not-applicable).",
+"F157": "No edge-shaped entry of any rule list other than R-C1's names a source in one packaged context and a target in another; every module-to-module edge listed before is in R-C1, targets a Contracts type, or has left the IL.",
+"F158": "every per-module list read by value",
+"F159": "planted falsifier: a fixture list naming Modules.Refinement.X -> Modules.Access.Application.Y is named WHAT/WHY/HOW",
+"F16": "Carriers and owners. Event types: one sealed record per file in Modules/<Owner>/Contracts, namespace = folder, implementing the kernel's IDomainEvent (Models.Events). ForecastRoundFinished and ForecastRoundOutcome: Forecasting.Contracts, one type per file. The refresh-log entry: kernel RefreshLog, built by ForecastRoundFinishedRefreshLogHandler (Work Items, Application/Policies) and written through Work Items' IRefreshLogService. Errors: a throwing handler is an exception caught and logged by DomainEventDispatcher (platform lane); no new error type. Per-process state: none added; the handler is Scoped like every other handler.",
+"F160": "the exclusion list compared both ways with the members it names",
+"F161": "closed finite set of compiled members",
+"F162": "one owner per edge",
+"F163": "law executed over every edge-shaped list member by value",
+"F164": "R-C1's list already holds the eight non-Contracts edges; the per-module lists can be emptied of module edges without losing one",
+"F165": "compiled test assembly -> oracle -> dotnet test exit and message",
+"F166": "no liveness claim: a static relation over lists",
+"F167": "One owner per edge: no per-module list names a module-to-module edge; every such edge is owned by R-C1 or is legal through Contracts",
+"F168": "git mv from Models/Events; namespace line only",
+"F169": "using line or old event name/path literal only",
+"F17": "Ports. Driving: unchanged (controllers, hosted services, the update queue). The forecast round is driven at IForecastUpdater.TriggerImmediateUpdate with the harness's scope factory, no host (test-writing skill rule 1, background job at the port). Driven: IDomainEventDispatcher (platform lane) and IRefreshLogService (Work Items' Contracts), both reused unchanged. One new in-process event path: ForecastUpdater -> IDomainEventDispatcher -> ForecastRoundFinishedRefreshLogHandler -> IRefreshLogService. No new external call.",
+"F170": "direction pattern admits the Application.Policies of contexts reacting to its event",
+"F171": "direction pattern or non-module outsider entry restated under the event's new name",
+"F172": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Architecture over the compiled assembly",
+"F173": "RED before the move: the oracle names each of the 15 events still in Models.Events. GREEN after: each event resolves to exactly one type in its owner's Contracts, Models.Events holds only IDomainEvent, and every other Architecture rule passes.",
+"F174": "An event left in Models.Events, or placed in a context's Contracts other than its publisher's (planted fixture), fails with source, owner and the HOW.",
+"F175": "The S1 oracle's law is generic so no later slice edits it: every type implementing IDomainEvent, except IDomainEvent itself, lives in Lighthouse.Backend.Modules.<C>.Contracts where C is the context whose code constructs it; for an event constructed only outside the modules (TeamDeleted by API.TeamController, PortfolioFeaturesRefreshed by PortfolioUpdater) C is the owner named inline by ADR-270 Decision 3 (D-5); the 15 events of D-5 are named inline with their owner and compared one way (each found at its owner); no type but IDomainEvent is left in Models.Events. ConnectionFetchShapeChanged belongs to Organisation set-up (open question 5 default, its publisher ConnectionSaveService). ContextContractsMembership's event rows (A1) are reused as the old/new namespace map.",
+"F176": "Direction after the move: a handler in context Y naming an event now in X.Contracts is a downstream reaction, legal by ADR-270 (upstream publishes, downstream reacts). Where X's per-module direction rule does not admit Y (measured at HEAD: Forecasting admits only the API and Refinement, so Promises' PortfolioForecastsUpdated handlers), the crafter widens X's legal-callers pattern by Y's Application.Policies namespace only, never by a list entry. Non-module publishers (API, Services) keep or restate their existing outsider entries under the new name.",
+"F177": "already maps each of the 15 events to its owner's Contracts (A1); the oracle reads it instead of a second map",
+"F178": "already holds the old/new event literals of the open-host test and OrganisationSetupMembership; never edited",
+"F179": "stays in the kernel (D-5); every event keeps implementing it",
+"F18": "Already done by feature C, so not repeated here: Organisation set-up's open host was narrowed to its Contracts in feature C S5 (feature C decision D16: ModuleRules owns SetUpContracts and SetUpBehindItsContracts; OrganisationSetupIsAnOpenHostArchUnitTest reads ContextContractsMembership.ContractsOf(\"OrganisationSetup\")). The Story's D3 line \"S03i's open-host oracle rewritten to Contracts\" is therefore met; S3 changes only the two Tracker integration list assertions of that test, which P3 contradicts.",
+"F180": "existing wording and IL edge helpers for the oracle's refusal message",
+"F181": "New file at the owner's Contracts home, made by git mv of Models/Events/WorkItemTransitioned.cs; the record itself is reused unchanged (namespace line only), no other owner exists",
+"F182": "New file at the owner's Contracts home, made by git mv of Models/Events/WorkItemBlocked.cs; the record itself is reused unchanged (namespace line only), no other owner exists",
+"F183": "New file at the owner's Contracts home, made by git mv of Models/Events/WorkItemUnblocked.cs; the record itself is reused unchanged (namespace line only), no other owner exists",
+"F184": "New file at the owner's Contracts home, made by git mv of Models/Events/WorkItemBecameStale.cs; the record itself is reused unchanged (namespace line only), no other owner exists",
+"F185": "New file at the owner's Contracts home, made by git mv of Models/Events/FeatureBlocked.cs; the record itself is reused unchanged (namespace line only), no other owner exists",
+"F186": "New file at the owner's Contracts home, made by git mv of Models/Events/FeatureUnblocked.cs; the record itself is reused unchanged (namespace line only), no other owner exists",
+"F187": "New file at the owner's Contracts home, made by git mv of Models/Events/TeamDataRefreshed.cs; the record itself is reused unchanged (namespace line only), no other owner exists",
+"F188": "New file at the owner's Contracts home, made by git mv of Models/Events/PortfolioFeaturesRefreshed.cs; the record itself is reused unchanged (namespace line only), no other owner exists",
+"F189": "New file at the owner's Contracts home, made by git mv of Models/Events/PortfolioForecastsUpdated.cs; the record itself is reused unchanged (namespace line only), no other owner exists",
+"F19": "R-C1's list (ContextContractsArchUnitTest.CrossContextEdgesOutsideContracts) holds eight edges at HEAD and none of them is ForecastUpdater -> IRefreshLogService: IRefreshLogService moved to Work Items' Contracts in feature C S3, so that edge is legal under R-C1. The Story's \"R-C1 entry deleted\" for RX1 has nothing to delete; S2's oracle asserts instead, on the IL, that ForecastUpdater names no IRefreshLogService.",
+"F190": "New file at the owner's Contracts home, made by git mv of Models/Events/TeamDeleted.cs; the record itself is reused unchanged (namespace line only), no other owner exists",
+"F191": "New file at the owner's Contracts home, made by git mv of Models/Events/PortfolioDeleted.cs; the record itself is reused unchanged (namespace line only), no other owner exists",
+"F192": "New file at the owner's Contracts home, made by git mv of Models/Events/BlackoutConfigurationChanged.cs; the record itself is reused unchanged (namespace line only), no other owner exists",
+"F193": "New file at the owner's Contracts home, made by git mv of Models/Events/FeatureOrderingPolicyChanged.cs; the record itself is reused unchanged (namespace line only), no other owner exists",
+"F194": "New file at the owner's Contracts home, made by git mv of Models/Events/FeatureRankChanged.cs; the record itself is reused unchanged (namespace line only), no other owner exists",
+"F195": "New file at the owner's Contracts home, made by git mv of Models/Events/ConnectionFetchShapeChanged.cs; the record itself is reused unchanged (namespace line only), no other owner exists",
+"F196": "existing owner edited in place: using line or event literal only",
+"F197": "15 event files move to their owners' Contracts; namespace line only",
+"F198": "93 files naming an event: using line or literal only (Program.cs handler block, handlers, publishers, tests); measured by text search, the build and the Architecture run decide",
+"F199": "names only IDomainEvent",
 "F2": "Contexts depend on each other only through published contracts and events, each edge has exactly one rule that owns it, and the docs say so.",
+"F20": "Context map: Work Items reacting to ForecastRoundFinished makes Work Items' Application.Policies depend on Forecasting's Contracts, the reverse of the ADR-270 edge Work Items -> Forecasting (customer/supplier, by events). The edge is by event only, through Contracts, in one deployable; S3 records it on ADR-270's map as Forecasting -> Work Items, by events (ForecastRoundFinished).",
+"F200": "events are not EF-mapped and not serialised (D-0)",
+"F201": "event record moved, namespace line only",
+"F202": "using line or event literal only",
+"F203": "Namespace-only move of in-process record types in one deployable; no wire, persisted or config form; every producer and consumer changes in the same commit and the compiler rejects a missed one.",
+"F204": "Per touched file: each of the 15 event files holds one record (not-applicable, moved whole); every Extend file changes a using line or a literal only, no structural edit, so no layout move is due; Program.cs holds one type. The move is itself the refactoring, in a refactor(contracts) commit.",
+"F205": "For every type implementing IDomainEvent other than IDomainEvent: its namespace is Lighthouse.Backend.Modules.<C>.Contracts, C being the context whose types construct it (or ADR-270 Decision 3's owner when only non-module code constructs it); Models.Events holds IDomainEvent only.",
+"F206": "each of the 15 D-5 events at its owner",
+"F207": "Models.Events holds only IDomainEvent",
+"F208": "planted falsifier: a made-up event constructed in one fixture context but declared in another context's Contracts is named WHAT/WHY/HOW",
+"F209": "closed finite set read from the compiled assembly",
+"F21": "Behaviour unchanged except who writes a forecast round's refresh-log entry and that a failing write no longer fails the round (P1-P3, D-0). No schema, migration, route, DTO, usage-data event or registration-lifetime change; frontend, E2E and Lighthouse-Clients untouched.",
+"F210": "event placement",
+"F211": "the oracle's law excludes an event outside its publisher's Contracts, executed on the IL",
+"F212": "each of the 15 owners' Contracts folders exists (feature C) and receives its files by git mv",
+"F213": "compiled assembly -> IlDependencies -> oracle -> dotnet test exit and message",
+"F214": "no liveness claim: a static placement relation, nothing eventual",
+"F215": "R-C5: each domain event type lives in the Contracts of the context that publishes it; none but IDomainEvent in Models.Events",
+"F216": "Using the public architecture rules and backend tests, a user sees every one of the 15 domain event types in the Contracts of the context that publishes it, IDomainEvent being the only event type left in Models.Events, and the backend test suite and the architecture rules pass as before.",
+"F217": "A rule or test count passing does not show each event sits in its publishing context's Contracts rather than another context's; it also cannot show that no event was renamed or its payload changed.",
+"F218": "architecture-rules and backend-tests probes against the built candidate",
+"F219": "After a forecast round that succeeds, fails, is cancelled or is skipped, the refresh log shows the same entry as before this feature; a failing log write is logged and the round still completes; the forecast updater no longer names the refresh-log service.",
+"F22": "IDomainEvent stays in Lighthouse.Backend.Models.Events; the 15 event types keep their names, shapes and positional parameters; only namespace and file path change.",
+"F220": "Compare answers show entries, but cannot show which component wrote them, nor reliably force a log-write failure from outside; the absence of the service name in the updater is a structural fact public probes see only through an architecture rule.",
+"F221": "refresh-answers-compare and forecast-answers-compare against the base revision; architecture-rules probe",
+"F222": "The architecture rules show every module-to-module edge governed by contracts rule R-C1 only, and a per-module boundary list naming a module-to-module edge makes the rules fail; ADR-270 and ARCHITECTURE.md section 4 describe the contracts layer and the CI test-selection payoff.",
+"F223": "A passing rule run does not show the rule would fail on a planted per-module list entry unless a negative control is captured; reading the documents shows wording but not that it matches shipped behaviour.",
+"F224": "architecture-rules probe with a negative control; public reading of the two documents",
+"F225": "Across the feature the product behaves as before: forecast and refresh answers equal those of the base revision and the backend tests pass, with no new user-visible change.",
+"F226": "Answer comparisons cover only the sampled forecast and refresh scenarios; behaviour outside them, and timing or ordering of event handling, stays unobserved.",
+"F227": "refresh-answers-compare, forecast-answers-compare and backend-tests probes",
+"F23": "Out of scope: any other cross-context command (RX2-RX5 keep their owners), any fix of an R-C1 residue edge, mutation testing (end of the Story).",
+"F24": "Lists by full type name, compared both ways, only shrink, with one exception: an S1 rename may restate a pre-existing listed edge from code that is not a module (API, Services, Data, platform lane) under the event's new name. No module-to-module entry is ever added to a per-module list.",
+"F25": "Tests: no nWave scenario tags; backend acceptance scenarios drive the application-service port; the test-writing skill and its backend half win over nWave's timing and PBT density rules. Each new test within the default per-test budget, no infrastructure suite, no derogation; the Architecture tests reuse the IL loaded once per assembly.",
+"F26": "Do not run the full backend suite under parallel load or any live connector category; the filtered full gate (TestCategory exclusions of CLAUDE.md) runs once before the push, by the host.",
+"F27": "Program.cs changes in S1 and S2, so the feature's single push runs every live connector suite once in CI (D-12).",
+"F28": "Every producer and consumer of the touched contracts (the 15 event types, ForecastRoundFinished, IRefreshLogService, RefreshLog) lives in the one backend deployable and changes in the same commit; nothing is serialised, persisted in a new shape or sent on a wire. The S2 oracle runs the real producer through the real consumer at the service port.",
+"F29": "Architecture rules: the compiled production assembly read through LighthouseArchitecture.Production / IlDependencies (in-process; nearest argv: dotnet test ... --filter FullyQualifiedName~Architecture). RX1: IForecastUpdater.TriggerImmediateUpdate over a ServicePortHarness scope factory, no host.",
 "F3": "Each of the 15 domain event types lives in the Contracts of the context that publishes it, and no event type but IDomainEvent is left in Models.Events; behaviour unchanged.",
+"F30": "IDomainEventDispatcher (platform lane, unchanged)",
+"F31": "IRefreshLogService (Work Items Contracts, unchanged)",
+"F32": "Module types reach another module only through its Contracts (R-C1) and only where the target's per-module direction rule admits the caller's namespace; Contracts reach only the kernel, the BCL, abstractions and other Contracts (R-C2); the kernel and the platform lane reach no module.",
+"F33": "The refresh-log rows after a forecast round, read through Work Items' IRefreshLogService.GetRefreshLogs in a fresh harness scope",
+"F34": "which type wrote the row; that is observed separately on the IL (ForecastUpdater names no IRefreshLogService)",
+"F35": "Architecture test verdict: exit code and the failure message naming WHAT (source, target, list), WHY and HOW",
+"F36": "code reached only by reflection or by string (no IL edge)",
+"F37": "The dispatcher's error log entry when a handler throws (handler type name, event type name)",
+"F38": "a handler that threw before writing from one that threw after a partial write",
+"F39": "Two RefreshLog rows are equal when Type, EntityId, EntityName, ItemCount, Mode, RecordsScanned, RecordsFetched, Success, Cancelled and Skipped are equal and ExecutedAt equals the round's finish instant on the scenario's TimeProvider; Id is ignored and DurationMs is compared as non-negative and taken from the round.",
 "F4": "After every forecast round (succeeded, failed, cancelled or skipped) the refresh log holds the same entry as today, written by Work Items reacting to ForecastRoundFinished; ForecastUpdater no longer names the refresh-log service; a failing log write is logged and the round still completes.",
+"F40": "Round outcomes Succeeded, Failed, Cancelled, Skipped",
+"F41": "Refresh-log flag combinations a round cannot produce (Success and Cancelled, Skipped without Success): unrepresentable in ForecastRoundOutcome",
+"F42": "Process dies after the round's save and before the handler's write: no row, as today",
+"F43": "Negated assumption: an event publish behaves like the call it replaces (E7)",
+"F44": "the refresh-log row of every completed, failed, cancelled or skipped round",
+"F45": "a throwing write is logged by the dispatcher and the round completes without its row; the next round logs again",
+"F46": "a log failure failing or stopping a round; a round finishing without publishing",
+"F47": "a round whose log write failed has no row (accepted by the maintainer 2026-11-26)",
+"F48": "Negated assumption: a cancelled round still reaches the handler (the operator's token is cancelled)",
+"F49": "the Cancelled row",
 "F5": "Every module-to-module edge is owned by the contracts rule R-C1 alone: a per-module boundary list that names one fails; ADR-270 and ARCHITECTURE.md section 4 describe the contracts layer and the CI test-selection payoff.",
+"F50": "none",
+"F51": "publishing with the round's cancelled token so the handler or the write is skipped",
+"F52": "none: ForecastUpdater publishes with CancellationToken.None, pinned by the oracle's cancelled row",
+"F53": "Negated assumption: moving an event leaves every boundary rule seeing its readers (E5)",
+"F54": "every rule keeps reading the event's edges",
+"F55": "direction patterns of the publisher admit the reacting contexts' Application.Policies",
+"F56": "a rule silently passing over a moved type; a module-to-module list entry added",
+"F57": "none known; the Architecture run after S1 names each failing rule",
+"F58": "DomainEventDispatcher resolves the handler; a missing registration loses every forecast refresh-log row silently",
+"F59": "one handler of ForecastRoundFinished registered",
 "F6": "Any other cross-context command, any fix of a non-contract residue edge, any schema, route, DTO or registration-lifetime change, mutation testing (runs at the end of the Story).",
+"F60": "a round with no row and no error",
+"F61": "none: the order pin names ForecastRoundFinished's handler list and the S2 oracle builds the handlers through Program's registration",
+"F62": "Another Forecasting type calling IRefreshLogService directly (legal under R-C1, Contracts edge)",
+"F63": "one writer per forecast round's row",
+"F64": "two rows for one round",
+"F65": "only ForecastUpdater is checked on the IL; a new Forecasting writer would pass R-C1 and Forecasting's rules",
+"F66": "Second set, walkthrough only (not executed): an undefined ForecastRoundOutcome value cast from an int; a later Story adding a 16th event published by a module; a per-module list entry built by string concatenation rather than a literal; PortfolioFeaturesRefreshed published by Services code",
+"F67": "S1 and S3 laws hold for future members",
+"F68": "the undefined outcome throws in the handler's total switch and the dispatcher logs it",
+"F69": "a new event or list entry passing unseen",
 "F7": "The rule that each domain event type lives in its publisher's Contracts fails until the 15 event types move; then it and every other Architecture rule pass.",
+"F70": "S1's law is generic over every IDomainEvent implementer (a 16th event needs no oracle edit); S3's law reads list values from the compiled test assembly, not source text, so concatenated entries are seen; Services publishers stay outside R-C1 (D-4, owner S04b and Epic 6474 slice 12)",
+"F71": "R-C1-R-C3 stay green with the residue list; every Architecture rule passes after each slice",
+"F72": "Domain-event handler order is pinned per event, ForecastRoundFinished included after S2",
+"F73": "the event: PortfolioId, PortfolioName, ItemCount, DurationMs, FinishedAt, Outcome",
+"F74": "closed choice Succeeded | Failed | Cancelled | Skipped, one type per file",
+"F75": "writes the same RefreshLog row through IRefreshLogService",
+"F76": "publishes ForecastRoundFinished where LogForecastRefresh was called; drops IRefreshLogService",
+"F77": "registers the handler Scoped in the one ordered handler block",
+"F78": "Forecasting's legal callers admit Work Items' Application.Policies",
+"F79": "unit rows capture the published ForecastRoundFinished instead of the refresh-log mock",
 "F8": "Event types sit with the context that owns them.",
-"F9": "After a forecast round the refresh log holds the same entry as before, written by the Work Items handler of ForecastRoundFinished, and ForecastUpdater names no refresh-log service; a throwing log write is logged and the round completes."
+"F80": "only if its placement list names the Work Items handlers",
+"F81": "IForecastUpdater.TriggerImmediateUpdate(portfolioId) on a ServicePortHarness built as Program builds the round, once per outcome (succeeded, failed, cancelled, skipped) and once with a throwing refresh-log write; plus the IL of ForecastUpdater",
+"F82": "Each round leaves exactly one Forecast row equal to today's row for its outcome, written by the handler; the throwing write is logged by the dispatcher and the round completes; ForecastUpdater names no IRefreshLogService; the order pin lists ForecastRoundFinishedRefreshLogHandler. RED before craft: ForecastRoundFinished does not exist / ForecastUpdater still names IRefreshLogService.",
+"F83": "Publishing with the round's token (cancelled row missing), a wrong flag mapping (skipped row with Success false), a missing registration (no row), or ForecastUpdater still writing the row directly each fails a named row.",
+"F84": "ForecastUpdater keeps the round's flags and, in the same finally and at the same point, publishes ForecastRoundFinished(portfolio.Id, portfolio.Name, itemCount, stopwatch ms, CurrentInstant, outcome) through IDomainEventDispatcher with CancellationToken.None, so a cancelled round still writes its row. Outcome: Cancelled when cancelled, Failed when not successful, Skipped when successful and skipped, else Succeeded; Forecasting owns that decision: a static factory ForecastRoundFinished.For(portfolio, itemCount, durationMs, finishedAt, success, cancelled, skipped) on the event record derives the outcome, replacing ForecastUpdater's private LogForecastRefresh.",
+"F85": "ForecastRoundFinishedRefreshLogHandler (Work Items, Application/Policies, IDomainEventHandler<ForecastRoundFinished>) translates the event into today's RefreshLog row: Type Forecast, EntityId, EntityName, ItemCount, SyncOutcome.None's Mode/RecordsScanned/RecordsFetched, DurationMs, ExecutedAt = FinishedAt, Success = Succeeded or Skipped, Cancelled = Cancelled, Skipped = Skipped; a total switch over ForecastRoundOutcome (CS8524 pragma per the repository idiom). It is the anti-corruption translation of Work Items' own record and holds no other rule. Registered Scoped in Program's handler block; it is the only handler of the event.",
+"F86": "Forecasting's direction rule (ForecastingsLegalCallers: the API and Refinement at HEAD) admits Lighthouse.Backend.Modules.WorkItems.Application.Policies, so the handler may name Forecasting.Contracts.ForecastRoundFinished. A namespace pattern, not a list entry (S3's law forbids module-to-module list entries).",
+"F87": "The S2 oracle is one file at the port: a ServicePortHarness registering the forecast round as Program builds it (real ForecastUpdater, DomainEventDispatcher, RefreshLogService, the handler through the start-up registration), doubles only for IForecastService outcomes (computed, confirmed unchanged, throws) and the operator stop; four rows (succeeded, failed, cancelled, skipped) read the row through IRefreshLogService.GetRefreshLogs against today's expected fields; one row with a throwing IRefreshLogService observes the dispatcher's error log and the round's completion; one IL row asserts ForecastUpdater names no IRefreshLogService. The order pin (support) reads ForecastRoundFinished and pins [ForecastRoundFinishedRefreshLogHandler].",
+"F88": "existing transport (ADR-027 D7); its log-and-continue policy is the accepted degradation",
+"F89": "owns the round and its outcome flags; LogForecastRefresh becomes the publish",
+"F9": "After a forecast round the refresh log holds the same entry as before, written by the Work Items handler of ForecastRoundFinished, and ForecastUpdater names no refresh-log service; a throwing log write is logged and the round completes.",
+"F90": "no event carries a forecast round's end; ForecastRunOutcome is the forecast computation's result (computed or confirmed unchanged), not the round's four-way outcome, so it is not extended",
+"F91": "follows the existing Work Items refresh-log policy handler shape; no handler of a forecast round exists",
+"F92": "the port seam for background jobs without a host",
+"F93": "the write RX1 performs, unchanged, now called by Work Items' own handler",
+"F94": "new type, no existing owner (see the slice's CreateNew rows)",
+"F95": "existing owner edited in place: list entries, a pattern or a registration only",
+"F96": "direct refresh-log write replaced by the event publish",
+"F97": "one handler registration added to the handler block",
+"F98": "reads the same rows with the same fields",
+"F99": "CaptureRefreshLog rows move to the published event"
 },
 "product": {
 "promises": [

@@ -156,13 +156,4675 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Paradigm</h2>
 
-<p>None.</p>
+<p>object_oriented</p>
 
 <h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>Feature D adopts the Story DESIGN unchanged (docs/feature/story-6382-s09a-context-contracts/feature-delta.md): D-0 no schema, route, DTO or user-visible change except the RX1 failure path; D-3 R-C1 owns surface, the per-module rules own direction, one owner per edge; D-4 Models is the kernel; D-5 event owners; D-6 RX1 converted, RX2-RX5 stay with their owners; D-9 domain-event handlers stay in the one ordered block in Program; D-11 ADR-270 and ARCHITECTURE.md section 4 amended, no new ADR; D-12 commit per slice, one push for the feature; D-13 payoff note written, nothing implemented; D-15 mutation last, at the end of the Story; D-16 no formal model. Maintainer decision of 2026-11-26 (open question 8): RX1&#x27;s changed failure path is accepted as behaviour-free.
+</code></pre>
+
+<h4>D2</h4>
+
+<pre><code>Formal verification (D-16, confirmed): no Quint, TLA+ or Agda model. No model for R-C1, R-C5 and the one-owner law: they are relations over finite closed sets (compiled types, contexts, inline lists) executed exhaustively on the IL by the Architecture tests, with no state, protocol, concurrency or crash window. No model for RX1: one in-process publish and handle inside the round&#x27;s finally, the dispatcher awaiting its handlers one after the other in the same call; the refresh log is append-only, one row per round, no other actor reads or changes that row, and the crash window (process dies after the round, before the row) is the same as today&#x27;s direct call. The outcome mapping is a total function over a closed four-value domain, checked exhaustively by the S2 oracle&#x27;s four rows. No liveness claim: nothing is eventual, the handler completes before PublishAsync returns. PBT: not applicable, every domain is closed and finite and enumerated.
+</code></pre>
+
+<h4>D3</h4>
+
+<pre><code>Cross-layer algebra. Domain: ForecastRoundOutcome is a closed choice Succeeded | Failed | Cancelled | Skipped (the four flag combinations today&#x27;s round can produce). Application: Forecasting decides the round&#x27;s outcome and publishes ForecastRoundFinished; Work Items decides how its refresh log records a forecast round. Adapter: ForecastUpdater (Forecasting.Adapters.Background) publishes through IDomainEventDispatcher; DomainEventDispatcher (platform lane) runs handlers in a new scope and logs and swallows a handler&#x27;s exception. Infrastructure: RefreshLogService writes the RefreshLog row through its repository, unchanged. Observations: the refresh-log rows read through IRefreshLogService.GetRefreshLogs, the dispatcher&#x27;s error log, the Architecture test verdicts.
+</code></pre>
+
+<h4>D4</h4>
+
+<pre><code>Carriers and owners. Event types: one sealed record per file in Modules/&lt;Owner&gt;/Contracts, namespace = folder, implementing the kernel&#x27;s IDomainEvent (Models.Events). ForecastRoundFinished and ForecastRoundOutcome: Forecasting.Contracts, one type per file. The refresh-log entry: kernel RefreshLog, built by ForecastRoundFinishedRefreshLogHandler (Work Items, Application/Policies) and written through Work Items&#x27; IRefreshLogService. Errors: a throwing handler is an exception caught and logged by DomainEventDispatcher (platform lane); no new error type. Per-process state: none added; the handler is Scoped like every other handler.
+</code></pre>
+
+<h4>D5</h4>
+
+<pre><code>Ports. Driving: unchanged (controllers, hosted services, the update queue). The forecast round is driven at IForecastUpdater.TriggerImmediateUpdate with the harness&#x27;s scope factory, no host (test-writing skill rule 1, background job at the port). Driven: IDomainEventDispatcher (platform lane) and IRefreshLogService (Work Items&#x27; Contracts), both reused unchanged. One new in-process event path: ForecastUpdater -&gt; IDomainEventDispatcher -&gt; ForecastRoundFinishedRefreshLogHandler -&gt; IRefreshLogService. No new external call.
+</code></pre>
+
+<h4>D6</h4>
+
+<pre><code>Already done by feature C, so not repeated here: Organisation set-up&#x27;s open host was narrowed to its Contracts in feature C S5 (feature C decision D16: ModuleRules owns SetUpContracts and SetUpBehindItsContracts; OrganisationSetupIsAnOpenHostArchUnitTest reads ContextContractsMembership.ContractsOf(&quot;OrganisationSetup&quot;)). The Story&#x27;s D3 line &quot;S03i&#x27;s open-host oracle rewritten to Contracts&quot; is therefore met; S3 changes only the two Tracker integration list assertions of that test, which P3 contradicts.
+</code></pre>
+
+<h4>D7</h4>
+
+<pre><code>R-C1&#x27;s list (ContextContractsArchUnitTest.CrossContextEdgesOutsideContracts) holds eight edges at HEAD and none of them is ForecastUpdater -&gt; IRefreshLogService: IRefreshLogService moved to Work Items&#x27; Contracts in feature C S3, so that edge is legal under R-C1. The Story&#x27;s &quot;R-C1 entry deleted&quot; for RX1 has nothing to delete; S2&#x27;s oracle asserts instead, on the IL, that ForecastUpdater names no IRefreshLogService.
+</code></pre>
+
+<h4>D8</h4>
+
+<pre><code>Context map: Work Items reacting to ForecastRoundFinished makes Work Items&#x27; Application.Policies depend on Forecasting&#x27;s Contracts, the reverse of the ADR-270 edge Work Items -&gt; Forecasting (customer/supplier, by events). The edge is by event only, through Contracts, in one deployable; S3 records it on ADR-270&#x27;s map as Forecasting -&gt; Work Items, by events (ForecastRoundFinished).
+</code></pre>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Behaviour unchanged except who writes a forecast round&#x27;s refresh-log entry and that a failing write no longer fails the round (P1-P3, D-0). No schema, migration, route, DTO, usage-data event or registration-lifetime change; frontend, E2E and Lighthouse-Clients untouched.
+</code></pre>
+
+<h4>K2</h4>
+
+<pre><code>IDomainEvent stays in Lighthouse.Backend.Models.Events; the 15 event types keep their names, shapes and positional parameters; only namespace and file path change.
+</code></pre>
+
+<h4>K3</h4>
+
+<pre><code>Out of scope: any other cross-context command (RX2-RX5 keep their owners), any fix of an R-C1 residue edge, mutation testing (end of the Story).
+</code></pre>
+
+<h4>K4</h4>
+
+<pre><code>Lists by full type name, compared both ways, only shrink, with one exception: an S1 rename may restate a pre-existing listed edge from code that is not a module (API, Services, Data, platform lane) under the event&#x27;s new name. No module-to-module entry is ever added to a per-module list.
+</code></pre>
+
+<h4>K5</h4>
+
+<pre><code>Tests: no nWave scenario tags; backend acceptance scenarios drive the application-service port; the test-writing skill and its backend half win over nWave&#x27;s timing and PBT density rules. Each new test within the default per-test budget, no infrastructure suite, no derogation; the Architecture tests reuse the IL loaded once per assembly.
+</code></pre>
+
+<h4>K6</h4>
+
+<pre><code>Do not run the full backend suite under parallel load or any live connector category; the filtered full gate (TestCategory exclusions of CLAUDE.md) runs once before the push, by the host.
+</code></pre>
+
+<h4>K7</h4>
+
+<pre><code>Program.cs changes in S1 and S2, so the feature&#x27;s single push runs every live connector suite once in CI (D-12).
+</code></pre>
+
+<h3>Reuse</h3>
+
+<p>None.</p>
+
+<h3>Impact</h3>
+
+<p>None.</p>
+
+<h3>Agreement</h3>
+
+<p>None.</p>
+
+<h3>Not applicable</h3>
+
+<p>contract_tests</p>
+
+<pre><code>Every producer and consumer of the touched contracts (the 15 event types, ForecastRoundFinished, IRefreshLogService, RefreshLog) lives in the one backend deployable and changes in the same commit; nothing is serialised, persisted in a new shape or sent on a wire. The S2 oracle runs the real producer through the real consumer at the service port.
+</code></pre>
+
+<h3>Boundaries</h3>
+
+<pre><code>Architecture rules: the compiled production assembly read through LighthouseArchitecture.Production / IlDependencies (in-process; nearest argv: dotnet test ... --filter FullyQualifiedName~Architecture). RX1: IForecastUpdater.TriggerImmediateUpdate over a ServicePortHarness scope factory, no host.
+</code></pre>
+
+<h4>Driven ports</h4>
+
+<pre><code>IDomainEventDispatcher (platform lane, unchanged)
+</code></pre>
+
+<pre><code>IRefreshLogService (Work Items Contracts, unchanged)
+</code></pre>
+
+<pre><code>Module types reach another module only through its Contracts (R-C1) and only where the target&#x27;s per-module direction rule admits the caller&#x27;s namespace; Contracts reach only the kernel, the BCL, abstractions and other Contracts (R-C2); the kernel and the platform lane reach no module.
+</code></pre>
+
+<h4>Failures</h4>
+
+<p>None.</p>
+
+<h3>Observations</h3>
+
+<pre><code>The refresh-log rows after a forecast round, read through Work Items&#x27; IRefreshLogService.GetRefreshLogs in a fresh harness scope
+</code></pre>
+
+<p>IEnumerable&lt;RefreshLog&gt;</p>
+
+<pre><code>which type wrote the row; that is observed separately on the IL (ForecastUpdater names no IRefreshLogService)
+</code></pre>
+
+<pre><code>Architecture test verdict: exit code and the failure message naming WHAT (source, target, list), WHY and HOW
+</code></pre>
+
+<p>NUnit outcome + message</p>
+
+<pre><code>code reached only by reflection or by string (no IL edge)
+</code></pre>
+
+<pre><code>The dispatcher&#x27;s error log entry when a handler throws (handler type name, event type name)
+</code></pre>
+
+<p>captured ILogger&lt;DomainEventDispatcher&gt; entry</p>
+
+<pre><code>a handler that threw before writing from one that threw after a partial write
+</code></pre>
+
+<h3>Equality</h3>
+
+<p>refresh-log entry</p>
+
+<pre><code>Two RefreshLog rows are equal when Type, EntityId, EntityName, ItemCount, Mode, RecordsScanned, RecordsFetched, Success, Cancelled and Skipped are equal and ExecutedAt equals the round&#x27;s finish instant on the scenario&#x27;s TimeProvider; Id is ignored and DurationMs is compared as non-negative and taken from the round.
+</code></pre>
+
+<h3>Constructors</h3>
+
+<p>None.</p>
+
+<h3>Laws</h3>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<p>None.</p>
+
+<h3>Claims</h3>
+
+<p>None.</p>
+
+<h3>States</h3>
+
+<p>Admitted</p>
+
+<pre><code>Round outcomes Succeeded, Failed, Cancelled, Skipped
+</code></pre>
+
+<p>Forecasting</p>
+
+<p>Excluded</p>
+
+<pre><code>Refresh-log flag combinations a round cannot produce (Success and Cancelled, Skipped without Success): unrepresentable in ForecastRoundOutcome
+</code></pre>
+
+<p>Forecasting</p>
+
+<p>Unknown</p>
+
+<pre><code>Process dies after the round&#x27;s save and before the handler&#x27;s write: no row, as today
+</code></pre>
+
+<p>Forecasting</p>
+
+<h3>Models</h3>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negated assumption: an event publish behaves like the call it replaces (E7)
+</code></pre>
+
+<pre><code>the refresh-log row of every completed, failed, cancelled or skipped round
+</code></pre>
+
+<pre><code>a throwing write is logged by the dispatcher and the round completes without its row; the next round logs again
+</code></pre>
+
+<pre><code>a log failure failing or stopping a round; a round finishing without publishing
+</code></pre>
+
+<pre><code>a round whose log write failed has no row (accepted by the maintainer 2026-11-26)
+</code></pre>
+
+<p>Forecasting / Work Items</p>
+
+<h4>Y2</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negated assumption: a cancelled round still reaches the handler (the operator&#x27;s token is cancelled)
+</code></pre>
+
+<pre><code>the Cancelled row
+</code></pre>
+
+<pre><code>none
+</code></pre>
+
+<pre><code>publishing with the round&#x27;s cancelled token so the handler or the write is skipped
+</code></pre>
+
+<pre><code>none: ForecastUpdater publishes with CancellationToken.None, pinned by the oracle&#x27;s cancelled row
+</code></pre>
+
+<p>Forecasting</p>
+
+<h4>Y3</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negated assumption: moving an event leaves every boundary rule seeing its readers (E5)
+</code></pre>
+
+<pre><code>every rule keeps reading the event&#x27;s edges
+</code></pre>
+
+<pre><code>direction patterns of the publisher admit the reacting contexts&#x27; Application.Policies
+</code></pre>
+
+<pre><code>a rule silently passing over a moved type; a module-to-module list entry added
+</code></pre>
+
+<pre><code>none known; the Architecture run after S1 names each failing rule
+</code></pre>
+
+<p>S1 crafter</p>
+
+<h4>Y4</h4>
+
+<p>SinglePointOfFailure</p>
+
+<pre><code>DomainEventDispatcher resolves the handler; a missing registration loses every forecast refresh-log row silently
+</code></pre>
+
+<pre><code>one handler of ForecastRoundFinished registered
+</code></pre>
+
+<pre><code>none
+</code></pre>
+
+<pre><code>a round with no row and no error
+</code></pre>
+
+<pre><code>none: the order pin names ForecastRoundFinished&#x27;s handler list and the S2 oracle builds the handlers through Program&#x27;s registration
+</code></pre>
+
+<p>S2</p>
+
+<h4>Y5</h4>
+
+<p>Bypass</p>
+
+<pre><code>Another Forecasting type calling IRefreshLogService directly (legal under R-C1, Contracts edge)
+</code></pre>
+
+<pre><code>one writer per forecast round&#x27;s row
+</code></pre>
+
+<pre><code>none
+</code></pre>
+
+<pre><code>two rows for one round
+</code></pre>
+
+<pre><code>only ForecastUpdater is checked on the IL; a new Forecasting writer would pass R-C1 and Forecasting&#x27;s rules
+</code></pre>
+
+<p>Forecasting (Epic 6474 refresh paths)</p>
+
+<h4>Y6</h4>
+
+<p>Stressor</p>
+
+<pre><code>Second set, walkthrough only (not executed): an undefined ForecastRoundOutcome value cast from an int; a later Story adding a 16th event published by a module; a per-module list entry built by string concatenation rather than a literal; PortfolioFeaturesRefreshed published by Services code
+</code></pre>
+
+<pre><code>S1 and S3 laws hold for future members
+</code></pre>
+
+<pre><code>the undefined outcome throws in the handler&#x27;s total switch and the dispatcher logs it
+</code></pre>
+
+<pre><code>a new event or list entry passing unseen
+</code></pre>
+
+<pre><code>S1&#x27;s law is generic over every IDomainEvent implementer (a 16th event needs no oracle edit); S3&#x27;s law reads list values from the compiled test assembly, not source text, so concatenated entries are seen; Services publishers stay outside R-C1 (D-4, owner S04b and Epic 6474 slice 12)
+</code></pre>
+
+<p>Story 6382</p>
+
+<h3>Architectural tests</h3>
+
+<h4>T1</h4>
+
+<pre><code>R-C1-R-C3 stay green with the residue list; every Architecture rule passes after each slice
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~Architecture&quot;
+</code></pre>
+
+<h4>T2</h4>
+
+<pre><code>Domain-event handler order is pinned per event, ForecastRoundFinished included after S2
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~DomainEventHandlerOrderPinTest&quot;
+</code></pre>
+
+<h3>Contract tests</h3>
 
 <p>None.</p>
 
 <h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemTransitioned.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Models/Events; namespace line only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemBlocked.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Models/Events; namespace line only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemUnblocked.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Models/Events; namespace line only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemBecameStale.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Models/Events; namespace line only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/FeatureBlocked.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Models/Events; namespace line only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/FeatureUnblocked.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Models/Events; namespace line only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/TeamDataRefreshed.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Models/Events; namespace line only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/PortfolioFeaturesRefreshed.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Models/Events; namespace line only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/PortfolioForecastsUpdated.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Models/Events; namespace line only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/TeamDeleted.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Models/Events; namespace line only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/PortfolioDeleted.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Models/Events; namespace line only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/BlackoutConfigurationChanged.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Models/Events; namespace line only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/FeatureOrderingPolicyChanged.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Models/Events; namespace line only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/FeatureRankChanged.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Models/Events; namespace line only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/ConnectionFetchShapeChanged.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Models/Events; namespace line only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/BlackoutConfigurationChangedMetricsInvalidationHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/BlockedCountSnapshotRecordingHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PortfolioFeaturesRefreshedMetricsInvalidationHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/ProcessBehaviorRecordingHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/TeamDataRefreshedTeamMetricsUpdateHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ReconstructionMemo.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDataRefreshedForecastTriggerHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/BlackoutPeriodService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/ConnectionSaveService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankingService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/FeatureOrderingApplier.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/RecurringBlackoutRuleService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/Policies/DeliveryForecastPublishingHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ConnectionFetchShapeChangedUpdateTriggerHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionCaptureHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionCloseHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCaptureHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCloseHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/TeamDataService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryArchiveClosurePinIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaSpecifications.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaSpecifications.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/PercentilesOverTimeAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/ReconstructOverTimeHistoryAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/SkipUnchangedForecastsAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01AnnouncedAndDailyScenarios.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01StaleSignalSpecifications.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/TeamFeatureSizeAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectionFetchShapeChangedSinglePublisherArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsStringsTheMoveRenames.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InstantsUnaffectedByZoneTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDoesNotCommandFlowMetricsArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/BlackoutConfigurationChangedMetricsInvalidationHandlerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/BlockedCountSnapshotRecordingHandlerTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandlerTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandlerTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandlerTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/PortfolioFeaturesRefreshedMetricsInvalidationHandlerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/ProcessBehaviorRecordingHandlerTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/TeamDataRefreshedTeamMetricsUpdateHandlerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ReconstructionMemoTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandlerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandlerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/TeamDataRefreshedForecastTriggerHandlerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandlerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/AppSettingServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/BlackoutPeriodServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Connections/ConnectionSaveServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/RecurringBlackoutRuleServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryMetricValuesProjectorTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryForecastPublishingHandlerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandlerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/ConnectionFetchShapeChangedUpdateTriggerHandlerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionHandlerTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandlerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandlerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCaptureTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/TeamDataServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/DomainEvents/DomainEventDispatcherGoldTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/DomainEvents/DomainEventDispatcherTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/SnapshotRecordedDayInstanceZoneTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/TeamDataRefreshedGoldTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/WorkItemDomainEventsGoldTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/SharedHostCleanup.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using line or old event name/path literal only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>direction pattern admits the Application.Policies of contexts reacting to its event
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>direction pattern or non-module outsider entry restated under the event&#x27;s new name
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventsLiveWithTheirPublisherArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet build Lighthouse.Backend
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~Architecture&quot;
+pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Architecture over the compiled assembly
+</code></pre>
+
+<pre><code>RED before the move: the oracle names each of the 15 events still in Models.Events. GREEN after: each event resolves to exactly one type in its owner&#x27;s Contracts, Models.Events holds only IDomainEvent, and every other Architecture rule passes.
+</code></pre>
+
+<pre><code>An event left in Models.Events, or placed in a context&#x27;s Contracts other than its publisher&#x27;s (planted fixture), fails with source, owner and the HOW.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<pre><code>The S1 oracle&#x27;s law is generic so no later slice edits it: every type implementing IDomainEvent, except IDomainEvent itself, lives in Lighthouse.Backend.Modules.&lt;C&gt;.Contracts where C is the context whose code constructs it; for an event constructed only outside the modules (TeamDeleted by API.TeamController, PortfolioFeaturesRefreshed by PortfolioUpdater) C is the owner named inline by ADR-270 Decision 3 (D-5); the 15 events of D-5 are named inline with their owner and compared one way (each found at its owner); no type but IDomainEvent is left in Models.Events. ConnectionFetchShapeChanged belongs to Organisation set-up (open question 5 default, its publisher ConnectionSaveService). ContextContractsMembership&#x27;s event rows (A1) are reused as the old/new namespace map.
+</code></pre>
+
+<pre><code>Direction after the move: a handler in context Y naming an event now in X.Contracts is a downstream reaction, legal by ADR-270 (upstream publishes, downstream reacts). Where X&#x27;s per-module direction rule does not admit Y (measured at HEAD: Forecasting admits only the API and Refinement, so Promises&#x27; PortfolioForecastsUpdated handlers), the crafter widens X&#x27;s legal-callers pattern by Y&#x27;s Application.Policies namespace only, never by a list entry. Non-module publishers (API, Services) keep or restate their existing outsider entries under the new name.
+</code></pre>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>ContextContractsMembership</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembership.cs:74</p>
+
+<p>Reuse</p>
+
+<pre><code>already maps each of the 15 events to its owner&#x27;s Contracts (A1); the oracle reads it instead of a second map
+</code></pre>
+
+<p>ContextContractsStringsTheMoveRenames</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsStringsTheMoveRenames.cs:12</p>
+
+<p>Reuse</p>
+
+<pre><code>already holds the old/new event literals of the open-host test and OrganisationSetupMembership; never edited
+</code></pre>
+
+<p>IDomainEvent</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Events/IDomainEvent.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>stays in the kernel (D-5); every event keeps implementing it
+</code></pre>
+
+<p>ModuleRules</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>existing wording and IL edge helpers for the oracle&#x27;s refusal message
+</code></pre>
+
+<p>WorkItemTransitioned</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemTransitioned.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file at the owner&#x27;s Contracts home, made by git mv of Models/Events/WorkItemTransitioned.cs; the record itself is reused unchanged (namespace line only), no other owner exists
+</code></pre>
+
+<p>WorkItemBlocked</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemBlocked.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file at the owner&#x27;s Contracts home, made by git mv of Models/Events/WorkItemBlocked.cs; the record itself is reused unchanged (namespace line only), no other owner exists
+</code></pre>
+
+<p>WorkItemUnblocked</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemUnblocked.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file at the owner&#x27;s Contracts home, made by git mv of Models/Events/WorkItemUnblocked.cs; the record itself is reused unchanged (namespace line only), no other owner exists
+</code></pre>
+
+<p>WorkItemBecameStale</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemBecameStale.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file at the owner&#x27;s Contracts home, made by git mv of Models/Events/WorkItemBecameStale.cs; the record itself is reused unchanged (namespace line only), no other owner exists
+</code></pre>
+
+<p>FeatureBlocked</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/FeatureBlocked.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file at the owner&#x27;s Contracts home, made by git mv of Models/Events/FeatureBlocked.cs; the record itself is reused unchanged (namespace line only), no other owner exists
+</code></pre>
+
+<p>FeatureUnblocked</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/FeatureUnblocked.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file at the owner&#x27;s Contracts home, made by git mv of Models/Events/FeatureUnblocked.cs; the record itself is reused unchanged (namespace line only), no other owner exists
+</code></pre>
+
+<p>TeamDataRefreshed</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/TeamDataRefreshed.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file at the owner&#x27;s Contracts home, made by git mv of Models/Events/TeamDataRefreshed.cs; the record itself is reused unchanged (namespace line only), no other owner exists
+</code></pre>
+
+<p>PortfolioFeaturesRefreshed</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/PortfolioFeaturesRefreshed.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file at the owner&#x27;s Contracts home, made by git mv of Models/Events/PortfolioFeaturesRefreshed.cs; the record itself is reused unchanged (namespace line only), no other owner exists
+</code></pre>
+
+<p>PortfolioForecastsUpdated</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/PortfolioForecastsUpdated.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file at the owner&#x27;s Contracts home, made by git mv of Models/Events/PortfolioForecastsUpdated.cs; the record itself is reused unchanged (namespace line only), no other owner exists
+</code></pre>
+
+<p>TeamDeleted</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/TeamDeleted.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file at the owner&#x27;s Contracts home, made by git mv of Models/Events/TeamDeleted.cs; the record itself is reused unchanged (namespace line only), no other owner exists
+</code></pre>
+
+<p>PortfolioDeleted</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/PortfolioDeleted.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file at the owner&#x27;s Contracts home, made by git mv of Models/Events/PortfolioDeleted.cs; the record itself is reused unchanged (namespace line only), no other owner exists
+</code></pre>
+
+<p>BlackoutConfigurationChanged</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/BlackoutConfigurationChanged.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file at the owner&#x27;s Contracts home, made by git mv of Models/Events/BlackoutConfigurationChanged.cs; the record itself is reused unchanged (namespace line only), no other owner exists
+</code></pre>
+
+<p>FeatureOrderingPolicyChanged</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/FeatureOrderingPolicyChanged.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file at the owner&#x27;s Contracts home, made by git mv of Models/Events/FeatureOrderingPolicyChanged.cs; the record itself is reused unchanged (namespace line only), no other owner exists
+</code></pre>
+
+<p>FeatureRankChanged</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/FeatureRankChanged.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file at the owner&#x27;s Contracts home, made by git mv of Models/Events/FeatureRankChanged.cs; the record itself is reused unchanged (namespace line only), no other owner exists
+</code></pre>
+
+<p>ConnectionFetchShapeChanged</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/ConnectionFetchShapeChanged.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file at the owner&#x27;s Contracts home, made by git mv of Models/Events/ConnectionFetchShapeChanged.cs; the record itself is reused unchanged (namespace line only), no other owner exists
+</code></pre>
+
+<p>PortfolioController</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs:33</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>TeamController</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs:32</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>BlackoutConfigurationChangedMetricsInvalidationHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/BlackoutConfigurationChangedMetricsInvalidationHandler.cs:9</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>BlockedCountSnapshotRecordingHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/BlockedCountSnapshotRecordingHandler.cs:13</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>DemoBlockedHistoryBackfillHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandler.cs:25</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>DemoPercentilesBackfillHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandler.cs:28</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>PercentilesOverTimeRecordingHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandler.cs:11</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>PortfolioFeaturesRefreshedMetricsInvalidationHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PortfolioFeaturesRefreshedMetricsInvalidationHandler.cs:9</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>ProcessBehaviorRecordingHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/ProcessBehaviorRecordingHandler.cs:11</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>TeamDataRefreshedTeamMetricsUpdateHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/TeamDataRefreshedTeamMetricsUpdateHandler.cs:9</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>ReconstructionMemo</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ReconstructionMemo.cs:21</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>ForecastUpdater</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs:22</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>FeatureOrderingPolicyChangedForecastTriggerHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandler.cs:21</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>FeatureRankChangedForecastTriggerHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandler.cs:16</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>TeamDataRefreshedForecastTriggerHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDataRefreshedForecastTriggerHandler.cs:8</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>TeamDeletedForecastRetriggerHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandler.cs:7</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>BlackoutPeriodService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/BlackoutPeriodService.cs:11</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>ConnectionSaveService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/ConnectionSaveService.cs:12</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>FeatureRankingService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankingService.cs:11</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>FeatureOrderingApplier</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/FeatureOrderingApplier.cs:15</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>RecurringBlackoutRuleService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/RecurringBlackoutRuleService.cs:9</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>DeliveryForecastPublishingHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/Policies/DeliveryForecastPublishingHandler.cs:21</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>DeliveryMetricSnapshotRecordingHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandler.cs:10</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>ConnectionFetchShapeChangedUpdateTriggerHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ConnectionFetchShapeChangedUpdateTriggerHandler.cs:7</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>FeatureBlockedTransitionCaptureHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionCaptureHandler.cs:8</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>FeatureBlockedTransitionCloseHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionCloseHandler.cs:7</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>PortfolioDeletedOrphanedFeatureCleanupHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandler.cs:7</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>TeamDeletedRefreshLogCleanupHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandler.cs:8</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>WorkItemBlockedTransitionCaptureHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCaptureHandler.cs:8</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>WorkItemBlockedTransitionCloseHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCloseHandler.cs:7</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>TeamDataService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/TeamDataService.cs:7</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>WorkItemService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:23</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>Program</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:79</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>PortfolioUpdater</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs:23</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>RefreshesStayTheSameTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs:54</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>TeamMetricsFollowTheTeamRefreshTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs:60</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>PortfolioBlockedHistoryAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs:36</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>DeliveryArchiveClosurePinIntegrationTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryArchiveClosurePinIntegrationTest.cs:26</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>Slice00OneForecastPerBatchScenarios</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:49</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>FasterUpdatesAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:56</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>using</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaSpecifications.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>using</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaSpecifications.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>PercentilesOverTimeAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/PercentilesOverTimeAcceptanceTest.cs:27</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>ReconstructOverTimeHistoryAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/ReconstructOverTimeHistoryAcceptanceTest.cs:48</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>SkipUnchangedForecastsAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/SkipUnchangedForecastsAcceptanceTest.cs:45</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>Slice01AnnouncedAndDailyScenarios</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01AnnouncedAndDailyScenarios.cs:15</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>using</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01StaleSignalSpecifications.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>TeamFeatureSizeAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/TeamFeatureSizeAcceptanceTest.cs:33</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>PortfolioControllerTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs:25</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>TeamControllerTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs:30</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>ConnectionFetchShapeChangedSinglePublisherArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectionFetchShapeChangedSinglePublisherArchUnitTest.cs:12</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>DomainEventHandlerOrderPinTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs:18</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>InstantsUnaffectedByZoneTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InstantsUnaffectedByZoneTest.cs:35</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>OrganisationSetupIsAnOpenHostArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs:23</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>OrganisationSetupMembership</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs:53</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>WorkItemsDoesNotCommandFlowMetricsArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDoesNotCommandFlowMetricsArchUnitTest.cs:16</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>WorkItemsModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:36</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>BlackoutConfigurationChangedMetricsInvalidationHandlerTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/BlackoutConfigurationChangedMetricsInvalidationHandlerTest.cs:10</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>BlockedCountSnapshotRecordingHandlerTests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/BlockedCountSnapshotRecordingHandlerTests.cs:23</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>DemoBlockedHistoryBackfillHandlerTests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandlerTests.cs:22</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>DemoPercentilesBackfillHandlerTests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandlerTests.cs:19</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>PercentilesOverTimeRecordingHandlerTests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandlerTests.cs:22</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>PortfolioFeaturesRefreshedMetricsInvalidationHandlerTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/PortfolioFeaturesRefreshedMetricsInvalidationHandlerTest.cs:10</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>ProcessBehaviorRecordingHandlerTests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/ProcessBehaviorRecordingHandlerTests.cs:23</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>TeamDataRefreshedTeamMetricsUpdateHandlerTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/TeamDataRefreshedTeamMetricsUpdateHandlerTest.cs:10</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>ReconstructionMemoTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ReconstructionMemoTest.cs:8</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>ForecastUpdaterTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs:32</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>FeatureOrderingPolicyChangedForecastTriggerHandlerTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandlerTest.cs:29</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>FeatureRankChangedForecastTriggerHandlerTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandlerTest.cs:28</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>TeamDataRefreshedForecastTriggerHandlerTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/TeamDataRefreshedForecastTriggerHandlerTest.cs:11</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>TeamDeletedForecastRetriggerHandlerTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandlerTest.cs:9</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>using</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/AppSettingServiceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>BlackoutPeriodServiceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/BlackoutPeriodServiceTest.cs:12</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>ConnectionSaveServiceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Connections/ConnectionSaveServiceTest.cs:17</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>RecurringBlackoutRuleServiceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/RecurringBlackoutRuleServiceTest.cs:12</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>DeliveryMetricValuesProjectorTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryMetricValuesProjectorTest.cs:18</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>DeliveryForecastPublishingHandlerTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryForecastPublishingHandlerTest.cs:22</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>DeliveryMetricSnapshotRecordingHandlerTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandlerTest.cs:29</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>ConnectionFetchShapeChangedUpdateTriggerHandlerTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/ConnectionFetchShapeChangedUpdateTriggerHandlerTest.cs:10</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>FeatureBlockedTransitionHandlerTests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionHandlerTests.cs:14</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>PortfolioDeletedOrphanedFeatureCleanupHandlerTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandlerTest.cs:17</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>TeamDeletedRefreshLogCleanupHandlerTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandlerTest.cs:10</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>WorkItemBlockedTransitionCaptureTests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCaptureTests.cs:16</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>TeamDataServiceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/TeamDataServiceTest.cs:10</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>WorkItemServiceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:22</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>DomainEventDispatcherGoldTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/DomainEvents/DomainEventDispatcherGoldTest.cs:11</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>DomainEventDispatcherTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/DomainEvents/DomainEventDispatcherTest.cs:9</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>PortfolioUpdaterTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs:32</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>SnapshotRecordedDayInstanceZoneTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/SnapshotRecordedDayInstanceZoneTest.cs:45</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>TeamDataRefreshedGoldTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/TeamDataRefreshedGoldTest.cs:12</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>WorkItemDomainEventsGoldTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/WorkItemDomainEventsGoldTest.cs:18</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>SharedHostCleanup</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/SharedHostCleanup.cs:18</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>ForecastingModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:44</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<p>OrganisationSetupModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs:16</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: using line or event literal only
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>production-event-types</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Events/TeamDeleted.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>15 event files move to their owners&#x27; Contracts; namespace line only
+</code></pre>
+
+<p>production-and-test-consumers</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:1418</p>
+
+<p>Changed</p>
+
+<pre><code>93 files naming an event: using line or literal only (Program.cs handler block, handlers, publishers, tests); measured by text search, the build and the Architecture run decide
+</code></pre>
+
+<p>kernel-dispatch</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/DomainEvents/DomainEventDispatcher.cs:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>names only IDomainEvent
+</code></pre>
+
+<p>schema-wire</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>events are not EF-mapped and not serialised (D-0)
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemTransitioned.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>event record moved, namespace line only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemBlocked.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>event record moved, namespace line only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemUnblocked.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>event record moved, namespace line only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/WorkItemBecameStale.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>event record moved, namespace line only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/FeatureBlocked.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>event record moved, namespace line only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/FeatureUnblocked.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>event record moved, namespace line only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/TeamDataRefreshed.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>event record moved, namespace line only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/PortfolioFeaturesRefreshed.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>event record moved, namespace line only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/PortfolioForecastsUpdated.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>event record moved, namespace line only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/TeamDeleted.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>event record moved, namespace line only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/PortfolioDeleted.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>event record moved, namespace line only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/BlackoutConfigurationChanged.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>event record moved, namespace line only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/FeatureOrderingPolicyChanged.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>event record moved, namespace line only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/FeatureRankChanged.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>event record moved, namespace line only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/ConnectionFetchShapeChanged.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>event record moved, namespace line only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs:33</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs:32</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/BlackoutConfigurationChangedMetricsInvalidationHandler.cs:9</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/BlockedCountSnapshotRecordingHandler.cs:13</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandler.cs:25</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandler.cs:28</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandler.cs:11</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PortfolioFeaturesRefreshedMetricsInvalidationHandler.cs:9</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/ProcessBehaviorRecordingHandler.cs:11</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/TeamDataRefreshedTeamMetricsUpdateHandler.cs:9</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ReconstructionMemo.cs:21</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs:22</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandler.cs:21</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandler.cs:16</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDataRefreshedForecastTriggerHandler.cs:8</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandler.cs:7</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/BlackoutPeriodService.cs:11</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/ConnectionSaveService.cs:12</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankingService.cs:11</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/FeatureOrderingApplier.cs:15</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/RecurringBlackoutRuleService.cs:9</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/Policies/DeliveryForecastPublishingHandler.cs:21</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandler.cs:10</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ConnectionFetchShapeChangedUpdateTriggerHandler.cs:7</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionCaptureHandler.cs:8</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionCloseHandler.cs:7</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandler.cs:7</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandler.cs:8</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCaptureHandler.cs:8</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCloseHandler.cs:7</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/TeamDataService.cs:7</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:23</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs:23</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs:54</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs:60</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs:36</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryArchiveClosurePinIntegrationTest.cs:26</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:49</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:56</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaSpecifications.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaSpecifications.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/PercentilesOverTimeAcceptanceTest.cs:27</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/ReconstructOverTimeHistoryAcceptanceTest.cs:48</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/SkipUnchangedForecastsAcceptanceTest.cs:45</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01AnnouncedAndDailyScenarios.cs:15</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Staleness/Slice01StaleSignalSpecifications.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/TeamFeatureSizeAcceptanceTest.cs:33</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs:25</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs:30</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectionFetchShapeChangedSinglePublisherArchUnitTest.cs:12</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsStringsTheMoveRenames.cs:8</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs:18</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InstantsUnaffectedByZoneTest.cs:35</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs:23</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs:53</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDoesNotCommandFlowMetricsArchUnitTest.cs:16</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:36</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/BlackoutConfigurationChangedMetricsInvalidationHandlerTest.cs:10</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/BlockedCountSnapshotRecordingHandlerTests.cs:23</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandlerTests.cs:22</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandlerTests.cs:19</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandlerTests.cs:22</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/PortfolioFeaturesRefreshedMetricsInvalidationHandlerTest.cs:10</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/ProcessBehaviorRecordingHandlerTests.cs:23</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/TeamDataRefreshedTeamMetricsUpdateHandlerTest.cs:10</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ReconstructionMemoTest.cs:8</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs:32</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandlerTest.cs:29</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandlerTest.cs:28</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/TeamDataRefreshedForecastTriggerHandlerTest.cs:11</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandlerTest.cs:9</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/AppSettingServiceTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/BlackoutPeriodServiceTest.cs:12</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Connections/ConnectionSaveServiceTest.cs:17</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/RecurringBlackoutRuleServiceTest.cs:12</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryMetricValuesProjectorTest.cs:18</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryForecastPublishingHandlerTest.cs:22</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandlerTest.cs:29</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/ConnectionFetchShapeChangedUpdateTriggerHandlerTest.cs:10</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionHandlerTests.cs:14</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandlerTest.cs:17</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandlerTest.cs:10</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCaptureTests.cs:16</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/TeamDataServiceTest.cs:10</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:22</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/DomainEvents/DomainEventDispatcherGoldTest.cs:11</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/DomainEvents/DomainEventDispatcherTest.cs:9</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs:32</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/SnapshotRecordedDayInstanceZoneTest.cs:45</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/TeamDataRefreshedGoldTest.cs:12</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/WorkItemDomainEventsGoldTest.cs:18</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/SharedHostCleanup.cs:18</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:44</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs:16</p>
+
+<p>Changed</p>
+
+<pre><code>using line or event literal only
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>agreement</p>
+
+<pre><code>Namespace-only move of in-process record types in one deployable; no wire, persisted or config form; every producer and consumer changes in the same commit and the compiler rejects a missed one.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>Per touched file: each of the 15 event files holds one record (not-applicable, moved whole); every Extend file changes a using line or a literal only, no structural edit, so no layout move is due; Program.cs holds one type. The move is itself the refactoring, in a refactor(contracts) commit.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L6</h6>
+
+<pre><code>For every type implementing IDomainEvent other than IDomainEvent: its namespace is Lighthouse.Backend.Modules.&lt;C&gt;.Contracts, C being the context whose types construct it (or ADR-270 Decision 3&#x27;s owner when only non-module code constructs it); Models.Events holds IDomainEvent only.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Domain</p>
+
+<p>DomainEventsLiveWithTheirPublisherArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>each of the 15 D-5 events at its owner
+</code></pre>
+
+<pre><code>Models.Events holds only IDomainEvent
+</code></pre>
+
+<pre><code>planted falsifier: a made-up event constructed in one fixture context but declared in another context&#x27;s Contracts is named WHAT/WHY/HOW
+</code></pre>
+
+<pre><code>closed finite set read from the compiled assembly
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<pre><code>event placement
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>the oracle&#x27;s law excludes an event outside its publisher&#x27;s Contracts, executed on the IL
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>event placement
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>each of the 15 owners&#x27; Contracts folders exists (feature C) and receives its files by git mv
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>event placement
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>compiled assembly -&gt; IlDependencies -&gt; oracle -&gt; dotnet test exit and message
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>event placement
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>no liveness claim: a static placement relation, nothing eventual
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T4</h6>
+
+<pre><code>R-C5: each domain event type lives in the Contracts of the context that publishes it; none but IDomainEvent in Models.Events
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventsLiveWithTheirPublisherArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~Architecture&quot;
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundFinished.cs</p>
+
+<p>Create</p>
+
+<pre><code>the event: PortfolioId, PortfolioName, ItemCount, DurationMs, FinishedAt, Outcome
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundOutcome.cs</p>
+
+<p>Create</p>
+
+<pre><code>closed choice Succeeded | Failed | Cancelled | Skipped, one type per file
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ForecastRoundFinishedRefreshLogHandler.cs</p>
+
+<p>Create</p>
+
+<pre><code>writes the same RefreshLog row through IRefreshLogService
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs</p>
+
+<p>Extend</p>
+
+<pre><code>publishes ForecastRoundFinished where LogForecastRefresh was called; drops IRefreshLogService
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<pre><code>registers the handler Scoped in the one ordered handler block
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Forecasting&#x27;s legal callers admit Work Items&#x27; Application.Policies
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>unit rows capture the published ForecastRoundFinished instead of the refresh-log mock
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>only if its placement list names the Work Items handlers
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/ForecastRoundsKeepTheirRefreshLogEntryTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet build Lighthouse.Backend
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~ForecastRoundsKeepTheirRefreshLogEntryTest|FullyQualifiedName~DomainEventHandlerOrderPinTest|FullyQualifiedName~ForecastUpdaterTest&quot;
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~Architecture&quot;
+pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>IForecastUpdater.TriggerImmediateUpdate(portfolioId) on a ServicePortHarness built as Program builds the round, once per outcome (succeeded, failed, cancelled, skipped) and once with a throwing refresh-log write; plus the IL of ForecastUpdater
+</code></pre>
+
+<pre><code>Each round leaves exactly one Forecast row equal to today&#x27;s row for its outcome, written by the handler; the throwing write is logged by the dispatcher and the round completes; ForecastUpdater names no IRefreshLogService; the order pin lists ForecastRoundFinishedRefreshLogHandler. RED before craft: ForecastRoundFinished does not exist / ForecastUpdater still names IRefreshLogService.
+</code></pre>
+
+<pre><code>Publishing with the round&#x27;s token (cancelled row missing), a wrong flag mapping (skipped row with Success false), a missing registration (no row), or ForecastUpdater still writing the row directly each fails a named row.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<pre><code>ForecastUpdater keeps the round&#x27;s flags and, in the same finally and at the same point, publishes ForecastRoundFinished(portfolio.Id, portfolio.Name, itemCount, stopwatch ms, CurrentInstant, outcome) through IDomainEventDispatcher with CancellationToken.None, so a cancelled round still writes its row. Outcome: Cancelled when cancelled, Failed when not successful, Skipped when successful and skipped, else Succeeded; Forecasting owns that decision: a static factory ForecastRoundFinished.For(portfolio, itemCount, durationMs, finishedAt, success, cancelled, skipped) on the event record derives the outcome, replacing ForecastUpdater&#x27;s private LogForecastRefresh.
+</code></pre>
+
+<pre><code>ForecastRoundFinishedRefreshLogHandler (Work Items, Application/Policies, IDomainEventHandler&lt;ForecastRoundFinished&gt;) translates the event into today&#x27;s RefreshLog row: Type Forecast, EntityId, EntityName, ItemCount, SyncOutcome.None&#x27;s Mode/RecordsScanned/RecordsFetched, DurationMs, ExecutedAt = FinishedAt, Success = Succeeded or Skipped, Cancelled = Cancelled, Skipped = Skipped; a total switch over ForecastRoundOutcome (CS8524 pragma per the repository idiom). It is the anti-corruption translation of Work Items&#x27; own record and holds no other rule. Registered Scoped in Program&#x27;s handler block; it is the only handler of the event.
+</code></pre>
+
+<pre><code>Forecasting&#x27;s direction rule (ForecastingsLegalCallers: the API and Refinement at HEAD) admits Lighthouse.Backend.Modules.WorkItems.Application.Policies, so the handler may name Forecasting.Contracts.ForecastRoundFinished. A namespace pattern, not a list entry (S3&#x27;s law forbids module-to-module list entries).
+</code></pre>
+
+<pre><code>The S2 oracle is one file at the port: a ServicePortHarness registering the forecast round as Program builds it (real ForecastUpdater, DomainEventDispatcher, RefreshLogService, the handler through the start-up registration), doubles only for IForecastService outcomes (computed, confirmed unchanged, throws) and the operator stop; four rows (succeeded, failed, cancelled, skipped) read the row through IRefreshLogService.GetRefreshLogs against today&#x27;s expected fields; one row with a throwing IRefreshLogService observes the dispatcher&#x27;s error log and the round&#x27;s completion; one IL row asserts ForecastUpdater names no IRefreshLogService. The order pin (support) reads ForecastRoundFinished and pins [ForecastRoundFinishedRefreshLogHandler].
+</code></pre>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>DomainEventDispatcher</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/DomainEvents/DomainEventDispatcher.cs:6</p>
+
+<p>Reuse</p>
+
+<pre><code>existing transport (ADR-027 D7); its log-and-continue policy is the accepted degradation
+</code></pre>
+
+<p>ForecastUpdater</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs:22</p>
+
+<p>Extend</p>
+
+<pre><code>owns the round and its outcome flags; LogForecastRefresh becomes the publish
+</code></pre>
+
+<p>ForecastRoundFinished</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRunOutcome.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>no event carries a forecast round&#x27;s end; ForecastRunOutcome is the forecast computation&#x27;s result (computed or confirmed unchanged), not the round&#x27;s four-way outcome, so it is not extended
+</code></pre>
+
+<p>ForecastRoundFinishedRefreshLogHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandler.cs:8</p>
+
+<p>CreateNew</p>
+
+<pre><code>follows the existing Work Items refresh-log policy handler shape; no handler of a forecast round exists
+</code></pre>
+
+<p>ServicePortHarness</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ServicePortHarness.cs:21</p>
+
+<p>Reuse</p>
+
+<pre><code>the port seam for background jobs without a host
+</code></pre>
+
+<p>LogRefreshAsync</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Contracts/IRefreshLogService.cs:7</p>
+
+<p>Reuse</p>
+
+<pre><code>the write RX1 performs, unchanged, now called by Work Items&#x27; own handler
+</code></pre>
+
+<p>ForecastRoundFinished</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundFinished.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>new type, no existing owner (see the slice&#x27;s CreateNew rows)
+</code></pre>
+
+<p>ForecastRoundOutcome</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundOutcome.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>new type, no existing owner (see the slice&#x27;s CreateNew rows)
+</code></pre>
+
+<p>ForecastRoundFinishedRefreshLogHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ForecastRoundFinishedRefreshLogHandler.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>new type, no existing owner (see the slice&#x27;s CreateNew rows)
+</code></pre>
+
+<p>Program</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:79</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: list entries, a pattern or a registration only
+</code></pre>
+
+<p>ForecastingModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:44</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: list entries, a pattern or a registration only
+</code></pre>
+
+<p>ForecastUpdaterTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs:32</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: list entries, a pattern or a registration only
+</code></pre>
+
+<p>WorkItemsPoliciesLayoutArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs:20</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: list entries, a pattern or a registration only
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs:383</p>
+
+<p>Changed</p>
+
+<pre><code>direct refresh-log write replaced by the event publish
+</code></pre>
+
+<p>composition-root</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:1433</p>
+
+<p>Changed</p>
+
+<pre><code>one handler registration added to the handler block
+</code></pre>
+
+<p>refresh-log-readers</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/SystemInfoController.cs:22</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>reads the same rows with the same fields
+</code></pre>
+
+<p>refresh-log-readers</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateNotificationHub.cs:14</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>reads the same rows with the same fields
+</code></pre>
+
+<p>unit-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs:1253</p>
+
+<p>Changed</p>
+
+<pre><code>CaptureRefreshLog rows move to the published event
+</code></pre>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:145</p>
+
+<p>Changed</p>
+
+<pre><code>legal callers widened by Work Items&#x27; Application.Policies
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundFinished.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>new file of the RX1 path
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ForecastRoundOutcome.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>new file of the RX1 path
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ForecastRoundFinishedRefreshLogHandler.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>new file of the RX1 path
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs:20</p>
+
+<p>Changed</p>
+
+<pre><code>edited for this slice&#x27;s law
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>ForecastRoundFinished (Forecasting.Contracts)</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs:226</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>new producer replacing the direct LogRefreshAsync call
+</code></pre>
+
+<p>ForecastRoundFinished (Forecasting.Contracts)</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ForecastRoundFinishedRefreshLogHandler.cs:1</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>sole consumer, same commit
+</code></pre>
+
+<p>RefreshLog row of RefreshType.Forecast</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/RefreshLogService.cs:17</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>receives the same entry fields from the handler
+</code></pre>
+
+<p>RefreshLog row of RefreshType.Forecast</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/SystemInfoController.cs:22</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>reads rows equal under the refresh-log entry equality
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>Per touched file: ForecastUpdater.cs holds one type (not-applicable); Program.cs one type (not-applicable); ForecastUpdaterTest.cs one type (not-applicable); ForecastingModuleBoundariesArchUnitTest.cs and WorkItemsPoliciesLayoutArchUnitTest.cs hold the rule class plus planted fixture types in made-up namespaces that the falsifiers read from the compiled test assembly; the edit is one pattern, and splitting every rule&#x27;s fixtures is a whole-folder layout decision for the test-writing skill&#x27;s owner, not this slice (not-applicable, flagged to the maintainer). The three new files hold one type each.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>IForecastUpdater.TriggerImmediateUpdate over a ServicePortHarness scope factory, no host
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<pre><code>IDomainEventDispatcher (platform lane, unchanged)
+</code></pre>
+
+<pre><code>IRefreshLogService (Work Items Contracts, unchanged)
+</code></pre>
+
+<pre><code>Forecasting publishes ForecastRoundFinished from its Contracts; Work Items&#x27; Application.Policies handler depends on Forecasting.Contracts and writes through its own IRefreshLogService; ForecastUpdater names no Work Items type for the log
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>####### B1</p>
+
+<pre><code>IRefreshLogService.LogRefreshAsync throws inside the handler
+</code></pre>
+
+<p>Indeterminate</p>
+
+<pre><code>dispatcher error log naming the handler and event; no row for that round; the round completes
+</code></pre>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>ForecastRoundFinished</p>
+
+<p>sealed record ForecastRoundFinished(int PortfolioId, string PortfolioName, int ItemCount, long DurationMs, DateTime FinishedAt, ForecastRoundOutcome Outcome) : IDomainEvent</p>
+
+<p>ForecastRoundOutcome</p>
+
+<p>enum ForecastRoundOutcome { Succeeded, Failed, Cancelled, Skipped }</p>
+
+<h5>Laws</h5>
+
+<h6>L1</h6>
+
+<pre><code>For each round outcome, the refresh-log row written after the round equals today&#x27;s row under the refresh-log entry equality.
+</code></pre>
+
+<p>Refinement</p>
+
+<p>Application</p>
+
+<p>ForecastRoundsKeepTheirRefreshLogEntryTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>succeeded: Success true, Cancelled false, Skipped false, ItemCount = feature count
+</code></pre>
+
+<pre><code>failed (forecast throws): Success false, Cancelled false, Skipped false, ItemCount 0
+</code></pre>
+
+<pre><code>cancelled (operator stop): Success false, Cancelled true, Skipped false
+</code></pre>
+
+<pre><code>skipped (confirmed unchanged): Success true, Cancelled false, Skipped true
+</code></pre>
+
+<pre><code>closed four-value domain, every member a row
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L2</h6>
+
+<pre><code>A throwing refresh-log write never fails the round: the round completes, the dispatcher logs one error naming ForecastRoundFinishedRefreshLogHandler and ForecastRoundFinished, and no refresh-log row exists for it.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>ForecastRoundsKeepTheirRefreshLogEntryTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>succeeded round with an IRefreshLogService whose LogRefreshAsync throws
+</code></pre>
+
+<pre><code>one failure point, one example (D-16)
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L3</h6>
+
+<pre><code>ForecastUpdater has no IL dependency on IRefreshLogService.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>ForecastRoundsKeepTheirRefreshLogEntryTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>IlDependencies of ForecastUpdater and its nested types exclude Modules.WorkItems.Contracts.IRefreshLogService
+</code></pre>
+
+<pre><code>single type, read once
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L4</h6>
+
+<pre><code>ForecastRoundFinished&#x27;s handlers, in registration order, are exactly [ForecastRoundFinishedRefreshLogHandler].
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>DomainEventHandlerOrderPinTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>start-up registrations read without a host
+</code></pre>
+
+<pre><code>one event, one list
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<h6>C1</h6>
+
+<pre><code>A forecast round&#x27;s refresh-log flags come from one of four outcomes, so Success with Cancelled, or Skipped without Success, cannot be written for a forecast round
+</code></pre>
+
+<pre><code>a row the System info page shows as both succeeded and stopped
+</code></pre>
+
+<p>Forecasting.Contracts.ForecastRoundOutcome</p>
+
+<pre><code>the round&#x27;s success, cancelled and skipped flags in ForecastUpdater
+</code></pre>
+
+<p>ForecastRoundFinished</p>
+
+<p>ForecastRoundFinishedRefreshLogHandler</p>
+
+<pre><code>the refresh-log row read through IRefreshLogService.GetRefreshLogs
+</code></pre>
+
+<pre><code>an undefined enum value cast from an int: the handler&#x27;s total switch throws and the dispatcher logs it (C# enums are open; construction centralised, not proved)
+</code></pre>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<pre><code>RX1
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>four-way closed outcome excludes unreachable flag rows; IL row excludes the direct write
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>RX1
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>each outcome is constructed by ForecastUpdater from flags the round already computes
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>RX1
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>round -&gt; ForecastRoundFinished -&gt; DomainEventDispatcher -&gt; handler -&gt; IRefreshLogService -&gt; GetRefreshLogs at the port
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>RX1
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>no liveness claim: the handler runs to completion inside the awaited PublishAsync of the round&#x27;s finally
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>module-to-module entries removed; patterns stop reading other modules as forbidden where R-C1 now owns the edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>module-to-module entries removed; patterns stop reading other modules as forbidden where R-C1 now owns the edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>module-to-module entries removed; patterns stop reading other modules as forbidden where R-C1 now owns the edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>module-to-module entries removed; patterns stop reading other modules as forbidden where R-C1 now owns the edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>module-to-module entries removed; patterns stop reading other modules as forbidden where R-C1 now owns the edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>module-to-module entries removed; patterns stop reading other modules as forbidden where R-C1 now owns the edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>module-to-module entries removed; patterns stop reading other modules as forbidden where R-C1 now owns the edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>module-to-module entries removed; patterns stop reading other modules as forbidden where R-C1 now owns the edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>module-to-module entries removed; patterns stop reading other modules as forbidden where R-C1 now owns the edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>module-to-module entries removed; patterns stop reading other modules as forbidden where R-C1 now owns the edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>module-to-module entries removed; patterns stop reading other modules as forbidden where R-C1 now owns the edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>module-to-module entries removed; patterns stop reading other modules as forbidden where R-C1 now owns the edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>R-C1&#x27;s list: gains any module-to-module non-Contracts edge found only in a per-module list
+</code></pre>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md</p>
+
+<p>Extend</p>
+
+<pre><code>prose: Contracts as fourth layer (D-2 criterion, R-C1-R-C5), event table with owners, Every-edge rows to Contracts, Forecasting -&gt; Work Items by events, ratchet candidates = R-C1 residue with owners, ConnectionFetchShapeChanged owner, context contract term
+</code></pre>
+
+<p>ARCHITECTURE.md</p>
+
+<p>Extend</p>
+
+<pre><code>prose: section 4 Context contracts bullet (layer, rule, enumerator, residue) and the CI test-selection payoff note (D-13); section 5 names ForecastRoundFinished
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EachCrossContextEdgeHasOneOwningRuleArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet build Lighthouse.Backend
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~Architecture&quot;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Architecture over the compiled test and production assemblies
+</code></pre>
+
+<pre><code>RED before craft: the law names each module-to-module entry of the per-module lists (e.g. Licensing&#x27;s ForecastFilterRuleService -&gt; ILicenseService, Tracker integration&#x27;s ConnectionHealthCadence -&gt; IAppSettingService, Work Items&#x27; WorkItemService -&gt; PercentileCalculator). GREEN after: no such entry remains, R-C1 and every other Architecture rule pass.
+</code></pre>
+
+<pre><code>Re-adding any module-to-module entry to a per-module list, or a planted fixture list with one, fails the law naming the list, the entry and R-C1 as the owner.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<pre><code>The one-owner law&#x27;s population is read, not named: every static string collection member of the test assembly&#x27;s Architecture types whose entries have the edge shape &quot;Source -&gt; Target&quot;, read by value from the compiled test assembly (concatenated entries included). It excludes R-C1&#x27;s own list and an inline, both-ways-compared list of members that record compiled edges rather than allow them (for example the open host&#x27;s edges-that-became-legal list). Law: no included entry has a source in Lighthouse.Backend.Modules.A and a target in Lighthouse.Backend.Modules.B with A different from B (fixture roots such as *Fixtures excluded as not packaged contexts, per R-C3). Preservation: every module-to-module edge listed anywhere before S3 is in R-C1&#x27;s list after S3, or targets a Contracts type, or has left the IL.
+</code></pre>
+
+<pre><code>A module-to-module edge into another context&#x27;s Contracts leaves every list: R-C1 makes it legal and the target&#x27;s direction pattern governs it at context level. This includes Licensing R-L3&#x27;s module-sourced licence reads (Forecasting ForecastFilterRuleService and WriteBackTriggerService, Work Items DependencyDecision, Reports ReportCommands and ReportQueries) and Work Items&#x27; and Access&#x27;s Contracts edges; R-L3 keeps its non-module readers (the Services updaters, API). The per-edge ratchet on module licence reads is given up for a context-level direction rule, as P3 requires.
+</code></pre>
+
+<pre><code>OrganisationSetupIsAnOpenHostArchUnitTest (support, acceptance designer): TrackerIntegrationsList_HoldsExactlyTheCadenceEdgeIntoTheSettings becomes &quot;Tracker integration&#x27;s list names no edge into set-up&quot;, and AMadeUpTrackerIntegrationTypeAskingTheSettings_IsNamedByTrackerIntegrationsRule becomes &quot;a made-up Tracker integration type asking set-up&#x27;s Contracts passes Tracker integration&#x27;s rule&quot; (set-up is the open host). Nothing else in that file changes; its Contracts narrowing is feature C&#x27;s.
+</code></pre>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>GivenTheEntriesOfTheList</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs:237</p>
+
+<p>Reuse</p>
+
+<pre><code>reading a list&#x27;s entries by reflection already exists; the oracle uses the same reading over every member instead of named ones
+</code></pre>
+
+<p>CrossContextEdgesOutsideContracts</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:51</p>
+
+<p>Reuse</p>
+
+<pre><code>R-C1 is the one owner; holds all eight non-Contracts edges at HEAD
+</code></pre>
+
+<p>TheTenPackagedContexts</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:36</p>
+
+<p>Reuse</p>
+
+<pre><code>the R-C3 enumerator decides which namespace roots are contexts
+</code></pre>
+
+<p>ForecastingModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:44</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: list entries, a pattern or a registration only
+</code></pre>
+
+<p>LicensingModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:36</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: list entries, a pattern or a registration only
+</code></pre>
+
+<p>OrganisationSetupModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs:16</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: list entries, a pattern or a registration only
+</code></pre>
+
+<p>RefinementModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs:41</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: list entries, a pattern or a registration only
+</code></pre>
+
+<p>ReportsModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs:42</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: list entries, a pattern or a registration only
+</code></pre>
+
+<p>TrackerIntegrationModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:29</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: list entries, a pattern or a registration only
+</code></pre>
+
+<p>WorkItemsModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:36</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: list entries, a pattern or a registration only
+</code></pre>
+
+<p>AccessModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:36</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: list entries, a pattern or a registration only
+</code></pre>
+
+<p>PromisesModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:36</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: list entries, a pattern or a registration only
+</code></pre>
+
+<p>FlowMetricsApplicationOutboundArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs:29</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: list entries, a pattern or a registration only
+</code></pre>
+
+<p>FlowMetricsInboundApplicationArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:21</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: list entries, a pattern or a registration only
+</code></pre>
+
+<p>FlowMetricsInboundDomainAndAdaptersArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs:23</p>
+
+<p>Extend</p>
+
+<pre><code>existing owner edited in place: list entries, a pattern or a registration only
+</code></pre>
+
+<p>Bounded</p>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:1</p>
+
+<p>Extend</p>
+
+<pre><code>the existing authority document is amended (D-11), no second document
+</code></pre>
+
+<p>Lighthouse</p>
+
+<p>ARCHITECTURE.md:1</p>
+
+<p>Extend</p>
+
+<pre><code>the existing authority document is amended (D-11), no second document
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:136</p>
+
+<p>Changed</p>
+
+<pre><code>module-to-module entries removed (measured at HEAD by literal search: Forecasting, Licensing, Organisation set-up, Refinement, Reports, Tracker integration, Work Items lists; concatenated entries found by the oracle)
+</code></pre>
+
+<p>architecture-tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs:51</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>expected unchanged: every non-Contracts module edge of the per-module lists is already in R-C1
+</code></pre>
+
+<p>docs</p>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:1</p>
+
+<p>Changed</p>
+
+<pre><code>D-11 prose
+</code></pre>
+
+<p>docs</p>
+
+<p>ARCHITECTURE.md:1</p>
+
+<p>Changed</p>
+
+<pre><code>D-11, D-13 prose
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:44</p>
+
+<p>Changed</p>
+
+<pre><code>edited for this slice&#x27;s law
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs:16</p>
+
+<p>Changed</p>
+
+<pre><code>edited for this slice&#x27;s law
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs:41</p>
+
+<p>Changed</p>
+
+<pre><code>edited for this slice&#x27;s law
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs:42</p>
+
+<p>Changed</p>
+
+<pre><code>edited for this slice&#x27;s law
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:29</p>
+
+<p>Changed</p>
+
+<pre><code>edited for this slice&#x27;s law
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:36</p>
+
+<p>Changed</p>
+
+<pre><code>edited for this slice&#x27;s law
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:36</p>
+
+<p>Changed</p>
+
+<pre><code>edited for this slice&#x27;s law
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:36</p>
+
+<p>Changed</p>
+
+<pre><code>edited for this slice&#x27;s law
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs:29</p>
+
+<p>Changed</p>
+
+<pre><code>edited for this slice&#x27;s law
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:21</p>
+
+<p>Changed</p>
+
+<pre><code>edited for this slice&#x27;s law
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs:23</p>
+
+<p>Changed</p>
+
+<pre><code>edited for this slice&#x27;s law
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>agreement</p>
+
+<pre><code>Test-side rule lists and prose only; no production contract changes.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>Per touched file: OrganisationSetupModuleBoundariesArchUnitTest.cs, ContextContractsArchUnitTest.cs (rule plus fixtures), and the per-module rule files (Forecasting, Licensing, Refinement, Reports, Tracker integration, Work Items, Access, Promises, the three Flow metrics rules) each hold one rule class plus planted fixture types in made-up namespaces that the falsifiers read from the compiled test assembly; the slice edits list entries and patterns only. Splitting every rule&#x27;s fixtures is a whole-folder layout decision for the test-writing skill&#x27;s owner (not-applicable per file, flagged to the maintainer). ADR-270 and ARCHITECTURE.md are prose (not-applicable).
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L5</h6>
+
+<pre><code>No edge-shaped entry of any rule list other than R-C1&#x27;s names a source in one packaged context and a target in another; every module-to-module edge listed before is in R-C1, targets a Contracts type, or has left the IL.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>EachCrossContextEdgeHasOneOwningRuleArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>every per-module list read by value
+</code></pre>
+
+<pre><code>planted falsifier: a fixture list naming Modules.Refinement.X -&gt; Modules.Access.Application.Y is named WHAT/WHY/HOW
+</code></pre>
+
+<pre><code>the exclusion list compared both ways with the members it names
+</code></pre>
+
+<pre><code>closed finite set of compiled members
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<pre><code>one owner per edge
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>law executed over every edge-shaped list member by value
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>one owner per edge
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>R-C1&#x27;s list already holds the eight non-Contracts edges; the per-module lists can be emptied of module edges without losing one
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>one owner per edge
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>compiled test assembly -&gt; oracle -&gt; dotnet test exit and message
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>one owner per edge
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>no liveness claim: a static relation over lists
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T3</h6>
+
+<pre><code>One owner per edge: no per-module list names a module-to-module edge; every such edge is owned by R-C1 or is legal through Contracts
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EachCrossContextEdgeHasOneOwningRuleArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~Architecture&quot;
+</code></pre>
+
+<h5>Contract tests</h5>
 
 <p>None.</p>
 
