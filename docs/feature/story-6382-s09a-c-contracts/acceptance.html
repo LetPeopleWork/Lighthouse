@@ -156,7 +156,123 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the map of what Licensing and Access publish, without events
+</code></pre>
+
+<pre><code>Exactly the two Access types and the one Licensing type the other contexts reach are listed
+</code></pre>
+
+<pre><code>The published list cannot shrink to nothing and pass unseen
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingAndAccessPublishTheirContractsArchUnitTest.cs</p>
+
+<p>EachContextPublishesTheTypesTheOthersReach_AndTheListOfThemIsNotEmpty</p>
+
+<pre><code>The list is emptied or loses a type, because every other check then looks at nothing
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Look up each published type of Licensing and Access in the compiled code
+</code></pre>
+
+<pre><code>Each is found exactly once, in the Contracts namespace of its own context
+</code></pre>
+
+<pre><code>Other contexts have one published place to name each of these types
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingAndAccessPublishTheirContractsArchUnitTest.cs</p>
+
+<p>EachPublishedTypeIsFoundOnceAndInTheContractsOfItsOwnContext</p>
+
+<pre><code>A type is kept in its old place, present in both places, or put into another context&#x27;s Contracts, only if the check looked at the old place or counted loosely
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Look in the old namespace of each published type
+</code></pre>
+
+<pre><code>None of them is found there
+</code></pre>
+
+<pre><code>Nothing of Licensing and Access can be reached outside its Contracts
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingAndAccessPublishTheirContractsArchUnitTest.cs</p>
+
+<p>NoPublishedTypeIsLeftInTheNamespaceItHadBefore</p>
+
+<pre><code>A copy stays behind in the old namespace while the new one also exists
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Scan the compiled production and test code outside Licensing and Access for references to the old names
+</code></pre>
+
+<pre><code>No type names any published type through its old namespace
+</code></pre>
+
+<pre><code>Every use of Licensing and Access goes through their Contracts
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingAndAccessPublishTheirContractsArchUnitTest.cs</p>
+
+<p>NoTypeOutsideLicensingAndAccessNamesAPublishedTypeByItsOldName</p>
+
+<pre><code>A type outside the two contexts still uses the old name, only if the scan skipped nested, test or generic uses
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
 
 <h2>Expectations</h2>
 

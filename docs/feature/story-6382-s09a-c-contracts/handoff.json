@@ -1,10 +1,90 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F66",
+"L1/F67",
+"T1"
+],
+"still_passes_if": "F164",
+"test": "EachContextPublishesTheTypesTheOthersReach_AndTheListOfThemIsNotEmpty",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingAndAccessPublishTheirContractsArchUnitTest.cs"
+},
+"expected": "F162",
+"stimulus": "F161",
+"user_result": "F163"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F66",
+"L1/F67",
+"T1"
+],
+"still_passes_if": "F168",
+"test": "EachPublishedTypeIsFoundOnceAndInTheContractsOfItsOwnContext",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingAndAccessPublishTheirContractsArchUnitTest.cs"
+},
+"expected": "F166",
+"stimulus": "F165",
+"user_result": "F167"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F66",
+"L1/F67",
+"T1"
+],
+"still_passes_if": "F172",
+"test": "NoPublishedTypeIsLeftInTheNamespaceItHadBefore",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingAndAccessPublishTheirContractsArchUnitTest.cs"
+},
+"expected": "F170",
+"stimulus": "F169",
+"user_result": "F171"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F66",
+"L1/F67",
+"T1"
+],
+"still_passes_if": "F176",
+"test": "NoTypeOutsideLicensingAndAccessNamesAPublishedTypeByItsOldName",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingAndAccessPublishTheirContractsArchUnitTest.cs"
+},
+"expected": "F174",
+"stimulus": "F173",
+"user_result": "F175"
+}
+]
+},
 "counters": {
 "B": 1,
 "C": 1,
 "D": 15,
 "E": 6,
-"F": 160,
+"F": 176,
 "K": 4,
 "L": 2,
 "P": 5,
@@ -9342,7 +9422,23 @@
 "F159": "RED before the move: each of IAppSettingService, IBlackoutPeriodService, IFeatureOrdering is found in its old namespace and not in Lighthouse.Backend.Modules.OrganisationSetup.Contracts. GREEN after: each resolves to exactly one top-level type in Lighthouse.Backend.Modules.OrganisationSetup.Contracts, none is left in the old namespace, no type names one through the old name, and with R-C1's entries for these targets deleted every Architecture rule passes. It also asserts the open host is narrowed: no downstream module's set-up pattern or SetUpNamespacesOpenToDownstreamModules admits Organisation set-up's Application or Domain, only its Contracts.",
 "F16": "R-C1 with the Tracker integration entries deleted fails until its contract types move; the path classifier test classifies a Tracker integration Contracts path as shared; then every Architecture rule and the classifier test pass.",
 "F160": "A Organisation set-up published type left in its old namespace, present in both, moved to another context's Contracts, or a membership entry matching no type (vacuous list): the oracle fails naming the type. A stale R-C1 entry or a residue entry deleted fails R-C1 as gone or unlisted.",
+"F161": "Read the map of what Licensing and Access publish, without events",
+"F162": "Exactly the two Access types and the one Licensing type the other contexts reach are listed",
+"F163": "The published list cannot shrink to nothing and pass unseen",
+"F164": "The list is emptied or loses a type, because every other check then looks at nothing",
+"F165": "Look up each published type of Licensing and Access in the compiled code",
+"F166": "Each is found exactly once, in the Contracts namespace of its own context",
+"F167": "Other contexts have one published place to name each of these types",
+"F168": "A type is kept in its old place, present in both places, or put into another context's Contracts, only if the check looked at the old place or counted loosely",
+"F169": "Look in the old namespace of each published type",
 "F17": "Tracker integration is named only through Contracts, and CI still selects the right suites for a change there.",
+"F170": "None of them is found there",
+"F171": "Nothing of Licensing and Access can be reached outside its Contracts",
+"F172": "A copy stays behind in the old namespace while the new one also exists",
+"F173": "Scan the compiled production and test code outside Licensing and Access for references to the old names",
+"F174": "No type names any published type through its old namespace",
+"F175": "Every use of Licensing and Access goes through their Contracts",
+"F176": "A type outside the two contexts still uses the old name, only if the scan skipped nested, test or generic uses",
 "F18": "R-C1 with the Organisation set-up entries deleted, and its open host narrowed to Contracts, fails until the types move; then R-C1 holds only the owned residue and every Architecture rule passes.",
 "F19": "Organisation set-up is named only through Contracts; the ratchet list is down to its owned residue.",
 "F2": "Every cross-context reference goes through the publisher's Contracts namespace or is a listed, owned residue edge, so the contracts-only rule holds and S09b can turn Contracts into an assembly boundary, with no behaviour change.",

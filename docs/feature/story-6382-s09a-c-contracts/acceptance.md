@@ -2,7 +2,139 @@
 
 ## Slices
 
-None.
+### S1
+
+##### Covers
+
+P1
+
+```text
+Read the map of what Licensing and Access publish, without events
+```
+
+```text
+Exactly the two Access types and the one Licensing type the other contexts reach are listed
+```
+
+```text
+The published list cannot shrink to nothing and pass unseen
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingAndAccessPublishTheirContractsArchUnitTest\.cs
+
+EachContextPublishesTheTypesTheOthersReach\_AndTheListOfThemIsNotEmpty
+
+```text
+The list is emptied or loses a type, because every other check then looks at nothing
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Look up each published type of Licensing and Access in the compiled code
+```
+
+```text
+Each is found exactly once, in the Contracts namespace of its own context
+```
+
+```text
+Other contexts have one published place to name each of these types
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingAndAccessPublishTheirContractsArchUnitTest\.cs
+
+EachPublishedTypeIsFoundOnceAndInTheContractsOfItsOwnContext
+
+```text
+A type is kept in its old place, present in both places, or put into another context's Contracts, only if the check looked at the old place or counted loosely
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Look in the old namespace of each published type
+```
+
+```text
+None of them is found there
+```
+
+```text
+Nothing of Licensing and Access can be reached outside its Contracts
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingAndAccessPublishTheirContractsArchUnitTest\.cs
+
+NoPublishedTypeIsLeftInTheNamespaceItHadBefore
+
+```text
+A copy stays behind in the old namespace while the new one also exists
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Scan the compiled production and test code outside Licensing and Access for references to the old names
+```
+
+```text
+No type names any published type through its old namespace
+```
+
+```text
+Every use of Licensing and Access goes through their Contracts
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingAndAccessPublishTheirContractsArchUnitTest\.cs
+
+NoTypeOutsideLicensingAndAccessNamesAPublishedTypeByItsOldName
+
+```text
+A type outside the two contexts still uses the old name, only if the scan skipped nested, test or generic uses
+```
+
+###### Obligations
+
+
+
 
 ## Expectations
 
