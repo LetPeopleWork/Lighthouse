@@ -147,6 +147,20 @@ DEVOPS usage data (host, 2026-11-27): two name-only events, appended to UsageDat
 ```
 Governed slices: S5, S7
 
+#### D24
+
+```text
+Amendment after the S5 slice review (host, 2026-11-27): the withinSle widget's fetch requirement is [withinSleInfo] only, as the approved S5 loading oracle requires (the frame is ready once the share is answered). View Data's closed-items list reads cycleTimeData, which the Cycle Time Percentiles widget beside it already fetches on the same Flow Overview; until it arrives the list is empty, never stale. Supersedes the earlier requirement [withinSleInfo, cycleTimeData].
+```
+Governed slices: S5
+
+#### D25
+
+```text
+Amendment after the S5 slice review (host, 2026-11-27): the WithinSleListOpened usage event emitted since S5 gets its executable checks in S6's oracle (the widget's remaining behaviour): the frontend reports it once per View Data open on the withinSle widget and never on render; a backend event-name test pins the value 31, like OutlierListOpened's.
+```
+Governed slices: S6
+
 ### Constraints
 
 #### K1

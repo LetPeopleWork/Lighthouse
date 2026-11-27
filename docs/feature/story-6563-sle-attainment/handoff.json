@@ -146,9 +146,9 @@
 "counters": {
 "B": 6,
 "C": 2,
-"D": 23,
+"D": 25,
 "E": 15,
-"F": 529,
+"F": 531,
 "K": 26,
 "L": 7,
 "N": 4,
@@ -493,6 +493,20 @@
 "S7"
 ],
 "text": "F443"
+},
+{
+"id": "D24",
+"slices": [
+"S5"
+],
+"text": "F530"
+},
+{
+"id": "D25",
+"slices": [
+"S6"
+],
+"text": "F531"
 }
 ],
 "equality": [
@@ -2969,6 +2983,8 @@
 "F528": "The widget is placed without a licence; while the answer is on its way the frame reads loading; when it fails the frame reads error and shows the could-not-load message",
 "F529": "Without Premium the reader sees the widget, with a loading look or a could-not-load message, never an empty area",
 "F53": "Q6: both the widget and the chart appear for Teams and Portfolios.",
+"F530": "Amendment after the S5 slice review (host, 2026-11-27): the withinSle widget's fetch requirement is [withinSleInfo] only, as the approved S5 loading oracle requires (the frame is ready once the share is answered). View Data's closed-items list reads cycleTimeData, which the Cycle Time Percentiles widget beside it already fetches on the same Flow Overview; until it arrives the list is empty, never stale. Supersedes the earlier requirement [withinSleInfo, cycleTimeData].",
+"F531": "Amendment after the S5 slice review (host, 2026-11-27): the WithinSleListOpened usage event emitted since S5 gets its executable checks in S6's oracle (the widget's remaining behaviour): the frontend reports it once per View Data open on the withinSle widget and never on render; a backend event-name test pins the value 31, like OutlierListOpened's.",
 "F54": "Q7: the widget reuses the Cycle Time Percentiles status rule (Sustain at or above target, Observe up to 20 points below, Act beyond or no SLE); Cycle Time Percentiles keeps its own status.",
 "F55": "Q8: free, no Premium gate.",
 "F56": "Q9: the tooltip wording and the Aging chart line default are out of this Story.",
