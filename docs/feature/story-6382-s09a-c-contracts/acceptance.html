@@ -274,6 +274,119 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read the map of what Flow metrics and Forecasting publish, without events
+</code></pre>
+
+<pre><code>Thirteen types are listed: ten of Flow metrics and three of Forecasting; the list is neither empty nor shrunk
+</code></pre>
+
+<pre><code>A check over the published types cannot pass by looking at nothing
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.cs</p>
+
+<p>FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.EachContextPublishesTheTypesTheOthersReach_AndTheListOfThemIsNotEmpty</p>
+
+<pre><code>An empty or shorter list of published types would pass all later checks; this row fails it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Look up each published type of Flow metrics and Forecasting in the compiled code
+</code></pre>
+
+<pre><code>Each is found exactly once, in the Contracts namespace of its own context
+</code></pre>
+
+<pre><code>Other contexts find Flow metrics and Forecasting types only in their Contracts
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.cs</p>
+
+<p>FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.EachPublishedTypeIsFoundOnceAndInTheContractsOfItsOwnContext</p>
+
+<pre><code>A type copied into Contracts and kept in the old place, or moved into another context Contracts, is not accepted by this row
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Look for each published type in the namespace it had before the move
+</code></pre>
+
+<pre><code>None is left in its old namespace
+</code></pre>
+
+<pre><code>No published type remains reachable outside Contracts
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.cs</p>
+
+<p>FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.NoPublishedTypeIsLeftInTheNamespaceItHadBefore</p>
+
+<pre><code>An unrelated type of the same name in another namespace would not matter; only the old namespace and name together are checked
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Scan the compiled production and test code outside Flow metrics and Forecasting for use of a published type
+</code></pre>
+
+<pre><code>No type names a published type by its old full name
+</code></pre>
+
+<pre><code>Behaviour is unchanged and every user of a moved type follows the move; the scan reads compiled code only, so a full name written inside a string is not covered by this row
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.cs</p>
+
+<p>FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.NoTypeOutsideFlowMetricsAndForecastingNamesAPublishedTypeByItsOldName</p>
+
+<pre><code>An old full name kept only inside a string literal would pass, because the scan reads compiled type references only
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

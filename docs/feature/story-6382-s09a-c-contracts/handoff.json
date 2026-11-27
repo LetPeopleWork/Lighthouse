@@ -77,6 +77,79 @@
 "stimulus": "F173",
 "user_result": "F175"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F180",
+"test": "FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.EachContextPublishesTheTypesTheOthersReach_AndTheListOfThemIsNotEmpty",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.cs"
+},
+"expected": "F178",
+"stimulus": "F177",
+"user_result": "F179"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F66",
+"T1"
+],
+"still_passes_if": "F183",
+"test": "FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.EachPublishedTypeIsFoundOnceAndInTheContractsOfItsOwnContext",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.cs"
+},
+"expected": "F166",
+"stimulus": "F181",
+"user_result": "F182"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F66",
+"T1"
+],
+"still_passes_if": "F187",
+"test": "FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.NoPublishedTypeIsLeftInTheNamespaceItHadBefore",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.cs"
+},
+"expected": "F185",
+"stimulus": "F184",
+"user_result": "F186"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F66",
+"T1"
+],
+"still_passes_if": "F191",
+"test": "FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.NoTypeOutsideFlowMetricsAndForecastingNamesAPublishedTypeByItsOldName",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsAndForecastingPublishTheirContractsArchUnitTest.cs"
+},
+"expected": "F189",
+"stimulus": "F188",
+"user_result": "F190"
+}
 ]
 },
 "counters": {
@@ -84,7 +157,7 @@
 "C": 1,
 "D": 15,
 "E": 6,
-"F": 176,
+"F": 191,
 "K": 4,
 "L": 2,
 "P": 5,
@@ -9439,8 +9512,23 @@
 "F174": "No type names any published type through its old namespace",
 "F175": "Every use of Licensing and Access goes through their Contracts",
 "F176": "A type outside the two contexts still uses the old name, only if the scan skipped nested, test or generic uses",
+"F177": "Read the map of what Flow metrics and Forecasting publish, without events",
+"F178": "Thirteen types are listed: ten of Flow metrics and three of Forecasting; the list is neither empty nor shrunk",
+"F179": "A check over the published types cannot pass by looking at nothing",
 "F18": "R-C1 with the Organisation set-up entries deleted, and its open host narrowed to Contracts, fails until the types move; then R-C1 holds only the owned residue and every Architecture rule passes.",
+"F180": "An empty or shorter list of published types would pass all later checks; this row fails it",
+"F181": "Look up each published type of Flow metrics and Forecasting in the compiled code",
+"F182": "Other contexts find Flow metrics and Forecasting types only in their Contracts",
+"F183": "A type copied into Contracts and kept in the old place, or moved into another context Contracts, is not accepted by this row",
+"F184": "Look for each published type in the namespace it had before the move",
+"F185": "None is left in its old namespace",
+"F186": "No published type remains reachable outside Contracts",
+"F187": "An unrelated type of the same name in another namespace would not matter; only the old namespace and name together are checked",
+"F188": "Scan the compiled production and test code outside Flow metrics and Forecasting for use of a published type",
+"F189": "No type names a published type by its old full name",
 "F19": "Organisation set-up is named only through Contracts; the ratchet list is down to its owned residue.",
+"F190": "Behaviour is unchanged and every user of a moved type follows the move; the scan reads compiled code only, so a full name written inside a string is not covered by this row",
+"F191": "An old full name kept only inside a string literal would pass, because the scan reads compiled type references only",
 "F2": "Every cross-context reference goes through the publisher's Contracts namespace or is a listed, owned residue edge, so the contracts-only rule holds and S09b can turn Contracts into an assembly boundary, with no behaviour change.",
 "F20": "Licensing and Access contract types (license service, RBAC administration service and the types they use) are available from their Contracts namespaces, and the product behaves as before for licence checks and access decisions.",
 "F21": "The oracle sees structure and build success; it does not see that licence checks and RBAC decisions still give the same answers for the same users.",

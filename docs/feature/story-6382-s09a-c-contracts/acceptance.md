@@ -136,6 +136,135 @@ A type outside the two contexts still uses the old name, only if the scan skippe
 
 
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+Read the map of what Flow metrics and Forecasting publish, without events
+```
+
+```text
+Thirteen types are listed: ten of Flow metrics and three of Forecasting; the list is neither empty nor shrunk
+```
+
+```text
+A check over the published types cannot pass by looking at nothing
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsAndForecastingPublishTheirContractsArchUnitTest\.cs
+
+FlowMetricsAndForecastingPublishTheirContractsArchUnitTest\.EachContextPublishesTheTypesTheOthersReach\_AndTheListOfThemIsNotEmpty
+
+```text
+An empty or shorter list of published types would pass all later checks; this row fails it
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Look up each published type of Flow metrics and Forecasting in the compiled code
+```
+
+```text
+Each is found exactly once, in the Contracts namespace of its own context
+```
+
+```text
+Other contexts find Flow metrics and Forecasting types only in their Contracts
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsAndForecastingPublishTheirContractsArchUnitTest\.cs
+
+FlowMetricsAndForecastingPublishTheirContractsArchUnitTest\.EachPublishedTypeIsFoundOnceAndInTheContractsOfItsOwnContext
+
+```text
+A type copied into Contracts and kept in the old place, or moved into another context Contracts, is not accepted by this row
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Look for each published type in the namespace it had before the move
+```
+
+```text
+None is left in its old namespace
+```
+
+```text
+No published type remains reachable outside Contracts
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsAndForecastingPublishTheirContractsArchUnitTest\.cs
+
+FlowMetricsAndForecastingPublishTheirContractsArchUnitTest\.NoPublishedTypeIsLeftInTheNamespaceItHadBefore
+
+```text
+An unrelated type of the same name in another namespace would not matter; only the old namespace and name together are checked
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Scan the compiled production and test code outside Flow metrics and Forecasting for use of a published type
+```
+
+```text
+No type names a published type by its old full name
+```
+
+```text
+Behaviour is unchanged and every user of a moved type follows the move; the scan reads compiled code only, so a full name written inside a string is not covered by this row
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsAndForecastingPublishTheirContractsArchUnitTest\.cs
+
+FlowMetricsAndForecastingPublishTheirContractsArchUnitTest\.NoTypeOutsideFlowMetricsAndForecastingNamesAPublishedTypeByItsOldName
+
+```text
+An old full name kept only inside a string literal would pass, because the scan reads compiled type references only
+```
+
+###### Obligations
+
+
+
 ## Expectations
 
 ### Rows
