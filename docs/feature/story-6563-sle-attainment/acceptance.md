@@ -1260,6 +1260,373 @@ a filled-in day drawn with the same marker as a recorded day; the open-marker no
 ###### Obligations
 
 
+### S8
+
+##### Covers
+
+P8
+
+```text
+A Team (and, as a second case, a Portfolio) with Work Items closed from the 3rd of November, the 5th recorded by a refresh that day at an SLE of 60 % within 8 days, the SLE now 70 % within 10 days and today the 20th; the reader opens the chart for the 1st to the 10th of November, trailing 30 days
+```
+
+```text
+The chart answers at once with only the 5th, as recorded (3 of 5 within, 60 % within 8 days), and nothing is written to the database while the reader waits
+```
+
+```text
+The reader sees the recorded day straight away; the missing days are left to the background fill instead of slowing the chart
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/WithinSle\/WithinSleFillInAtTheServicePortTest\.cs
+
+Opening\_the\_chart\_answers\_only\_the\_recorded\_day\_at\_once\_and\_writes\_nothing\_while\_the\_reader\_waits
+
+```text
+the chart read asks nobody for the missing days at all, so they are never filled (caught by the after-the-fill scenario, not here)
+```
+
+###### Obligations
+
+
+##### Covers
+
+P8
+
+P15
+
+```text
+The same Team (and Portfolio): the reader opened the chart for the 1st to the 10th of November, then the background filler works through what it was asked for, and the chart is read again
+```
+
+```text
+The chart answers the 3rd, 4th and 6th to 10th as filled in against 70 % within 10 days with their own counts (3/3, 5/4, 6/5, 7/5, 7/5, 8/6, 8/6 closed/within), the 5th still recorded at 3 of 5 within 60 % within 8 days, no entry for the 1st and 2nd before the first closed Work Item, and the filler reports no failure. Two copies filling the same day is not repeated here: the daily-record oracle's two-copies scenario already pins it, so no separate two-copies support file is written
+```
+
+```text
+Past days appear on the chart worked out from stored history, marked as filled in and measured against today's SLE, while the day recorded at the time keeps its own SLE and share, and no point appears before the history starts
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/WithinSle\/WithinSleFillInAtTheServicePortTest\.cs
+
+After\_the\_filler\_catches\_up\_the\_missing\_past\_days\_are\_filled\_in\_against\_todays\_SLE\_and\_the\_recorded\_day\_is\_kept
+
+```text
+a filled-in day measured with a window of a different length, or the 60 and 90 day horizons left unfilled (only the 30-day horizon is read)
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P8
+
+```text
+A Team that keeps finished work for 40 days after its last refresh on the 20th of November, Work Items closed from the 3rd, SLE 70 % within 10 days; the reader opens the chart for the 10th, then the background filler catches up
+```
+
+```text
+The 10th is filled in on the trailing 30 days (8 closed, 6 within, against 70 % within 10 days), has no entry on the trailing 90 days because that window reaches back past the work still kept, and the filler reports no failure
+```
+
+```text
+A filled-in day never shows a share worked out from partly deleted work: the longer window shows a gap instead
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/WithinSle\/WithinSleFillInAtTheServicePortTest\.cs
+
+A\_day\_whose\_longer\_window\_reaches\_past\_the\_work\_still\_kept\_is\_filled\_in\_only\_for\_the\_windows\_inside\_it
+
+```text
+the 60-day window filled with an understated count (only the 30 and 90 day horizons are read)
+```
+
+###### Obligations
+
+
+##### Covers
+
+P15
+
+```text
+The chart's line is built from a filled-in day with a share, a recorded day, a filled-in day too few to judge, a day with nothing stored and another filled-in day with a share
+```
+
+```text
+Only the two filled-in days with a share are marked filled in; the recorded day, the too-few day and the gap are not
+```
+
+```text
+Filled-in days draw as open markers and recorded days as filled markers, and a day with no point is never marked
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/withinSleLines\.filledIn\.test\.ts
+
+marks only a filled\-in day that draws a point\; a recorded day\, a filled\-in day too few to judge and a day with nothing stored are not marked
+
+```text
+the widget ignores the flag and draws every marker alike (the marker style is not pinned through the stubbed chart)
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P15
+
+P8
+
+```text
+An instance that calls its SLE a Delivery Promise draws the chart once with a filled-in day that has a share, and once with only recorded days and a filled-in day too few to judge
+```
+
+```text
+The first shows the note 'filled in from history (measured against today's Delivery Promise)' under the chart; the second shows no such note
+```
+
+```text
+The reader is told that filled-in days are measured against today's SLE, in the instance's own word, and only when such a day is drawn
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/WithinSleOverTimeWidget\.filledIn\.test\.tsx
+
+says that filled\-in days are measured against today\'s SLE\, in the instance\'s own word\, when a drawn point is filled in
+
+```text
+the note shown also when the only filled-in day is too few to judge (caught by the second test in the file)
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P8
+
+```text
+The source tree is scanned for the trailing-window list 30, 60, 90
+```
+
+```text
+It is declared only by the percentile writer, the demo synthesiser and the Within SLE writer; the failure names both writers
+```
+
+```text
+A recorded and a filled-in Within SLE day always cover the same windows, so the chart gains no step where the two disagree
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OverTimeReconstructionSeamArchUnitTest\.cs
+
+TheCycleTimeHorizonList\_IsDeclaredOnlyWhereItIsAllowedToBe
+
+```text
+the Within SLE writer and a controller each holding its own copy spelled differently
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Inherited, unchanged: closed Work Items in any order, none, exactly four or five, one finished in exactly the SLE days, or no SLE
+```
+
+```text
+The share follows a direct count of the Cycle Times; the boundary and no-SLE cases answer as before
+```
+
+```text
+The share the reader sees is the plain count of Work Items finished within the SLE
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/WithinSle\/WithinSleInfoAtTheServicePortTest\.cs
+
+The\_share\_within\_the\_SLE\_follows\_a\_direct\_count\_of\_the\_Cycle\_Times\_whatever\_their\_order
+
+```text
+a rounding change that keeps the count but shifts the shown share by a tenth (pinned by the earlier slice's examples, unchanged here)
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P2
+
+```text
+Inherited, unchanged: shares of 70, 69.9, 50 and 49.9 against a 70 target, no SLE, and too few closed
+```
+
+```text
+Sustain, Observe, Observe, Act, Act and no status, as before
+```
+
+```text
+The status word matches how the share stands against the target
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/ragRulesTimeAndAge\.test\.ts
+
+computeWithinSleRag
+
+```text
+a status colour change with the same word (colours are not pinned)
+```
+
+###### Obligations
+
+
+
+
+
+
+
+##### Covers
+
+P7
+
+```text
+Inherited, unchanged: a day recorded and the SLE changed, today filled in then refreshed, no SLE set, a day with 3 closed
+```
+
+```text
+The recorded day keeps its SLE, today refreshed reads Recorded, no row without an SLE, a too-few day kept with its count and no point
+```
+
+```text
+The daily record keeps history as it happened and never invents a point
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/WithinSle\/WithinSleDailyRecordAtTheServicePortTest\.cs
+
+WithinSleDailyRecordAtTheServicePortTest
+
+```text
+a refresh on a later day rewriting an earlier recorded day only on the 60 or 90 day horizon (the earlier slice reads mainly the 30-day horizon)
+```
+
+###### Obligations
+
+
+
+
+
+
+
+##### Covers
+
+P7
+
+```text
+Inherited, unchanged: two copies of the application fill the same day on one SQLite file
+```
+
+```text
+One row per horizon, with the first copy's counts, and no error for the copy that lost; this is why no separate two-copies support is written in this slice
+```
+
+```text
+Running two copies of Lighthouse never doubles a point on the chart
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/WithinSle\/WithinSleDailyRecordAtTheServicePortTest\.cs
+
+Two\_copies\_of\_the\_application\_filling\_in\_the\_same\_day\_leave\_one\_day\_with\_the\_first\_copys\_counts
+
+```text
+two fillers racing through the background pass rather than the writer (the pass reaches the same writer and unique index)
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Inherited, unchanged: the current share against the previous period's, equal shares, a previous period too few to judge, and no SLE now
+```
+
+```text
+Up by the difference in points, flat, and no trend in the last two cases, as before
+```
+
+```text
+The trend in the widget header tells the reader whether the share improved
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/WithinSleWidget\.verdicts\.test\.tsx
+
+the Within SLE widget\'s verdict
+
+```text
+a trend arrow shown for a change below one decimal point (rounding pinned by the earlier slice)
+```
+
+###### Obligations
+
+
+
+
+
 ## Expectations
 
 ### Rows

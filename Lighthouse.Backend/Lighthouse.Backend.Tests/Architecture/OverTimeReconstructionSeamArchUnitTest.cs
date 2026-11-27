@@ -28,7 +28,14 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// </summary>
         private const string TheDemoSynthesiser = "Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandler.cs";
 
-        private static readonly string[] FilesAllowedToDeclareTheHorizons = [TheWriter, TheDemoSynthesiser];
+        /// <summary>
+        /// The one writer of Within SLE days. Those horizons belong to a different chart from the percentile ones and
+        /// may change apart from them, but the same law holds: the day recorded today and the day filled in later have
+        /// to cover the same windows, so the list lives with the writer that does both.
+        /// </summary>
+        private const string TheWithinSleWriter = "Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs";
+
+        private static readonly string[] FilesAllowedToDeclareTheHorizons = [TheWriter, TheDemoSynthesiser, TheWithinSleWriter];
 
         /// <summary>The port a chart load asks through, and the thing it asks.</summary>
         private const string TheGapReconcilerPort = "Modules/FlowMetrics/Application/IOverTimeGapReconciler.cs";
@@ -139,10 +146,10 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .ToList();
 
             Assert.That(declarations, Is.EqualTo(FilesAllowedToDeclareTheHorizons.OrderBy(path => path, StringComparer.Ordinal).ToList()),
-                "The cycle-time horizons decide which windows a percentile day covers. A copy outside " +
-                $"{TheWriter} can be changed without the recorded and the reconstructed day changing " +
+                "The horizons decide which windows a percentile day or a Within SLE day covers. A copy outside " +
+                $"{TheWriter} or {TheWithinSleWriter} can be changed without the recorded and the reconstructed day changing " +
                 "together, which is how a series gains a step at the date the two stopped agreeing. Take " +
-                "the horizons from the writer instead. Declared in: " + string.Join(", ", declarations));
+                "the horizons from the writer of that chart instead. Declared in: " + string.Join(", ", declarations));
         }
 
         [Test]
