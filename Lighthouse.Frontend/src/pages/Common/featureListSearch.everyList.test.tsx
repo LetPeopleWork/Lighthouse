@@ -5,10 +5,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Delivery } from "../../models/Delivery";
 import type { IFeature } from "../../models/Feature";
 import {
+	Atlas,
 	aFeatureServiceAnswering,
 	aList,
 	aRow,
-	Atlas,
 	Borealis,
 	NorthwindPlatform,
 	renderAFeatureList,
