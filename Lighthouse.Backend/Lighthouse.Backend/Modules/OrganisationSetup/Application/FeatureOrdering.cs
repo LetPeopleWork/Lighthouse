@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Modules.OrganisationSetup.Application

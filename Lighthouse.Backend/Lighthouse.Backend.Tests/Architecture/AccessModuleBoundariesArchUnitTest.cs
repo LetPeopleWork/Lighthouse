@@ -150,8 +150,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         [
         ];
 
-        private static readonly string TheLayersBelowTheApplicationAndThePlatform =
-            $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{AnyModuleAdapters})|(?:{ThePlatform})";
+        private static string TheLayersBelowTheApplicationAndThePlatform =>
+            $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{AnyModuleAdapters})|(?:{ThePlatform})|(?:{ModuleRules.SetUpBehindItsContracts})";
 
         private static readonly string TheOtherContexts = $"(?:{TheOtherModules})|(?:{TheUpdateCode})|(?:{RefinementAndReports})";
 

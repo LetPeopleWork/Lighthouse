@@ -7,6 +7,7 @@ using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Modules.Forecasting.Contracts;
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Modules.Licensing.Contracts;
@@ -16,7 +17,6 @@ using Lighthouse.Backend.Modules.WorkItems.Application;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
-using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
 {

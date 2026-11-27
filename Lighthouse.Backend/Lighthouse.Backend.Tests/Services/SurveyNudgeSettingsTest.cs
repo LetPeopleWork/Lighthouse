@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;

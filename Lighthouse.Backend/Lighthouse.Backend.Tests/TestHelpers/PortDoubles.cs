@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Modules.Access.Contracts;
@@ -7,7 +8,6 @@ using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Microsoft.AspNetCore.Http;
 using Moq;
-using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {

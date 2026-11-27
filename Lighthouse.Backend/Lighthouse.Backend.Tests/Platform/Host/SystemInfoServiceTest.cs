@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Platform.Logging;
 using Lighthouse.Backend.Services.Implementation;
@@ -7,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Lighthouse.Backend.Platform.Host;
-using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Platform.Host
 {

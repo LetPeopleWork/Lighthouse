@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.Forecasting.Adapters.Background;
 using Lighthouse.Backend.Modules.Forecasting.Contracts;
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Implementation;
@@ -24,7 +25,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Platform.Host;
-using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 using Lighthouse.Backend.Modules.Forecasting.Application.WriteBack;
 
 namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background

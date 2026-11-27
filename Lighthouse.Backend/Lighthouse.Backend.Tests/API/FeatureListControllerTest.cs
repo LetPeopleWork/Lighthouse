@@ -1,10 +1,10 @@
 using Lighthouse.Backend.API;
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.API
 {

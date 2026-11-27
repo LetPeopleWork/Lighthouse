@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Modules.OrganisationSetup.Application
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Contracts
 {
     /// <summary>
     /// The only production type that builds an ordering comparer, so every read path - the Features view,

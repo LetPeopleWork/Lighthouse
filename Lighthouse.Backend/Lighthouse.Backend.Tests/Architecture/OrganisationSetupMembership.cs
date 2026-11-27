@@ -5,13 +5,14 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         Domain,
         Application,
+        Contracts,
         ApplicationConnections,
         ApplicationOptionalFeatures,
     }
 
     /// <summary>
     /// A type of the Organisation set-up module: found today in its old namespace, after the move in
-    /// Lighthouse.Backend.Modules.OrganisationSetup.Domain, .Application, .Application.Connections or .Application.OptionalFeatures.
+    /// Lighthouse.Backend.Modules.OrganisationSetup.Domain, .Application, .Contracts, .Application.Connections or .Application.OptionalFeatures.
     /// </summary>
     internal sealed record OrganisationSetupType(string Name, OrganisationSetupLayer Layer, string OldNamespace)
     {
@@ -21,6 +22,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             OrganisationSetupLayer.Domain => $"{NewRootNamespace}.Domain",
             OrganisationSetupLayer.Application => $"{NewRootNamespace}.Application",
+            OrganisationSetupLayer.Contracts => $"{NewRootNamespace}.Contracts",
             OrganisationSetupLayer.ApplicationConnections => $"{NewRootNamespace}.Application.Connections",
             OrganisationSetupLayer.ApplicationOptionalFeatures => $"{NewRootNamespace}.Application.OptionalFeatures",
             _ => throw new ArgumentOutOfRangeException(nameof(Layer), Layer, "An Organisation set-up type goes to the Domain, the Application or one of its two groupings."),
@@ -63,7 +65,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             new("RecurringBlackoutRuleExtensions", OrganisationSetupLayer.Domain, Implementation),
             new("BlackoutPeriodService", OrganisationSetupLayer.Application, Implementation),
             new("RecurringBlackoutRuleService", OrganisationSetupLayer.Application, Implementation),
-            new("IBlackoutPeriodService", OrganisationSetupLayer.Application, Interfaces),
+            new("IBlackoutPeriodService", OrganisationSetupLayer.Contracts, Interfaces),
             new("IRecurringBlackoutRuleService", OrganisationSetupLayer.Application, Interfaces),
 
             // Feature ordering and ranking.
@@ -71,7 +73,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             new("FeatureOrderingPolicyProvider", OrganisationSetupLayer.Application, Implementation),
             new("FeatureRankingService", OrganisationSetupLayer.Application, Implementation),
             new("FeatureRankSeeder", OrganisationSetupLayer.Application, Implementation),
-            new("IFeatureOrdering", OrganisationSetupLayer.Application, Interfaces),
+            new("IFeatureOrdering", OrganisationSetupLayer.Contracts, Interfaces),
             new("IFeatureOrderingPolicyProvider", OrganisationSetupLayer.Application, Interfaces),
             new("IFeatureRankingService", OrganisationSetupLayer.Application, Interfaces),
             new("IFeatureRankSeeder", OrganisationSetupLayer.Application, Interfaces),
@@ -85,7 +87,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             // Settings and terminology.
             new("AppSettingService", OrganisationSetupLayer.Application, Implementation),
             new("TerminologyService", OrganisationSetupLayer.Application, Implementation),
-            new("IAppSettingService", OrganisationSetupLayer.Application, Interfaces),
+            new("IAppSettingService", OrganisationSetupLayer.Contracts, Interfaces),
             new("ITerminologyService", OrganisationSetupLayer.Application, Interfaces),
 
             // Connection defaults and the connection usage.

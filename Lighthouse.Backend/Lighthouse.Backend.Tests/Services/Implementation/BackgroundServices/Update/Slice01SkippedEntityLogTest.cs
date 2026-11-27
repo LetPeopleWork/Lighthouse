@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces;
@@ -11,7 +12,6 @@ using Lighthouse.Backend.Modules.WorkItems.Application;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
-using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 using Lighthouse.Backend.Modules.Forecasting.Application.WriteBack;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update

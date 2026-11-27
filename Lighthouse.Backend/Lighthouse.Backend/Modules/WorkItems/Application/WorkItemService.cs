@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Modules.FlowMetrics.Domain;
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
 using Lighthouse.Backend.Modules.WorkItems.Contracts;
@@ -15,7 +16,6 @@ using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Modules.WorkItems.Domain;
 using Lighthouse.Backend.Platform.Host;
-using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Modules.WorkItems.Application
 {

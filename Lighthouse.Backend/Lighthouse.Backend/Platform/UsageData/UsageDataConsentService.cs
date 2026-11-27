@@ -1,12 +1,12 @@
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models.UsageData;
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Options;
-using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Platform.UsageData
 {

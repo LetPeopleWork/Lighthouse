@@ -166,11 +166,15 @@ namespace Lighthouse.Backend.Tests.Architecture
         [
         ];
 
-        private static readonly string TheLayersBelowTheApplicationAndThePlatform =
-            $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{AnyModuleAdapters})|(?:{ThePlatform})";
+        private static string TheLayersBelowTheApplicationAndThePlatform =>
+            $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{AnyModuleAdapters})|(?:{ThePlatform})|(?:{ModuleRules.SetUpBehindItsContracts})";
 
         private static readonly string TheNamespacedUpstreamCode =
             $"(?:{AnyModuleAdapters})|(?:{TheUpdateCode})|(?:{AccessAndLicensing})";
+
+        // Apart from the declared pattern, so that this one is a property and no rule pattern the move laws read.
+        private static string TheNamespacedUpstreamCodeAndSetUpBehindItsContracts =>
+            $"(?:{TheNamespacedUpstreamCode})|(?:{ModuleRules.SetUpBehindItsContracts})";
 
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(Feature).Assembly));
 
@@ -483,7 +487,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 moduleNamespaces);
 
         private static bool IsUpstreamCode(TypeReference type, string roundPattern)
-            => IsATypeIn(type, TheNamespacedUpstreamCode)
+            => IsATypeIn(type, TheNamespacedUpstreamCodeAndSetUpBehindItsContracts)
                 || ModuleRules.IsARoundType(type, roundPattern);
 
         // A generic parameter takes the namespace of the type that declares it; it is a placeholder, not a dependency.

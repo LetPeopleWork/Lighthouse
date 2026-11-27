@@ -562,7 +562,7 @@ namespace Lighthouse.Backend.Tests.Architecture.OrganisationSetupMembershipFixtu
 
         public const string AContextThatSeesOnlyTheOldPlace = @"^Lighthouse\.Backend\.Services\.Interfaces\.IFeatureOrdering$";
 
-        public const string AContextWidenedToTheNewPlace = @"^Lighthouse\.Backend\.(Services\.Interfaces|Modules\.OrganisationSetup\.Application)\.IFeatureOrdering$";
+        public const string AContextWidenedToTheNewPlace = @"^Lighthouse\.Backend\.(Services\.Interfaces|Modules\.OrganisationSetup\.Contracts)\.IFeatureOrdering$";
 
         public const string APlaceWidenedIntoTheNewPlace = AContextWidenedToTheNewPlace;
 

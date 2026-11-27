@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application;
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 
 namespace Lighthouse.Backend.Modules.OrganisationSetup
 {

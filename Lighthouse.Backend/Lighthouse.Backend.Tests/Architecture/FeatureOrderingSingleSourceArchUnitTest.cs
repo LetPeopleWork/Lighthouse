@@ -1,5 +1,6 @@
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Modules.Refinement.Application;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application;

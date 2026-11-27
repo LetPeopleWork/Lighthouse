@@ -7,6 +7,7 @@ using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Modules.Forecasting.Contracts;
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Interfaces;

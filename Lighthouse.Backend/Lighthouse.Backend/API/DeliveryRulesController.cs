@@ -5,13 +5,13 @@ using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Modules.Licensing.Adapters.Http;
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Lighthouse.Backend.Modules.Promises.Application;
 using Lighthouse.Backend.Platform.Host;
-using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.API
 {

@@ -5,7 +5,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
     /// Settings, terminology, connection defaults and connection usage are the last 9 types of OrganisationSetupMembership. Each lives
-    /// in Lighthouse.Backend.Modules.OrganisationSetup, in the namespace of its layer and in no other (4 in Application, 5 in
+    /// in Lighthouse.Backend.Modules.OrganisationSetup, in the namespace of its layer and in no other (3 in Application, 1 in Contracts, 5 in
     /// Application.Connections), and none is left in the loose Services namespaces. The four unit tests of the group sit under
     /// Modules/OrganisationSetup in this project, in the folder of their subject's layer and in the namespace of that folder. Tracker
     /// integration reaches set-up along exactly one listed edge, from the connection health cadence to the settings port. The map owns
@@ -64,7 +64,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void TheGroupIsNineDistinctTypes_FourInApplication_FiveInConnections_FromSettingsToConnectionUsage()
+        public void TheGroupIsNineDistinctTypes_ThreeInApplication_OneInContracts_FiveInConnections_FromSettingsToConnectionUsage()
         {
             var group = Group;
 
@@ -73,15 +73,17 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Assert.That(group.Select(type => type.Name).ToList(), Has.Count.EqualTo(TypesInTheGroup).And.Unique, "WHAT: the settings, terminology and connections group is not 9 distinct types. WHY: the move is judged against the 9 types of the map, and a short or doubled group lets one stay behind unseen. HOW: the entries after the first 18 of OrganisationSetupMembership are this group.");
                 Assert.That(group[0].Name, Is.EqualTo("AppSettingService"), "WHAT: the group does not start at the settings service. WHY: the group is cut by position, and a shifted map would test the wrong 9 types. HOW: keep the settings service first after the calendar, ordering and optional-feature types.");
                 Assert.That(group[^1].Name, Is.EqualTo("IWorkTrackingSystemConnectionUsage"), "WHAT: the group does not end at the connection usage port. WHY: the group is cut by position, and a shifted map would test the wrong 9 types. HOW: keep the connection usage port last in the map.");
-                Assert.That(group.Count(type => type.Layer == OrganisationSetupLayer.Application), Is.EqualTo(4), "WHAT: the group does not hold 4 Application types. WHY: the layer split is part of what is promised. HOW: the map lists the settings and terminology services with their two ports.");
+                Assert.That(group.Count(type => type.Layer == OrganisationSetupLayer.Application), Is.EqualTo(3), "WHAT: the group does not hold 3 Application types. WHY: the layer split is part of what is promised. HOW: the map lists the settings and terminology services with the terminology port.");
+                Assert.That(group.Count(type => type.Layer == OrganisationSetupLayer.Contracts), Is.EqualTo(1), "WHAT: the group does not hold 1 Contracts type. WHY: the layer split is part of what is promised. HOW: the map lists the settings port as published.");
                 Assert.That(group.Count(type => type.Layer == OrganisationSetupLayer.ApplicationConnections), Is.EqualTo(5), "WHAT: the group does not hold 5 Application.Connections types. WHY: the layer split is part of what is promised. HOW: the map lists the connection save, its default change, the connection usage and their two ports.");
             }
         }
 
         [Test]
-        public void TheFourSettingsAndTerminologyTypes_LiveInTheModuleApplication_AndNoneIsLeftUnderServices()
+        public void TheThreeSettingsAndTerminologyTypes_LiveInTheModuleApplication_AndTheSettingsPortInItsContracts_AndNoneIsLeftUnderServices()
         {
             ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, NamespaceOf(OrganisationSetupLayer.Application), NamesIn(OrganisationSetupLayer.Application)).Check();
+            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, NamespaceOf(OrganisationSetupLayer.Contracts), NamesIn(OrganisationSetupLayer.Contracts)).Check();
         }
 
         [Test]

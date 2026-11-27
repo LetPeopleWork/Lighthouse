@@ -53,22 +53,19 @@ namespace Lighthouse.Backend.Tests.Architecture
         ];
 
         private static string TheCadenceEdgeIntoTheSettings =>
-            "Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth.ConnectionHealthCadence -> Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService";
+            "Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth.ConnectionHealthCadence -> Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService";
 
         private static readonly string[] SetUpNamespacesOpenToDownstreamModules =
         [
-            SetUpModule + ".Domain",
-            SetUpModule + ".Application",
-            SetUpModule + ".Application.Connections",
-            SetUpModule + ".Application.OptionalFeatures",
+            SetUpModule + ".Contracts",
         ];
 
         // Work Items' Application reaches set-up along these edges in the compiled code; once set-up is open to Work Items
         // they are legal by namespace and no list names them.
         private static readonly string[] WorkItemsEdgesIntoSetUpThatBecomeLegal =
         [
-            "Lighthouse.Backend.Modules.WorkItems.Application.RefreshLogService -> Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService",
-            "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Modules.OrganisationSetup.Application.IFeatureOrdering",
+            "Lighthouse.Backend.Modules.WorkItems.Application.RefreshLogService -> Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService",
+            "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IFeatureOrdering",
         ];
 
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(Feature).Assembly));
@@ -80,8 +77,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             (typeof(FlowMetricsApplicationOutboundArchUnitTest), "Flow metrics", "TheLayersBelowTheApplication", "Lighthouse.Backend.Data"),
             (typeof(ForecastingModuleBoundariesArchUnitTest), "Forecasting", "TheLayersBelowTheApplicationAndTheLicence", "Lighthouse.Backend.Modules.Licensing.Application"),
             (typeof(PromisesModuleBoundariesArchUnitTest), "Promises", "TheLayersBelowTheApplicationAndThePlatform", TheLooseServices),
-            (typeof(PromisesModuleBoundariesArchUnitTest), "Promises", "TheNamespacedUpstreamCode", "Lighthouse.Backend.Modules.Licensing.Application"),
-            (typeof(RefinementModuleBoundariesArchUnitTest), "Refinement", "TheForbiddenCode", SetUpModule + ".Adapters"),
+            (typeof(PromisesModuleBoundariesArchUnitTest), "Promises", "TheNamespacedUpstreamCodeAndSetUpBehindItsContracts", "Lighthouse.Backend.Modules.Licensing.Application"),
+            (typeof(RefinementModuleBoundariesArchUnitTest), "Refinement", "TheForbiddenCodeAndSetUpBehindItsContracts", SetUpModule + ".Adapters"),
             (typeof(RefinementModuleBoundariesArchUnitTest), "Refinement", "AccessSetUpPlatformAndRepositories", TheLooseServices),
             (typeof(ReportsModuleBoundariesArchUnitTest), "Reports", "TheForbiddenCode", SetUpModule + ".Adapters"),
             (typeof(ReportsModuleBoundariesArchUnitTest), "Reports", "FlowMetricsLicensingSetUpAndPlatform", TheLooseServices),
@@ -161,7 +158,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var production = ProductionModule.Value;
 
-            var edgesIntoSetUp = WhenTheCompiledEdgesAreRead(production, WorkItemsApplication, SetUpApplication);
+            var edgesIntoSetUp = WhenTheCompiledEdgesAreRead(production, WorkItemsApplication, $@"^{Regex.Escape(SetUpModule)}\.Contracts(\.|$)");
 
             ThenTheEdgesThatBecomeLegalAreStillCompiled(edgesIntoSetUp);
         }
@@ -264,7 +261,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             => [.. namespaces.Where(candidate => Regex.IsMatch(candidate, target, RegexOptions.None, TimeSpan.FromSeconds(1)))];
 
         private static List<string> WhenTheEntriesIntoSetUpAreTaken(IEnumerable<string> entries)
-            => [.. entries.Where(entry => entry.Contains($" -> {SetUpModule}.", StringComparison.Ordinal))];
+            => [.. entries.Where(entry => entry.Contains($" -> {SetUpModule}.Contracts.", StringComparison.Ordinal))];
 
         private static List<string> WhenTheCompiledEdgesAreRead(ModuleDefinition production, string dependents, string targets)
             => [.. IlDependencies.DependentsIn(production, dependents, type => IlDependencies.ResidesInNamespaceMatching(type, targets))
@@ -323,7 +320,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "new Tracker integration type reaching set-up must be named. Keep set-up in Tracker integration's other contexts.");
 
         private static void ThenTheMadeUpTrackerIntegrationTypeIsNamed(List<string> unlistedEdges)
-            => Assert.That(unlistedEdges, Is.EqualTo(new[] { $"{typeof(AConnectorAskingTheSettings).FullName} -> {typeof(global::Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService).FullName}" }),
+            => Assert.That(unlistedEdges, Is.EqualTo(new[] { $"{typeof(AConnectorAskingTheSettings).FullName} -> {typeof(global::Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService).FullName}" }),
                 $"Tracker integration's rule named {string.Join("; ", unlistedEdges)} for a made-up Tracker integration type that asks the settings. " +
                 "Tracker integration reaches set-up only along its one listed edge, so any other type of it reaching set-up must be named. Keep " +
                 "set-up among Tracker integration's other contexts and keep its list to the cadence edge.");
@@ -353,9 +350,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
 namespace Lighthouse.Backend.Modules.OrganisationSetupFixtures.OpenHost.TrackerIntegration
 {
-    internal sealed class AConnectorAskingTheSettings(global::Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService settings)
+    internal sealed class AConnectorAskingTheSettings(global::Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService settings)
     {
-        public global::Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService Settings { get; } = settings;
+        public global::Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService Settings { get; } = settings;
     }
 }
 

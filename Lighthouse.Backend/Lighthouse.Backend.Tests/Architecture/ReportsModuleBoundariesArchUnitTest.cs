@@ -190,7 +190,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static string TheUpdateCode => $"(?:{KernelRules.TheUpdateQueue})|(?:^{Regex.Escape(typeof(IUpdateService).Namespace!)}(\\.|$))";
 
         private static string TheForbiddenCode =>
-            $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{AnyModuleAdapters})|(?:{TrackerIntegration})|(?:{ModuleRules.AccessModule})|(?:{TheUpdateCode})";
+            $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{AnyModuleAdapters})|(?:{TrackerIntegration})|(?:{ModuleRules.AccessModule})|(?:{TheUpdateCode})|(?:{ModuleRules.SetUpBehindItsContracts})";
 
         // Organisation set-up has no namespace of its own yet: its settings and the repositories sit in the top-level
         // Services namespaces, and the platform infrastructure sits under Platform.

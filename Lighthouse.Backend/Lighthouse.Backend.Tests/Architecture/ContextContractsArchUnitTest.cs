@@ -50,24 +50,13 @@ namespace Lighthouse.Backend.Tests.Architecture
         // Each edge names its source and target under the modules root; the comment names the context that owns the target.
         private static IReadOnlyList<string> CrossContextEdgesOutsideContracts =>
         [
-            Edge("FlowMetrics.Application.PortfolioMetricsService", "OrganisationSetup.Application.IAppSettingService"), // owner: Organisation set-up
-            Edge("FlowMetrics.Application.TeamMetricsService", "OrganisationSetup.Application.IAppSettingService"), // owner: Organisation set-up
-            Edge("FlowMetrics.Application.TeamMetricsService", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
-            Edge("Forecasting.Application.ForecastRealityCheckService", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
-            Edge("Forecasting.Application.WriteBack.WriteBackTriggerService", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
             Edge("OrganisationSetup.Application.Connections.ConnectionSaveService", "WorkItems.Domain.FetchFingerprint"), // owner: Work Items
-            Edge("Promises.Application.DeliveryMetricValuesProjector", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
             Edge("Promises.Application.DeliveryRuleService", "WorkItems.Application.FeatureFieldProvider"), // owner: Work Items
             Edge("Promises.Application.DeliveryRuleService", "WorkItems.Application.RuleEvaluator`1"), // owner: Work Items
             Edge("Refinement.Application.RefinementCadenceCalendar", "OrganisationSetup.Domain.WeeklyRecurrence"), // owner: Organisation set-up
-            Edge("Refinement.Application.RefinementCalendar", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
-            Edge("Refinement.Application.RefinementNeedCalculator", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
             Edge("Refinement.Application.VoterIdentityResolver", "Access.Application.CurrentUserProfileService"), // owner: Access
             Edge("Reports.Application.Metrics.DailySeriesSummary", "FlowMetrics.Domain.PercentileCalculator"), // owner: Flow metrics
-            Edge("TrackerIntegration.Application.ConnectionHealth.ConnectionHealthCadence", "OrganisationSetup.Application.IAppSettingService"), // owner: Organisation set-up
-            Edge("WorkItems.Application.RefreshLogService", "OrganisationSetup.Application.IAppSettingService"), // owner: Organisation set-up
             Edge("WorkItems.Application.WorkItemService", "FlowMetrics.Domain.PercentileCalculator"), // owner: Flow metrics
-            Edge("WorkItems.Application.WorkItemService", "OrganisationSetup.Application.IFeatureOrdering"), // owner: Organisation set-up
             Edge("WorkItems.Application.WorkItemService", "TrackerIntegration.Domain.ParentSourceSelector"), // owner: Tracker integration
         ];
 

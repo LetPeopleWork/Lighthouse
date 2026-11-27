@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Modules.Forecasting.Contracts;
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth;
 using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
@@ -24,7 +25,6 @@ using Moq;
 using System.Net;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Modules.Promises.Application;
-using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 using Lighthouse.Backend.Modules.Forecasting.Application.WriteBack;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update

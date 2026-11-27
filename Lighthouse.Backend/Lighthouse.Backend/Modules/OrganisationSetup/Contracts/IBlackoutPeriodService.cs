@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Modules.OrganisationSetup.Application
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Contracts
 {
     public interface IBlackoutPeriodService
     {

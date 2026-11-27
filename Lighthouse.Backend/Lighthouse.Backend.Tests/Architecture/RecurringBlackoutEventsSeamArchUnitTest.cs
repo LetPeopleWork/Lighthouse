@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string RecurringBlackoutRuleFullName = "Lighthouse.Backend.Models.RecurringBlackoutRule";
         private const string ServiceImplementationNamespace = @"^Lighthouse\.Backend\.Modules\.OrganisationSetup(\.|$)|^Lighthouse\.Backend\.Platform\.(DemoData|Encryption|Host|Logging|Persistence|Releases|UpdateQueue)(\.|$)";
         private const string ForecastChartControllersPattern = "Lighthouse.Backend.API";
-        private const string BlackoutPeriodServiceInterfaceFullName = "Lighthouse.Backend.Modules.OrganisationSetup.Application.IBlackoutPeriodService";
+        private static string BlackoutPeriodServiceInterfaceFullName => "Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IBlackoutPeriodService";
 
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 

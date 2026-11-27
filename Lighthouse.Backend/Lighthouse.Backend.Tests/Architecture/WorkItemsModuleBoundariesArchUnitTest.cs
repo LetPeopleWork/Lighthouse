@@ -155,7 +155,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Modules.FlowMetrics.Domain.PercentileCalculator",
         ];
 
-        // Work Items builds on Organisation set-up, so its edges into set-up's Application and Domain are legal and not listed;
+        // Work Items builds on Organisation set-up through its Contracts, so its edges into them are legal and not listed;
         // the services still in the loose Services namespaces and the platform's clock and update queue are listed until they move.
         private static readonly string[] EdgesOfTheApplicationIntoAccessLicensingOrganisationSetUpAndTheUpdateQueue =
         [
@@ -166,12 +166,12 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
         ];
 
-        private static readonly string TheLayersBelowTheApplication =
-            $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{AnyModuleAdapters})";
+        private static string TheLayersBelowTheApplication =>
+            $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{AnyModuleAdapters})|(?:{ModuleRules.SetUpBehindItsContracts})";
 
-        // Properties, not fields: they deliberately stop reading set-up's new Application and Domain namespaces, which the
+        // A property, not a field: it deliberately stops reading set-up's Application and Domain namespaces, which the
         // namespace-move law would otherwise read as a rule losing sight of a moved type.
-        private static string SetUpOpenToTheContextsBuildingOnIt => @"Lighthouse\.Backend\.Modules\.OrganisationSetup\.(Application|Domain)(\.|$)";
+        private static string SetUpOpenToTheContextsBuildingOnIt => @"Lighthouse\.Backend\.Modules\.OrganisationSetup\.Contracts(\.|$)";
 
         private static string AccessLicensingOrganisationSetUpAndTheUpdateQueue =>
             $"^(?!{SetUpOpenToTheContextsBuildingOnIt})(?:(?:{AccessAndLicensing})|(?:{OrganisationSetUp})|(?:{KernelRules.TheUpdateQueue}))";
@@ -210,9 +210,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static string OrphanedFeatureCleanup => typeof(global::Lighthouse.Backend.Services.Interfaces.IOrphanedFeatureCleanupService).FullName!;
 
-        private static string SetUpSettings => typeof(global::Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService).FullName!;
-
-        private static string SetUpRecurrence => typeof(global::Lighthouse.Backend.Modules.OrganisationSetup.Domain.WeeklyRecurrence).FullName!;
+        private static string SetUpSettings => typeof(global::Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService).FullName!;
 
         [OneTimeTearDown]
         public void DisposeModules()
@@ -349,7 +347,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             ThenTheFailureNamesOnly(
                 verdict.Check,
                 $"Not on the list, and offending: {Edge(offender, OrphanedFeatureCleanup)}. ",
-                [Edge(offender, SetUpSettings), Edge(offender, SetUpRecurrence)],
+                [Edge(offender, SetUpSettings)],
                 "the Application outbound rule into Access, Licensing, Organisation set-up and the update queue");
         }
 
@@ -797,9 +795,7 @@ namespace Lighthouse.Backend.Modules.WorkItemsFixtures.BoundariesOutbound.Reachi
 {
     internal static class AWorkItemServiceAskingSetUpAndTheOrphanCleanup
     {
-        public static bool Asks(global::Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService settings) => settings is not null;
-
-        public static DateOnly Recurs(DateOnly day) => global::Lighthouse.Backend.Modules.OrganisationSetup.Domain.WeeklyRecurrence.MondayOfWeek(day);
+        public static bool Asks(global::Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService settings) => settings is not null;
 
         public static bool Cleans(global::Lighthouse.Backend.Services.Interfaces.IOrphanedFeatureCleanupService cleanup) => cleanup is not null;
     }

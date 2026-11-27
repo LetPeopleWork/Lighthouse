@@ -147,9 +147,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         ];
 
         // The edges from Refinement's Application into EF Core, the data layer, the API, any module's adapters, Tracker
-        // integration or the update code. The list only shrinks.
+        // integration, the update code or Organisation set-up behind its Contracts. The cadence arithmetic still takes the
+        // weekly recurrence from set-up's Domain, which set-up does not publish. The list only shrinks.
         private static readonly string[] EdgesOfTheApplicationIntoForbiddenCode =
         [
+            "Lighthouse.Backend.Modules.Refinement.Application.RefinementCadenceCalendar -> Lighthouse.Backend.Modules.OrganisationSetup.Domain.WeeklyRecurrence",
         ];
 
         // The edges from Refinement's Application into Access, Organisation set-up, the Platform lane and the repositories.
@@ -175,6 +177,10 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly string TheForbiddenCode =
             $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{AnyModuleAdapters})|(?:{TrackerIntegration})|(?:{TheUpdateCode})";
+
+        // Apart from the declared pattern, so that this one is a property and no rule pattern the move laws read.
+        private static string TheForbiddenCodeAndSetUpBehindItsContracts =>
+            $"(?:{TheForbiddenCode})|(?:{ModuleRules.SetUpBehindItsContracts})";
 
         // Organisation set-up has no namespace of its own yet: its settings, blackout periods and recurrence sit in the
         // top-level Services namespaces, and the Platform lane and the repositories sit under Services and Platform too.
@@ -487,10 +493,10 @@ namespace Lighthouse.Backend.Tests.Architecture
             => ModuleRules.OutboundEdges(
                 module,
                 application,
-                TheForbiddenCode,
+                TheForbiddenCodeAndSetUpBehindItsContracts,
                 listed,
                 $"Types in Refinement's Application, namespaces matching \"{application}\", should not depend on any type in namespaces matching " +
-                $"\"{TheForbiddenCode}\" except through the listed edges, because Refinement's Application decides what a team's refinement needs " +
+                $"\"{TheForbiddenCodeAndSetUpBehindItsContracts}\" except through the listed edges, because Refinement's Application decides what a team's refinement needs " +
                 "and who voted, and returns Models and its own result types. An Application type that holds a DbSet or the database context, shapes " +
                 "an API type, runs a module's adapter, calls Tracker integration or queues an update ties Refinement to how the rest of the system " +
                 "stores, shows and fetches its data. Read through a repository port, ask Work Items, Forecasting or Flow metrics through their " +
@@ -640,7 +646,7 @@ namespace Lighthouse.Backend.Modules.SizingFixtures.Boundaries.Domain
         public int Width => High - Low;
     }
 
-    internal sealed class AnEstimateBandAskingTheSettings(global::Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService settings)
+    internal sealed class AnEstimateBandAskingTheSettings(global::Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService settings)
     {
         public int Describe() => settings.GetHashCode();
     }

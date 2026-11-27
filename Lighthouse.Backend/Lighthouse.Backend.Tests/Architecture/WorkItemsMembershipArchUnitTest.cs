@@ -229,7 +229,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 || IsIn(outermost.Namespace, @"^Microsoft\.Extensions\.Logging(\.|$)")
                 || IsIn(outermost.Namespace, @"^Lighthouse\.Backend\.Models(\.|$)")
                 || IsIn(outermost.Namespace, @"^Lighthouse\.Backend\.Services\.Interfaces\.Repositories(\.|$)")
-                || outermost.FullName == "Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService"
+                || outermost.FullName == "Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService"
                 || IsIn(outermost.Namespace, WorkItemsNamespaces)
                 || MembersOutsideTheWorkItemsNamespaces.Contains(outermost.Name);
         }

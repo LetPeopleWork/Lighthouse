@@ -6,7 +6,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// <summary>
     /// The calendar (blackout periods and recurring blackout rules), Feature ordering and ranking and the optional-features
     /// mechanism are the first 18 types of OrganisationSetupMembership. Each lives in Lighthouse.Backend.Modules.OrganisationSetup,
-    /// in the namespace of its layer and in no other (2 in Domain, 12 in Application, 4 in Application.OptionalFeatures), and none is
+    /// in the namespace of its layer and in no other (2 in Domain, 10 in Application, 2 in Contracts, 4 in Application.OptionalFeatures), and none is
     /// left in the loose Services namespaces. The five unit tests of the group sit under Modules/OrganisationSetup in this project, in the
     /// folder of their subject's layer and in the namespace of that folder. The map owns every name and layer; this class adds no
     /// list of types. The checks run on made-up types too: a type left behind or put in the wrong layer must be named.
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void TheGroupIsEighteenDistinctTypes_TwoInDomain_TwelveInApplication_FourInOptionalFeatures()
+        public void TheGroupIsEighteenDistinctTypes_TwoInDomain_TenInApplication_TwoInContracts_FourInOptionalFeatures()
         {
             var group = Group;
 
@@ -68,7 +68,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             {
                 Assert.That(group.Select(type => type.Name).ToList(), Has.Count.EqualTo(TypesInTheGroup).And.Unique, "WHAT: the calendar, ordering and optional-feature group is not 18 distinct types. WHY: the move is judged against the 18 types of the map, and a short or doubled group lets one stay behind unseen. HOW: the first 18 entries of OrganisationSetupMembership are this group.");
                 Assert.That(group.Count(type => type.Layer == OrganisationSetupLayer.Domain), Is.EqualTo(2), "WHAT: the group does not hold 2 Domain types. WHY: the layer split is part of what is promised. HOW: the map lists the two calendar Domain candidates first.");
-                Assert.That(group.Count(type => type.Layer == OrganisationSetupLayer.Application), Is.EqualTo(12), "WHAT: the group does not hold 12 Application types. WHY: the layer split is part of what is promised. HOW: the map lists ten services and ports of calendar and ordering plus the two calendar services.");
+                Assert.That(group.Count(type => type.Layer == OrganisationSetupLayer.Application), Is.EqualTo(10), "WHAT: the group does not hold 10 Application types. WHY: the layer split is part of what is promised. HOW: the map lists ten services and ports of calendar and ordering plus the two calendar services.");
+                Assert.That(group.Count(type => type.Layer == OrganisationSetupLayer.Contracts), Is.EqualTo(2), "WHAT: the group does not hold 2 Contracts types. WHY: the layer split is part of what is promised. HOW: the map lists the blackout period service and the feature ordering ports as published.");
                 Assert.That(group.Count(type => type.Layer == OrganisationSetupLayer.ApplicationOptionalFeatures), Is.EqualTo(4), "WHAT: the group does not hold 4 optional-feature types. WHY: the layer split is part of what is promised. HOW: the map lists the three appliers, the registry and the port as the last four of the group.");
             }
         }
@@ -80,9 +81,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void TheTwelveCalendarOrderingAndRankingServicesAndPorts_LiveInTheModuleApplication_AndNoneIsLeftUnderServices()
+        public void TheTenCalendarOrderingAndRankingTypes_LiveInTheModuleApplication_AndTheTwoPublishedPortsInItsContracts_AndNoneIsLeftUnderServices()
         {
             ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, NamespaceOf(OrganisationSetupLayer.Application), NamesIn(OrganisationSetupLayer.Application)).Check();
+            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, NamespaceOf(OrganisationSetupLayer.Contracts), NamesIn(OrganisationSetupLayer.Contracts)).Check();
         }
 
         [Test]

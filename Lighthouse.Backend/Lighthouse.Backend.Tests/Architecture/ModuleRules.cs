@@ -30,6 +30,10 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public const string LicensingModule = @"^Lighthouse\.Backend\.Modules\.Licensing(\.|$)";
 
+        // A property, not a constant: the namespace-move law reads constants and fields for the types they see, and this one
+        // deliberately sees none of the types set-up publishes.
+        public static string SetUpBehindItsContracts => @"^Lighthouse\.Backend\.Modules\.OrganisationSetup\.(?!Contracts(\.|$))";
+
         public const string FlowMetricsAdapters = @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.Adapters(\.|$)";
 
         public const string TheCompositionRoot = "Lighthouse.Backend.Program";

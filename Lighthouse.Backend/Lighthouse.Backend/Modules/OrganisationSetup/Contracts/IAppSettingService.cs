@@ -1,7 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 
-namespace Lighthouse.Backend.Modules.OrganisationSetup.Application
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Contracts
 {
     public interface IAppSettingService
     {

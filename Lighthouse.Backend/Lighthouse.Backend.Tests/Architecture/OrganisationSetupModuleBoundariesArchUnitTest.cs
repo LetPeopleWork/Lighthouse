@@ -37,11 +37,12 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Modules.OrganisationSetup.Domain"] = ["RecurringBlackoutRuleExtensions", "WeeklyRecurrence"],
             ["Lighthouse.Backend.Modules.OrganisationSetup.Application"] =
             [
-                "AppSettingService", "IAppSettingService", "BlackoutPeriodService", "IBlackoutPeriodService", "FeatureMovePlacement",
-                "FeatureOrdering", "IFeatureOrdering", "FeatureOrderingPolicyProvider", "IFeatureOrderingPolicyProvider",
+                "AppSettingService", "BlackoutPeriodService", "FeatureMovePlacement",
+                "FeatureOrdering", "FeatureOrderingPolicyProvider", "IFeatureOrderingPolicyProvider",
                 "FeatureRankingService", "IFeatureRankingService", "FeatureRankSeeder", "IFeatureRankSeeder",
                 "RecurringBlackoutRuleService", "IRecurringBlackoutRuleService", "TerminologyService", "ITerminologyService",
             ],
+            ["Lighthouse.Backend.Modules.OrganisationSetup.Contracts"] = ["IAppSettingService", "IBlackoutPeriodService", "IFeatureOrdering"],
             ["Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections"] =
             [
                 "ChangedConnectionDefault", "ConnectionFollowers", "ConnectionSaveHandle", "ConnectionSaveOutcome", "ConnectionSaveService",
@@ -79,7 +80,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         // The connection-health cadence reads its interval from the settings. The list only shrinks.
         private static readonly string[] EdgesOfTrackerIntegrationIntoSetUp =
         [
-            "Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth.ConnectionHealthCadence -> Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService",
+            "Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth.ConnectionHealthCadence -> Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService",
         ];
 
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(Feature).Assembly));

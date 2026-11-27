@@ -2,6 +2,7 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
@@ -11,7 +12,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Lighthouse.Backend.Modules.Promises.Domain;
 using Lighthouse.Backend.Modules.Promises.Application;
-using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.Promises.Application
 {

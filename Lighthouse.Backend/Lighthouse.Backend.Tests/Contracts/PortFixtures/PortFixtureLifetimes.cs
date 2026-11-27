@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Modules.Forecasting.Contracts;
+using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Reports.Application;
@@ -13,7 +14,6 @@ using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 using Lighthouse.Backend.Platform.Host;
-using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Contracts.PortFixtures
 {
