@@ -209,6 +209,20 @@
 "expected": "F337",
 "stimulus": "F336",
 "user_result": "F338"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F420",
+"test": "finds a Feature through the reference ID of its parent",
+"test_path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.search.test.tsx"
+},
+"expected": "F418",
+"stimulus": "F417",
+"user_result": "F419"
 }
 ],
 "S2": [
@@ -526,7 +540,7 @@
 "C": 1,
 "D": 9,
 "E": 10,
-"F": 416,
+"F": 420,
 "K": 9,
 "L": 4,
 "P": 10,
@@ -1969,7 +1983,11 @@
 "F414": "No row stays",
 "F415": "Cells without shown text never match",
 "F416": "A match on the raw value",
+"F417": "The user types proj-3: in lower case, the ID of one Feature's parent",
+"F418": "Only PROJ-20: Payments, whose parent is PROJ-3: Checkout, is listed",
+"F419": "The user finds a Feature by its parent's reference ID",
 "F42": "Search matches every visible column as the cell value reads; named fields (reference ID, name, parent ID and name) must be findable.",
+"F420": "The parent is matched by its name only, so the parent's ID finds nothing",
 "F43": "Name column filter also matches the Feature reference ID.",
 "F44": "Search text is not remembered; box is empty each time a page opens.",
 "F45": "Fact: the Parent column filter already matches both ID and name (its value is the same 'ID: name' text the cell shows); no change.",

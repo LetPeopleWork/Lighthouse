@@ -152,6 +152,14 @@ describe("FeatureListDataGrid search", () => {
 		await thenOnlyTheseAreListed([CHECKOUT, PAYMENTS]);
 	});
 
+	it("finds a Feature through the reference ID of its parent", async () => {
+		const user = givenTheFeatureList();
+
+		await whenTheyType(user, "proj-3:");
+
+		await thenOnlyTheseAreListed([PAYMENTS]);
+	});
+
 	it("lists every Feature again when the box is cleared", async () => {
 		const user = givenTheFeatureList();
 		await whenTheyType(user, "proj-12");

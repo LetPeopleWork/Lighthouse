@@ -411,6 +411,38 @@ The owner hears only the final text or never hears the clear
 
 None.
 
+##### Covers
+
+P4
+
+```text
+The user types proj-3: in lower case, the ID of one Feature's parent
+```
+
+```text
+Only PROJ-20: Payments, whose parent is PROJ-3: Checkout, is listed
+```
+
+```text
+The user finds a Feature by its parent's reference ID
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.search\.test\.tsx
+
+finds a Feature through the reference ID of its parent
+
+```text
+The parent is matched by its name only, so the parent's ID finds nothing
+```
+
+###### Obligations
+
+None.
+
 ### S2
 
 ##### Covers
