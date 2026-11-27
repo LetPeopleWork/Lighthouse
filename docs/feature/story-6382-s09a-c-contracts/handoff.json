@@ -1,0 +1,143 @@
+{
+"counters": {
+"F": 19,
+"P": 5,
+"S": 5
+},
+"facts": {
+"F1": "Story 6382 S09a feature C, contracts: each context that other contexts reach publishes the types they may name in Modules/<X>/Contracts (namespace = folder), chosen by the measured closure of feature A's ContextContractsMembership; Licensing and Access, then Flow metrics and Forecasting, then Work Items, then Tracker integration (with the CI path classifier), then Organisation set-up (its open host narrowed to Contracts). Each slice's RED oracle is the contracts rule R-C1 with that slice's ratchet entries deleted; only namespace and using lines change.",
+"F10": "R-C1 with the Licensing and Access entries deleted fails until their contract types move to Contracts; then it and every other Architecture rule pass.",
+"F11": "Licensing and Access are named by other contexts only through Contracts.",
+"F12": "R-C1 with the Flow metrics and Forecasting entries deleted fails until their contract types move; then every Architecture rule passes.",
+"F13": "Flow metrics and Forecasting are named by other contexts only through Contracts.",
+"F14": "R-C1 with the Work Items entries deleted fails until its contract types move; then every Architecture rule passes.",
+"F15": "Work Items is named by other contexts only through Contracts.",
+"F16": "R-C1 with the Tracker integration entries deleted fails until its contract types move; the path classifier test classifies a Tracker integration Contracts path as shared; then every Architecture rule and the classifier test pass.",
+"F17": "Tracker integration is named only through Contracts, and CI still selects the right suites for a change there.",
+"F18": "R-C1 with the Organisation set-up entries deleted, and its open host narrowed to Contracts, fails until the types move; then R-C1 holds only the owned residue and every Architecture rule passes.",
+"F19": "Organisation set-up is named only through Contracts; the ratchet list is down to its owned residue.",
+"F2": "Every cross-context reference goes through the publisher's Contracts namespace or is a listed, owned residue edge, so the contracts-only rule holds and S09b can turn Contracts into an assembly boundary, with no behaviour change.",
+"F3": "Licensing and Access publish their contract types (ILicenseService, IRbacAdministrationService and its signature closure) in their Contracts namespace; R-C1 holds with their entries deleted; behaviour unchanged.",
+"F4": "Flow metrics and Forecasting publish their contract types (the metrics queries, ForecastThroughputStatus, the ports Forecasting fills, what Refinement and Promises read of Forecasting) in Contracts; R-C1 holds with their entries deleted; behaviour unchanged.",
+"F5": "Work Items publishes its contract types (blocked items, rule evaluation ports, refresh log, what the forecast waits for) in Contracts; R-C1 holds with its entries deleted; behaviour unchanged.",
+"F6": "Tracker integration publishes its contract types (the connector port and capability interfaces, the factory, IDescriptionBlockMerger, CsvWorkTrackingOptionNames, IWriteBackTarget) in Contracts, and the CI path classifier treats a Contracts path as shared; R-C1 holds with its entries deleted; behaviour unchanged.",
+"F7": "Organisation set-up publishes its contract types in Contracts and its open host narrows from Application or Domain by right to Contracts; after this slice R-C1 lists only the owned non-contract residue; behaviour unchanged.",
+"F8": "The Contracts folders of Licensing, Access, Flow metrics, Forecasting, Work Items, Tracker integration and Organisation set-up; the namespace and using lines that follow; ContextContractsMembership and R-C1 ratchet entries; the CI path classifier and its test (C4).",
+"F9": "Domain event types and RX1 (feature D); per-module rule narrowing and docs (feature D3); Contracts folders for Promises, Refinement and Reports (none expected); any behaviour, registration, schema, route or DTO change; fixing a non-contract residue edge."
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F6"
+},
+{
+"id": "P5",
+"kind": "Outcome",
+"text": "F7"
+}
+],
+"scope_in": [
+"F8"
+],
+"scope_out": [
+"F9"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F10",
+"promises": [
+"P1"
+],
+"work": {
+"size": "M",
+"value": "F11"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F12",
+"promises": [
+"P2"
+],
+"work": {
+"size": "M",
+"value": "F13"
+}
+},
+{
+"depends_on": [
+"S2"
+],
+"id": "S3",
+"observation": "F14",
+"promises": [
+"P3"
+],
+"work": {
+"size": "S",
+"value": "F15"
+}
+},
+{
+"depends_on": [
+"S3"
+],
+"id": "S4",
+"observation": "F16",
+"promises": [
+"P4"
+],
+"work": {
+"size": "M",
+"value": "F17"
+}
+},
+{
+"depends_on": [
+"S4"
+],
+"id": "S5",
+"observation": "F18",
+"promises": [
+"P5"
+],
+"work": {
+"size": "M",
+"value": "F19"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6382-s09a-c-contracts",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "L",
+"value": "F2"
+}
+}
