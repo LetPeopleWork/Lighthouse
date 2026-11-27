@@ -1,0 +1,29 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/API/DTO/Reports/ReportNoteDto.cs",
+      "**/API/DeliveryNotesController.cs",
+      "**/API/PortfolioReportNotesController.cs",
+      "**/API/ReportNotesControllerBase.cs",
+      "**/API/TeamReportNotesController.cs",
+      "**/Models/DeliveryNote.cs",
+      "**/Models/NoteSignature.cs",
+      "**/Models/Reports/ReportNote.cs",
+      "**/Modules/Reports/Application/ReportNoteCommands.cs",
+      "**/Modules/Reports/Application/ReportNoteQueries.cs",
+      "**/Modules/Reports/Domain/ReportNoteCaller.cs",
+      "**/Modules/Reports/Domain/ReportNoteRead.cs",
+      "**/Services/Implementation/Repositories/ReportRepository.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~ReportNote|FullyQualifiedName~DeliveryNote|FullyQualifiedName~ReportRepositoryTest)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Containers&FullyQualifiedName!~WireContract&FullyQualifiedName!~Dogfood",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
