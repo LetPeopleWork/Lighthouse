@@ -46,6 +46,32 @@ Click **Delete** next to the report's name, or the 🗑️ icon in its row on th
 
 A report belongs to its Team or Portfolio. When you [delete a Team](../teams/teams.html#delete-a-team) or [a Portfolio](../portfolios/portfolios.html#delete-a-portfolio), its reports are deleted with it. The confirmation dialog tells you how many reports go too.
 
+The [notes](#notes) of a report are deleted with the report.
+
+# Notes
+
+The numbers of a report do not say why they moved. A note does: "The team grew from 6 to 9 people", "Two weeks of training in March". Notes are short texts that you and others write on a report, so that whoever reads it later knows what happened in the meantime.
+
+## Reading the Notes
+
+The notes sit under the report's name, above the numbers, in a row that starts closed: **Notes (2)** tells you that the report has two notes. Click the row to open it. A report without notes shows **Notes (0)**.
+
+Each note shows its text, the day it was written and, when [authentication](../Installation/authentication.html) is on, the name of the person who wrote it. A changed note also shows the day it was changed, for example "2026-10-03 · Ann · edited 2026-10-04". The newest note comes first.
+
+While the notes load, the row shows only **Notes** and the open row shows a spinner. If the notes cannot be loaded, the open row says so and offers *Retry*. The numbers of the report still show either way.
+
+## Adding a Note
+
+Open the row, type your note in the *Note* field and click **Add note**. A note needs some text, and it can have at most 2000 characters. Line breaks are kept.
+
+## Changing and Deleting a Note
+
+Click **Edit** on a note to change its text, then *Save*, or *Cancel* to leave it as it was. Click **Delete** to remove it. Deleting a note cannot be undone.
+
+You can change and delete the notes you wrote. A note written while authentication was off has no author, and everyone who may change the report can change or delete it.
+
+Notes are not part of the [PDF](#export-pdf).
+
 # Export PDF
 
 A report often has to reach people who never open Lighthouse: a sponsor, a steering meeting, a slide deck. **Export PDF** turns the report into a dated, branded file you can send to them.
@@ -62,7 +88,7 @@ While the PDF is being prepared, the button (or the row's icon) shows a small sp
 ## What the PDF Holds
 
 - **A line at the top of every page** with the Team or Portfolio, the report's name, its windows, and when the PDF was produced, for example "Produced 20 Oct 2026, 12:21". The time is your local time.
-- **The report itself**, with its name as the title on the first page, followed by its summary and panels, as on screen.
+- **The report itself**, with its name as the title on the first page, followed by its summary and panels, as on screen. The report's notes are not printed.
 - **A footer on every page** with the Lighthouse mark and "Made with Lighthouse by LetPeopleWork · letpeople.work".
 
 The PDF is always light, whatever theme you use in Lighthouse. Your browser usually suggests the report's name and its Team or Portfolio as the file name.
@@ -202,6 +228,9 @@ As for a single report, **Export PDF (n)** is greyed out in the [Standalone app]
 | See a report on the Reports page | Everyone who can read the report. Rows of Teams and Portfolios you cannot read are not listed |
 | Export a report, or several, as a PDF | Everyone who can read the reports |
 | Create, edit and delete reports | System Admins, and the Team Admins or Portfolio Admins of that Team or Portfolio |
+| Read the notes of a report | Everyone who can read the report |
+| Add a note | The same people who can edit the report |
+| Change or delete a note | Its author, if they can still edit the report. A note without an author: everyone who can edit the report |
 | Create reports for several Teams and Portfolios | The same people, for each Team or Portfolio they are Admin of. The wizard lists only those, and Lighthouse checks every one again when it creates (Premium) |
 | Remove several reports | Only when you may delete every selected report |
 
