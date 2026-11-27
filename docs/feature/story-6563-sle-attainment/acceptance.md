@@ -1461,11 +1461,11 @@ the Within SLE writer and a controller each holding its own copy spelled differe
 P1
 
 ```text
-Inherited, unchanged: closed Work Items in any order, none, exactly four or five, one finished in exactly the SLE days, or no SLE
+Inherited, unchanged: closed Work Items in any order, none, exactly four or five, and one finished in exactly the SLE days
 ```
 
 ```text
-The share follows a direct count of the Cycle Times; the boundary and no-SLE cases answer as before
+The share follows a direct count of the Cycle Times; the boundary cases answer as before
 ```
 
 ```text
@@ -1485,7 +1485,6 @@ a rounding change that keeps the count but shifts the shown share by a tenth (pi
 ```
 
 ###### Obligations
-
 
 
 
@@ -1598,11 +1597,11 @@ two fillers racing through the background pass rather than the writer (the pass 
 P2
 
 ```text
-Inherited, unchanged: the current share against the previous period's, equal shares, a previous period too few to judge, and no SLE now
+Inherited, unchanged: the current share against the previous period's, and no SLE now
 ```
 
 ```text
-Up by the difference in points, flat, and no trend in the last two cases, as before
+Up by the difference in points, and no trend without an SLE, as before
 ```
 
 ```text
@@ -1625,6 +1624,97 @@ a trend arrow shown for a change below one decimal point (rounding pinned by the
 
 
 
+##### Covers
+
+P1
+
+```text
+Inherited, unchanged: a Team or Portfolio with no SLE set and closed Work Items
+```
+
+```text
+The widget says no SLE is set and judges nothing
+```
+
+```text
+The reader is told to set an SLE instead of seeing a share against nothing
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/WithinSle\/WithinSleInfoAtTheServicePortTest\.cs
+
+Without\_an\_SLE\_the\_widget\_says\_none\_is\_set\_and\_judges\_nothing
+
+```text
+a share computed against a default SLE while the verdict still reads no SLE (caught by the same test's no-judgement check)
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Inherited, unchanged: a judged share in November and a preceding period with too few closed Work Items to judge
+```
+
+```text
+The header trend compares nothing: direction none and no change
+```
+
+```text
+The reader sees no trend rather than one against a period too thin to judge
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/WithinSle\/WithinSleInfoVerdictsAtTheServicePortTest\.cs
+
+The\_header\_trend\_compares\_nothing\_when\_the\_preceding\_period\_is\_too\_few\_to\_judge
+
+```text
+a trend shown when the chosen period, rather than the preceding one, is too few (pinned by its sibling test)
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A Team, and as a second case a Portfolio, with SLE 70 % within 10 days, five Work Items closed in October and five in November, each period with Cycle Times of 2, 3, 4, 5 and 20 days; the widget is read for November
+```
+
+```text
+Both periods are 80 % within, so the header trend reads flat with a change of 0.0 pts. This passes on arrival because production already answers it; the crafter shows it can fail with a deliberate break that maps an equal share to up
+```
+
+```text
+When the share has not moved, the header says it is flat rather than suggesting a rise or a fall
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/WithinSle\/WithinSleTrendFlatAtTheServicePortTest\.cs
+
+The\_header\_trend\_reads\_flat\_with\_no\_change\_when\_the\_share\_is\_the\_same\_as\_in\_the\_preceding\_period
+
+```text
+a change smaller than half a tenth of a point read as flat (rounding to one decimal makes it flat by design)
+```
+
+###### Obligations
 
 
 ## Expectations

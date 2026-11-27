@@ -1430,10 +1430,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P1</p>
 
-<pre><code>Inherited, unchanged: closed Work Items in any order, none, exactly four or five, one finished in exactly the SLE days, or no SLE
+<pre><code>Inherited, unchanged: closed Work Items in any order, none, exactly four or five, and one finished in exactly the SLE days
 </code></pre>
 
-<pre><code>The share follows a direct count of the Cycle Times; the boundary and no-SLE cases answer as before
+<pre><code>The share follows a direct count of the Cycle Times; the boundary cases answer as before
 </code></pre>
 
 <pre><code>The share the reader sees is the plain count of Work Items finished within the SLE
@@ -1451,7 +1451,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 </code></pre>
 
 <h6>Obligations</h6>
-
 
 
 
@@ -1551,10 +1550,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>Inherited, unchanged: the current share against the previous period&#x27;s, equal shares, a previous period too few to judge, and no SLE now
+<pre><code>Inherited, unchanged: the current share against the previous period&#x27;s, and no SLE now
 </code></pre>
 
-<pre><code>Up by the difference in points, flat, and no trend in the last two cases, as before
+<pre><code>Up by the difference in points, and no trend without an SLE, as before
 </code></pre>
 
 <pre><code>The trend in the widget header tells the reader whether the share improved
@@ -1575,6 +1574,85 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Inherited, unchanged: a Team or Portfolio with no SLE set and closed Work Items
+</code></pre>
+
+<pre><code>The widget says no SLE is set and judges nothing
+</code></pre>
+
+<pre><code>The reader is told to set an SLE instead of seeing a share against nothing
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoAtTheServicePortTest.cs</p>
+
+<p>Without_an_SLE_the_widget_says_none_is_set_and_judges_nothing</p>
+
+<pre><code>a share computed against a default SLE while the verdict still reads no SLE (caught by the same test&#x27;s no-judgement check)
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Inherited, unchanged: a judged share in November and a preceding period with too few closed Work Items to judge
+</code></pre>
+
+<pre><code>The header trend compares nothing: direction none and no change
+</code></pre>
+
+<pre><code>The reader sees no trend rather than one against a period too thin to judge
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoVerdictsAtTheServicePortTest.cs</p>
+
+<p>The_header_trend_compares_nothing_when_the_preceding_period_is_too_few_to_judge</p>
+
+<pre><code>a trend shown when the chosen period, rather than the preceding one, is too few (pinned by its sibling test)
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A Team, and as a second case a Portfolio, with SLE 70 % within 10 days, five Work Items closed in October and five in November, each period with Cycle Times of 2, 3, 4, 5 and 20 days; the widget is read for November
+</code></pre>
+
+<pre><code>Both periods are 80 % within, so the header trend reads flat with a change of 0.0 pts. This passes on arrival because production already answers it; the crafter shows it can fail with a deliberate break that maps an equal share to up
+</code></pre>
+
+<pre><code>When the share has not moved, the header says it is flat rather than suggesting a rise or a fall
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleTrendFlatAtTheServicePortTest.cs</p>
+
+<p>The_header_trend_reads_flat_with_no_change_when_the_share_is_the_same_as_in_the_preceding_period</p>
+
+<pre><code>a change smaller than half a tenth of a point read as flat (rounding to one decimal makes it flat by design)
+</code></pre>
+
+<h6>Obligations</h6>
 
 
 <h2>Expectations</h2>

@@ -784,15 +784,14 @@
 "obligations": [
 "L1/F160",
 "L1/F161",
-"L1/F162",
-"L1/F163"
+"L1/F162"
 ],
 "still_passes_if": "F720",
 "test": "The_share_within_the_SLE_follows_a_direct_count_of_the_Cycle_Times_whatever_their_order",
 "test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoAtTheServicePortTest.cs"
 },
-"expected": "F718",
-"stimulus": "F717",
+"expected": "F738",
+"stimulus": "F737",
 "user_result": "F719"
 },
 {
@@ -864,17 +863,66 @@
 "kind": "Tested",
 "obligations": [
 "L6/F191",
-"L6/F192",
-"L6/F193",
 "L6/F194"
 ],
 "still_passes_if": "F736",
 "test": "the Within SLE widget's verdict",
 "test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.verdicts.test.tsx"
 },
-"expected": "F734",
-"stimulus": "F733",
+"expected": "F740",
+"stimulus": "F739",
 "user_result": "F735"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F163"
+],
+"still_passes_if": "F744",
+"test": "Without_an_SLE_the_widget_says_none_is_set_and_judges_nothing",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoAtTheServicePortTest.cs"
+},
+"expected": "F742",
+"stimulus": "F741",
+"user_result": "F743"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F193"
+],
+"still_passes_if": "F748",
+"test": "The_header_trend_compares_nothing_when_the_preceding_period_is_too_few_to_judge",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoVerdictsAtTheServicePortTest.cs"
+},
+"expected": "F746",
+"stimulus": "F745",
+"user_result": "F747"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F192"
+],
+"still_passes_if": "F752",
+"test": "The_header_trend_reads_flat_with_no_change_when_the_share_is_the_same_as_in_the_preceding_period",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleTrendFlatAtTheServicePortTest.cs"
+},
+"expected": "F750",
+"stimulus": "F749",
+"user_result": "F751"
 }
 ]
 },
@@ -883,7 +931,7 @@
 "C": 2,
 "D": 25,
 "E": 15,
-"F": 736,
+"F": 752,
 "K": 26,
 "L": 7,
 "N": 4,
@@ -4097,8 +4145,6 @@
 "F714": "It is declared only by the percentile writer, the demo synthesiser and the Within SLE writer; the failure names both writers",
 "F715": "A recorded and a filled-in Within SLE day always cover the same windows, so the chart gains no step where the two disagree",
 "F716": "the Within SLE writer and a controller each holding its own copy spelled differently",
-"F717": "Inherited, unchanged: closed Work Items in any order, none, exactly four or five, one finished in exactly the SLE days, or no SLE",
-"F718": "The share follows a direct count of the Cycle Times; the boundary and no-SLE cases answer as before",
 "F719": "The share the reader sees is the plain count of Work Items finished within the SLE",
 "F72": "Status colours the share",
 "F720": "a rounding change that keeps the count but shifts the shown share by a tenth (pinned by the earlier slice's examples, unchanged here)",
@@ -4115,12 +4161,26 @@
 "F730": "One row per horizon, with the first copy's counts, and no error for the copy that lost; this is why no separate two-copies support is written in this slice",
 "F731": "Running two copies of Lighthouse never doubles a point on the chart",
 "F732": "two fillers racing through the background pass rather than the writer (the pass reaches the same writer and unique index)",
-"F733": "Inherited, unchanged: the current share against the previous period's, equal shares, a previous period too few to judge, and no SLE now",
-"F734": "Up by the difference in points, flat, and no trend in the last two cases, as before",
 "F735": "The trend in the widget header tells the reader whether the share improved",
 "F736": "a trend arrow shown for a change below one decimal point (rounding pinned by the earlier slice)",
+"F737": "Inherited, unchanged: closed Work Items in any order, none, exactly four or five, and one finished in exactly the SLE days",
+"F738": "The share follows a direct count of the Cycle Times; the boundary cases answer as before",
+"F739": "Inherited, unchanged: the current share against the previous period's, and no SLE now",
 "F74": "View Data lists the Work Items behind the share",
+"F740": "Up by the difference in points, and no trend without an SLE, as before",
+"F741": "Inherited, unchanged: a Team or Portfolio with no SLE set and closed Work Items",
+"F742": "The widget says no SLE is set and judges nothing",
+"F743": "The reader is told to set an SLE instead of seeing a share against nothing",
+"F744": "a share computed against a default SLE while the verdict still reads no SLE (caught by the same test's no-judgement check)",
+"F745": "Inherited, unchanged: a judged share in November and a preceding period with too few closed Work Items to judge",
+"F746": "The header trend compares nothing: direction none and no change",
+"F747": "The reader sees no trend rather than one against a period too thin to judge",
+"F748": "a trend shown when the chosen period, rather than the preceding one, is too few (pinned by its sibling test)",
+"F749": "A Team, and as a second case a Portfolio, with SLE 70 % within 10 days, five Work Items closed in October and five in November, each period with Cycle Times of 2, 3, 4, 5 and 20 days; the widget is read for November",
 "F75": "Given Work Items closed in the selected range",
+"F750": "Both periods are 80 % within, so the header trend reads flat with a change of 0.0 pts. This passes on arrival because production already answers it; the crafter shows it can fail with a deliberate break that maps an equal share to up",
+"F751": "When the share has not moved, the header says it is flat rather than suggesting a rise or a fall",
+"F752": "a change smaller than half a tenth of a point read as flat (rounding to one decimal makes it flat by design)",
 "F76": "When the reader selects View Data in the widget's header",
 "F77": "Then the closed-items dialog of Cycle Time Percentiles opens with those Work Items, each with its close day and Cycle Time coloured against the SLE, longest first.",
 "F78": "Days the stored history does not reach",
