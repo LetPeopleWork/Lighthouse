@@ -228,6 +228,112 @@
 "stimulus": "F204",
 "user_result": "F206"
 }
+],
+"S4": [
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F66"
+],
+"still_passes_if": "F211",
+"test": "TrackerIntegrationPublishesTheTypesTheOthersReach_AndTheListOfThemIsNotEmpty",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F209",
+"stimulus": "F208",
+"user_result": "F210"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F66",
+"L1/F67"
+],
+"still_passes_if": "F215",
+"test": "EachPublishedTypeIsFoundOnceAndInTheContractsOfItsOwnContext",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F213",
+"stimulus": "F212",
+"user_result": "F214"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F67"
+],
+"still_passes_if": "F218",
+"test": "NoPublishedTypeIsLeftInTheNamespaceItHadBefore",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F185",
+"stimulus": "F216",
+"user_result": "F217"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F67",
+"T1"
+],
+"still_passes_if": "F222",
+"test": "NoTypeOutsideTrackerIntegrationNamesAPublishedTypeByItsOldName",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F220",
+"stimulus": "F219",
+"user_result": "F221"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F66"
+],
+"still_passes_if": "F226",
+"test": "TheCsvOptionNamesLiveOnlyInTheContractsOfTrackerIntegration",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F224",
+"stimulus": "F223",
+"user_result": "F225"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F230",
+"test": "AChangeToTheConnectorPortInItsContractsHome_StillMakesCiRunEveryConnectorSuite",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F228",
+"stimulus": "F227",
+"user_result": "F229"
+}
 ]
 },
 "counters": {
@@ -235,7 +341,7 @@
 "C": 1,
 "D": 15,
 "E": 6,
-"F": 207,
+"F": 230,
 "K": 4,
 "L": 2,
 "P": 5,
@@ -9625,9 +9731,32 @@
 "F205": "No type outside Work Items names one by the old name. RED today: controllers, services and tests still do.",
 "F206": "Every consumer follows the move; behaviour unchanged.",
 "F207": "A type name kept only inside a string literal, which the IL scan cannot see.",
+"F208": "Read the measured map of what each context publishes, for Tracker integration, without its events",
+"F209": "It lists exactly the eight Tracker integration types the other contexts reach: the connector port, its factory, the feature, incremental, delivery source, delivery forecast publisher, description block merger and write-back target interfaces",
 "F21": "The oracle sees structure and build success; it does not see that licence checks and RBAC decisions still give the same answers for the same users.",
+"F210": "Every check of Tracker integration's contracts looks at a complete list and cannot pass vacuously",
+"F211": "the map holds the right eight names but with a wrong old layer, which the namespace checks below then catch",
+"F212": "Look up each published Tracker integration type by name in the compiled production code",
+"F213": "Each is found exactly once, in the Contracts namespace of Tracker integration; before the move each is found only in its Application namespace",
+"F214": "Other contexts can name Tracker integration's contract types only through its Contracts",
+"F215": "a published type gets a second, nested type of the same name elsewhere; nested types are not top-level and are not compared",
+"F216": "Look for each published Tracker integration type in the namespace it had before",
+"F217": "No copy of a contract type stays reachable outside Contracts",
+"F218": "the old copy is renamed instead of removed; the found-once check still holds the new home",
+"F219": "Scan the compiled production and test code outside Tracker integration for references to a published type by its old full name",
 "F22": "Flow metrics and Forecasting contract types (metrics queries, forecast throughput status, ports Forecasting fills, what Refinement and Promises read of Forecasting) are available from Contracts, and metrics and forecasts show the same numbers as before.",
+"F220": "No type names one by its old name",
+"F221": "Every user of the connector port and its capabilities follows the move; behaviour is unchanged",
+"F222": "an old name survives only as text that is never compiled into a reference, such as a comment or an inlined constant; the scan reads compiled references only",
+"F223": "Look up the CSV option names class by name in the compiled production code",
+"F224": "It is found exactly once, in the Contracts namespace of Tracker integration, and not in the CSV connector's folder",
+"F225": "Flow metrics names the CSV option names through Tracker integration's Contracts, although the compiled code shows no reference for constants",
+"F226": "Flow metrics keeps an old using line that the compiler resolves elsewhere; the build catches a missing type",
+"F227": "Ask the CI test selection whether a change to the connector port in its new Contracts home is shared",
+"F228": "It answers shared, so every connector suite runs",
+"F229": "CI still selects every connector suite for a change to Tracker integration's contracts",
 "F23": "The oracle does not see whether forecast and metric values a user reads are unchanged, nor that Refinement and Promises still read the same forecast data.",
+"F230": "the pattern selects the whole Tracker integration module, which also selects connector-only changes as shared",
 "F24": "Work Items contract types (blocked items, rule evaluation ports, refresh log, what the forecast waits for) are available from Contracts, and blocked-item rules, refreshes and forecast waiting behave as before.",
 "F25": "The oracle does not see whether a user still gets the same blocked-item results, refresh log entries and forecast timing after refresh.",
 "F26": "Tracker integration contract types (connector port and capabilities, factory, description block merger, CSV option names, write-back target) are available from Contracts; a change touching a Contracts path is treated as shared by CI; connecting, syncing and writing back to trackers behave as before.",

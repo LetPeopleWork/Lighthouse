@@ -505,6 +505,172 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h3>S4</h3>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Read the measured map of what each context publishes, for Tracker integration, without its events
+</code></pre>
+
+<pre><code>It lists exactly the eight Tracker integration types the other contexts reach: the connector port, its factory, the feature, incremental, delivery source, delivery forecast publisher, description block merger and write-back target interfaces
+</code></pre>
+
+<pre><code>Every check of Tracker integration&#x27;s contracts looks at a complete list and cannot pass vacuously
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationPublishesItsContractsArchUnitTest.cs</p>
+
+<p>TrackerIntegrationPublishesTheTypesTheOthersReach_AndTheListOfThemIsNotEmpty</p>
+
+<pre><code>the map holds the right eight names but with a wrong old layer, which the namespace checks below then catch
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Look up each published Tracker integration type by name in the compiled production code
+</code></pre>
+
+<pre><code>Each is found exactly once, in the Contracts namespace of Tracker integration; before the move each is found only in its Application namespace
+</code></pre>
+
+<pre><code>Other contexts can name Tracker integration&#x27;s contract types only through its Contracts
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationPublishesItsContractsArchUnitTest.cs</p>
+
+<p>EachPublishedTypeIsFoundOnceAndInTheContractsOfItsOwnContext</p>
+
+<pre><code>a published type gets a second, nested type of the same name elsewhere; nested types are not top-level and are not compared
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Look for each published Tracker integration type in the namespace it had before
+</code></pre>
+
+<pre><code>None is left in its old namespace
+</code></pre>
+
+<pre><code>No copy of a contract type stays reachable outside Contracts
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationPublishesItsContractsArchUnitTest.cs</p>
+
+<p>NoPublishedTypeIsLeftInTheNamespaceItHadBefore</p>
+
+<pre><code>the old copy is renamed instead of removed; the found-once check still holds the new home
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Scan the compiled production and test code outside Tracker integration for references to a published type by its old full name
+</code></pre>
+
+<pre><code>No type names one by its old name
+</code></pre>
+
+<pre><code>Every user of the connector port and its capabilities follows the move; behaviour is unchanged
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationPublishesItsContractsArchUnitTest.cs</p>
+
+<p>NoTypeOutsideTrackerIntegrationNamesAPublishedTypeByItsOldName</p>
+
+<pre><code>an old name survives only as text that is never compiled into a reference, such as a comment or an inlined constant; the scan reads compiled references only
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Look up the CSV option names class by name in the compiled production code
+</code></pre>
+
+<pre><code>It is found exactly once, in the Contracts namespace of Tracker integration, and not in the CSV connector&#x27;s folder
+</code></pre>
+
+<pre><code>Flow metrics names the CSV option names through Tracker integration&#x27;s Contracts, although the compiled code shows no reference for constants
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationPublishesItsContractsArchUnitTest.cs</p>
+
+<p>TheCsvOptionNamesLiveOnlyInTheContractsOfTrackerIntegration</p>
+
+<pre><code>Flow metrics keeps an old using line that the compiler resolves elsewhere; the build catches a missing type
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Ask the CI test selection whether a change to the connector port in its new Contracts home is shared
+</code></pre>
+
+<pre><code>It answers shared, so every connector suite runs
+</code></pre>
+
+<pre><code>CI still selects every connector suite for a change to Tracker integration&#x27;s contracts
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationPublishesItsContractsArchUnitTest.cs</p>
+
+<p>AChangeToTheConnectorPortInItsContractsHome_StillMakesCiRunEveryConnectorSuite</p>
+
+<pre><code>the pattern selects the whole Tracker integration module, which also selects connector-only changes as shared
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

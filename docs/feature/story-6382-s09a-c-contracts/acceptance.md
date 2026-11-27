@@ -399,6 +399,196 @@ A type name kept only inside a string literal, which the IL scan cannot see.
 
 
 
+### S4
+
+##### Covers
+
+P4
+
+```text
+Read the measured map of what each context publishes, for Tracker integration, without its events
+```
+
+```text
+It lists exactly the eight Tracker integration types the other contexts reach: the connector port, its factory, the feature, incremental, delivery source, delivery forecast publisher, description block merger and write-back target interfaces
+```
+
+```text
+Every check of Tracker integration's contracts looks at a complete list and cannot pass vacuously
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationPublishesItsContractsArchUnitTest\.cs
+
+TrackerIntegrationPublishesTheTypesTheOthersReach\_AndTheListOfThemIsNotEmpty
+
+```text
+the map holds the right eight names but with a wrong old layer, which the namespace checks below then catch
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Look up each published Tracker integration type by name in the compiled production code
+```
+
+```text
+Each is found exactly once, in the Contracts namespace of Tracker integration; before the move each is found only in its Application namespace
+```
+
+```text
+Other contexts can name Tracker integration's contract types only through its Contracts
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationPublishesItsContractsArchUnitTest\.cs
+
+EachPublishedTypeIsFoundOnceAndInTheContractsOfItsOwnContext
+
+```text
+a published type gets a second, nested type of the same name elsewhere; nested types are not top-level and are not compared
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P4
+
+```text
+Look for each published Tracker integration type in the namespace it had before
+```
+
+```text
+None is left in its old namespace
+```
+
+```text
+No copy of a contract type stays reachable outside Contracts
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationPublishesItsContractsArchUnitTest\.cs
+
+NoPublishedTypeIsLeftInTheNamespaceItHadBefore
+
+```text
+the old copy is renamed instead of removed; the found-once check still holds the new home
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Scan the compiled production and test code outside Tracker integration for references to a published type by its old full name
+```
+
+```text
+No type names one by its old name
+```
+
+```text
+Every user of the connector port and its capabilities follows the move; behaviour is unchanged
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationPublishesItsContractsArchUnitTest\.cs
+
+NoTypeOutsideTrackerIntegrationNamesAPublishedTypeByItsOldName
+
+```text
+an old name survives only as text that is never compiled into a reference, such as a comment or an inlined constant; the scan reads compiled references only
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P4
+
+```text
+Look up the CSV option names class by name in the compiled production code
+```
+
+```text
+It is found exactly once, in the Contracts namespace of Tracker integration, and not in the CSV connector's folder
+```
+
+```text
+Flow metrics names the CSV option names through Tracker integration's Contracts, although the compiled code shows no reference for constants
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationPublishesItsContractsArchUnitTest\.cs
+
+TheCsvOptionNamesLiveOnlyInTheContractsOfTrackerIntegration
+
+```text
+Flow metrics keeps an old using line that the compiler resolves elsewhere; the build catches a missing type
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Ask the CI test selection whether a change to the connector port in its new Contracts home is shared
+```
+
+```text
+It answers shared, so every connector suite runs
+```
+
+```text
+CI still selects every connector suite for a change to Tracker integration's contracts
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationPublishesItsContractsArchUnitTest\.cs
+
+AChangeToTheConnectorPortInItsContractsHome\_StillMakesCiRunEveryConnectorSuite
+
+```text
+the pattern selects the whole Tracker integration module, which also selects connector-only changes as shared
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
