@@ -102,6 +102,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Adapters.Background
                 .AddSingleton(workItemRepositoryMock.Object)
                 .AddSingleton(percentileWriterMock.Object)
                 .AddSingleton(limitWriterMock.Object)
+                .AddSingleton(Mock.Of<IWithinSleSnapshotWriter>())
                 .AddSingleton<ILighthouseClock>(new FakeLighthouseClock(Now))
                 .AddSingleton(_ => new DatabaseMaintenanceGate(Mock.Of<IUpdateStatusStore>(), subject))
                 .AddSingleton<ReconstructionMemo>()

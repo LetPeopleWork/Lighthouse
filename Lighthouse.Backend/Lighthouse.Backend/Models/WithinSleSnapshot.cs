@@ -7,8 +7,6 @@ namespace Lighthouse.Backend.Models
     /// </summary>
     public class WithinSleSnapshot : IEntity
     {
-        public static readonly IReadOnlyList<int> Horizons = [30, 60, 90];
-
         public int Id { get; set; }
 
         public int OwnerId { get; set; }

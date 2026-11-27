@@ -17,6 +17,7 @@ function nextDay(day: string): string {
 /**
  * One entry per calendar day from the first stored day to the last, so a day nobody recorded is a gap in both
  * lines rather than its neighbours joined across it. A day too few to judge keeps its target but has no share.
+ * Only a day that draws a point can be marked as filled in, since there is no marker on any other day to mark.
  */
 export function withinSleLinesOf(
 	days: readonly IWithinSleDay[],
@@ -37,7 +38,9 @@ export function withinSleLinesOf(
 		lines.dates.push(day);
 		lines.share.push(answered?.sharePercent ?? null);
 		lines.target.push(answered?.slePercentile ?? null);
-		lines.filledIn.push(false);
+		lines.filledIn.push(
+			answered?.origin === "FilledIn" && answered.sharePercent !== null,
+		);
 	}
 	return lines;
 }

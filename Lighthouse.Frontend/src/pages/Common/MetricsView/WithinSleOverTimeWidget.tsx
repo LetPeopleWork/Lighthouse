@@ -20,6 +20,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import { OVER_TIME_EMPTY_COPY } from "./overTimeEmptyState";
 import { useWithinSleOverTime } from "./useWithinSleOverTime";
+import { FilledInDaysContext, WithinSleShareMark } from "./WithinSleShareMark";
 import { useReportWidgetStatus } from "./widgetStatus";
 import { withinSleLinesOf } from "./withinSleLines";
 
@@ -60,6 +61,7 @@ const WithinSleOverTimeWidget: React.FC<WithinSleOverTimeWidgetProps> = ({
 	const days = answer?.days ?? [];
 	const lines = withinSleLinesOf(days);
 	const anyTooFew = days.some((day) => day.verdict === "TooFew");
+	const anyFilledIn = lines.filledIn.some((filledIn) => filledIn);
 
 	const sentence = (text: string) => (
 		<Typography
@@ -82,27 +84,35 @@ const WithinSleOverTimeWidget: React.FC<WithinSleOverTimeWidgetProps> = ({
 		return (
 			<>
 				<Box sx={{ flex: 1, minHeight: 0 }}>
-					<LineChart
-						style={{ height: "100%", width: "100%" }}
-						xAxis={[{ data: lines.dates, scaleType: "point", label: "Date" }]}
-						yAxis={[{ min: 0, max: 100, label: `Within ${sle} (%)` }]}
-						series={[
-							{
-								label: `Within ${sle}`,
-								data: lines.share,
-								color: theme.palette.primary.main,
-								showMark: true,
-							},
-							{
-								label: "Target",
-								data: lines.target,
-								color: theme.palette.text.secondary,
-								curve: "stepAfter",
-								showMark: false,
-							},
-						]}
-					/>
+					<FilledInDaysContext value={lines.filledIn}>
+						<LineChart
+							style={{ height: "100%", width: "100%" }}
+							xAxis={[{ data: lines.dates, scaleType: "point", label: "Date" }]}
+							yAxis={[{ min: 0, max: 100, label: `Within ${sle} (%)` }]}
+							series={[
+								{
+									label: `Within ${sle}`,
+									data: lines.share,
+									color: theme.palette.primary.main,
+									showMark: true,
+								},
+								{
+									label: "Target",
+									data: lines.target,
+									color: theme.palette.text.secondary,
+									curve: "stepAfter",
+									showMark: false,
+								},
+							]}
+							slots={{ mark: WithinSleShareMark }}
+						/>
+					</FilledInDaysContext>
 				</Box>
+				{anyFilledIn && (
+					<Typography variant="caption" color="text.secondary">
+						{`○ filled in from history (measured against today's ${sle})`}
+					</Typography>
+				)}
 				{anyTooFew && (
 					<Typography variant="caption" color="text.secondary">
 						{`No point is drawn on a day with fewer than 5 closed ${workItems}.`}

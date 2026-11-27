@@ -198,7 +198,8 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background
 
             var writers = new OverTimeWriters(
                 services.GetRequiredService<IPercentileSnapshotWriter>(),
-                services.GetRequiredService<IProcessBehaviorSnapshotWriter>());
+                services.GetRequiredService<IProcessBehaviorSnapshotWriter>(),
+                services.GetRequiredService<IWithinSleSnapshotWriter>());
             var memo = services.GetRequiredService<ReconstructionMemo>();
             var progress = new PassProgress();
 
@@ -327,9 +328,9 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background
         /// when the next chart load looks. Abandoning the walk here would cost the other eighty-nine
         /// days over a single bad one.
         ///
-        /// The two kinds of chart are staged and committed separately so that a fault in one leaves
-        /// the other's rows written rather than discarding them - but the day is only settled once
-        /// both got through, because a day remembered as settled is never offered to a pass again.
+        /// Each kind of chart is staged and committed on its own so that a fault in one leaves the
+        /// others' rows written rather than discarding them - but the day is only settled once all of
+        /// them got through, because a day remembered as settled is never offered to a pass again.
         /// </summary>
         private async Task FillOneDayAsync(
             OverTimeWriters writers,
@@ -359,7 +360,11 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background
                 },
                 writers.ProcessBehavior.SaveFilledDay);
 
-            var failure = percentilesFailure ?? limitsFailure;
+            var withinSleFailure = await TryWriteDayAsync(
+                () => writers.WithinSle.FillDayIfAbsent(request.OwnerId, request.OwnerType, day, target.WithinSleFamily),
+                writers.WithinSle.SaveFilledDay);
+
+            var failure = percentilesFailure ?? limitsFailure ?? withinSleFailure;
             if (failure is not null)
             {
                 // Deliberately not remembered: a day lost to a fault is worth another try, unlike one
@@ -445,12 +450,13 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background
         }
 
         /// <summary>
-        /// The two write policies a pass commits through. Held together because a day is one day
-        /// across both of them: the pass writes each family's row and only then counts the day done.
+        /// The write policies a pass commits through. Held together because a day is one day across
+        /// all of them: the pass writes each family's row and only then counts the day done.
         /// </summary>
         private sealed record OverTimeWriters(
             IPercentileSnapshotWriter Percentiles,
-            IProcessBehaviorSnapshotWriter ProcessBehavior);
+            IProcessBehaviorSnapshotWriter ProcessBehavior,
+            IWithinSleSnapshotWriter WithinSle);
 
         /// <summary>
         /// What one pass has got through and how many of those days it could not write, held outside

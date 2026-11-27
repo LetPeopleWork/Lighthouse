@@ -625,7 +625,7 @@ namespace Lighthouse.Backend.API
         [HttpGet("within-sle-over-time")]
         public ActionResult<WithinSleOverTimeDto> GetWithinSleOverTime(int teamId, [FromQuery] int horizon = 30, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
-            if (!WithinSleSnapshot.Horizons.Contains(horizon))
+            if (!WithinSleSnapshotWriter.Horizons.Contains(horizon))
             {
                 return BadRequest(HorizonMustBeOneOfErrorMessage);
             }

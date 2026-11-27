@@ -7,6 +7,12 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
     public sealed class WithinSleSnapshotWriter(IWithinSleSnapshotRepository snapshots, ILighthouseClock clock) : IWithinSleSnapshotWriter
     {
+        /// <summary>
+        /// The trailing windows of the Within SLE record. Kept with the one writer of both the day recorded today and
+        /// the day filled in later, so the two always cover the same windows.
+        /// </summary>
+        public static readonly IReadOnlyList<int> Horizons = [30, 60, 90];
+
         public async Task RecordToday(int ownerId, OwnerType ownerType, WithinSleFamilyReader family)
         {
             // Without an SLE a day has nothing to be measured against, so nothing is written.
@@ -18,8 +24,14 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
             var day = clock.Today;
 
-            foreach (var horizon in WithinSleSnapshot.Horizons)
+            foreach (var horizon in Horizons)
             {
+                var cycleTimesInDays = ReadWindow(family, horizon, day);
+                if (cycleTimesInDays is null)
+                {
+                    continue;
+                }
+
                 var row = StoredRow(ownerId, ownerType, horizon, day);
                 if (row is null)
                 {
@@ -27,7 +39,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                     snapshots.Add(row);
                 }
 
-                Measure(row, family, sle, WithinSleSnapshotOrigin.Recorded);
+                Measure(row, cycleTimesInDays, sle, WithinSleSnapshotOrigin.Recorded);
             }
 
             await snapshots.Save();
@@ -41,7 +53,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                 return;
             }
 
-            foreach (var horizon in WithinSleSnapshot.Horizons)
+            foreach (var horizon in Horizons)
             {
                 // A stored day was measured while it was current, against the SLE then in force; working it out
                 // again now would replace what was observed with a guess, so it is left exactly as it is.
@@ -50,8 +62,16 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                     continue;
                 }
 
+                // A window reaching back past the work the owner still keeps would count partly deleted work and read
+                // lower than the owner ever was, so that window stays a gap while the shorter ones are still written.
+                var cycleTimesInDays = ReadWindow(family, horizon, day);
+                if (cycleTimesInDays is null)
+                {
+                    continue;
+                }
+
                 var row = NewRow(ownerId, ownerType, horizon, day);
-                Measure(row, family, sle, WithinSleSnapshotOrigin.FilledIn);
+                Measure(row, cycleTimesInDays, sle, WithinSleSnapshotOrigin.FilledIn);
                 snapshots.Add(row);
             }
         }
@@ -64,12 +84,16 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         private static WithinSleSnapshot NewRow(int ownerId, OwnerType ownerType, int horizon, DateOnly day)
             => new() { OwnerId = ownerId, OwnerType = ownerType, Horizon = horizon, RecordedAt = day };
 
-        private static void Measure(WithinSleSnapshot row, WithinSleFamilyReader family, ServiceLevelExpectation sle, WithinSleSnapshotOrigin origin)
+        private static IReadOnlyList<int>? ReadWindow(WithinSleFamilyReader family, int horizon, DateOnly day)
         {
-            var windowEnd = InstanceCalendar.AsUtcMidnight(row.RecordedAt);
-            var windowStart = windowEnd.AddDays(-(row.Horizon - 1));
-            var cycleTimesInDays = family.ReadClosedCycleTimes(windowStart, windowEnd);
+            var windowEnd = InstanceCalendar.AsUtcMidnight(day);
+            var windowStart = windowEnd.AddDays(-(horizon - 1));
 
+            return family.ReadClosedCycleTimes(windowStart, windowEnd);
+        }
+
+        private static void Measure(WithinSleSnapshot row, IReadOnlyList<int> cycleTimesInDays, ServiceLevelExpectation sle, WithinSleSnapshotOrigin origin)
+        {
             row.ClosedCount = cycleTimesInDays.Count;
             row.WithinCount = sle.CountWithin(cycleTimesInDays);
             row.SlePercentile = sle.Percentile;

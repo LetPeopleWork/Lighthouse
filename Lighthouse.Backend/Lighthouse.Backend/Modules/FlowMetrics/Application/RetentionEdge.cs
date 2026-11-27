@@ -67,6 +67,14 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                     ReachesPastTheEdge(windowStart) ? [] : family.ReadPercentiles(windowStart, windowEnd),
             };
 
+        /// <summary>A window that reaches past the edge comes back unreadable, which the writer leaves unwritten for that window.</summary>
+        public WithinSleFamilyReader Guard(WithinSleFamilyReader family)
+            => family with
+            {
+                ReadClosedCycleTimes = (windowStart, windowEnd) =>
+                    ReachesPastTheEdge(windowStart) ? null : family.ReadClosedCycleTimes(windowStart, windowEnd),
+            };
+
         /// <summary>
         /// Limits whose stretch reaches past the edge come back unusable, which the writer leaves unwritten.
         ///

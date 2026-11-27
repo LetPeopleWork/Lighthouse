@@ -13,15 +13,16 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
     /// the same ask. Narrow this to one family and the other families' asks are dropped while the
     /// work they cover is still outstanding, and the charts they belong to never fill at all.
     ///
-    /// Both family lists are the ones the live recording uses rather than a copy made here. A copy
-    /// is a second place the set can be changed, and the two then disagree about what a scope
-    /// records without anything saying so. Each family is only wrapped, so that a reading reaching
-    /// back past the work the owner still keeps comes back empty.
+    /// Every family is the one the live recording uses rather than a copy made here. A copy is a
+    /// second place the set can be changed, and the two then disagree about what a scope records
+    /// without anything saying so. Each family is only wrapped, so that a reading reaching back
+    /// past the work the owner still keeps comes back unusable and is left unwritten.
     /// </summary>
     internal sealed record OverTimeFillTarget(
         DateOnly LastObservedOn,
         IReadOnlyList<PercentileFamilyReader> PercentileFamilies,
         IReadOnlyList<ProcessBehaviorFamilyReader> ProcessBehaviorFamilies,
+        WithinSleFamilyReader WithinSleFamily,
         Action InvalidateReadCache,
         Func<DateOnly?> EarliestDayTheItemsSupport)
     {
@@ -56,6 +57,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                 lastObservedOn,
                 [.. Application.PercentileFamilies.For(team, metrics).Select(retention.Guard)],
                 [.. services.GetRequiredService<IProcessBehaviorSnapshotWriter>().FamiliesFor(team).Select(retention.Guard)],
+                retention.Guard(WithinSleFamilies.For(team, metrics, clock)),
                 () => metrics.InvalidateTeamMetrics(team),
                 () => retention.NoEarlierThanTheEdge(EarliestFinishedDay(
                     clock,
@@ -81,6 +83,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                 lastObservedOn,
                 [.. Application.PercentileFamilies.For(portfolio, metrics).Select(retention.Guard)],
                 [.. services.GetRequiredService<IProcessBehaviorSnapshotWriter>().FamiliesFor(portfolio).Select(retention.Guard)],
+                retention.Guard(WithinSleFamilies.For(portfolio, metrics, clock)),
                 () => metrics.InvalidatePortfolioMetrics(portfolio),
                 () => retention.NoEarlierThanTheEdge(EarliestFinishedDay(
                     clock,
