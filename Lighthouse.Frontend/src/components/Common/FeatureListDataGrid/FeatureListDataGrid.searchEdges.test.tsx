@@ -193,5 +193,5 @@ describe("FeatureListDataGrid search in its edge states", () => {
 			"a search that still leaves more than one page must open at its first page",
 		).toBeInTheDocument();
 		expect(featuresShown()[0]).toBe("PROJ-1: Feature 001");
-	}, 20000);
+	});
 });
