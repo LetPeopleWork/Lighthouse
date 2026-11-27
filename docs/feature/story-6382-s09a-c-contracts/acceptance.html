@@ -998,53 +998,71 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h4>Observations</h4>
 
-<pre><code>Probe architecture-rules PublishTheirContracts (Debug build, Architecture filter): 8 of 8 passed, exit 0. Includes each-published-type-found-once-in-own-Contracts, no-type-left-in-old-namespace, and no-outside-type-names-old-name for Licensing+Access and Flow metrics+Forecasting. Only these two slices&#x27; rules matched the fragment; Work Items, Tracker integration and Organisation set-up rule classes were not run in this probe.
+<pre><code>architecture-rules PublishTheirContracts (Licensing+Access, Flow metrics+Forecasting): 8 of 8 passed, incl. found once in own Contracts, none left in old namespace, no outside type names old name.
 </code></pre>
 
-<pre><code>Probe access-answers-compare 2db405ff5 (candidate 33b37aa17): 10 Access/Licensing answers (api-keys, auth-mode, everyone-signed-in, licence status before and after import, my-summary, rbac-status, session, system-wide-rules x2), 0 different; VERDICT IDENTICAL, exit 0.
+<pre><code>access-answers-compare base 2db405ff5 vs candidate 7f3eb8ef3: VERDICT IDENTICAL, all 10 Access or Licensing answers match (api-keys, auth-mode, licence status before/after import, my-summary, rbac-status, session, system-wide-rules, everyone-signed-in).
 </code></pre>
 
 <h3>E2</h3>
+
+<p>not_examined</p>
+
+<pre><code>Forecast numbers and Refinement/Promises forecast reads not observed: forecast-answers-compare not run within the 9-probe budget; metrics answers identical (O9) and structure passes (O6) only. Prerequisite: run forecast-answers-compare 2db405ff5; owner: host.
+</code></pre>
+
+<h3>E3</h3>
 
 <p>met</p>
 
 <h4>Observations</h4>
 
-<pre><code>Probe architecture-rules PublishTheirContracts (Debug build, Architecture filter): 8 of 8 passed, exit 0. Includes each-published-type-found-once-in-own-Contracts, no-type-left-in-old-namespace, and no-outside-type-names-old-name for Licensing+Access and Flow metrics+Forecasting. Only these two slices&#x27; rules matched the fragment; Work Items, Tracker integration and Organisation set-up rule classes were not run in this probe.
+<pre><code>architecture-rules PublishesItsContracts (Work Items, Tracker integration, Organisation set-up): 17 of 17 passed, incl. each published type found once in its Contracts, none left in old namespace, no outside type names old name, CSV option names only in Tracker Contracts, open host admits only Organisation set-up Contracts, tolerated-edge list holds no published type, connector-port-in-Contracts still makes CI run every connector suite.
 </code></pre>
 
-<pre><code>Probe metrics-answers-compare 2db405ff5 vs candidate 33b37aa17, same seeded database hashes, window 2026-07-20..2026-10-17, 366 requests per round, teams 1 4 5, portfolios 1 4 5: IDENTICAL, 366 responses and 3 snapshot tables, exit 0.
-</code></pre>
-
-<pre><code>Probe forecast-answers-compare 2db405ff5 vs candidate 33b37aa17: 128 forecast answers over 9 scenarios (backtest, deliveries, feature-list, features, item-creation-prediction, manual-how-many, manual-when-and-how-many, manual-when-filtered, reality-check), 0 different; VERDICT IDENTICAL, exit 0.
-</code></pre>
-
-<h3>E3</h3>
-
-<p>not_examined</p>
-
-<pre><code>Probe budget of 4 spent on access, metrics, forecast and architecture-rules PublishTheirContracts (only Licensing/Access and Flow metrics/Forecasting rules matched). No refresh, tracker, CI-classifier, Organisation set-up or full-suite observation was captured in this revision; the earlier published met verdict is not re-observed here.
+<pre><code>refresh-answers-compare base 2db405ff5 vs candidate 7f3eb8ef3: IDENTICAL, 343 refresh answers over 9 scenarios (blocked today/a week ago, blocked-count-history, feature-list, finished, in-progress, work-items, parent-placement 2136 compared) all match.
 </code></pre>
 
 <h3>E4</h3>
 
-<p>not_examined</p>
+<p>met</p>
 
-<pre><code>Probe budget of 4 spent on access, metrics, forecast and architecture-rules PublishTheirContracts (only Licensing/Access and Flow metrics/Forecasting rules matched). No refresh, tracker, CI-classifier, Organisation set-up or full-suite observation was captured in this revision; the earlier published met verdict is not re-observed here.
+<h4>Observations</h4>
+
+<pre><code>architecture-rules PublishesItsContracts (Work Items, Tracker integration, Organisation set-up): 17 of 17 passed, incl. each published type found once in its Contracts, none left in old namespace, no outside type names old name, CSV option names only in Tracker Contracts, open host admits only Organisation set-up Contracts, tolerated-edge list holds no published type, connector-port-in-Contracts still makes CI run every connector suite.
+</code></pre>
+
+<pre><code>test-selection-show with Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Contracts/IWorkTrackingConnector.cs: backend true, jira/ado/linear/servicenow/github false, shared true. ci-live-suites-show: CI run 46023961545 backend success, live connector suites Jira 72, Ado 58, Linear 20, ServiceNow 20, Github 32 passed, 0 failed (run on commit a641826bc, not exactly HEAD).
 </code></pre>
 
 <h3>E5</h3>
 
-<p>not_examined</p>
+<p>met</p>
 
-<pre><code>Probe budget of 4 spent on access, metrics, forecast and architecture-rules PublishTheirContracts (only Licensing/Access and Flow metrics/Forecasting rules matched). No refresh, tracker, CI-classifier, Organisation set-up or full-suite observation was captured in this revision; the earlier published met verdict is not re-observed here.
+<h4>Observations</h4>
+
+<pre><code>architecture-rules PublishesItsContracts (Work Items, Tracker integration, Organisation set-up): 17 of 17 passed, incl. each published type found once in its Contracts, none left in old namespace, no outside type names old name, CSV option names only in Tracker Contracts, open host admits only Organisation set-up Contracts, tolerated-edge list holds no published type, connector-port-in-Contracts still makes CI run every connector suite.
 </code></pre>
 
 <h3>E6</h3>
 
-<p>not_examined</p>
+<p>met</p>
 
-<pre><code>Probe budget of 4 spent on access, metrics, forecast and architecture-rules PublishTheirContracts (only Licensing/Access and Flow metrics/Forecasting rules matched). No refresh, tracker, CI-classifier, Organisation set-up or full-suite observation was captured in this revision; the earlier published met verdict is not re-observed here.
+<h4>Observations</h4>
+
+<pre><code>architecture-rules PublishesItsContracts (Work Items, Tracker integration, Organisation set-up): 17 of 17 passed, incl. each published type found once in its Contracts, none left in old namespace, no outside type names old name, CSV option names only in Tracker Contracts, open host admits only Organisation set-up Contracts, tolerated-edge list holds no published type, connector-port-in-Contracts still makes CI run every connector suite.
+</code></pre>
+
+<pre><code>architecture-rules PublishTheirContracts (Licensing+Access, Flow metrics+Forecasting): 8 of 8 passed, incl. found once in own Contracts, none left in old namespace, no outside type names old name.
+</code></pre>
+
+<pre><code>access-answers-compare base 2db405ff5 vs candidate 7f3eb8ef3: VERDICT IDENTICAL, all 10 Access or Licensing answers match (api-keys, auth-mode, licence status before/after import, my-summary, rbac-status, session, system-wide-rules, everyone-signed-in).
+</code></pre>
+
+<pre><code>metrics-answers-compare base 2db405ff5 vs candidate 7f3eb8ef3: IDENTICAL, 366 responses and 3 snapshot tables, window 2026-07-20..2026-10-17, teams 1 4 5, portfolios 1 4 5. Forecast-answers-compare and full backend-tests not run (probe budget); not observed.
+</code></pre>
+
+<pre><code>refresh-answers-compare base 2db405ff5 vs candidate 7f3eb8ef3: IDENTICAL, 343 refresh answers over 9 scenarios (blocked today/a week ago, blocked-count-history, feature-list, finished, in-progress, work-items, parent-placement 2136 compared) all match.
 </code></pre>
 
 </body></html>
