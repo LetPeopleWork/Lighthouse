@@ -2,7 +2,7 @@
 "counters": {
 "C": 1,
 "D": 9,
-"F": 248,
+"F": 263,
 "K": 9,
 "L": 4,
 "P": 10,
@@ -345,6 +345,29 @@
 "stimulus": "F215"
 },
 "records": {
+"agreement": [
+{
+"contract": "UsageDataEventName value 31 FeatureListSearched, name-only",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:121",
+"party": "Producer",
+"reason": "F261"
+},
+{
+"contract": "UsageDataEventName value 31 FeatureListSearched, name-only",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts:55",
+"party": "Consumer",
+"reason": "F262"
+},
+{
+"contract": "UsageDataEventName value 31 FeatureListSearched, name-only",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Frontend/src/services/UsageData/usageDataReporter.ts:95",
+"party": "Consumer",
+"reason": "F263"
+}
+],
 "architectural_tests": [
 {
 "command": "pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --reporter=json src/components/Common/DataGrid/DataGridBase.search.test.tsx",
@@ -352,6 +375,9 @@
 "obligation": "F248",
 "oracle": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.search.test.tsx"
 }
+],
+"decisions": [
+"F252"
 ],
 "impact": [
 {
@@ -467,13 +493,33 @@
 "kind": "new-module",
 "locator": "Lighthouse.Frontend/src/components/Common/DataGrid/GridSearchBox.tsx:1",
 "reason": "F245"
+},
+{
+"decision": "Changed",
+"kind": "enum",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:121",
+"reason": "F257"
+},
+{
+"decision": "Changed",
+"kind": "wire-name-map",
+"locator": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts:55",
+"reason": "F258"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "docs/settings/usagedata.md:46",
+"reason": "F259"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx:29",
+"reason": "F260"
 }
 ],
 "not_applicable": [
-{
-"analysis": "agreement",
-"reason": "F246"
-},
 {
 "analysis": "contract_tests",
 "reason": "F247"
@@ -539,6 +585,30 @@
 "locator": "Lighthouse.Frontend/src/pages/Features/FeaturesView.tsx:18",
 "reason": "F229",
 "symbol": "FeaturesView"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:8",
+"reason": "F253",
+"symbol": "UsageDataEventName"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts:55",
+"reason": "F254",
+"symbol": "ReportNoteAdded"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/services/UsageData/usageDataReporter.ts:95",
+"reason": "F255",
+"symbol": "useUsageDataReporter"
+},
+{
+"decision": "Extend",
+"locator": "docs/settings/usagedata.md:42",
+"reason": "F256",
+"symbol": "Event"
 }
 ]
 },
@@ -586,6 +656,21 @@
 "change": "Extend",
 "path": "Lighthouse.Frontend/src/pages/Features/FeaturesView.tsx",
 "reason": "F214"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs",
+"reason": "F249"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts",
+"reason": "F250"
+},
+{
+"change": "Extend",
+"path": "docs/settings/usagedata.md",
+"reason": "F251"
 }
 ],
 "verification": [
@@ -1101,11 +1186,25 @@
 "F243": "No new dependency: @mui/x-data-grid ^9.18.0, fast-check 4.10.3 already declared",
 "F244": "New pure module, imported only by DataGridBase",
 "F245": "New component, imported only by DataGridToolbar",
-"F246": "The search prop is passed between FeatureListDataGrid and DataGridBase in one deployable and one commit; no persisted or wire shape changes",
 "F247": "Producer and consumer of the new props change together in one bundle; the primary oracle covers the real producer through the real consumer",
 "F248": "The search box is opt-in: DataGridBase and DataGridToolbar render no search textbox unless a search prop is given, so the grids outside the four pages gain none",
+"F249": "Append FeatureListSearched = 31 with a summary saying it carries nothing and never the text, list, team, portfolio or match count; never renumber",
 "F25": "A new search opens the first page of results",
+"F250": "Add FeatureListSearched to the event name map",
+"F251": "One table row: Feature list searched, sent the first time a search box holds text on a page visit, Nothing travels with it",
+"F252": "Usage data (DEVOPS obligation): name-only event FeatureListSearched = 31, no property: never the text, the list, the team or portfolio, or a match count. FeatureListDataGrid owns the once-per-visit latch because DataGridBase is shared and must stay unaware of usage data: it holds the search text through the search prop callback, and the first time that text is non-empty it calls useUsageDataReporter() and spends the latch (a useRef flag) only when the reporter answers that the use was recorded, so an answer that has not yet arrived does not burn it. The latch is per mount, so each page visit and each list reports at most once; clearing and retyping does not report again. The producer is the DataGridBase search prop gaining an onTextChange callback (text string), the only new data crossing the boundary.",
+"F253": "The catalogue owner of event names, append-only; ReportNoteAdded = 30 is the last value",
+"F254": "Name map entry precedent; one new entry next to it",
+"F255": "Already hides consent and answers whether the use was recorded, which is exactly what a once-latch needs",
+"F256": "The event table is the one catalogue of what is sent; one row appended",
+"F257": "New value 31 appended; existing values keep their numbers",
+"F258": "Name map gains the entry; the backend enum and this map must agree",
+"F259": "One row added to the event table",
 "F26": "the user is on page 2 of a long list",
+"F260": "Holds the latch and calls the reporter on the first non-empty search text",
+"F261": "Backend enum gains the name",
+"F262": "Frontend name map gains the same name",
+"F263": "Reporter is name-driven and unchanged",
 "F27": "the user types a search",
 "F28": "the list shows the first page of the results",
 "F29": "The search box is found on every full feature list",

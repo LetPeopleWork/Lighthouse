@@ -744,6 +744,30 @@ Extend
 Projects column gets valueFormatter = projectNamesText so Portfolio names are searchable on the Features page
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataEventName\.cs
+
+Extend
+
+```text
+Append FeatureListSearched = 31 with a summary saying it carries nothing and never the text, list, team, portfolio or match count; never renumber
+```
+
+Lighthouse\.Frontend\/src\/services\/Api\/UsageDataService\.ts
+
+Extend
+
+```text
+Add FeatureListSearched to the event name map
+```
+
+docs\/settings\/usagedata\.md
+
+Extend
+
+```text
+One table row: Feature list searched, sent the first time a search box holds text on a page visit, Nothing travels with it
+```
+
 Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.search\.test\.tsx
 
 #### Verification
@@ -809,7 +833,9 @@ pnpm --dir Lighthouse.Frontend exec cross-env TZ=Europe/Zurich vitest run --repo
 
 ##### Decisions
 
-None.
+```text
+Usage data (DEVOPS obligation): name-only event FeatureListSearched = 31, no property: never the text, the list, the team or portfolio, or a match count. FeatureListDataGrid owns the once-per-visit latch because DataGridBase is shared and must stay unaware of usage data: it holds the search text through the search prop callback, and the first time that text is non-empty it calls useUsageDataReporter() and spends the latch (a useRef flag) only when the reporter answers that the use was recorded, so an answer that has not yet arrived does not burn it. The latch is per mount, so each page visit and each list reports at most once; clearing and retyping does not report again. The producer is the DataGridBase search prop gaining an onTextChange callback (text string), the only new data crossing the boundary.
+```
 
 ##### Constraints
 
@@ -915,6 +941,46 @@ Extend
 
 ```text
 Owns the projects column on the Features page
+```
+
+UsageDataEventName
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataEventName\.cs\:8
+
+Extend
+
+```text
+The catalogue owner of event names, append-only; ReportNoteAdded = 30 is the last value
+```
+
+ReportNoteAdded
+
+Lighthouse\.Frontend\/src\/services\/Api\/UsageDataService\.ts\:55
+
+Extend
+
+```text
+Name map entry precedent; one new entry next to it
+```
+
+useUsageDataReporter
+
+Lighthouse\.Frontend\/src\/services\/UsageData\/usageDataReporter\.ts\:95
+
+Reuse
+
+```text
+Already hides consent and answers whether the use was recorded, which is exactly what a once-latch needs
+```
+
+Event
+
+docs\/settings\/usagedata\.md\:42
+
+Extend
+
+```text
+The event table is the one catalogue of what is sent; one row appended
 ```
 
 ##### Impact
@@ -1109,17 +1175,85 @@ Changed
 New component, imported only by DataGridToolbar
 ```
 
-##### Agreement
+enum
 
-None.
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataEventName\.cs\:121
 
-##### Not applicable
-
-agreement
+Changed
 
 ```text
-The search prop is passed between FeatureListDataGrid and DataGridBase in one deployable and one commit; no persisted or wire shape changes
+New value 31 appended; existing values keep their numbers
 ```
+
+wire\-name\-map
+
+Lighthouse\.Frontend\/src\/services\/Api\/UsageDataService\.ts\:55
+
+Changed
+
+```text
+Name map gains the entry; the backend enum and this map must agree
+```
+
+docs
+
+docs\/settings\/usagedata\.md\:46
+
+Changed
+
+```text
+One row added to the event table
+```
+
+component
+
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.tsx\:29
+
+Changed
+
+```text
+Holds the latch and calls the reporter on the first non-empty search text
+```
+
+##### Agreement
+
+UsageDataEventName value 31 FeatureListSearched\, name\-only
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataEventName\.cs\:121
+
+Producer
+
+Migrated
+
+```text
+Backend enum gains the name
+```
+
+UsageDataEventName value 31 FeatureListSearched\, name\-only
+
+Lighthouse\.Frontend\/src\/services\/Api\/UsageDataService\.ts\:55
+
+Consumer
+
+Migrated
+
+```text
+Frontend name map gains the same name
+```
+
+UsageDataEventName value 31 FeatureListSearched\, name\-only
+
+Lighthouse\.Frontend\/src\/services\/UsageData\/usageDataReporter\.ts\:95
+
+Consumer
+
+UnchangedCompatible
+
+```text
+Reporter is name-driven and unchanged
+```
+
+##### Not applicable
 
 contract_tests
 

@@ -66,3 +66,14 @@ Design facts live in `handoff.json` (rendered to `architecture.md`). Choices tak
 - **Name column:** S1 shows it through a `valueFormatter`; S4 makes the shown "ID: name" its value with a sort that
   stays by name. The Refinement grid shares the column, so its Name filter also matches the ID.
 - No formal model: a stateless row filter. Pure matcher gets property tests; the rest is component tests. No new E2E.
+
+## DEVOPS (2026-11-27, AFK)
+
+- **Platform risk:** none. Frontend change inside the existing deployable; no new service, setting, migration or
+  external call.
+- **Usage-data event:** `FeatureListSearched = 31`, name only, no property. It is reported once per feature list
+  per page visit, the first time its search box holds text, so typing does not send one event per keystroke and a
+  visit counts once. It carries nothing: not which list, not which Team or Portfolio, not the search text or its
+  length, not how many Features matched. It answers the outcome question "do people use the search box?".
+  Emitted by S1 (the slice that first makes the search usable), which also adds it to
+  `UsageDataEventName.cs`, the frontend `UsageDataService.ts` name map and `docs/settings/usagedata.md`.
