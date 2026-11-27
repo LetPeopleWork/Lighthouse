@@ -1,9 +1,222 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F287",
+"test": "finds a Feature by its reference ID typed in lower case",
+"test_path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.search.test.tsx"
+},
+"expected": "F285",
+"stimulus": "F284",
+"user_result": "F286"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F291",
+"test": "finds a Feature through the name of its parent as well as through its own name",
+"test_path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.search.test.tsx"
+},
+"expected": "F289",
+"stimulus": "F288",
+"user_result": "F290"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F295",
+"test": "lists every Feature again when the box is cleared",
+"test_path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.search.test.tsx"
+},
+"expected": "F293",
+"stimulus": "F292",
+"user_result": "F294"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F303",
+"test": "offers an empty box named after the Features in the toolbar before its icons",
+"test_path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.search.test.tsx"
+},
+"expected": "F301",
+"stimulus": "F300",
+"user_result": "F302"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F307",
+"test": "reports one use of the search per visit, however much is typed, cleared and typed again",
+"test_path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.search.test.tsx"
+},
+"expected": "F305",
+"stimulus": "F304",
+"user_result": "F306"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F311",
+"test": "still reports the use once the answer to record it arrives after an unrecorded first try",
+"test_path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.search.test.tsx"
+},
+"expected": "F309",
+"stimulus": "F308",
+"user_result": "F310"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F315",
+"test": "keeps a cell whose shown text contains the typed text, in any letter case (law L1)",
+"test_path": "Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.test.ts"
+},
+"expected": "F313",
+"stimulus": "F312",
+"user_result": "F314"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F319",
+"test": "never keeps a cell holding %s, whatever is typed (law L2)",
+"test_path": "Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.test.ts"
+},
+"expected": "F317",
+"stimulus": "F316",
+"user_result": "F318"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F323",
+"test": "never brings back a row when more text is typed, and keeps exactly the rows whose shown text contains it (law L3)",
+"test_path": "Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.test.ts"
+},
+"expected": "F321",
+"stimulus": "F320",
+"user_result": "F322"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F327",
+"test": "shows no search box when it is not given a search",
+"test_path": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.search.test.tsx"
+},
+"expected": "F325",
+"stimulus": "F324",
+"user_result": "F326"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F331",
+"test": "narrows the rows by the text a column shows rather than the value behind it",
+"test_path": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.search.test.tsx"
+},
+"expected": "F329",
+"stimulus": "F328",
+"user_result": "F330"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F335",
+"test": "finds nothing through a column that holds no text when %s is typed",
+"test_path": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.search.test.tsx"
+},
+"expected": "F333",
+"stimulus": "F332",
+"user_result": "F334"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F339",
+"test": "tells its owner the text as it is typed and cleared",
+"test_path": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.search.test.tsx"
+},
+"expected": "F337",
+"stimulus": "F336",
+"user_result": "F338"
+}
+]
+},
 "counters": {
 "C": 1,
 "D": 9,
 "E": 10,
-"F": 283,
+"F": 347,
 "K": 9,
 "L": 4,
 "P": 10,
@@ -1312,12 +1525,64 @@
 "F281": "Does not show the search box while the tab's list is still loading, and does not check Delivery Work Items beyond a Feature reference ID.",
 "F282": "Typing 'PROJ-12' in the Name column filter lists the Feature with reference ID PROJ-12 and name 'Checkout'.",
 "F283": "Does not check a Feature whose name alone contains the typed text.",
+"F284": "On the Features list, the user types proj-12 in lower case into the search box",
+"F285": "Only the Feature PROJ-12: Checkout is listed",
+"F286": "The user finds a Feature by its reference ID without opening a column menu",
+"F287": "The Name column matches only the name, so the ID search lists nothing, or the match is case-sensitive",
+"F288": "The user types checkout into the search box",
+"F289": "PROJ-12: Checkout (own name) and PROJ-20: Payments (parent PROJ-3: Checkout) are listed; PROJ-30: Reports is not",
 "F29": "The search box is found on every full feature list",
+"F290": "The user finds a Feature through its parent",
+"F291": "The search ignores the Parent column and only matches the Feature's own name",
+"F292": "The user types proj-12 and then clears the box with its clear button",
+"F293": "All three Features are listed again",
+"F294": "The user gets the whole list back",
+"F295": "The list stays narrowed after the box is cleared",
 "F3": "A user finds a Feature in a feature list by typing part of any value shown in the list (reference ID, name, parent ID or name, or any other column) into one search box above the list; case does not matter and part of a word is enough.",
 "F30": "the Portfolio Features tab, the Team Features tab and the Delivery Work Items tab",
+"F300": "The list opens",
+"F301": "An empty box named Search Features sits in the toolbar row before the copy, export and layout icons",
+"F302": "The user sees the search box above the list without opening any column menu",
+"F303": "The box sits after the icons or is named with a fixed word instead of the configured Features term",
+"F304": "The user types proj, clears the box and types checkout",
+"F305": "The use of the search is reported once, as a bare FeatureListSearched event with no property",
+"F306": "The use of the search is counted once per visit and nothing the user typed leaves the browser",
+"F307": "An event is sent for every keystroke or carries the text, list or match count",
+"F308": "The reporter first answers that the use was not recorded, then that it was, while the user types proj-12",
+"F309": "Exactly one use is recorded",
 "F31": "the user opens each",
+"F310": "A use made before consent is known is not lost, and is still counted once",
+"F311": "The once-per-visit latch is spent by an unrecorded first try, so the use is never recorded",
+"F312": "A text is typed against cells showing PROJ-12: Checkout, special characters or any letter case",
+"F313": "A cell whose shown text contains the typed text in any case is kept; regex characters are literal",
+"F314": "Typing part of any shown text finds it, whatever the case",
+"F315": "The matcher is case-sensitive or treats typed special characters as a pattern",
+"F316": "A cell holding an object, list, boolean, nothing or null is tested against a typed text; a number against its digits",
+"F317": "Cells without text never match; a number matches its digits",
+"F318": "Typing obj or true does not light up every row",
+"F319": "An object cell matches typing obj through its object text",
 "F32": "each shows the same search box above its list and it finds a Feature by its reference ID",
+"F320": "A blank or whitespace-only text is typed, and more text is typed after some text",
+"F321": "Blank gives no filter value so every row stays; extending the text never brings a dropped row back; rows kept equal those containing the trimmed text",
+"F322": "An empty box shows every Feature and more typing only narrows",
+"F323": "Whitespace-only text is treated as a literal and hides rows",
+"F324": "A list is shown with no search given",
+"F325": "No text box is offered",
+"F326": "The other grids gain no search box",
+"F327": "Every grid gets a search box",
+"F328": "The user types 8 PTS in a list whose Weight column shows 8 pts over the value 8",
+"F329": "Only the row whose shown text contains it is listed",
 "F33": "Name column filter finds a Feature by ID",
+"F330": "Search agrees with what the cell reads",
+"F331": "Search tests the raw value behind the cell instead of its shown text",
+"F332": "The user types team, true or false against object and boolean columns",
+"F333": "No row is listed",
+"F334": "Typing a word does not match columns that show no text",
+"F335": "Object cells match through their object text",
+"F336": "The user types al then clears the box",
+"F337": "The owner of the list hears a, al and then the empty text",
+"F338": "The list owner can react to the text, such as counting the first use",
+"F339": "The owner hears only the final text or never hears the clear",
 "F34": "a Feature has reference ID PROJ-12 and name 'Checkout'",
 "F35": "the user types 'PROJ-12' in the Name column filter",
 "F36": "that Feature is listed",
