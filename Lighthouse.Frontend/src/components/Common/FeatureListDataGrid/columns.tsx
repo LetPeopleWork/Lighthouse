@@ -51,13 +51,17 @@ export const createNameColumn = <
 	width: 300,
 	flex: 1,
 	valueGetter: (_value, row) => getWorkItemName(row.name, row.referenceId),
-	// The value now carries the reference ID, so sorting by it would order by ID; keep ordering by name.
+	// The value carries the reference ID, so sorting by it would order by ID; keep ordering by name.
+	// DataGridColumn types the cell params as unknown and the grid API hands rows back untyped, so both
+	// are narrowed here once, to the column's own row type.
 	sortComparator: (_first, _second, firstParams, secondParams) => {
 		const first = firstParams as GridSortCellParams;
 		const second = secondParams as GridSortCellParams;
+		const rowOf = (params: GridSortCellParams) =>
+			params.api.getRow(params.id) as T | null;
 		return gridStringOrNumberComparator(
-			first.api.getRow(first.id).name,
-			second.api.getRow(second.id).name,
+			rowOf(first)?.name,
+			rowOf(second)?.name,
 			first,
 			second,
 		);
@@ -70,7 +74,7 @@ export const createNameColumn = <
 	),
 });
 
-/** The Portfolio names a Feature is shown under, as the Projects column lists them. */
+/** The names of the Portfolios a Feature belongs to, joined by ", ": the text a search matches. */
 export const projectNamesText = (feature: Pick<IFeature, "projects">): string =>
 	feature.projects.map((project) => project.name).join(", ");
 

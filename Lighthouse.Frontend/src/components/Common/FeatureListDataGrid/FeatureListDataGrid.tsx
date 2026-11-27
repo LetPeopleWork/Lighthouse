@@ -28,6 +28,11 @@ import {
 } from "./columns";
 import type { FeatureListDataGridProps } from "./types";
 
+export const noFeatureMatchMessage = (
+	featuresTerm: string,
+	text: string,
+): string => `No ${featuresTerm} match "${text}".`;
+
 const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 	features,
 	columns,
@@ -156,7 +161,7 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 			onSortModelChange={(model) => setIsSortActive(model.length > 0)}
 			search={{
 				placeholder: `Search ${featuresTerm}`,
-				noMatchMessage: (text) => `No ${featuresTerm} match "${text}".`,
+				noMatchMessage: (text) => noFeatureMatchMessage(featuresTerm, text),
 				onTextChange: reportSearchOnce,
 			}}
 		/>

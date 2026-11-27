@@ -156,10 +156,7 @@ const teamsCarryingWork = (row: IFeature, teams: IEntityReference[]) =>
 	teams.filter((team) => row.getTotalWorkForTeam(team.id) > 0);
 
 /** The Team text of one row as a reader sees it, for anything that has to match what the cell shows. */
-export const owningTeamsText = (
-	row: IFeature,
-	teams: IEntityReference[],
-): string => {
+const owningTeamsText = (row: IFeature, teams: IEntityReference[]): string => {
 	const teamsWithWork = teamsCarryingWork(row, teams);
 	return teamsWithWork.length === 0
 		? UNASSIGNED_TEXT
