@@ -1,0 +1,287 @@
+{
+"counters": {
+"F": 61,
+"P": 10,
+"S": 4
+},
+"facts": {
+"F1": "ADO Story 6711 \"Improve Search on Feature List\": It is not obvious that you have to click on the \"...\" in a column and then get the filter. At least to filter: Feature Reference ID; Feature Name; Parent ID & Reference. A textbox on top would be nice. This applies everywhere we have the feature list. Also right now we only search for the \"name\" and not the \"Reference ID\" if we filter on Feature Name (which is confusing).",
+"F10": "a Feature has a parent shown as 'PROJ-3: Checkout'",
+"F11": "the user types 'checkout' into the search box",
+"F12": "that Feature appears in the list",
+"F13": "User sees that nothing matches the search",
+"F14": "no Feature shows the text 'zzz'",
+"F15": "the user types 'zzz' into the search box",
+"F16": "the list says in words that no Feature matches the search, distinct from the message for a list that has no Features at all",
+"F17": "User clears the search and sees every Feature again",
+"F18": "the search box holds text and the list is narrowed",
+"F19": "the user clears the box",
+"F2": "A user finds a Feature in any feature list by typing part of its ID, name, parent or any other shown value into one search box above the list, and the Name column filter also finds a Feature by its ID.",
+"F20": "every Feature of the list is shown again",
+"F21": "Search and a column filter narrow the list together",
+"F22": "a column filter is set and the search box holds text",
+"F23": "the list is shown",
+"F24": "only Features meeting both the column filter and the search are listed",
+"F25": "A new search opens the first page of results",
+"F26": "the user is on page 2 of a long list",
+"F27": "the user types a search",
+"F28": "the list shows the first page of the results",
+"F29": "The search box is found on every full feature list",
+"F3": "A user finds a Feature in a feature list by typing part of any value shown in the list (reference ID, name, parent ID or name, or any other column) into one search box above the list; case does not matter and part of a word is enough.",
+"F30": "the Portfolio Features tab, the Team Features tab and the Delivery Work Items tab",
+"F31": "the user opens each",
+"F32": "each shows the same search box above its list and it finds a Feature by its reference ID",
+"F33": "Name column filter finds a Feature by ID",
+"F34": "a Feature has reference ID PROJ-12 and name 'Checkout'",
+"F35": "the user types 'PROJ-12' in the Name column filter",
+"F36": "that Feature is listed",
+"F37": "One search box above every full feature list: Features page, Portfolio Features tab, Team Features tab, Delivery Work Items tab. Matches every visible column as the cell reads, case-insensitive, part of a word enough.",
+"F38": "The Name column filter also matches the Feature reference ID.",
+"F39": "Delivery dialog Feature pickers, the Refinement grid and the Archived features grid get no search box now; Suggestion: could follow later.",
+"F4": "A user finds a Feature by its reference ID when typing it into the Name column filter, because the Name column filter now matches the same 'ID: name' text the cell shows.",
+"F40": "No change to the Parent column filter (it already matches ID and name), no remembered search text, no backend change, no change to persisted column filters, sort or layout.",
+"F41": "Search box on the full feature list only (four pages named in scope); pickers, Refinement and Archived grids excluded and suggested for later.",
+"F42": "Search matches every visible column as the cell value reads; named fields (reference ID, name, parent ID and name) must be findable.",
+"F43": "Name column filter also matches the Feature reference ID.",
+"F44": "Search text is not remembered; box is empty each time a page opens.",
+"F45": "Fact: the Parent column filter already matches both ID and name (its value is the same 'ID: name' text the cell shows); no change.",
+"F46": "Placeholder copy such as 'Search Features' and the no-match wording are DELIVER sketch decisions; reuse of the existing FilterBar or the third-party-packages search is a Design decision.",
+"F47": "How the box behaves while the list loads or could not load: shown or hidden, and loading and failure looks stay unchanged.",
+"F48": "User opens a feature list and sees a search box above it without opening any column menu",
+"F49": "not supplied (request says the column menu is not obvious)",
+"F5": "User finds a Feature by its reference ID",
+"F50": "User types part of an ID, name or parent and the list narrows to matching Features",
+"F51": "not supplied",
+"F52": "User clears the box, or sees a no-match message, and knows the list is not simply empty",
+"F53": "not supplied (request calls the current ID/name behaviour confusing)",
+"F54": "On the Features page, the user types part of a Feature's reference ID, name or parent into one search box above the list and sees only matching Features; clearing the box shows every Feature again.",
+"F55": "Features are findable without knowing the column menu",
+"F56": "On the Features page, a search with no match says so in words distinct from an empty list; a search narrows together with a column filter; a new search from page 2 or later opens the first page of results.",
+"F57": "Search results are trustworthy in edge states",
+"F58": "The same search box appears above the Portfolio Features tab, the Team Features tab and the Delivery Work Items tab and finds a Feature by its reference ID.",
+"F59": "Same search wherever the full feature list shows",
+"F6": "the Features page lists Features and one has the reference ID PROJ-12 (Proposal value)",
+"F60": "Typing a Feature's reference ID into the Name column filter finds that Feature in every full feature list.",
+"F61": "Name filter no longer ignores the ID shown in the cell",
+"F7": "the user types 'proj-12' into the search box above the list",
+"F8": "the list shows only Features whose shown values contain 'proj-12', including that Feature",
+"F9": "User finds a Feature by its parent"
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F41"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F42"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F43"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F44"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F45"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F46"
+},
+{
+"status": {
+"kind": "Open",
+"owner": "Design"
+},
+"text": "F47"
+}
+],
+"journey": [
+{
+"emotion": "F49",
+"step": "F48"
+},
+{
+"emotion": "F51",
+"step": "F50"
+},
+{
+"emotion": "F53",
+"step": "F52"
+}
+],
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"given": "F6",
+"id": "P3",
+"kind": "Scenario",
+"then": "F8",
+"title": "F5",
+"when": "F7"
+},
+{
+"given": "F10",
+"id": "P4",
+"kind": "Scenario",
+"then": "F12",
+"title": "F9",
+"when": "F11"
+},
+{
+"given": "F14",
+"id": "P5",
+"kind": "Scenario",
+"then": "F16",
+"title": "F13",
+"when": "F15"
+},
+{
+"given": "F18",
+"id": "P6",
+"kind": "Scenario",
+"then": "F20",
+"title": "F17",
+"when": "F19"
+},
+{
+"given": "F22",
+"id": "P7",
+"kind": "Scenario",
+"then": "F24",
+"title": "F21",
+"when": "F23"
+},
+{
+"given": "F26",
+"id": "P8",
+"kind": "Scenario",
+"then": "F28",
+"title": "F25",
+"when": "F27"
+},
+{
+"given": "F30",
+"id": "P9",
+"kind": "Scenario",
+"then": "F32",
+"title": "F29",
+"when": "F31"
+},
+{
+"given": "F34",
+"id": "P10",
+"kind": "Scenario",
+"then": "F36",
+"title": "F33",
+"when": "F35"
+}
+],
+"scope_in": [
+"F37",
+"F38"
+],
+"scope_out": [
+"F39",
+"F40"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F54",
+"promises": [
+"P1",
+"P3",
+"P4",
+"P6"
+],
+"work": {
+"size": "S",
+"value": "F55"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F56",
+"promises": [
+"P5",
+"P7",
+"P8"
+],
+"work": {
+"size": "S",
+"value": "F57"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S3",
+"observation": "F58",
+"promises": [
+"P9"
+],
+"work": {
+"size": "S",
+"value": "F59"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S4",
+"observation": "F60",
+"promises": [
+"P2",
+"P10"
+],
+"work": {
+"size": "S",
+"value": "F61"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6711-feature-list-search",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "S",
+"value": "F2"
+}
+}
