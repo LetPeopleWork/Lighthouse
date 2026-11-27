@@ -9,6 +9,7 @@ import {
 	createNameColumn,
 	createParentColumn,
 	createStateColumn,
+	projectNamesText,
 } from "../../../components/Common/FeatureListDataGrid/columns";
 import FeatureListDataGrid from "../../../components/Common/FeatureListDataGrid/FeatureListDataGrid";
 import FeatureProgressIndicator from "../../../components/Common/FeatureListDataGrid/FeatureProgressIndicator";
@@ -78,6 +79,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 				headerName: portfoliosTerm,
 				width: 200,
 				sortable: false,
+				valueFormatter: (_value, row) => projectNamesText(row),
 				renderCell: ({ row }) => (
 					<Box>
 						{row.projects.map((project) => (

@@ -11,16 +11,15 @@ import type { DataGridColumn } from "../../../../../components/Common/DataGrid/t
 import {
 	createForecastedStartColumn,
 	createForecastsColumn,
+	createNameColumn,
 	createStateColumn,
 } from "../../../../../components/Common/FeatureListDataGrid/columns";
 import FeatureProgressIndicator from "../../../../../components/Common/FeatureListDataGrid/FeatureProgressIndicator";
-import FeatureName from "../../../../../components/Common/FeatureName/FeatureName";
 import { FeatureLikelihoodChip } from "../../../../../components/Common/Forecasts/FeatureLikelihoodChip";
 import StyledLink from "../../../../../components/Common/StyledLink/StyledLink";
 import type { Delivery } from "../../../../../models/Delivery";
 import type { IEntityReference } from "../../../../../models/EntityReference";
 import type { IFeature } from "../../../../../models/Feature";
-import { getWorkItemName } from "../../../../../utils/featureName";
 import { PREMIUM_UPGRADE_TOOLTIP } from "../../../../../utils/premiumUpgradeTooltip";
 
 // A Feature's own chance of landing, not the Delivery's — the Delivery's asks whether they ALL land,
@@ -151,19 +150,33 @@ export const SelectionModeMarker: React.FC<{
 	);
 };
 
+const UNASSIGNED_TEXT = "Unassigned";
+
+const teamsCarryingWork = (row: IFeature, teams: IEntityReference[]) =>
+	teams.filter((team) => row.getTotalWorkForTeam(team.id) > 0);
+
+/** The Team text of one row as a reader sees it, for anything that has to match what the cell shows. */
+export const owningTeamsText = (
+	row: IFeature,
+	teams: IEntityReference[],
+): string => {
+	const teamsWithWork = teamsCarryingWork(row, teams);
+	return teamsWithWork.length === 0
+		? UNASSIGNED_TEXT
+		: teamsWithWork.map((team) => team.name).join(", ");
+};
+
 /** The teams carrying work on one row, or a word saying nobody is. */
 export const OwningTeams: React.FC<{
 	row: IFeature;
 	teams: IEntityReference[];
 }> = ({ row, teams }) => {
-	const teamsWithWork = teams.filter(
-		(team) => row.getTotalWorkForTeam(team.id) > 0,
-	);
+	const teamsWithWork = teamsCarryingWork(row, teams);
 
 	if (teamsWithWork.length === 0) {
 		return (
 			<Typography variant="body2" color="text.secondary">
-				Unassigned
+				{UNASSIGNED_TEXT}
 			</Typography>
 		);
 	}
@@ -197,23 +210,16 @@ export function featureColumns({
 }): DataGridColumn<IFeature & GridValidRowModel>[] {
 	return [
 		{
-			field: "name",
-			headerName: `${featureTerm} Name`,
-			hideable: false,
+			...createNameColumn(featureTerm),
 			minWidth: 120,
-			flex: 1,
-			renderCell: ({ row }) => (
-				<FeatureName
-					name={getWorkItemName(row.name, row.referenceId)}
-					url={row.url ?? ""}
-				/>
-			),
+			width: undefined,
 		},
 		{
 			field: "owningTeam",
 			headerName: "Team",
 			minWidth: 100,
 			flex: 0.5,
+			valueFormatter: (_value, row) => owningTeamsText(row, teams),
 			renderCell: ({ row }) => <OwningTeams row={row} teams={teams} />,
 		},
 		{
