@@ -334,6 +334,127 @@
 "stimulus": "F227",
 "user_result": "F229"
 }
+],
+"S5": [
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F66"
+],
+"still_passes_if": "F234",
+"test": "EachPublishedTypeIsFoundOnceAndInTheContractsOfItsOwnContext",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F232",
+"stimulus": "F231",
+"user_result": "F233"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F67"
+],
+"still_passes_if": "F238",
+"test": "NoPublishedTypeIsLeftInTheNamespaceItHadBefore",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F236",
+"stimulus": "F235",
+"user_result": "F237"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F67"
+],
+"still_passes_if": "F238",
+"test": "NoTypeOutsideOrganisationSetupNamesAPublishedTypeByItsOldName",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F236",
+"stimulus": "F235",
+"user_result": "F237"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F242",
+"test": "TheOpenHostListAdmitsOnlyTheContractsOfOrganisationSetup",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F240",
+"stimulus": "F239",
+"user_result": "F241"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F246",
+"test": "NoDownstreamRuleReadingOrganisationSetupLetsItsApplicationOrDomainThrough_AndEveryOneLetsItsContractsThrough",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F244",
+"stimulus": "F243",
+"user_result": "F245"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F67"
+],
+"still_passes_if": "F250",
+"test": "TheListOfToleratedCrossContextEdgesHoldsNoEdgeIntoAPublishedType",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F248",
+"stimulus": "F247",
+"user_result": "F249"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F66"
+],
+"still_passes_if": "F254",
+"test": "OrganisationSetupPublishesTheTypesTheOthersReach_AndTheListOfThemIsNotEmpty",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F252",
+"stimulus": "F251",
+"user_result": "F253"
+}
 ]
 },
 "counters": {
@@ -341,7 +462,7 @@
 "C": 1,
 "D": 15,
 "E": 6,
-"F": 230,
+"F": 254,
 "K": 4,
 "L": 2,
 "P": 5,
@@ -9757,8 +9878,32 @@
 "F229": "CI still selects every connector suite for a change to Tracker integration's contracts",
 "F23": "The oracle does not see whether forecast and metric values a user reads are unchanged, nor that Refinement and Promises still read the same forecast data.",
 "F230": "the pattern selects the whole Tracker integration module, which also selects connector-only changes as shared",
+"F231": "Scan the compiled code for the types Organisation set-up publishes: where each is found, and which types outside Organisation set-up name one through its old place",
+"F232": "Each of the three types is found once, in Organisation set-up's Contracts, none is left in its old place, and no outside type names one through the old place",
+"F233": "Other contexts can name Organisation set-up only through its published Contracts",
+"F234": "a type is copied into Contracts and kept in its old place, or moved into another context's Contracts",
+"F235": "Check the old place of Organisation set-up's published types and every outside use of it in compiled production and test code",
+"F236": "Nothing remains in the old place and nothing outside Organisation set-up names it",
+"F237": "No consumer keeps reaching Organisation set-up behind its Contracts",
+"F238": "the type is moved but a consumer keeps its old using line only in a string or comment",
+"F239": "Read the namespaces Organisation set-up's open host leaves open and the downstream outbound rules' patterns",
 "F24": "Work Items contract types (blocked items, rule evaluation ports, refresh log, what the forecast waits for) are available from Contracts, and blocked-item rules, refreshes and forecast waiting behave as before.",
+"F240": "Only Organisation set-up's Contracts is open; its Application and Domain are read as another context's code",
+"F241": "Organisation set-up is an open host through its Contracts alone",
+"F242": "the open list is emptied or only the rule patterns are narrowed",
+"F243": "Apply each downstream rule that reads Organisation set-up to its Application, Domain and Contracts namespaces",
+"F244": "Application and Domain are read as foreign and Contracts is not",
+"F245": "Downstream contexts cannot reach Organisation set-up's Application or Domain by right",
+"F246": "a rule admits Application and Domain as well as Contracts",
+"F247": "Read the list of tolerated cross-context edges",
+"F248": "It holds no edge into Organisation set-up's published types, only the owned residue",
+"F249": "The tolerated list shrinks to edges into code that is not published",
 "F25": "The oracle does not see whether a user still gets the same blocked-item results, refresh log entries and forecast timing after refresh.",
+"F250": "entries are deleted for only some of the published types",
+"F251": "Read the map of what Organisation set-up publishes",
+"F252": "Exactly the three non-event types the other contexts reach, so no later check runs over an empty list",
+"F253": "The published list is complete and non-empty",
+"F254": "the list is padded with a type nobody reaches",
 "F26": "Tracker integration contract types (connector port and capabilities, factory, description block merger, CSV option names, write-back target) are available from Contracts; a change touching a Contracts path is treated as shared by CI; connecting, syncing and writing back to trackers behave as before.",
 "F27": "The oracle does not see real connector sync or write-back results, nor that the CI classifier marks a Contracts-only change as shared.",
 "F28": "Organisation set-up contract types are available from Contracts, its open host exposes only Contracts rather than Application or Domain, the remaining contract-breach list (R-C1) names only owned non-contract residue, and set-up behaves as before.",

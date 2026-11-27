@@ -671,6 +671,197 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S5</h3>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>Scan the compiled code for the types Organisation set-up publishes: where each is found, and which types outside Organisation set-up name one through its old place
+</code></pre>
+
+<pre><code>Each of the three types is found once, in Organisation set-up&#x27;s Contracts, none is left in its old place, and no outside type names one through the old place
+</code></pre>
+
+<pre><code>Other contexts can name Organisation set-up only through its published Contracts
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs</p>
+
+<p>EachPublishedTypeIsFoundOnceAndInTheContractsOfItsOwnContext</p>
+
+<pre><code>a type is copied into Contracts and kept in its old place, or moved into another context&#x27;s Contracts
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>Check the old place of Organisation set-up&#x27;s published types and every outside use of it in compiled production and test code
+</code></pre>
+
+<pre><code>Nothing remains in the old place and nothing outside Organisation set-up names it
+</code></pre>
+
+<pre><code>No consumer keeps reaching Organisation set-up behind its Contracts
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs</p>
+
+<p>NoPublishedTypeIsLeftInTheNamespaceItHadBefore</p>
+
+<pre><code>the type is moved but a consumer keeps its old using line only in a string or comment
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>Check the old place of Organisation set-up&#x27;s published types and every outside use of it in compiled production and test code
+</code></pre>
+
+<pre><code>Nothing remains in the old place and nothing outside Organisation set-up names it
+</code></pre>
+
+<pre><code>No consumer keeps reaching Organisation set-up behind its Contracts
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs</p>
+
+<p>NoTypeOutsideOrganisationSetupNamesAPublishedTypeByItsOldName</p>
+
+<pre><code>the type is moved but a consumer keeps its old using line only in a string or comment
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>Read the namespaces Organisation set-up&#x27;s open host leaves open and the downstream outbound rules&#x27; patterns
+</code></pre>
+
+<pre><code>Only Organisation set-up&#x27;s Contracts is open; its Application and Domain are read as another context&#x27;s code
+</code></pre>
+
+<pre><code>Organisation set-up is an open host through its Contracts alone
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs</p>
+
+<p>TheOpenHostListAdmitsOnlyTheContractsOfOrganisationSetup</p>
+
+<pre><code>the open list is emptied or only the rule patterns are narrowed
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>Apply each downstream rule that reads Organisation set-up to its Application, Domain and Contracts namespaces
+</code></pre>
+
+<pre><code>Application and Domain are read as foreign and Contracts is not
+</code></pre>
+
+<pre><code>Downstream contexts cannot reach Organisation set-up&#x27;s Application or Domain by right
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs</p>
+
+<p>NoDownstreamRuleReadingOrganisationSetupLetsItsApplicationOrDomainThrough_AndEveryOneLetsItsContractsThrough</p>
+
+<pre><code>a rule admits Application and Domain as well as Contracts
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>Read the list of tolerated cross-context edges
+</code></pre>
+
+<pre><code>It holds no edge into Organisation set-up&#x27;s published types, only the owned residue
+</code></pre>
+
+<pre><code>The tolerated list shrinks to edges into code that is not published
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs</p>
+
+<p>TheListOfToleratedCrossContextEdgesHoldsNoEdgeIntoAPublishedType</p>
+
+<pre><code>entries are deleted for only some of the published types
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>Read the map of what Organisation set-up publishes
+</code></pre>
+
+<pre><code>Exactly the three non-event types the other contexts reach, so no later check runs over an empty list
+</code></pre>
+
+<pre><code>The published list is complete and non-empty
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs</p>
+
+<p>OrganisationSetupPublishesTheTypesTheOthersReach_AndTheListOfThemIsNotEmpty</p>
+
+<pre><code>the list is padded with a type nobody reaches
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

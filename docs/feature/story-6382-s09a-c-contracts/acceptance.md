@@ -589,6 +589,225 @@ the pattern selects the whole Tracker integration module, which also selects con
 ###### Obligations
 
 
+### S5
+
+##### Covers
+
+P5
+
+```text
+Scan the compiled code for the types Organisation set-up publishes: where each is found, and which types outside Organisation set-up name one through its old place
+```
+
+```text
+Each of the three types is found once, in Organisation set-up's Contracts, none is left in its old place, and no outside type names one through the old place
+```
+
+```text
+Other contexts can name Organisation set-up only through its published Contracts
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupPublishesItsContractsArchUnitTest\.cs
+
+EachPublishedTypeIsFoundOnceAndInTheContractsOfItsOwnContext
+
+```text
+a type is copied into Contracts and kept in its old place, or moved into another context's Contracts
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+Check the old place of Organisation set-up's published types and every outside use of it in compiled production and test code
+```
+
+```text
+Nothing remains in the old place and nothing outside Organisation set-up names it
+```
+
+```text
+No consumer keeps reaching Organisation set-up behind its Contracts
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupPublishesItsContractsArchUnitTest\.cs
+
+NoPublishedTypeIsLeftInTheNamespaceItHadBefore
+
+```text
+the type is moved but a consumer keeps its old using line only in a string or comment
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+Check the old place of Organisation set-up's published types and every outside use of it in compiled production and test code
+```
+
+```text
+Nothing remains in the old place and nothing outside Organisation set-up names it
+```
+
+```text
+No consumer keeps reaching Organisation set-up behind its Contracts
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupPublishesItsContractsArchUnitTest\.cs
+
+NoTypeOutsideOrganisationSetupNamesAPublishedTypeByItsOldName
+
+```text
+the type is moved but a consumer keeps its old using line only in a string or comment
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+Read the namespaces Organisation set-up's open host leaves open and the downstream outbound rules' patterns
+```
+
+```text
+Only Organisation set-up's Contracts is open; its Application and Domain are read as another context's code
+```
+
+```text
+Organisation set-up is an open host through its Contracts alone
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupPublishesItsContractsArchUnitTest\.cs
+
+TheOpenHostListAdmitsOnlyTheContractsOfOrganisationSetup
+
+```text
+the open list is emptied or only the rule patterns are narrowed
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+Apply each downstream rule that reads Organisation set-up to its Application, Domain and Contracts namespaces
+```
+
+```text
+Application and Domain are read as foreign and Contracts is not
+```
+
+```text
+Downstream contexts cannot reach Organisation set-up's Application or Domain by right
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupPublishesItsContractsArchUnitTest\.cs
+
+NoDownstreamRuleReadingOrganisationSetupLetsItsApplicationOrDomainThrough\_AndEveryOneLetsItsContractsThrough
+
+```text
+a rule admits Application and Domain as well as Contracts
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+Read the list of tolerated cross-context edges
+```
+
+```text
+It holds no edge into Organisation set-up's published types, only the owned residue
+```
+
+```text
+The tolerated list shrinks to edges into code that is not published
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupPublishesItsContractsArchUnitTest\.cs
+
+TheListOfToleratedCrossContextEdgesHoldsNoEdgeIntoAPublishedType
+
+```text
+entries are deleted for only some of the published types
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+Read the map of what Organisation set-up publishes
+```
+
+```text
+Exactly the three non-event types the other contexts reach, so no later check runs over an empty list
+```
+
+```text
+The published list is complete and non-empty
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupPublishesItsContractsArchUnitTest\.cs
+
+OrganisationSetupPublishesTheTypesTheOthersReach\_AndTheListOfThemIsNotEmpty
+
+```text
+the list is padded with a type nobody reaches
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
