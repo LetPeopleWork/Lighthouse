@@ -18,6 +18,9 @@ namespace Lighthouse.Backend.Modules.FlowMetrics
             serviceCollection.AddScoped<ITeamMetricsService, TeamMetricsService>();
             serviceCollection.AddScoped<IPortfolioMetricsService, PortfolioMetricsService>();
             serviceCollection.AddScoped<IWithinSleInfoQuery, WithinSleInfoQuery>();
+            serviceCollection.AddScoped<IWithinSleSnapshotRepository, WithinSleSnapshotRepository>();
+            serviceCollection.AddScoped<IWithinSleSnapshotWriter, WithinSleSnapshotWriter>();
+            serviceCollection.AddScoped<IWithinSleOverTimeSeriesQuery, WithinSleOverTimeSeriesQuery>();
             // The shipped read is registered as itself and wrapped: the interface resolves to the
             // wrapper, so opening a chart both answers from what is stored and mentions which days of
             // the window were missing. Both controllers keep asking for the interface and are unaware.

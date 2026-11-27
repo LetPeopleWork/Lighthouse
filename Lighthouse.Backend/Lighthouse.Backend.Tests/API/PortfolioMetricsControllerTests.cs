@@ -29,6 +29,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IFeatureBlockedTransitionRepository> featureBlockedTransitionRepositoryMock;
         private Mock<IPercentilesOverTimeSeriesQuery> percentilesOverTimeSeriesQueryMock;
         private Mock<IProcessBehaviorSeriesQuery> processBehaviorSeriesQueryMock;
+        private Mock<IWithinSleOverTimeSeriesQuery> withinSleOverTimeSeriesQueryMock;
         private Mock<ILogger<PortfolioMetricsController>> loggerMock;
         private PortfolioMetricsController subject;
         private Portfolio project;
@@ -63,8 +64,12 @@ namespace Lighthouse.Backend.Tests.API
             processBehaviorSeriesQueryMock
                 .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<ProcessBehaviorMetricType>(), It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>()))
                 .Returns([]);
+            withinSleOverTimeSeriesQueryMock = new Mock<IWithinSleOverTimeSeriesQuery>();
+            withinSleOverTimeSeriesQueryMock
+                .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<int>(), It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>()))
+                .Returns(new WithinSleOverTimeDto(70, 10, []));
             loggerMock = new Mock<ILogger<PortfolioMetricsController>>();
-            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, blockedItemServiceMock.Object, featureBlockedTransitionRepositoryMock.Object, percentilesOverTimeSeriesQueryMock.Object, processBehaviorSeriesQueryMock.Object, new Mock<IWithinSleInfoQuery>().Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(TestToday.FrozenNow), loggerMock.Object);
+            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, blockedItemServiceMock.Object, featureBlockedTransitionRepositoryMock.Object, percentilesOverTimeSeriesQueryMock.Object, processBehaviorSeriesQueryMock.Object, new Mock<IWithinSleInfoQuery>().Object, withinSleOverTimeSeriesQueryMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(TestToday.FrozenNow), loggerMock.Object);
 
             project = new Portfolio
             {
@@ -1546,6 +1551,28 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(dtos, Has.Count.EqualTo(1));
                 Assert.That(dtos[0].RecordedAt, Is.EqualTo("2026-07-06"));
                 Assert.That(dtos[0].BlockedCount, Is.EqualTo(5));
+            }
+        }
+
+        [Test]
+        public void A_horizon_other_than_30_60_or_90_days_is_refused()
+        {
+            var response = subject.GetWithinSleOverTime(1, horizon: 45);
+
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>().With.Property(nameof(BadRequestObjectResult.Value)).EqualTo("Horizon must be one of 30, 60 or 90 days."));
+        }
+
+        [TestCase(30)]
+        [TestCase(60)]
+        [TestCase(90)]
+        public void A_horizon_of_30_60_or_90_days_is_answered(int horizon)
+        {
+            var response = subject.GetWithinSleOverTime(1, horizon);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                withinSleOverTimeSeriesQueryMock.Verify(q => q.GetSeries(1, OwnerType.Portfolio, horizon, null, null), Times.Once);
             }
         }
     }

@@ -282,6 +282,7 @@ Most "how did this metric look last month?" questions cannot be answered by re-d
 | `PercentilesOverTimeSnapshot` | cycle-time / age percentiles per owner per day | 106 / 107 / 108 / 207 / 208 |
 | `BlockedCountSnapshot` | how many items were blocked that day | 069 / 099 |
 | `ProcessBehaviorSnapshot` | XmR baselines & limits | 052 / 207 / 208 |
+| `WithinSleSnapshot` | per owner, trailing window (30/60/90 days) and day: Work Items closed, how many within the SLE, and the SLE in force that day; no row while no SLE is set | [ADR-003](docs/product/architecture/ADR-003.md) |
 
 The rules that keep this honest: **write is idempotent on the day key** (a re-run overwrites the same row, never appends a second one), **a stored day is never rewritten from the past**, and the read path serves the series straight from the table. A percentile day with nothing to measure (all four percentiles zero) is left absent by the recorder and the filler alike, rather than stored as a zero.
 

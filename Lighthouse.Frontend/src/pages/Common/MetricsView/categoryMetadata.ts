@@ -92,6 +92,7 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 	predictability: [
 		{ widgetKey: "predictabilityScoreDetails", size: "large" },
 		{ widgetKey: "percentilesOverTime", size: "large" },
+		{ widgetKey: "withinSleOverTime", size: "large" },
 		{ widgetKey: "pbcOverTime", size: "large" },
 		{ widgetKey: "throughputPbc", size: "large" },
 		{ widgetKey: "arrivalsPbc", size: "large" },
@@ -118,6 +119,8 @@ const trendPolicies: Record<string, TrendPolicy> = {
 	predictabilityScore: "previous-period",
 	predictabilityScoreDetails: "none",
 	percentilesOverTime: "none",
+	// Already a trend, like Percentiles Over Time.
+	withinSleOverTime: "none",
 	// Already a trend — a previous-period arrow on top of it would be nonsense.
 	pbcOverTime: "none",
 	totalThroughput: "previous-period",
@@ -211,7 +214,7 @@ const workItemLookupSources: readonly MetricsFetchKey[] = [
  * which is why `categoryMetadata.test.ts` asserts every widget in every category has an entry.
  *
  * An empty entry is legitimate only for a widget that owns its own fetch lifecycle
- * (`percentilesOverTime`, `pbcOverTime`); the test pins that exception list.
+ * (`percentilesOverTime`, `pbcOverTime`, `withinSleOverTime`); the test pins that exception list.
  */
 const widgetFetchRequirements: Record<string, readonly MetricsFetchKey[]> = {
 	// --- flow-overview ---------------------------------------------------------------------
@@ -281,6 +284,7 @@ const widgetFetchRequirements: Record<string, readonly MetricsFetchKey[]> = {
 	// Both fetch lazily inside themselves and read nothing from useMetricsData.
 	percentilesOverTime: [],
 	pbcOverTime: [],
+	withinSleOverTime: [],
 	throughputPbc: ["throughputPbc", ...workItemLookupSources],
 	arrivalsPbc: ["pbcCharts", "arrivals", ...workItemLookupSources],
 	cycleTimePbc: ["pbcCharts", ...workItemLookupSources],

@@ -24,6 +24,7 @@ namespace Lighthouse.Backend.API
     public class TeamMetricsController : ControllerBase
     {
         private const string StartDateMustBeBeforeEndDateErrorMessage = "Start date must be before end date.";
+        private const string HorizonMustBeOneOfErrorMessage = "Horizon must be one of 30, 60 or 90 days.";
         private const string StateMustNotBeEmptyErrorMessage = "State must not be empty.";
         private const string UnsupportedProcessBehaviorMetricTypeErrorMessage = "Unsupported process behavior metric type.";
         private readonly IRepository<Team> teamRepository;
@@ -36,11 +37,12 @@ namespace Lighthouse.Backend.API
         private readonly IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery;
         private readonly IProcessBehaviorSeriesQuery processBehaviorSeriesQuery;
         private readonly IWithinSleInfoQuery withinSleInfoQuery;
+        private readonly IWithinSleOverTimeSeriesQuery withinSleOverTimeSeriesQuery;
         private readonly ILighthouseClock clock;
         private readonly ILogger<TeamMetricsController> logger;
 
 #pragma warning disable S107 // The blocked-drill-through endpoint (slice-08) genuinely needs the snapshot repo, work-item repo and blocked-transition repo alongside the existing metrics collaborators; grouping them into an aggregate purely to dodge the 7-param threshold would add indirection without a domain rationale (same rationale as OAuthService).
-        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, IBlockedItemService blockedItemService, IBlockedCountSnapshotRepository blockedCountSnapshotRepository, IWorkItemRepository workItemRepository, IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository, IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery, IProcessBehaviorSeriesQuery processBehaviorSeriesQuery, IWithinSleInfoQuery withinSleInfoQuery, ILighthouseClock clock, ILogger<TeamMetricsController> logger)
+        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, IBlockedItemService blockedItemService, IBlockedCountSnapshotRepository blockedCountSnapshotRepository, IWorkItemRepository workItemRepository, IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository, IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery, IProcessBehaviorSeriesQuery processBehaviorSeriesQuery, IWithinSleInfoQuery withinSleInfoQuery, IWithinSleOverTimeSeriesQuery withinSleOverTimeSeriesQuery, ILighthouseClock clock, ILogger<TeamMetricsController> logger)
 #pragma warning restore S107
         {
             this.teamRepository = teamRepository;
@@ -53,6 +55,7 @@ namespace Lighthouse.Backend.API
             this.percentilesOverTimeSeriesQuery = percentilesOverTimeSeriesQuery;
             this.processBehaviorSeriesQuery = processBehaviorSeriesQuery;
             this.withinSleInfoQuery = withinSleInfoQuery;
+            this.withinSleOverTimeSeriesQuery = withinSleOverTimeSeriesQuery;
             this.clock = clock;
             this.logger = logger;
         }
@@ -613,6 +616,27 @@ namespace Lighthouse.Backend.API
                 processBehaviorSeriesQuery
                     .GetSeries(teamId, OwnerType.Team, type, AsRecordedDay(startDate), AsRecordedDay(endDate))
                     .Select(snapshot => new ProcessBehaviorSnapshotDto(snapshot)));
+        }
+
+        /// <summary>
+        /// Serves the stored Within SLE record of one trailing window, day by day, with the SLE set now. A horizon
+        /// the record does not keep is refused rather than answered empty, which would read as nothing recorded.
+        /// </summary>
+        [HttpGet("within-sle-over-time")]
+        public ActionResult<WithinSleOverTimeDto> GetWithinSleOverTime(int teamId, [FromQuery] int horizon = 30, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
+        {
+            if (!WithinSleSnapshot.Horizons.Contains(horizon))
+            {
+                return BadRequest(HorizonMustBeOneOfErrorMessage);
+            }
+
+            if (IsInvertedWindow(startDate, endDate))
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (_) =>
+                withinSleOverTimeSeriesQuery.GetSeries(teamId, OwnerType.Team, horizon, AsRecordedDay(startDate), AsRecordedDay(endDate)));
         }
 
         /// <summary>

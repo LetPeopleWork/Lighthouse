@@ -54,6 +54,7 @@ export const UsageDataEventName = {
 	DefaultFeatureSizingSwitchedOff: "DefaultFeatureSizingSwitchedOff",
 	ReportNoteAdded: "ReportNoteAdded",
 	WithinSleListOpened: "WithinSleListOpened",
+	WithinSleHorizonSwitched: "WithinSleHorizonSwitched",
 } as const;
 
 export type UsageDataEventName =

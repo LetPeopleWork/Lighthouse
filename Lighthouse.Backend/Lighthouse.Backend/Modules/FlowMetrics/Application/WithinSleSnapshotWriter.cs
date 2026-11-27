@@ -1,25 +1,95 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Modules.FlowMetrics.Domain;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Platform.Persistence;
 
 namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
-#pragma warning disable CS9113 // Skeleton: the writer uses these collaborators once it is filled in.
     public sealed class WithinSleSnapshotWriter(IWithinSleSnapshotRepository snapshots, ILighthouseClock clock) : IWithinSleSnapshotWriter
-#pragma warning restore CS9113
     {
-        public Task RecordToday(int ownerId, OwnerType ownerType, WithinSleFamilyReader family)
+        public async Task RecordToday(int ownerId, OwnerType ownerType, WithinSleFamilyReader family)
         {
-            throw new NotImplementedException("Recording today in the Within SLE record is not built yet.");
+            // Without an SLE a day has nothing to be measured against, so nothing is written.
+            var sle = family.CurrentSle();
+            if (sle is null)
+            {
+                return;
+            }
+
+            var day = clock.Today;
+
+            foreach (var horizon in WithinSleSnapshot.Horizons)
+            {
+                var row = StoredRow(ownerId, ownerType, horizon, day);
+                if (row is null)
+                {
+                    row = NewRow(ownerId, ownerType, horizon, day);
+                    snapshots.Add(row);
+                }
+
+                Measure(row, family, sle, WithinSleSnapshotOrigin.Recorded);
+            }
+
+            await snapshots.Save();
         }
 
         public void FillDayIfAbsent(int ownerId, OwnerType ownerType, DateOnly day, WithinSleFamilyReader family)
         {
-            throw new NotImplementedException("Filling in a day of the Within SLE record is not built yet.");
+            var sle = family.CurrentSle();
+            if (sle is null)
+            {
+                return;
+            }
+
+            foreach (var horizon in WithinSleSnapshot.Horizons)
+            {
+                // A stored day was measured while it was current, against the SLE then in force; working it out
+                // again now would replace what was observed with a guess, so it is left exactly as it is.
+                if (StoredRow(ownerId, ownerType, horizon, day) is not null)
+                {
+                    continue;
+                }
+
+                var row = NewRow(ownerId, ownerType, horizon, day);
+                Measure(row, family, sle, WithinSleSnapshotOrigin.FilledIn);
+                snapshots.Add(row);
+            }
         }
 
         public Task SaveFilledDay()
         {
-            throw new NotImplementedException("Saving a filled-in day of the Within SLE record is not built yet.");
+            return LostRaceTolerantSave.SaveAsync(snapshots.Save, IsAlreadyStored);
+        }
+
+        private static WithinSleSnapshot NewRow(int ownerId, OwnerType ownerType, int horizon, DateOnly day)
+            => new() { OwnerId = ownerId, OwnerType = ownerType, Horizon = horizon, RecordedAt = day };
+
+        private static void Measure(WithinSleSnapshot row, WithinSleFamilyReader family, ServiceLevelExpectation sle, WithinSleSnapshotOrigin origin)
+        {
+            var windowEnd = InstanceCalendar.AsUtcMidnight(row.RecordedAt);
+            var windowStart = windowEnd.AddDays(-(row.Horizon - 1));
+            var cycleTimesInDays = family.ReadClosedCycleTimes(windowStart, windowEnd);
+
+            row.ClosedCount = cycleTimesInDays.Count;
+            row.WithinCount = sle.CountWithin(cycleTimesInDays);
+            row.SlePercentile = sle.Percentile;
+            row.SleDays = sle.Days;
+            row.Origin = origin;
+        }
+
+        private bool IsAlreadyStored(object refusedEntity)
+        {
+            return refusedEntity is WithinSleSnapshot row &&
+                   StoredRow(row.OwnerId, row.OwnerType, row.Horizon, row.RecordedAt) is not null;
+        }
+
+        private WithinSleSnapshot? StoredRow(int ownerId, OwnerType ownerType, int horizon, DateOnly day)
+        {
+            return snapshots.GetByPredicate(
+                snapshot => snapshot.OwnerId == ownerId &&
+                            snapshot.OwnerType == ownerType &&
+                            snapshot.Horizon == horizon &&
+                            snapshot.RecordedAt == day);
         }
     }
 }

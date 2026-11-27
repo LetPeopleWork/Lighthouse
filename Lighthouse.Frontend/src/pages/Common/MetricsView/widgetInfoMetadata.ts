@@ -398,6 +398,11 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 			"The 50th, 70th, 85th, and 95th percentiles plotted as one point per day, so you can see how each percentile trends over time. Toggle between Cycle Time over the last 30, 60, or 90 days and the Work Item Age of the items in progress today.",
 		learnMoreUrl: `${PREDICTABILITY}#percentiles-over-time`,
 	},
+	withinSleOverTime: {
+		description:
+			"The share of Work Items closed within the SLE, one point per day over the last 30, 60, or 90 days, against the target that was in force that day. A day with fewer than 5 closed Work Items has no point.",
+		learnMoreUrl: `${PREDICTABILITY}#within-sle-over-time`,
+	},
 	pbcOverTime: {
 		description:
 			"The natural process limits of a Process Behaviour Chart plotted per recorded day: upper limit, average, and lower limit. Shows whether the limits themselves are widening, narrowing, or shifting over time.",

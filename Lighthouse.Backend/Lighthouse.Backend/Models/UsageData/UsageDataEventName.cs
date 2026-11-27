@@ -125,5 +125,11 @@ namespace Lighthouse.Backend.Models.UsageData
         /// Flow Overview. It carries nothing: not which Team or Portfolio, not the share, not how many items.
         /// </summary>
         WithinSleListOpened = 31,
+
+        /// <summary>
+        /// Somebody switched the trailing window of the Within SLE Over Time chart in a Team's or a Portfolio's
+        /// Predictability. It carries nothing: not which Team or Portfolio, not the share, not the window chosen.
+        /// </summary>
+        WithinSleHorizonSwitched = 32,
     }
 }

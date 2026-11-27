@@ -14,7 +14,24 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence
     {
         public IReadOnlyList<WithinSleSnapshot> GetSeries(int ownerId, OwnerType ownerType, int horizon, DateOnly? from, DateOnly? to)
         {
-            throw new NotImplementedException("Reading the stored Within SLE record is not built yet.");
+            var series = GetAllByPredicate(s =>
+                s.OwnerId == ownerId &&
+                s.OwnerType == ownerType &&
+                s.Horizon == horizon);
+
+            if (from.HasValue)
+            {
+                series = series.Where(s => s.RecordedAt >= from.Value);
+            }
+
+            if (to.HasValue)
+            {
+                series = series.Where(s => s.RecordedAt <= to.Value);
+            }
+
+            return series
+                .OrderBy(s => s.RecordedAt)
+                .ToList();
         }
     }
 }

@@ -15,7 +15,7 @@ partial class LighthouseAppContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20261126172246_AddReportNotes";
+    public override string LastMigrationId => "20261127160350_AddWithinSleSnapshots";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -1658,6 +1658,47 @@ partial class LighthouseAppContextModelSnapshot : ModelSnapshot
                 b.HasIndex("Decision", "LastSeenAt");
 
                 b.ToTable("UsageDataConsents");
+            });
+
+        modelBuilder.Entity("Lighthouse.Backend.Models.WithinSleSnapshot", b =>
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("INTEGER");
+
+                b.Property<int>("ClosedCount")
+                    .HasColumnType("INTEGER");
+
+                b.Property<int>("Horizon")
+                    .HasColumnType("INTEGER");
+
+                b.Property<int>("Origin")
+                    .HasColumnType("INTEGER");
+
+                b.Property<int>("OwnerId")
+                    .HasColumnType("INTEGER");
+
+                b.Property<int>("OwnerType")
+                    .HasColumnType("INTEGER");
+
+                b.Property<DateOnly>("RecordedAt")
+                    .HasColumnType("TEXT");
+
+                b.Property<int>("SleDays")
+                    .HasColumnType("INTEGER");
+
+                b.Property<int>("SlePercentile")
+                    .HasColumnType("INTEGER");
+
+                b.Property<int>("WithinCount")
+                    .HasColumnType("INTEGER");
+
+                b.HasKey("Id");
+
+                b.HasIndex("OwnerId", "OwnerType", "Horizon", "RecordedAt")
+                    .IsUnique();
+
+                b.ToTable("WithinSleSnapshots");
             });
 
         modelBuilder.Entity("Lighthouse.Backend.Models.WorkItem", b =>

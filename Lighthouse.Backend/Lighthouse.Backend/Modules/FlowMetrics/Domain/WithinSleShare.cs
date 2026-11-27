@@ -17,12 +17,17 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
                 return new NoSle(closed);
             }
 
+            return Counted(sle.CountWithin(cycleTimesInDays), closed, sle);
+        }
+
+        public static WithinSleShare Counted(int within, int closed, ServiceLevelExpectation sle)
+        {
             if (closed < MinimumClosed)
             {
                 return new TooFew(closed, sle);
             }
 
-            return new Measured(cycleTimesInDays.Count(days => days <= sle.Days), closed, sle);
+            return new Measured(within, closed, sle);
         }
 
         public sealed record NoSle(int Closed) : WithinSleShare;

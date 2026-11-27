@@ -30,6 +30,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IWorkItemBlockedTransitionRepository> workItemBlockedTransitionRepositoryMock;
         private Mock<IPercentilesOverTimeSeriesQuery> percentilesOverTimeSeriesQueryMock;
         private Mock<IProcessBehaviorSeriesQuery> processBehaviorSeriesQueryMock;
+        private Mock<IWithinSleOverTimeSeriesQuery> withinSleOverTimeSeriesQueryMock;
         private Mock<ILogger<TeamMetricsController>> loggerMock;
 
         [SetUp]
@@ -44,6 +45,10 @@ namespace Lighthouse.Backend.Tests.API
             workItemBlockedTransitionRepositoryMock = new Mock<IWorkItemBlockedTransitionRepository>();
             percentilesOverTimeSeriesQueryMock = new Mock<IPercentilesOverTimeSeriesQuery>();
             processBehaviorSeriesQueryMock = new Mock<IProcessBehaviorSeriesQuery>();
+            withinSleOverTimeSeriesQueryMock = new Mock<IWithinSleOverTimeSeriesQuery>();
+            withinSleOverTimeSeriesQueryMock
+                .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<int>(), It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>()))
+                .Returns(new WithinSleOverTimeDto(70, 10, []));
             processBehaviorSeriesQueryMock
                 .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<ProcessBehaviorMetricType>(), It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>()))
                 .Returns([]);
@@ -2087,9 +2092,35 @@ namespace Lighthouse.Backend.Tests.API
                 Times.Never);
         }
 
+        [Test]
+        public void A_horizon_other_than_30_60_or_90_days_is_refused()
+        {
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(new Team { Id = 1, Name = "Team Orca" });
+
+            var response = CreateSubject().GetWithinSleOverTime(1, horizon: 45);
+
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>().With.Property(nameof(BadRequestObjectResult.Value)).EqualTo("Horizon must be one of 30, 60 or 90 days."));
+        }
+
+        [TestCase(30)]
+        [TestCase(60)]
+        [TestCase(90)]
+        public void A_horizon_of_30_60_or_90_days_is_answered(int horizon)
+        {
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(new Team { Id = 1, Name = "Team Orca" });
+
+            var response = CreateSubject().GetWithinSleOverTime(1, horizon);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                withinSleOverTimeSeriesQueryMock.Verify(q => q.GetSeries(1, OwnerType.Team, horizon, null, null), Times.Once);
+            }
+        }
+
         private TeamMetricsController CreateSubject()
         {
-            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, blockedItemServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, workItemRepositoryMock.Object, workItemBlockedTransitionRepositoryMock.Object, percentilesOverTimeSeriesQueryMock.Object, processBehaviorSeriesQueryMock.Object, new Mock<IWithinSleInfoQuery>().Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(TestToday.FrozenNow), loggerMock.Object)
+            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, blockedItemServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, workItemRepositoryMock.Object, workItemBlockedTransitionRepositoryMock.Object, percentilesOverTimeSeriesQueryMock.Object, processBehaviorSeriesQueryMock.Object, new Mock<IWithinSleInfoQuery>().Object, withinSleOverTimeSeriesQueryMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(TestToday.FrozenNow), loggerMock.Object)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
             };

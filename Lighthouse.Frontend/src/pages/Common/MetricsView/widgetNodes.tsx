@@ -70,6 +70,7 @@ import ThroughputRunChartCard from "./ThroughputRunChartCard";
 import TotalArrivalsWidget from "./TotalArrivalsWidget";
 import TotalThroughputWidget from "./TotalThroughputWidget";
 import WipOverviewWidget from "./WipOverviewWidget";
+import WithinSleOverTimeWidget from "./WithinSleOverTimeWidget";
 import WithinSleWidget from "./WithinSleWidget";
 
 function buildPbcNode(
@@ -492,6 +493,14 @@ export function buildWidgetNodes(ctx: {
 		),
 		percentilesOverTime: (
 			<PercentilesOverTimeWidget
+				owner={metricsOwnerKeyOf(ctx.entity)}
+				metricsService={ctx.metricsService}
+				startDate={ctx.startDate}
+				endDate={ctx.endDate}
+			/>
+		),
+		withinSleOverTime: (
+			<WithinSleOverTimeWidget
 				owner={metricsOwnerKeyOf(ctx.entity)}
 				metricsService={ctx.metricsService}
 				startDate={ctx.startDate}

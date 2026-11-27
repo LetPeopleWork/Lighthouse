@@ -26,10 +26,9 @@ import {
 	type INamedCycleTimeValue,
 	NamedCycleTimeValueSchema,
 } from "../../models/Metrics/NamedCycleTime";
-import {
-	PERCENTILES_AGE_SELECTION,
-	type PercentilesOverTimeSnapshot,
-	type PercentilesSelection,
+import type {
+	PercentilesOverTimeSnapshot,
+	PercentilesSelection,
 } from "../../models/Metrics/PercentilesOverTimeSnapshot";
 import type {
 	ProcessBehaviorMetricType,
@@ -52,10 +51,15 @@ import type { IWorkItem } from "../../models/WorkItem";
 import { formatLocalDate } from "../../utils/date/localDate";
 import { BaseApiService } from "./BaseApiService";
 import type { IFeatureSizeMetricsService } from "./FeatureSizeMetricsService";
+import {
+	buildPercentilesOverTimeQuery,
+	type IOverTimeMetricsService,
+} from "./OverTimeMetricsService";
 
 export type { IFeatureSizeMetricsService };
 
-export interface IMetricsService<T extends IWorkItem | IFeature> {
+export interface IMetricsService<T extends IWorkItem | IFeature>
+	extends IOverTimeMetricsService {
 	getThroughput(
 		id: number,
 		startDate: Date,
@@ -237,32 +241,11 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		endDate: Date,
 	): Promise<IWithinSleInfo>;
 
-	getWithinSleOverTime(
-		id: number,
-		horizon: WithinSleHorizon,
-		startDate: Date,
-		endDate: Date,
-	): Promise<IWithinSleOverTime>;
-
 	getBlockedCountHistory(
 		id: number,
 		startDate: Date,
 		endDate: Date,
 	): Promise<BlockedCountSnapshot[]>;
-
-	getPercentilesOverTime(
-		id: number,
-		selection: PercentilesSelection,
-		startDate: Date,
-		endDate: Date,
-	): Promise<PercentilesOverTimeSnapshot[]>;
-
-	getProcessBehaviorOverTime(
-		id: number,
-		metricType: ProcessBehaviorMetricType,
-		startDate: Date,
-		endDate: Date,
-	): Promise<ProcessBehaviorSnapshot[]>;
 
 	getBlockedItemsAtDate(id: number, date: Date | string): Promise<IWorkItem[]>;
 
@@ -277,22 +260,6 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<IFlowEfficiencyInfo>;
-}
-
-/**
- * Query suffix for the percentiles-over-time read endpoint. Work Item Age is
- * as-of-today and therefore horizon-less — it asks for the metric type and lets
- * the backend resolve the horizon-less sentinel. Cycle time keeps the horizon
- * request shape unchanged.
- */
-function buildPercentilesOverTimeQuery(
-	selection: PercentilesSelection,
-): string {
-	if (selection === PERCENTILES_AGE_SELECTION) {
-		return "metricType=WorkItemAge";
-	}
-
-	return `horizon=${selection}`;
 }
 
 export interface ITeamMetricsService
@@ -837,12 +804,17 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 	}
 
 	getWithinSleOverTime(
-		_id: number,
-		_horizon: WithinSleHorizon,
-		_startDate: Date,
-		_endDate: Date,
+		id: number,
+		horizon: WithinSleHorizon,
+		startDate: Date,
+		endDate: Date,
 	): Promise<IWithinSleOverTime> {
-		return Promise.reject(new Error("getWithinSleOverTime is not built yet."));
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<IWithinSleOverTime>(
+				`/${this.api}/${id}/metrics/within-sle-over-time?horizon=${horizon}&${this.getDateFormatString(startDate, endDate)}`,
+			);
+			return response.data;
+		});
 	}
 
 	getBlockedCountHistory(

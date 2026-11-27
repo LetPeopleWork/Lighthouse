@@ -17,7 +17,7 @@ partial class LighthouseAppContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20261126172255_AddReportNotes";
+    public override string LastMigrationId => "20261127160359_AddWithinSleSnapshots";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -1732,6 +1732,49 @@ partial class LighthouseAppContextModelSnapshot : ModelSnapshot
                 b.HasIndex("Decision", "LastSeenAt");
 
                 b.ToTable("UsageDataConsents");
+            });
+
+        modelBuilder.Entity("Lighthouse.Backend.Models.WithinSleSnapshot", b =>
+            {
+                var id = b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("integer");
+
+                NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(id);
+
+                b.Property<int>("ClosedCount")
+                    .HasColumnType("integer");
+
+                b.Property<int>("Horizon")
+                    .HasColumnType("integer");
+
+                b.Property<int>("Origin")
+                    .HasColumnType("integer");
+
+                b.Property<int>("OwnerId")
+                    .HasColumnType("integer");
+
+                b.Property<int>("OwnerType")
+                    .HasColumnType("integer");
+
+                b.Property<DateOnly>("RecordedAt")
+                    .HasColumnType("date");
+
+                b.Property<int>("SleDays")
+                    .HasColumnType("integer");
+
+                b.Property<int>("SlePercentile")
+                    .HasColumnType("integer");
+
+                b.Property<int>("WithinCount")
+                    .HasColumnType("integer");
+
+                b.HasKey("Id");
+
+                b.HasIndex("OwnerId", "OwnerType", "Horizon", "RecordedAt")
+                    .IsUnique();
+
+                b.ToTable("WithinSleSnapshots");
             });
 
         modelBuilder.Entity("Lighthouse.Backend.Models.WorkItem", b =>

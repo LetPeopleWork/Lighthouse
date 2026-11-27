@@ -31,12 +31,14 @@ namespace Lighthouse.Backend.API
         IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery,
         IProcessBehaviorSeriesQuery processBehaviorSeriesQuery,
         IWithinSleInfoQuery withinSleInfoQuery,
+        IWithinSleOverTimeSeriesQuery withinSleOverTimeSeriesQuery,
         ILighthouseClock clock,
         ILogger<PortfolioMetricsController> logger)
         : ControllerBase
 #pragma warning restore S107
     {
         private const string StartDateMustBeBeforeEndDateErrorMessage = "Start date must be before end date.";
+        private const string HorizonMustBeOneOfErrorMessage = "Horizon must be one of 30, 60 or 90 days.";
         private const string StateMustNotBeEmptyErrorMessage = "State must not be empty.";
         private const string UnsupportedProcessBehaviorMetricTypeErrorMessage = "Unsupported process behavior metric type.";
 
@@ -618,6 +620,27 @@ namespace Lighthouse.Backend.API
                 processBehaviorSeriesQuery
                     .GetSeries(portfolioId, OwnerType.Portfolio, type, AsRecordedDay(startDate), AsRecordedDay(endDate))
                     .Select(snapshot => new ProcessBehaviorSnapshotDto(snapshot)));
+        }
+
+        /// <summary>
+        /// Serves the stored Within SLE record of one trailing window, day by day, with the SLE set now. A horizon
+        /// the record does not keep is refused rather than answered empty, which would read as nothing recorded.
+        /// </summary>
+        [HttpGet("within-sle-over-time")]
+        public ActionResult<WithinSleOverTimeDto> GetWithinSleOverTime(int portfolioId, [FromQuery] int horizon = 30, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
+        {
+            if (!WithinSleSnapshot.Horizons.Contains(horizon))
+            {
+                return BadRequest(HorizonMustBeOneOfErrorMessage);
+            }
+
+            if (IsInvertedWindow(startDate, endDate))
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (_) =>
+                withinSleOverTimeSeriesQuery.GetSeries(portfolioId, OwnerType.Portfolio, horizon, AsRecordedDay(startDate), AsRecordedDay(endDate)));
         }
 
         /// <summary>

@@ -29,6 +29,11 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
             return Of(owner.ServiceLevelExpectationProbability, owner.ServiceLevelExpectationRange);
         }
 
+        public int CountWithin(IEnumerable<int> cycleTimesInDays)
+        {
+            return cycleTimesInDays.Count(cycleTimeInDays => cycleTimeInDays <= Days);
+        }
+
         public bool Equals(ServiceLevelExpectation? other)
         {
             return other is not null && other.Percentile == Percentile && other.Days == Days;

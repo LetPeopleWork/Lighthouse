@@ -219,6 +219,7 @@ describe("categoryMetadata", () => {
 			expect(widgets.map((w) => w.widgetKey)).toEqual([
 				"predictabilityScoreDetails",
 				"percentilesOverTime",
+				"withinSleOverTime",
 				"pbcOverTime",
 				"throughputPbc",
 				"arrivalsPbc",
@@ -311,7 +312,11 @@ describe("categoryMetadata", () => {
 
 		// The only widgets allowed to declare nothing: they fetch for themselves, read nothing from
 		// useMetricsData, and report their own loading and failure.
-		const selfFetchingWidgets = ["percentilesOverTime", "pbcOverTime"];
+		const selfFetchingWidgets = [
+			"percentilesOverTime",
+			"pbcOverTime",
+			"withinSleOverTime",
+		];
 
 		function everyPlacement(): { widgetKey: string; where: string }[] {
 			const placements: { widgetKey: string; where: string }[] = [];
