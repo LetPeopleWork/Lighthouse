@@ -5,6 +5,7 @@ export type WithinSleLines = {
 	dates: string[];
 	share: (number | null)[];
 	target: (number | null)[];
+	filledIn: boolean[];
 };
 
 function nextDay(day: string): string {
@@ -22,7 +23,12 @@ export function withinSleLinesOf(
 ): WithinSleLines {
 	const byDay = new Map(days.map((day) => [day.recordedAt.slice(0, 10), day]));
 	const stored = [...byDay.keys()].sort((a, b) => a.localeCompare(b));
-	const lines: WithinSleLines = { dates: [], share: [], target: [] };
+	const lines: WithinSleLines = {
+		dates: [],
+		share: [],
+		target: [],
+		filledIn: [],
+	};
 	if (stored.length === 0) return lines;
 
 	const last = stored.at(-1) as string;
@@ -31,6 +37,7 @@ export function withinSleLinesOf(
 		lines.dates.push(day);
 		lines.share.push(answered?.sharePercent ?? null);
 		lines.target.push(answered?.slePercentile ?? null);
+		lines.filledIn.push(false);
 	}
 	return lines;
 }

@@ -3564,20 +3564,66 @@ pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/With
 <pre><code>open markers and the note
 </code></pre>
 
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/withinSleLines.ts</p>
+
+<p>Extend</p>
+
+<pre><code>filledIn per day
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleFamilyReader.cs</p>
+
+<p>Extend</p>
+
+<pre><code>nullable reading past the retention edge
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs</p>
+
+<p>Extend</p>
+
+<pre><code>owns the horizon list; skips a null reading per horizon
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshot.cs</p>
+
+<p>Extend</p>
+
+<pre><code>horizon list moves out
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>guard reads WithinSleSnapshotWriter.Horizons
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>guard reads WithinSleSnapshotWriter.Horizons
+</code></pre>
+
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleFillInAtTheServicePortTest.cs</p>
 
 <h4>Verification</h4>
 
 <pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.WithinSle.WithinSleFillInAtTheServicePortTest|FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.WithinSle.TwoCopiesFillingTheSameWithinSleDayAtThePortTest
-pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.OverTimeReconstructionSeamArchUnitTest|FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest
+pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/withinSleLines.filledIn.test.ts src/pages/Common/MetricsView/WithinSleOverTimeWidget.filledIn.test.tsx
 </code></pre>
 
 <h4>Supports</h4>
 
-<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx</p>
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/withinSleLines.filledIn.test.ts</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.filledIn.test.tsx</p>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/TwoCopiesFillingTheSameWithinSleDayAtThePortTest.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OverTimeReconstructionSeamArchUnitTest.cs</p>
 
 <p>None.</p>
 
@@ -3602,13 +3648,35 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 
 <h4>Prefactoring</h4>
 
-<p>None.</p>
+<pre><code>Before behaviour, in a separate refactor commit: WithinSleLines gains filledIn: boolean[] and withinSleLinesOf pushes false for every day, so the S8 frontend oracle type-checks and fails on behaviour. No backend skeleton: the backend oracle compiles against the shipped surface. Per touched file: withinSleLines.ts holds one type and its function -&gt; not-applicable. Follow-up made easier: the behaviour work sets the flag and draws the markers and note.
+</code></pre>
+
+<pre><code>Every S7 chart behaviour: filledIn is unread by the widget and every existing within-SLE test stays GREEN
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx</p>
+
+<h5>Verification</h5>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec tsc -b
+pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx
+</code></pre>
 
 <h4>Records</h4>
 
 <h5>Decisions</h5>
 
-<p>None.</p>
+<pre><code>Filled-in days on the chart (P15, sketch decision Open markers + note): S7&#x27;s widget test is approved and frozen, so S8 owns two new frontend oracle files. withinSleLinesOf in withinSleLines.ts (Extend) gains filledIn: boolean[] aligned with dates, true exactly where the day is stored with origin FilledIn and draws a share point (verdict Measured), false for recorded days, too-few days and gaps; the marker rule is asserted on that pure function in withinSleLines.filledIn.test.ts. WithinSleOverTimeWidget draws the share points of filledIn days as open markers (style not pinned) and, only when at least one drawn point is filled in, shows below the chart the note: filled in from history (measured against today&#x27;s {SLE}), with {SLE} the configurable term (default SLE), preceded by the open-circle glyph; one render in WithinSleOverTimeWidget.filledIn.test.tsx pins the note words and their absence when no drawn point is filled in. The tooltip stays as sketched.
+</code></pre>
+
+<pre><code>Retention edge for the within-SLE family: a day whose horizon window reaches back past the oldest day the owner still keeps is not filled for that horizon; it stays absent, so the chart shows a gap, never a 0 of 0 or an understated count. A count read from partly deleted work is the counterexample, and 0 closed is a legitimate stored day (S7), so an empty list cannot carry &#x27;not readable&#x27;. The carrier changes instead of adding a guard: WithinSleFamilyReader.ReadClosedCycleTimes becomes Func&lt;DateTime, DateTime, IReadOnlyList&lt;int&gt;?&gt;, null meaning the window reaches past what is kept (nullable reference checking with TreatWarningsAsErrors forces every reader to handle it). RetentionEdge.Guard(WithinSleFamilyReader) returns the family with ReadClosedCycleTimes answering null when ReachesPastTheEdge(windowStart), else the inner reading. WithinSleSnapshotWriter.FillDayIfAbsent stages no row for a horizon whose reading is null, per horizon (a 30-day window can be inside the edge while the 90-day one is not), and the day counts as declined for the walk like a percentile day turned away. Live RecordToday is never guarded. Observation: the chart answers no entry for that day on that horizon and the filler logs no error; the oracle pins it with an owner whose DoneItemsCutoffDays is above 0 and a day whose 90-day window reaches past lastRefresh minus the cutoff while its 30-day window does not.
+</code></pre>
+
+<pre><code>Horizon list defect from S7 (OverTimeReconstructionSeamArchUnitTest.TheCycleTimeHorizonList_IsDeclaredOnlyWhereItIsAllowedToBe fails on Models/WithinSleSnapshot.cs): the within-SLE horizons are separate knowledge from the percentile cycle-time horizons, because they belong to a different chart family that can change apart; what the seam law protects is that the recorded and the filled-in day of one family are computed by one writer. Reusing PercentileSnapshotWriter&#x27;s private list was rejected: it would couple the within-SLE writer and controllers to the percentile writer. Respelling the list to dodge the string match was rejected. Obligation for the crafter: move the list from WithinSleSnapshot to WithinSleSnapshotWriter as public static readonly IReadOnlyList&lt;int&gt; Horizons = [30, 60, 90] (the one writer of both within-SLE write policies), read by both write policies and by the controller guards in TeamMetricsController and PortfolioMetricsController; WithinSleSnapshot keeps no list. Obligation for the acceptance designer (S8 support): the test&#x27;s allow-list FilesAllowedToDeclareTheHorizons gains a named constant for Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs with the reason that it is the one writer of within-SLE days, and the failure message names both writers.
+</code></pre>
+
+<pre><code>S8 members the backend oracle assumes, confirmed: the oracle compiles against the shipped S7 surface and resolves everything through AddFlowMetrics, so no backend skeleton is needed. GapAskingWithinSleOverTimeSeriesQuery(WithinSleOverTimeSeriesQuery stored, IOverTimeGapReconciler reconciler) : IWithinSleOverTimeSeriesQuery answers stored.GetSeries(...) and asks reconciler.AskForTheDaysThatAreMissing(ownerId, ownerType, from, to, held days) for the days of the answer, writing nothing while the reader waits; AddFlowMetrics registers WithinSleOverTimeSeriesQuery as itself and IWithinSleOverTimeSeriesQuery as the gap-asking wrapper, like the percentile pair. OverTimeFillTarget gains WithinSleFamilyReader? WithinSleFamily built from WithinSleFamilies.For(owner, metrics, clock) through retention.Guard; OverTimeHistoryFiller.FillOneDayAsync stages it with IWithinSleSnapshotWriter.FillDayIfAbsent and commits through SaveFilledDay as a third TryWriteDayAsync, so one pass fills every chart of the owner; a failure is logged at Error like the other two families. The TwoCopiesFillingTheSameWithinSleDayAtThePortTest support does not exist yet; S7&#x27;s oracle already pins two copies filling one day, so the acceptance designer may drop it.
+</code></pre>
 
 <h5>Constraints</h5>
 
@@ -3688,6 +3756,60 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 <pre><code>created in S7, extended here with open markers and the note
 </code></pre>
 
+<p>withinSleLinesOf</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/withinSleLines.ts:20</p>
+
+<p>Extend</p>
+
+<pre><code>the one owner of per-day chart points; the filled-in flag is per drawn point
+</code></pre>
+
+<p>WithinSleFamilyReader</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleFamilyReader.cs:9</p>
+
+<p>Extend</p>
+
+<pre><code>the reading carrier must tell not readable apart from zero closed
+</code></pre>
+
+<p>WithinSleSnapshotWriter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>the one writer of within-SLE days owns its horizons
+</code></pre>
+
+<p>WithinSleSnapshot</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshot.cs:10</p>
+
+<p>Extend</p>
+
+<pre><code>entity keeps data only
+</code></pre>
+
+<p>GetWithinSleOverTime</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs:627</p>
+
+<p>Extend</p>
+
+<pre><code>guard reads the writer&#x27;s list
+</code></pre>
+
+<p>GetWithinSleOverTime</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs:631</p>
+
+<p>Extend</p>
+
+<pre><code>guard reads the writer&#x27;s list
+</code></pre>
+
 <h5>Impact</h5>
 
 <p>background-adapter</p>
@@ -3762,6 +3884,60 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 <pre><code>markers and note
 </code></pre>
 
+<p>function</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/withinSleLines.ts:20</p>
+
+<p>Changed</p>
+
+<pre><code>returns filledIn per day; only the widget consumes it
+</code></pre>
+
+<p>record</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleFamilyReader.cs:9</p>
+
+<p>Changed</p>
+
+<pre><code>reading becomes nullable; WithinSleFamilies, the writer, RetentionEdge and the S7 oracle lambda stay compatible
+</code></pre>
+
+<p>class</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>owns Horizons; skips a null reading
+</code></pre>
+
+<p>entity</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshot.cs:10</p>
+
+<p>Changed</p>
+
+<pre><code>static list removed; no column change, no migration
+</code></pre>
+
+<p>controller</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs:627</p>
+
+<p>Changed</p>
+
+<pre><code>guard reads WithinSleSnapshotWriter.Horizons; wire unchanged
+</code></pre>
+
+<p>controller</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs:631</p>
+
+<p>Changed</p>
+
+<pre><code>guard reads WithinSleSnapshotWriter.Horizons; wire unchanged
+</code></pre>
+
 <h5>Agreement</h5>
 
 <p>OverTimeFillTarget (internal record)</p>
@@ -3793,11 +3969,6 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 <pre><code>internal record and in-process ports, one deployable, same commit
 </code></pre>
 
-<p>prefactoring</p>
-
-<pre><code>Per touched file: OverTimeFillTarget.cs one record, RetentionEdge.cs one class, OverTimeHistoryFiller.cs one class with private nested helpers, FlowMetricsModule.cs one class, WithinSleOverTimeWidget.tsx one component -&gt; not-applicable; GapAskingWithinSleOverTimeSeriesQuery.cs new -&gt; not-applicable
-</code></pre>
-
 <h5>Boundaries</h5>
 
 <p>None.</p>
@@ -3812,7 +3983,21 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 
 <h5>Constructors</h5>
 
-<p>None.</p>
+<p>withinSleLinesOf.filledIn</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/withinSleLines.ts: export type WithinSleLines = { dates: string[]; share: (number | null)[]; target: (number | null)[]; filledIn: boolean[] }; withinSleLinesOf(days) sets filledIn[i] true when the day at dates[i] is stored with origin FilledIn and sharePercent is not null, else false</p>
+
+<p>WithinSleFamilyReader</p>
+
+<p>public sealed record WithinSleFamilyReader(Func&lt;DateTime, DateTime, IReadOnlyList&lt;int&gt;?&gt; ReadClosedCycleTimes, Func&lt;ServiceLevelExpectation?&gt; CurrentSle); null reading = the window reaches past the retention edge; RetentionEdge.Guard(WithinSleFamilyReader) internal in Modules/FlowMetrics/Application/RetentionEdge.cs</p>
+
+<p>GapAskingWithinSleOverTimeSeriesQuery</p>
+
+<p>Modules/FlowMetrics/Application/GapAskingWithinSleOverTimeSeriesQuery.cs: public sealed class GapAskingWithinSleOverTimeSeriesQuery(WithinSleOverTimeSeriesQuery stored, IOverTimeGapReconciler reconciler) : IWithinSleOverTimeSeriesQuery</p>
+
+<p>WithinSleSnapshotWriter.Horizons</p>
+
+<p>Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs: public static readonly IReadOnlyList&lt;int&gt; Horizons = [30, 60, 90]; removed from Models/WithinSleSnapshot.cs</p>
 
 <h5>Laws</h5>
 
