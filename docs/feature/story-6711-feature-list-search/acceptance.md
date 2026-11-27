@@ -694,6 +694,294 @@ A Team column with no shown text for search finds nothing and fails
 ###### Obligations
 
 
+### S4
+
+##### Covers
+
+P2
+
+```text
+The user sorts the Name column ascending over names not in ID order (Zebra under PROJ-12, Apple under PROJ-20, Mango under PROJ-30)
+```
+
+```text
+Features are ordered Apple, Mango, Zebra by name, not by ID prefix
+```
+
+```text
+Sorting the Name column still orders by Feature name
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.nameFilter\.test\.tsx
+
+keep sorting the Name column by Feature name rather than by reference ID
+
+```text
+A Name column sorted by the shown ID: name text
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+A cell's shown text is searched with any slice of it in any letter case, including an ID-like PROJ-12 prefix
+```
+
+```text
+Its row stays
+```
+
+```text
+The reader finds a Feature by what the list shows
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/quickSearch\.test\.ts
+
+keeps a cell whose shown text contains the typed text\, in any letter case
+
+```text
+A case-sensitive or regex-based match
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Digits are typed that a number cell shows
+```
+
+```text
+The row with that number stays
+```
+
+```text
+A number is found by its digits
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/quickSearch\.test\.ts
+
+keeps a cell holding a number when its digits are typed
+
+```text
+Numbers never matching
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Only spaces are typed
+```
+
+```text
+Every row stays
+```
+
+```text
+A blank search narrows nothing
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/quickSearch\.test\.ts
+
+hands the grid nothing for \%j\, so every row stays
+
+```text
+Whitespace treated as a search
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A search is typed while a column filter is set
+```
+
+```text
+Only rows meeting both are listed
+```
+
+```text
+Search and column filter work together
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.searchEdges\.test\.tsx
+
+FeatureListDataGrid search in its edge states lists only the Features that meet both the column filter and the search
+
+```text
+Search ignoring the column filter
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A search is typed on page two
+```
+
+```text
+The first page of results shows
+```
+
+```text
+A new search starts at the first page
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.searchEdges\.test\.tsx
+
+FeatureListDataGrid search in its edge states opens the first page of the results when a search is typed on the second page
+
+```text
+Staying on a page past the results
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+The search box is cleared
+```
+
+```text
+Every Feature is listed again
+```
+
+```text
+Clearing restores the list
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.search\.test\.tsx
+
+lists every Feature again when the box is cleared
+
+```text
+Rows staying hidden
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+P10
+
+```text
+A Feature with reference ID PROJ-12 and name Zebra is in a feature list; the user opens the Name column filter and types PROJ-12
+```
+
+```text
+Only the PROJ-12 Feature is listed
+```
+
+```text
+The user finds a Feature by the ID shown in its Name cell
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.nameFilter\.test\.tsx
+
+list a Feature when its reference ID is typed into the Name column filter
+
+```text
+A Name filter that matches only the name text, ignoring the ID
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+Text is typed that matches only a cell holding an object, list or yes/no value
+```
+
+```text
+No row stays
+```
+
+```text
+Cells without shown text never match
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/quickSearch\.test\.ts
+
+never keeps a cell holding \%s\, whatever is typed
+
+```text
+A match on the raw value
+```
+
+###### Obligations
+
+
+
+
+
 ## Expectations
 
 ### Rows

@@ -367,13 +367,166 @@
 "stimulus": "F378",
 "user_result": "F380"
 }
+],
+"S4": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F385",
+"test": "keep sorting the Name column by Feature name rather than by reference ID",
+"test_path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.nameFilter.test.tsx"
+},
+"expected": "F383",
+"stimulus": "F382",
+"user_result": "F384"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F83"
+],
+"still_passes_if": "F389",
+"test": "keeps a cell whose shown text contains the typed text, in any letter case",
+"test_path": "Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.test.ts"
+},
+"expected": "F387",
+"stimulus": "F386",
+"user_result": "F388"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F92"
+],
+"still_passes_if": "F393",
+"test": "keeps a cell holding a number when its digits are typed",
+"test_path": "Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.test.ts"
+},
+"expected": "F391",
+"stimulus": "F390",
+"user_result": "F392"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F96"
+],
+"still_passes_if": "F397",
+"test": "hands the grid nothing for %j, so every row stays",
+"test_path": "Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.test.ts"
+},
+"expected": "F395",
+"stimulus": "F394",
+"user_result": "F396"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F101"
+],
+"still_passes_if": "F401",
+"test": "FeatureListDataGrid search in its edge states lists only the Features that meet both the column filter and the search",
+"test_path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.searchEdges.test.tsx"
+},
+"expected": "F399",
+"stimulus": "F398",
+"user_result": "F400"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F102"
+],
+"still_passes_if": "F405",
+"test": "FeatureListDataGrid search in its edge states opens the first page of the results when a search is typed on the second page",
+"test_path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.searchEdges.test.tsx"
+},
+"expected": "F403",
+"stimulus": "F402",
+"user_result": "F404"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F103"
+],
+"still_passes_if": "F409",
+"test": "lists every Feature again when the box is cleared",
+"test_path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.search.test.tsx"
+},
+"expected": "F407",
+"stimulus": "F406",
+"user_result": "F408"
+},
+{
+"covers": [
+"P2",
+"P10"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F412",
+"test": "list a Feature when its reference ID is typed into the Name column filter",
+"test_path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.nameFilter.test.tsx"
+},
+"expected": "F367",
+"stimulus": "F410",
+"user_result": "F411"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F88",
+"L2/F89",
+"L2/F90",
+"L2/F91"
+],
+"still_passes_if": "F416",
+"test": "never keeps a cell holding %s, whatever is typed",
+"test_path": "Lighthouse.Frontend/src/components/Common/DataGrid/quickSearch.test.ts"
+},
+"expected": "F414",
+"stimulus": "F413",
+"user_result": "F415"
+}
 ]
 },
 "counters": {
 "C": 1,
 "D": 9,
 "E": 10,
-"F": 381,
+"F": 416,
 "K": 9,
 "L": 4,
 "P": 10,
@@ -1777,10 +1930,45 @@
 "F38": "The Name column filter also matches the Feature reference ID.",
 "F380": "The user finds Features by the Team shown in the Team column",
 "F381": "A Team column with no shown text for search finds nothing and fails",
+"F382": "The user sorts the Name column ascending over names not in ID order (Zebra under PROJ-12, Apple under PROJ-20, Mango under PROJ-30)",
+"F383": "Features are ordered Apple, Mango, Zebra by name, not by ID prefix",
+"F384": "Sorting the Name column still orders by Feature name",
+"F385": "A Name column sorted by the shown ID: name text",
+"F386": "A cell's shown text is searched with any slice of it in any letter case, including an ID-like PROJ-12 prefix",
+"F387": "Its row stays",
+"F388": "The reader finds a Feature by what the list shows",
+"F389": "A case-sensitive or regex-based match",
 "F39": "Delivery dialog Feature pickers, the Refinement grid and the Archived features grid get no search box now; Suggestion: could follow later.",
+"F390": "Digits are typed that a number cell shows",
+"F391": "The row with that number stays",
+"F392": "A number is found by its digits",
+"F393": "Numbers never matching",
+"F394": "Only spaces are typed",
+"F395": "Every row stays",
+"F396": "A blank search narrows nothing",
+"F397": "Whitespace treated as a search",
+"F398": "A search is typed while a column filter is set",
+"F399": "Only rows meeting both are listed",
 "F4": "A user finds a Feature by its reference ID when typing it into the Name column filter, because the Name column filter now matches the same 'ID: name' text the cell shows.",
 "F40": "No change to the Parent column filter (it already matches ID and name), no remembered search text, no backend change, no change to persisted column filters, sort or layout.",
+"F400": "Search and column filter work together",
+"F401": "Search ignoring the column filter",
+"F402": "A search is typed on page two",
+"F403": "The first page of results shows",
+"F404": "A new search starts at the first page",
+"F405": "Staying on a page past the results",
+"F406": "The search box is cleared",
+"F407": "Every Feature is listed again",
+"F408": "Clearing restores the list",
+"F409": "Rows staying hidden",
 "F41": "Search box on the full feature list only (four pages named in scope); pickers, Refinement and Archived grids excluded and suggested for later.",
+"F410": "A Feature with reference ID PROJ-12 and name Zebra is in a feature list; the user opens the Name column filter and types PROJ-12",
+"F411": "The user finds a Feature by the ID shown in its Name cell",
+"F412": "A Name filter that matches only the name text, ignoring the ID",
+"F413": "Text is typed that matches only a cell holding an object, list or yes/no value",
+"F414": "No row stays",
+"F415": "Cells without shown text never match",
+"F416": "A match on the raw value",
 "F42": "Search matches every visible column as the cell value reads; named fields (reference ID, name, parent ID and name) must be findable.",
 "F43": "Name column filter also matches the Feature reference ID.",
 "F44": "Search text is not remembered; box is empty each time a page opens.",
