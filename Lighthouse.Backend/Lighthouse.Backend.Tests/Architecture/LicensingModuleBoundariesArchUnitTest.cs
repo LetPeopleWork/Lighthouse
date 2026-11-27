@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         // The types each Licensing layer holds, measured from the compiled code.
         private static readonly Dictionary<string, IReadOnlyList<string>> TypesByLayer = new(StringComparer.Ordinal)
         {
-            [LicensingApplicationNamespace] = [.. AccessAndLicensingMembership.LicensingApplication.Except(AccessAndLicensingMembership.LicensingContracts)],
+            [LicensingApplicationNamespace] = AccessAndLicensingMembership.LicensingApplication,
             [LicensingAdaptersHttpNamespace] = AccessAndLicensingMembership.LicensingAdaptersHttp,
         };
 

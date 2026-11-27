@@ -1,6 +1,3 @@
-using Lighthouse.Backend.Modules.Access.Contracts;
-using Lighthouse.Backend.Modules.Licensing.Contracts;
-
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
@@ -31,12 +28,10 @@ namespace Lighthouse.Backend.Tests.Architecture
             "FeatureMoveAuthorization",
             "IApiKeyService",
             "IAuthConfigurationValidator",
-            "IAuthModeResolver",
             "ICurrentUserProfileService",
             "IEmbedSessionTokenService",
             "IFeatureMoveAuthorization",
             "IOidcGroupSnapshotWriter",
-            "IRbacAdministrationService",
             "OidcGroupSnapshotWriter",
             "RbacAdministrationService",
         ];
@@ -66,7 +61,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public static IReadOnlyList<string> LicensingApplication { get; } =
         [
-            "ILicenseService",
             "ILicenseVerifier",
             "LicenseService",
             "LicenseVerifier",

@@ -24,7 +24,6 @@ using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
-using Lighthouse.Backend.Modules.Licensing.Contracts;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {

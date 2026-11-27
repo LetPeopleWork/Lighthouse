@@ -360,8 +360,10 @@ namespace Lighthouse.Backend.Tests.Architecture
             [
                 (AccessAndLicensingMembership.AccessDomain.Concat(AccessAndLicensingMembership.ModelsTypesThatMoveIntoAccess), $"{AccessFolder}/Domain"),
                 (AccessAndLicensingMembership.AccessApplication, $"{AccessFolder}/Application"),
+                (AccessAndLicensingMembership.AccessContracts, $"{AccessFolder}/Contracts"),
                 (AccessAndLicensingMembership.AccessAdaptersHttp, $"{AccessFolder}/Adapters/Http"),
                 (AccessAndLicensingMembership.LicensingApplication, $"{LicensingFolder}/Application"),
+                (AccessAndLicensingMembership.LicensingContracts, $"{LicensingFolder}/Contracts"),
                 (AccessAndLicensingMembership.LicensingAdaptersHttp, $"{LicensingFolder}/Adapters/Http"),
             ];
 

@@ -87,7 +87,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly Dictionary<string, IReadOnlyList<string>> TypesByLayer = new(StringComparer.Ordinal)
         {
             [AccessDomainNamespace] = [.. AccessAndLicensingMembership.AccessDomain, .. AccessAndLicensingMembership.ModelsTypesThatMoveIntoAccess],
-            [AccessApplicationNamespace] = [.. AccessAndLicensingMembership.AccessApplication.Except(AccessAndLicensingMembership.AccessContracts)],
+            [AccessApplicationNamespace] = AccessAndLicensingMembership.AccessApplication,
             [AccessAdaptersHttpNamespace] = AccessAndLicensingMembership.AccessAdaptersHttp,
         };
 
