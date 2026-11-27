@@ -139,7 +139,7 @@ done
 # incremental build would keep a deps.json without them and the app could not migrate.
 build Lighthouse.Backend --no-incremental
 
-APP_DLL=$(find "$PROJECT/bin/Debug" -name Lighthouse.dll -path '*net10.0*' | head -n 1)
+APP_DLL=$(find "$PROJECT/bin/Debug" -name Lighthouse.dll -path '*/net[0-9]*.0/*' | head -n 1)
 [[ -n "$APP_DLL" ]] || { echo "Lighthouse.dll not found under $PROJECT/bin/Debug" >&2; exit 1; }
 [[ -f "$(dirname "$APP_DLL")/Lighthouse.Migrations.Sqlite.dll" ]] \
     || { echo "Lighthouse.Migrations.Sqlite.dll missing beside $APP_DLL" >&2; exit 1; }
