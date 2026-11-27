@@ -3,7 +3,8 @@
 "B": 6,
 "C": 2,
 "D": 23,
-"F": 443,
+"E": 15,
+"F": 473,
 "K": 26,
 "L": 7,
 "N": 4,
@@ -2136,6 +2137,131 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"lacuna": "F445",
+"promises": [
+"P1"
+],
+"text": "F444"
+},
+{
+"id": "E2",
+"lacuna": "F447",
+"promises": [
+"P1",
+"P12"
+],
+"text": "F446"
+},
+{
+"id": "E3",
+"lacuna": "F449",
+"promises": [
+"P2"
+],
+"text": "F448"
+},
+{
+"id": "E4",
+"lacuna": "F451",
+"promises": [
+"P3"
+],
+"text": "F450"
+},
+{
+"id": "E5",
+"lacuna": "F453",
+"promises": [
+"P4"
+],
+"text": "F452"
+},
+{
+"id": "E6",
+"lacuna": "F455",
+"promises": [
+"P5"
+],
+"text": "F454"
+},
+{
+"id": "E7",
+"lacuna": "F457",
+"promises": [
+"P6"
+],
+"text": "F456"
+},
+{
+"id": "E8",
+"lacuna": "F459",
+"promises": [
+"P7"
+],
+"text": "F458"
+},
+{
+"id": "E9",
+"lacuna": "F461",
+"promises": [
+"P8"
+],
+"text": "F460"
+},
+{
+"id": "E10",
+"lacuna": "F463",
+"promises": [
+"P9"
+],
+"text": "F462"
+},
+{
+"id": "E11",
+"lacuna": "F465",
+"promises": [
+"P10"
+],
+"text": "F464"
+},
+{
+"id": "E12",
+"lacuna": "F467",
+"promises": [
+"P11"
+],
+"text": "F466"
+},
+{
+"id": "E13",
+"lacuna": "F469",
+"promises": [
+"P13"
+],
+"text": "F468"
+},
+{
+"id": "E14",
+"lacuna": "F471",
+"promises": [
+"P14"
+],
+"text": "F470"
+},
+{
+"id": "E15",
+"lacuna": "F473",
+"promises": [
+"P15"
+],
+"text": "F472"
+}
+]
+},
 "facts": {
 "F1": "[the customer] could not find where the SLE is shown. [the informant] looked on the Flow Metrics tab and did not see it until he found the toggle. Benjamin agreed: \"where is it actually? We should have that somewhere.\"\n\nThe SLE is a goal, so the point is to see it next to how the Team actually performs, for example 72.7% of items within 10 days against a target of 70%.\n\nRaised by [the customer]\n\n- Make the SLE more prominent instead of hiding it behind chart toggles and a small header indicator.\n- See how actual performance against the SLE develops over time. [the informant]: tracking this over time is key.\n- Use wording like \"or less\" so it is clear to people new to flow.\n\nDetails to be worked out when we start on it.\n\n(ADO Story #6563 description; customer and informant names replaced because customer identifiers are not committed. Maintainer's scope choice after DIVERGE, 2026-11-27: \"Mix + daily record\" - one new dedicated SLE widget in the overview, plus the SLE over time in Predictability as a persisted daily record.)",
 "F10": "Then the widget's header trend indicator compares the share with the share in the preceding period of the same length, as the other Flow Overview widgets do; the widget body shows no change of its own.",
@@ -2519,8 +2645,38 @@
 "F441": "the migration is additive only",
 "F442": "DEVOPS (host, 2026-11-27): no material platform risk. One additive migration (the WithinSleSnapshot table) through the CreateMigration script on every provider; the recording handler reuses the existing per-handler failure containment; no new external call, configuration, secret or environment.",
 "F443": "DEVOPS usage data (host, 2026-11-27): two name-only events, appended to UsageDataEventName with the next integers and listed in docs/settings/usagedata.md by the slice that emits them. WithinSleListOpened = 31, emitted by S5 when View Data opens on the Within SLE widget (the widget is engaged, not merely rendered). WithinSleHorizonSwitched = 32, emitted by S7 when the reader switches the horizon on Within SLE Over Time (the riskiest assumption from DISCOVER: readers use the trend, not only today's number). Each carries nothing: not which Team or Portfolio, not the share, not the horizon chosen. Rendering a widget or chart emits nothing.",
+"F444": "Flow Overview of a Team or Portfolio shows a separate widget titled Within SLE: large share with count like '72.7 % (8 / 11)', smaller sentence 'of Work Items closed within 10 days or less', then 'Target 70 %'.",
+"F445": "Oracle may check text but not that the number is visibly large, the sentence smaller, or the layout order as a reader sees it.",
+"F446": "The large share is green at or above target, amber slightly below, red much below, and the header status word (Sustain/Observe/Act) agrees with the colour.",
+"F447": "Oracle may check a status string, not the rendered colour, its agreement with the header word, or the 20-point thresholds.",
+"F448": "With an SLE set and at least 5 closed items, status is Sustain at or above target, Observe up to 20 points below, Act more than 20 below; Cycle Time Percentiles status stays unchanged.",
+"F449": "Boundaries (exactly target, exactly 20 below) and the untouched Percentiles widget may be unseen by an oracle.",
 "F45": "Named Cycle Times: the SLE targets the default Cycle Time only.",
+"F450": "The header trend indicator compares the share with the preceding period of equal length like other widgets; the body shows no change figure of its own.",
+"F451": "Oracle may not see the visible absence of a body delta nor that the preceding-period comparison is right for the user's range.",
+"F452": "With no SLE set, the widget says no SLE is set, shows status Act, and prompts to define an SLE.",
+"F453": "Wording and whether the prompt helps the reader reach SLE definition are not visible to a data-level oracle.",
+"F454": "With an SLE and fewer than 5 closed items, the widget shows how many closed, says this is too few to judge, and shows no pass/fail status.",
+"F455": "Oracle may miss that no status badge or colour appears at all, including at exactly 4 versus 5 items.",
+"F456": "The Predictability category shows a chart of daily within-SLE share against that day's SLE target for items closed in the trailing 30, 60 or 90 days, chosen with a toggle, over days inside the selected date range.",
+"F457": "Toggle behaviour and limiting days to the range are interaction and rendering facts an API-level oracle does not see.",
+"F458": "After the SLE is changed, previously recorded days keep their recorded share and target; only later days use the new SLE.",
+"F459": "Oracle may not observe the chart's historical line across a real SLE change.",
 "F46": "Any change to SLE Risk or to the Cycle Time Percentiles widget and its status.",
+"F460": "Missing days are filled from stored history the same way as Percentiles Over Time, measured against the SLE at fill time, and the chart states that filled-in days use that SLE.",
+"F461": "Equivalence to Percentiles Over Time and the on-chart statement are not visible to a narrow oracle.",
+"F462": "A day whose trailing window holds fewer than 5 closed items draws no point and the chart says why.",
+"F463": "Oracle may see missing data but not the explanatory text shown to the reader.",
+"F464": "With no SLE set, the chart says no SLE is set instead of drawing a line.",
+"F465": "Oracle may not see absence of a line or the message as rendered.",
+"F466": "Without a Premium licence, the widget and the chart are both shown.",
+"F467": "Oracle may run only with a licence; the unlicensed instance experience is easy to miss.",
+"F468": "View Data in the widget header opens the Cycle Time Percentiles closed-items dialog listing the closed items with close day and Cycle Time coloured against the SLE, longest first.",
+"F469": "Oracle may not check dialog identity, ordering, colouring, or that the list matches the share's count.",
+"F470": "Days before the first finished item or after the last successful sync draw no point; a range with nothing recorded shows the same sentence as Percentiles Over Time.",
+"F471": "Reuse of the exact sentence and edge-day behaviour are not visible without a rendered chart.",
+"F472": "Filled-in days draw as open markers, recorded days as filled markers, and a note under the chart says filled-in days are measured against today's SLE.",
+"F473": "Marker style and note placement are visual facts a data oracle cannot see.",
 "F48": "Q1: the widget counts the Work Items closed in the selected date range, like its sibling widgets; filters apply.",
 "F49": "Q2: the change against the preceding period lives in the widget's header trend indicator (previous-period policy), not in the widget body.",
 "F5": "Given an SLE is set and at least 5 Work Items closed in the selected range",

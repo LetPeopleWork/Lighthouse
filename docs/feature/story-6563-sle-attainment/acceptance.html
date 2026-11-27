@@ -160,6 +160,282 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>Flow Overview of a Team or Portfolio shows a separate widget titled Within SLE: large share with count like &#x27;72.7 % (8 / 11)&#x27;, smaller sentence &#x27;of Work Items closed within 10 days or less&#x27;, then &#x27;Target 70 %&#x27;.
+</code></pre>
+
+<pre><code>Oracle may check text but not that the number is visibly large, the sentence smaller, or the layout order as a reader sees it.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P12</p>
+
+<pre><code>The large share is green at or above target, amber slightly below, red much below, and the header status word (Sustain/Observe/Act) agrees with the colour.
+</code></pre>
+
+<pre><code>Oracle may check a status string, not the rendered colour, its agreement with the header word, or the 20-point thresholds.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>With an SLE set and at least 5 closed items, status is Sustain at or above target, Observe up to 20 points below, Act more than 20 below; Cycle Time Percentiles status stays unchanged.
+</code></pre>
+
+<pre><code>Boundaries (exactly target, exactly 20 below) and the untouched Percentiles widget may be unseen by an oracle.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>The header trend indicator compares the share with the preceding period of equal length like other widgets; the body shows no change figure of its own.
+</code></pre>
+
+<pre><code>Oracle may not see the visible absence of a body delta nor that the preceding-period comparison is right for the user&#x27;s range.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>With no SLE set, the widget says no SLE is set, shows status Act, and prompts to define an SLE.
+</code></pre>
+
+<pre><code>Wording and whether the prompt helps the reader reach SLE definition are not visible to a data-level oracle.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P5</p>
+
+<pre><code>With an SLE and fewer than 5 closed items, the widget shows how many closed, says this is too few to judge, and shows no pass/fail status.
+</code></pre>
+
+<pre><code>Oracle may miss that no status badge or colour appears at all, including at exactly 4 versus 5 items.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E7</h4>
+
+<h5>Promises</h5>
+
+<p>P6</p>
+
+<pre><code>The Predictability category shows a chart of daily within-SLE share against that day&#x27;s SLE target for items closed in the trailing 30, 60 or 90 days, chosen with a toggle, over days inside the selected date range.
+</code></pre>
+
+<pre><code>Toggle behaviour and limiting days to the range are interaction and rendering facts an API-level oracle does not see.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E8</h4>
+
+<h5>Promises</h5>
+
+<p>P7</p>
+
+<pre><code>After the SLE is changed, previously recorded days keep their recorded share and target; only later days use the new SLE.
+</code></pre>
+
+<pre><code>Oracle may not observe the chart&#x27;s historical line across a real SLE change.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E9</h4>
+
+<h5>Promises</h5>
+
+<p>P8</p>
+
+<pre><code>Missing days are filled from stored history the same way as Percentiles Over Time, measured against the SLE at fill time, and the chart states that filled-in days use that SLE.
+</code></pre>
+
+<pre><code>Equivalence to Percentiles Over Time and the on-chart statement are not visible to a narrow oracle.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E10</h4>
+
+<h5>Promises</h5>
+
+<p>P9</p>
+
+<pre><code>A day whose trailing window holds fewer than 5 closed items draws no point and the chart says why.
+</code></pre>
+
+<pre><code>Oracle may see missing data but not the explanatory text shown to the reader.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E11</h4>
+
+<h5>Promises</h5>
+
+<p>P10</p>
+
+<pre><code>With no SLE set, the chart says no SLE is set instead of drawing a line.
+</code></pre>
+
+<pre><code>Oracle may not see absence of a line or the message as rendered.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E12</h4>
+
+<h5>Promises</h5>
+
+<p>P11</p>
+
+<pre><code>Without a Premium licence, the widget and the chart are both shown.
+</code></pre>
+
+<pre><code>Oracle may run only with a licence; the unlicensed instance experience is easy to miss.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E13</h4>
+
+<h5>Promises</h5>
+
+<p>P13</p>
+
+<pre><code>View Data in the widget header opens the Cycle Time Percentiles closed-items dialog listing the closed items with close day and Cycle Time coloured against the SLE, longest first.
+</code></pre>
+
+<pre><code>Oracle may not check dialog identity, ordering, colouring, or that the list matches the share&#x27;s count.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E14</h4>
+
+<h5>Promises</h5>
+
+<p>P14</p>
+
+<pre><code>Days before the first finished item or after the last successful sync draw no point; a range with nothing recorded shows the same sentence as Percentiles Over Time.
+</code></pre>
+
+<pre><code>Reuse of the exact sentence and edge-day behaviour are not visible without a rendered chart.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E15</h4>
+
+<h5>Promises</h5>
+
+<p>P15</p>
+
+<pre><code>Filled-in days draw as open markers, recorded days as filled markers, and a note under the chart says filled-in days are measured against today&#x27;s SLE.
+</code></pre>
+
+<pre><code>Marker style and note placement are visual facts a data oracle cannot see.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h3>Waivers</h3>
+
 <p>None.</p>
 
 <h2>Charter</h2>
