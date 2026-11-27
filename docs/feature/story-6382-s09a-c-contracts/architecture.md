@@ -98,6 +98,13 @@ Paradigm object_oriented preserved; no domain decision changes owner: every move
 Commits per slice: the split commit (S2), then refactor(contracts): move commits apart from list edits; S4 changes SHARED_REGEX in the same commit that moves the connector port (D-12, E8).
 ```
 
+#### D16
+
+```text
+S5 open-host narrowing keeps the property route (option A), with one owner: ModuleRules owns the set-up boundary. ModuleRules holds SetUpContracts, the positive pattern of Organisation set-up's Contracts namespace built from ContextContractsMembership.ContractsOf("OrganisationSetup"), and SetUpBehindItsContracts, the negative pattern derived from the same name; both are properties, not constants, so the namespace-move law does not read them as rule patterns. Every downstream rule reuses them: WorkItems' SetUpOpenToTheContextsBuildingOnIt becomes ModuleRules.SetUpContracts (or is removed and its readers use it), the composites in Promises (TheNamespacedUpstreamCodeAndSetUpBehindItsContracts) and Refinement (TheForbiddenCodeAndSetUpBehindItsContracts) and the Access, Licensing, Reports and WorkItems layer patterns compose ModuleRules.SetUpBehindItsContracts, and OrganisationSetupIsAnOpenHostArchUnitTest's open list uses ContextContractsMembership.ContractsOf("OrganisationSetup") instead of SetUpModule + ".Contracts". The declared pattern roles (ContextContractsPatternRoles, OrganisationSetupPatternRoles) stay unchanged: they describe what the namespace-move law sees, not the open host, and moving the narrowing there would put a boundary owner inside the move law. Option B rejected for that reason.
+```
+Governed slices: S5
+
 ### Constraints
 
 #### K1
@@ -14156,6 +14163,46 @@ Extend
 Open-host narrowing: set-up patterns admit only Contracts; Refinement lists its WeeklyRecurrence edge until feature D
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModuleRules\.cs
+
+Extend
+
+```text
+Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesModuleBoundariesArchUnitTest\.cs
+
+Extend
+
+```text
+Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessModuleBoundariesArchUnitTest\.cs
+
+Extend
+
+```text
+Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingModuleBoundariesArchUnitTest\.cs
+
+Extend
+
+```text
+Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs
+
+Extend
+
+```text
+Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupPublishesItsContractsArchUnitTest\.cs
 
 #### Verification
@@ -15519,6 +15566,56 @@ Changed
 
 ```text
 Open-host narrowing: set-up patterns admit only Contracts; Refinement lists its WeeklyRecurrence edge until feature D
+```
+
+rule\-file
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModuleRules\.cs\:1
+
+Changed
+
+```text
+Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+```
+
+rule\-file
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesModuleBoundariesArchUnitTest\.cs\:1
+
+Changed
+
+```text
+Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+```
+
+rule\-file
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessModuleBoundariesArchUnitTest\.cs\:1
+
+Changed
+
+```text
+Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+```
+
+rule\-file
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingModuleBoundariesArchUnitTest\.cs\:1
+
+Changed
+
+```text
+Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+```
+
+rule\-file
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs\:1
+
+Changed
+
+```text
+Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
 ```
 
 ##### Agreement

@@ -460,9 +460,9 @@
 "counters": {
 "B": 1,
 "C": 1,
-"D": 15,
+"D": 16,
 "E": 6,
-"F": 254,
+"F": 256,
 "K": 4,
 "L": 2,
 "P": 5,
@@ -617,6 +617,13 @@
 {
 "id": "D15",
 "text": "F46"
+},
+{
+"id": "D16",
+"slices": [
+"S5"
+],
+"text": "F255"
 }
 ],
 "equality": [
@@ -9011,6 +9018,36 @@
 "kind": "rule-file",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs:1",
 "reason": "F157"
+},
+{
+"decision": "Changed",
+"kind": "rule-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:1",
+"reason": "F256"
+},
+{
+"decision": "Changed",
+"kind": "rule-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:1",
+"reason": "F256"
+},
+{
+"decision": "Changed",
+"kind": "rule-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:1",
+"reason": "F256"
+},
+{
+"decision": "Changed",
+"kind": "rule-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:1",
+"reason": "F256"
+},
+{
+"decision": "Changed",
+"kind": "rule-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs:1",
+"reason": "F256"
 }
 ],
 "not_applicable": [
@@ -9679,6 +9716,31 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs",
 "reason": "F157"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs",
+"reason": "F256"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs",
+"reason": "F256"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs",
+"reason": "F256"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs",
+"reason": "F256"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs",
+"reason": "F256"
 }
 ],
 "verification": [
@@ -9904,6 +9966,8 @@
 "F252": "Exactly the three non-event types the other contexts reach, so no later check runs over an empty list",
 "F253": "The published list is complete and non-empty",
 "F254": "the list is padded with a type nobody reaches",
+"F255": "S5 open-host narrowing keeps the property route (option A), with one owner: ModuleRules owns the set-up boundary. ModuleRules holds SetUpContracts, the positive pattern of Organisation set-up's Contracts namespace built from ContextContractsMembership.ContractsOf(\"OrganisationSetup\"), and SetUpBehindItsContracts, the negative pattern derived from the same name; both are properties, not constants, so the namespace-move law does not read them as rule patterns. Every downstream rule reuses them: WorkItems' SetUpOpenToTheContextsBuildingOnIt becomes ModuleRules.SetUpContracts (or is removed and its readers use it), the composites in Promises (TheNamespacedUpstreamCodeAndSetUpBehindItsContracts) and Refinement (TheForbiddenCodeAndSetUpBehindItsContracts) and the Access, Licensing, Reports and WorkItems layer patterns compose ModuleRules.SetUpBehindItsContracts, and OrganisationSetupIsAnOpenHostArchUnitTest's open list uses ContextContractsMembership.ContractsOf(\"OrganisationSetup\") instead of SetUpModule + \".Contracts\". The declared pattern roles (ContextContractsPatternRoles, OrganisationSetupPatternRoles) stay unchanged: they describe what the namespace-move law sees, not the open host, and moving the narrowing there would put a boundary owner inside the move law. Option B rejected for that reason.",
+"F256": "Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts",
 "F26": "Tracker integration contract types (connector port and capabilities, factory, description block merger, CSV option names, write-back target) are available from Contracts; a change touching a Contracts path is treated as shared by CI; connecting, syncing and writing back to trackers behave as before.",
 "F27": "The oracle does not see real connector sync or write-back results, nor that the CI classifier marks a Contracts-only change as shared.",
 "F28": "Organisation set-up contract types are available from Contracts, its open host exposes only Contracts rather than Application or Domain, the remaining contract-breach list (R-C1) names only owned non-contract residue, and set-up behaves as before.",

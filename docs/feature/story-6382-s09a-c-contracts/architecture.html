@@ -237,6 +237,12 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Commits per slice: the split commit (S2), then refactor(contracts): move commits apart from list edits; S4 changes SHARED_REGEX in the same commit that moves the connector port (D-12, E8).
 </code></pre>
 
+<h4>D16</h4>
+
+<pre><code>S5 open-host narrowing keeps the property route (option A), with one owner: ModuleRules owns the set-up boundary. ModuleRules holds SetUpContracts, the positive pattern of Organisation set-up&#x27;s Contracts namespace built from ContextContractsMembership.ContractsOf(&quot;OrganisationSetup&quot;), and SetUpBehindItsContracts, the negative pattern derived from the same name; both are properties, not constants, so the namespace-move law does not read them as rule patterns. Every downstream rule reuses them: WorkItems&#x27; SetUpOpenToTheContextsBuildingOnIt becomes ModuleRules.SetUpContracts (or is removed and its readers use it), the composites in Promises (TheNamespacedUpstreamCodeAndSetUpBehindItsContracts) and Refinement (TheForbiddenCodeAndSetUpBehindItsContracts) and the Access, Licensing, Reports and WorkItems layer patterns compose ModuleRules.SetUpBehindItsContracts, and OrganisationSetupIsAnOpenHostArchUnitTest&#x27;s open list uses ContextContractsMembership.ContractsOf(&quot;OrganisationSetup&quot;) instead of SetUpModule + &quot;.Contracts&quot;. The declared pattern roles (ContextContractsPatternRoles, OrganisationSetupPatternRoles) stay unchanged: they describe what the namespace-move law sees, not the open host, and moving the narrowing there would put a boundary owner inside the move law. Option B rejected for that reason.
+</code></pre>
+<p>Governed slices: S5</p>
+
 <h3>Constraints</h3>
 
 <h4>K1</h4>
@@ -12737,6 +12743,41 @@ dotnet build Lighthouse.Backend
 <pre><code>Open-host narrowing: set-up patterns admit only Contracts; Refinement lists its WeeklyRecurrence edge until feature D
 </code></pre>
 
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+</code></pre>
+
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs</p>
 
 <h4>Verification</h4>
@@ -13965,6 +14006,51 @@ dotnet build Lighthouse.Backend
 <p>Changed</p>
 
 <pre><code>Open-host narrowing: set-up patterns admit only Contracts; Refinement lists its WeeklyRecurrence edge until feature D
+</code></pre>
+
+<p>rule-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+</code></pre>
+
+<p>rule-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+</code></pre>
+
+<p>rule-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+</code></pre>
+
+<p>rule-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
+</code></pre>
+
+<p>rule-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts
 </code></pre>
 
 <h5>Agreement</h5>
