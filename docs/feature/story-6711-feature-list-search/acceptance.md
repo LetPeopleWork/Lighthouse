@@ -537,6 +537,163 @@ The page stays on page 2 after a search that leaves more than one page
 ###### Obligations
 
 
+### S3
+
+##### Covers
+
+P9
+
+```text
+Open the Portfolio Features tab with a Feature PROJ-12 and type proj-12 into the Search Features box
+```
+
+```text
+Only the PROJ-12 Feature is listed
+```
+
+```text
+The user finds the Feature by its ID in the box above the list
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/featureListSearch\.everyList\.test\.tsx
+
+finds a Feature by its reference ID on the Portfolio Features tab
+
+```text
+A list that ignores the typed text would fail; a box that only matched names would fail
+```
+
+###### Obligations
+
+
+##### Covers
+
+P9
+
+```text
+Open the Team Features tab with a Feature PROJ-12 and type proj-12 into the Search Features box
+```
+
+```text
+Only the PROJ-12 Feature is listed
+```
+
+```text
+The user finds the Feature by its ID in the box above the list
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/featureListSearch\.everyList\.test\.tsx
+
+finds a Feature by its reference ID on the Team Features tab
+
+```text
+A list that ignores the typed text would fail; a box that only matched names would fail
+```
+
+###### Obligations
+
+
+##### Covers
+
+P9
+
+```text
+Open the Team Features tab and type mobile where one Feature belongs to Northwind Platform and another to Northwind Mobile
+```
+
+```text
+Only the Feature in Northwind Mobile is listed
+```
+
+```text
+The user finds Features by the Portfolio shown in the list
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/featureListSearch\.everyList\.test\.tsx
+
+finds a Feature by the Portfolio it belongs to on the Team Features tab
+
+```text
+A Portfolio column without shown text for search finds nothing and fails
+```
+
+###### Obligations
+
+
+##### Covers
+
+P9
+
+```text
+Open the Delivery Work Items tab with a Feature PROJ-12 and type proj-12 into the Search Features box
+```
+
+```text
+Only the PROJ-12 Feature is listed
+```
+
+```text
+The user finds the Feature by its ID on the Delivery tab
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/featureListSearch\.everyList\.test\.tsx
+
+finds a Feature by its reference ID on the Delivery Work Items tab
+
+```text
+A Delivery name column matching the name only misses PROJ-12 and fails
+```
+
+###### Obligations
+
+
+##### Covers
+
+P9
+
+```text
+Open the Delivery Work Items tab and type atlas where one Feature has work for Team Atlas and another for Team Borealis
+```
+
+```text
+Only the Feature Atlas works on is listed
+```
+
+```text
+The user finds Features by the Team shown in the Team column
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/featureListSearch\.everyList\.test\.tsx
+
+finds the Features a Team works on by typing the Team name on the Delivery Work Items tab
+
+```text
+A Team column with no shown text for search finds nothing and fails
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

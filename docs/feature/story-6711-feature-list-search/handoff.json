@@ -280,13 +280,100 @@
 "stimulus": "F362",
 "user_result": "F364"
 }
+],
+"S3": [
+{
+"covers": [
+"P9"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F369",
+"test": "finds a Feature by its reference ID on the Portfolio Features tab",
+"test_path": "Lighthouse.Frontend/src/pages/Common/featureListSearch.everyList.test.tsx"
+},
+"expected": "F367",
+"stimulus": "F366",
+"user_result": "F368"
+},
+{
+"covers": [
+"P9"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F369",
+"test": "finds a Feature by its reference ID on the Team Features tab",
+"test_path": "Lighthouse.Frontend/src/pages/Common/featureListSearch.everyList.test.tsx"
+},
+"expected": "F367",
+"stimulus": "F370",
+"user_result": "F368"
+},
+{
+"covers": [
+"P9"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F374",
+"test": "finds a Feature by the Portfolio it belongs to on the Team Features tab",
+"test_path": "Lighthouse.Frontend/src/pages/Common/featureListSearch.everyList.test.tsx"
+},
+"expected": "F372",
+"stimulus": "F371",
+"user_result": "F373"
+},
+{
+"covers": [
+"P9"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F377",
+"test": "finds a Feature by its reference ID on the Delivery Work Items tab",
+"test_path": "Lighthouse.Frontend/src/pages/Common/featureListSearch.everyList.test.tsx"
+},
+"expected": "F367",
+"stimulus": "F375",
+"user_result": "F376"
+},
+{
+"covers": [
+"P9"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F381",
+"test": "finds the Features a Team works on by typing the Team name on the Delivery Work Items tab",
+"test_path": "Lighthouse.Frontend/src/pages/Common/featureListSearch.everyList.test.tsx"
+},
+"expected": "F379",
+"stimulus": "F378",
+"user_result": "F380"
+}
 ]
 },
 "counters": {
 "C": 1,
 "D": 9,
 "E": 10,
-"F": 365,
+"F": 381,
 "K": 9,
 "L": 4,
 "P": 10,
@@ -1672,8 +1759,24 @@
 "F363": "The list shows the first page of results, 1 to 100 of 101, starting at the first Feature",
 "F364": "The person lands on the first page of the new search results",
 "F365": "The page stays on page 2 after a search that leaves more than one page",
+"F366": "Open the Portfolio Features tab with a Feature PROJ-12 and type proj-12 into the Search Features box",
+"F367": "Only the PROJ-12 Feature is listed",
+"F368": "The user finds the Feature by its ID in the box above the list",
+"F369": "A list that ignores the typed text would fail; a box that only matched names would fail",
 "F37": "One search box above every full feature list: Features page, Portfolio Features tab, Team Features tab, Delivery Work Items tab. Matches every visible column as the cell reads, case-insensitive, part of a word enough.",
+"F370": "Open the Team Features tab with a Feature PROJ-12 and type proj-12 into the Search Features box",
+"F371": "Open the Team Features tab and type mobile where one Feature belongs to Northwind Platform and another to Northwind Mobile",
+"F372": "Only the Feature in Northwind Mobile is listed",
+"F373": "The user finds Features by the Portfolio shown in the list",
+"F374": "A Portfolio column without shown text for search finds nothing and fails",
+"F375": "Open the Delivery Work Items tab with a Feature PROJ-12 and type proj-12 into the Search Features box",
+"F376": "The user finds the Feature by its ID on the Delivery tab",
+"F377": "A Delivery name column matching the name only misses PROJ-12 and fails",
+"F378": "Open the Delivery Work Items tab and type atlas where one Feature has work for Team Atlas and another for Team Borealis",
+"F379": "Only the Feature Atlas works on is listed",
 "F38": "The Name column filter also matches the Feature reference ID.",
+"F380": "The user finds Features by the Team shown in the Team column",
+"F381": "A Team column with no shown text for search finds nothing and fails",
 "F39": "Delivery dialog Feature pickers, the Refinement grid and the Archived features grid get no search box now; Suggestion: could follow later.",
 "F4": "A user finds a Feature by its reference ID when typing it into the Name column filter, because the Name column filter now matches the same 'ID: name' text the cell shows.",
 "F40": "No change to the Parent column filter (it already matches ID and name), no remembered search text, no backend change, no change to persisted column filters, sort or layout.",
