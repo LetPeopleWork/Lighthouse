@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly Lazy<ModuleDefinition> TestModule = new(() => IlDependencies.ReadModule(typeof(FlowMetricsDoesNotReachForecastingArchUnitTest).Assembly));
 
-        private static TheModules TheRealModules => new(ModuleRules.FlowMetricsModule, ModuleBoundariesArchUnitTest.ForecastingPattern, FlowMetricsApplication);
+        private static TheModules TheRealModules => new(ModuleRules.FlowMetricsModule, ModuleBoundariesArchUnitTest.ForecastingPattern, typeof(global::Lighthouse.Backend.Modules.FlowMetrics.Contracts.ITeamMetricsService).Namespace!);
 
         [OneTimeTearDown]
         public void DisposeModules()

@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application

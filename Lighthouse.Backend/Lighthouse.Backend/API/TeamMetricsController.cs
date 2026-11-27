@@ -6,6 +6,7 @@ using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Models.Staleness;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;

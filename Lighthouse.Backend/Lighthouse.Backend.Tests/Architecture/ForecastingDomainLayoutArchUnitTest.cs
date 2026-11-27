@@ -48,7 +48,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             "WhatTheRunsCouldNotFinish",
             "IDrawStream",
             "IDrawStreamFactory",
-            "ForecastRunOutcome",
         ];
 
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(Feature).Assembly));

@@ -2,7 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 
-namespace Lighthouse.Backend.Modules.FlowMetrics.Application
+namespace Lighthouse.Backend.Modules.FlowMetrics.Contracts
 {
     public interface IPortfolioMetricsService
     {

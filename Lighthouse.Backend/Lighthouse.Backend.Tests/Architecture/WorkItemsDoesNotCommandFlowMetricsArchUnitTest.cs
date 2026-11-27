@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly string[] TheTeamMetricsUpdate =
         [
-            "Lighthouse.Backend.Modules.FlowMetrics.Application.ITeamMetricsService",
+            "Lighthouse.Backend.Modules.FlowMetrics.Contracts.ITeamMetricsService",
             "Lighthouse.Backend.Modules.FlowMetrics.Application.TeamMetricsService",
         ];
 
@@ -102,7 +102,7 @@ namespace Lighthouse.Backend.Modules.WorkItemsFixtures.MetricsCommand.Applicatio
     {
         public static async Task Refresh(global::Lighthouse.Backend.Models.Team team, IServiceProvider services)
         {
-            var teamMetricsService = (global::Lighthouse.Backend.Modules.FlowMetrics.Application.ITeamMetricsService)services.GetService(typeof(global::Lighthouse.Backend.Modules.FlowMetrics.Application.ITeamMetricsService))!;
+            var teamMetricsService = (global::Lighthouse.Backend.Modules.FlowMetrics.Contracts.ITeamMetricsService)services.GetService(typeof(global::Lighthouse.Backend.Modules.FlowMetrics.Contracts.ITeamMetricsService))!;
             await Task.Yield();
             await teamMetricsService.UpdateTeamMetrics(team);
         }

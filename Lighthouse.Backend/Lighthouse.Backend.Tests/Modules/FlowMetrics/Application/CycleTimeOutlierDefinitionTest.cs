@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 
 namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
 {

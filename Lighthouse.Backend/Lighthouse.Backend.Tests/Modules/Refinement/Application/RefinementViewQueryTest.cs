@@ -1,10 +1,11 @@
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
+using Lighthouse.Backend.Modules.Forecasting.Contracts;
 using Microsoft.AspNetCore.Http;
 using System.Linq.Expressions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Models.Refinement;
-using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Modules.Refinement.Application;
 using Lighthouse.Backend.Services.Interfaces;

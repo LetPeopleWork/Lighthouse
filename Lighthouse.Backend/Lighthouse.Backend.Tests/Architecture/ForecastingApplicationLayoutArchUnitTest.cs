@@ -1,5 +1,6 @@
 using System.Reflection;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Modules.Forecasting.Contracts;
 using Mono.Cecil;
 
 namespace Lighthouse.Backend.Tests.Architecture
@@ -16,31 +17,36 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private const string ForecastingApplicationNamespace = "Lighthouse.Backend.Modules.Forecasting.Application";
 
+        private const string ForecastingContractsFolder = "Modules/Forecasting/Contracts";
+
         private const string ForecastingApplicationFolder = "Modules/Forecasting/Application";
 
         // Each file declares one top-level type named like the file; the fingerprint file also holds the record of the inputs.
         private static readonly string[] ApplicationTypes =
         [
-            "IForecastService",
             "ForecastService",
             "ForecastInputFingerprint",
             "ForecastInputs",
             "IForecastRealityCheckService",
             "ForecastRealityCheckService",
-            "IForecastFilterRuleService",
             "ForecastFilterRuleService",
             "ForecastLane",
             "IForecastUpdater",
         ];
 
+        private static readonly string[] PublishedTypes =
+        [
+            "IForecastService",
+            "IForecastFilterRuleService",
+            "ForecastRunOutcome",
+        ];
+
         private static readonly string[] ApplicationFiles =
         [
-            "IForecastService.cs",
             "ForecastService.cs",
             "ForecastInputFingerprint.cs",
             "IForecastRealityCheckService.cs",
             "ForecastRealityCheckService.cs",
-            "IForecastFilterRuleService.cs",
             "ForecastFilterRuleService.cs",
             "ForecastLane.cs",
             "IForecastUpdater.cs",
@@ -67,6 +73,18 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void TheForecastServicesTheirPortsAndTheLaneFiles_SitInTheModuleApplicationFolder_AndNowhereElse()
         {
             ThenEachFileSitsOnlyIn(ForecastingApplicationFolder, ApplicationFiles);
+        }
+
+        [Test]
+        public void TheForecastingPublishedTypes_LiveInTheModuleContracts_AndNoneIsLeftUnderServices()
+        {
+            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, typeof(IForecastService).Namespace!, PublishedTypes).Check();
+        }
+
+        [Test]
+        public void TheForecastingPublishedTypeFiles_SitInTheModuleContractsFolder_AndNowhereElse()
+        {
+            ThenEachFileSitsOnlyIn(ForecastingContractsFolder, [.. PublishedTypes.Select(name => $"{name}.cs")]);
         }
 
         [Test]

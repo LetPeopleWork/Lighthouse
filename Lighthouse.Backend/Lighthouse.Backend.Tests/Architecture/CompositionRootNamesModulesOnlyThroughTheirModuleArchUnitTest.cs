@@ -106,9 +106,9 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Access"] = [],
             ["FlowMetrics"] =
             [
-                $"{TheModulesRoot}.FlowMetrics.Application.IForecastDataSufficiency",
-                $"{TheModulesRoot}.FlowMetrics.Application.IHowManyForecaster",
-                $"{TheModulesRoot}.FlowMetrics.Application.IThroughputFilter",
+                $"{TheModulesRoot}.FlowMetrics.Contracts.IForecastDataSufficiency",
+                $"{TheModulesRoot}.FlowMetrics.Contracts.IHowManyForecaster",
+                $"{TheModulesRoot}.FlowMetrics.Contracts.IThroughputFilter",
             ],
             ["Forecasting"] = [],
             ["Licensing"] = [],

@@ -82,9 +82,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         // service, names two contexts; no context's own module may name another context, so the statement stays here.
         private static IEnumerable<Allowed> TheStatementsWiringTwoContexts =>
         [
-            Of("FlowMetrics", WiringCategory, "Application.IForecastDataSufficiency"),
-            Of("FlowMetrics", WiringCategory, "Application.IHowManyForecaster"),
-            Of("FlowMetrics", WiringCategory, "Application.IThroughputFilter"),
+            Of("FlowMetrics", WiringCategory, "Contracts.IForecastDataSufficiency"),
+            Of("FlowMetrics", WiringCategory, "Contracts.IHowManyForecaster"),
+            Of("FlowMetrics", WiringCategory, "Contracts.IThroughputFilter"),
             Of("Forecasting", WiringCategory, "Application.ForecastFilterRuleService"),
             Of("Forecasting", WiringCategory, "Application.ForecastingAnswersToFlowMetrics"),
             Of("Promises", WiringCategory, "Application.DeliveryForecastBlockRenderer"),

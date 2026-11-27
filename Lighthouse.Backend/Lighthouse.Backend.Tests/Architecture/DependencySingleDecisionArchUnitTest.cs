@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
 using Lighthouse.Backend.Modules.Forecasting.Application;

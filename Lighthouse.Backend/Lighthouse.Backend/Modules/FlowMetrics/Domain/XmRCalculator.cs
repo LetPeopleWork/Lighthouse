@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 
 namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
 {

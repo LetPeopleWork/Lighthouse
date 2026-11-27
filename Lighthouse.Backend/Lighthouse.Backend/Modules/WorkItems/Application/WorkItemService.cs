@@ -1,3 +1,5 @@
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
+using Lighthouse.Backend.Modules.FlowMetrics.Domain;
 using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
@@ -6,8 +8,6 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Staleness;
-using Lighthouse.Backend.Modules.FlowMetrics.Application;
-using Lighthouse.Backend.Modules.FlowMetrics.Domain;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;

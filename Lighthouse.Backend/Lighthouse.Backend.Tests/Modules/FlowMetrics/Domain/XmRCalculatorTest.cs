@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Modules.FlowMetrics.Domain;
 
 namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Domain

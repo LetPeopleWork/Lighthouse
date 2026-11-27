@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.Modules.Access;
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Modules.FlowMetrics;
 using Lighthouse.Backend.Modules.Forecasting;
 using Lighthouse.Backend.Modules.Licensing;

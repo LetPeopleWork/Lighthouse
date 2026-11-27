@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Modules.FlowMetrics.Domain;
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;

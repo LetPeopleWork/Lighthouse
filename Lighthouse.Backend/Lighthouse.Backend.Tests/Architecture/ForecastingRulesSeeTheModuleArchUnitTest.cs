@@ -5,7 +5,7 @@ using Lighthouse.Backend.ForecastingRulesFixtures.RealityCheck;
 using Lighthouse.Backend.ForecastingRulesFixtures.Refinement;
 using Lighthouse.Backend.ForecastingRulesFixtures.Staleness;
 using Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastingFixtures;
-using Lighthouse.Backend.Modules.Forecasting.Application;
+using Lighthouse.Backend.Modules.Forecasting.Contracts;
 using Lighthouse.Backend.Modules.Forecasting.Domain.ForecastingFixtures;
 using Lighthouse.Backend.Modules.ForecastingFixtures.RulesSeeTheModule;
 using Mono.Cecil;
@@ -266,7 +266,7 @@ namespace Lighthouse.Backend.Modules.Forecasting.Adapters.Background.Forecasting
 {
     internal static class AMadeUpForecastRoundJob
     {
-        public static bool CanForecast(global::Lighthouse.Backend.Modules.Forecasting.Application.IForecastService forecasts) => forecasts is not null;
+        public static bool CanForecast(global::Lighthouse.Backend.Modules.Forecasting.Contracts.IForecastService forecasts) => forecasts is not null;
 
         public static int Start(int round) => round + 1;
     }
@@ -291,7 +291,7 @@ namespace Lighthouse.Backend.Modules.ForecastingFixtures.RulesSeeTheModule
 
     internal static class AnOutsiderAskingForAForecast
     {
-        public static bool CanForecast(global::Lighthouse.Backend.Modules.Forecasting.Application.IForecastService forecasts) => forecasts is not null;
+        public static bool CanForecast(global::Lighthouse.Backend.Modules.Forecasting.Contracts.IForecastService forecasts) => forecasts is not null;
     }
 }
 

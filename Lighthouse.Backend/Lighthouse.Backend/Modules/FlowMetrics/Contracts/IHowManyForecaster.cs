@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 
-namespace Lighthouse.Backend.Modules.FlowMetrics.Application
+namespace Lighthouse.Backend.Modules.FlowMetrics.Contracts
 {
     /// <summary>
     /// How many items a throughput is likely to finish in a number of days.

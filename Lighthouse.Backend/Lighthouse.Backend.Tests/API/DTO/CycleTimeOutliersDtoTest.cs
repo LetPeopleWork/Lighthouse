@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 
 namespace Lighthouse.Backend.Tests.API.DTO
 {

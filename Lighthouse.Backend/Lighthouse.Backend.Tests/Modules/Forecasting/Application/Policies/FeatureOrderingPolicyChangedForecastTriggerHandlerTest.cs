@@ -4,6 +4,7 @@ using Lighthouse.Backend.Modules.Forecasting.Application.Policies;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Modules.Forecasting.Application;
+using Lighthouse.Backend.Modules.Forecasting.Contracts;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces;

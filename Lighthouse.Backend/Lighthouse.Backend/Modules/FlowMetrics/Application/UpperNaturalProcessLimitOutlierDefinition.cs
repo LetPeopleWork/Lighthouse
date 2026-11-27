@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Modules.FlowMetrics.Domain;
 
 namespace Lighthouse.Backend.Modules.FlowMetrics.Application

@@ -1,8 +1,8 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Modules.Forecasting.Contracts;
 using Lighthouse.Backend.Modules.Refinement.Application;
-using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Moq;
 

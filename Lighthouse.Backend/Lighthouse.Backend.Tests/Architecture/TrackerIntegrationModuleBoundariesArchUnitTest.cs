@@ -447,8 +447,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static IEnumerable<TestCaseData> ModuleTypesReachingAnotherContext()
         {
             yield return OtherContextCase("ReachingWorkItems", "Lighthouse.Backend.Modules.WorkItems.Application.IWorkItemService", "ATrackerIntegrationTypeReachingWorkItems_IsNamed");
-            yield return OtherContextCase("ReachingForecasting", "Lighthouse.Backend.Modules.Forecasting.Application.IForecastService", "ATrackerIntegrationTypeReachingForecasting_IsNamed");
-            yield return OtherContextCase("ReachingFlowMetrics", "Lighthouse.Backend.Modules.FlowMetrics.Application.IPortfolioMetricsService", "ATrackerIntegrationTypeReachingFlowMetrics_IsNamed");
+            yield return OtherContextCase("ReachingForecasting", "Lighthouse.Backend.Modules.Forecasting.Contracts.IForecastService", "ATrackerIntegrationTypeReachingForecasting_IsNamed");
+            yield return OtherContextCase("ReachingFlowMetrics", "Lighthouse.Backend.Modules.FlowMetrics.Contracts.IPortfolioMetricsService", "ATrackerIntegrationTypeReachingFlowMetrics_IsNamed");
             yield return OtherContextCase("ReachingASecondPromisesType", "Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastPublishingService", "ATrackerIntegrationTypeReachingPromisesBeyondTheListedRenderer_IsNamed");
             yield return OtherContextCase("ReachingTheUpdateCode", "Lighthouse.Backend.Platform.UpdateQueue.UpdateKey", "ATrackerIntegrationTypeReachingTheUpdateCode_IsNamed");
             yield return OtherContextCase("ReachingRefinement", "Lighthouse.Backend.Modules.Refinement.Application.IRefinementViewQuery", "ATrackerIntegrationTypeReachingRefinement_IsNamed");
@@ -824,7 +824,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.BoundariesOutbou
 {
     internal static class AConnector
     {
-        public static bool Reaches(global::Lighthouse.Backend.Modules.Forecasting.Application.IForecastService other) => other is not null;
+        public static bool Reaches(global::Lighthouse.Backend.Modules.Forecasting.Contracts.IForecastService other) => other is not null;
     }
 
     internal static class AConnectorMergingTheForecastBlock
@@ -837,7 +837,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.BoundariesOutbou
 {
     internal static class AConnector
     {
-        public static bool Reaches(global::Lighthouse.Backend.Modules.FlowMetrics.Application.IPortfolioMetricsService other) => other is not null;
+        public static bool Reaches(global::Lighthouse.Backend.Modules.FlowMetrics.Contracts.IPortfolioMetricsService other) => other is not null;
     }
 
     internal static class AConnectorMergingTheForecastBlock

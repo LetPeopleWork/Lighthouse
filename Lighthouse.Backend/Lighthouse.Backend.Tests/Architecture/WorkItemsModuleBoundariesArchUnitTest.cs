@@ -146,7 +146,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         // Work Items' two queries of Flow metrics stay until Flow metrics answers them itself. The list only shrinks.
         private static readonly string[] EdgesOfTheApplicationIntoFlowMetrics =
         [
-            "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Modules.FlowMetrics.Application.IPortfolioMetricsService",
+            "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Modules.FlowMetrics.Contracts.IPortfolioMetricsService",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Modules.FlowMetrics.Domain.PercentileCalculator",
         ];
 
@@ -199,7 +199,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static IEnumerable<string> Layers => TypesByLayer.Keys;
 
-        private static string PortfolioMetricsService => typeof(global::Lighthouse.Backend.Modules.FlowMetrics.Application.IPortfolioMetricsService).FullName!;
+        private static string PortfolioMetricsService => typeof(global::Lighthouse.Backend.Modules.FlowMetrics.Contracts.IPortfolioMetricsService).FullName!;
 
         private static string LicenceService => typeof(global::Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService).FullName!;
 
@@ -388,7 +388,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             yield return new TestCaseData(
                     typeof(AWorkItemServiceUpdatingTeamMetrics),
                     new[] { $"{typeof(AWorkItemServiceUpdatingTeamMetrics).FullName} -> {PortfolioMetricsService}" },
-                    OutboundTarget.FlowMetrics, Edge(typeof(AWorkItemServiceUpdatingTeamMetrics), "Lighthouse.Backend.Modules.FlowMetrics.Application.ITeamMetricsService"))
+                    OutboundTarget.FlowMetrics, Edge(typeof(AWorkItemServiceUpdatingTeamMetrics), "Lighthouse.Backend.Modules.FlowMetrics.Contracts.ITeamMetricsService"))
                 .SetName("AWorkItemsApplicationTypeReachingAnUnlistedFlowMetricsType_IsNamed");
             yield return new TestCaseData(
                     typeof(AWorkItemServiceReadingTheLicenceTwice),
@@ -740,7 +740,7 @@ namespace Lighthouse.Backend.Modules.WorkItemsFixtures.BoundariesOutbound.Listed
 {
     internal static class AWorkItemQueryService
     {
-        public static bool Asks(global::Lighthouse.Backend.Modules.FlowMetrics.Application.IPortfolioMetricsService metrics) => metrics is not null;
+        public static bool Asks(global::Lighthouse.Backend.Modules.FlowMetrics.Contracts.IPortfolioMetricsService metrics) => metrics is not null;
     }
 }
 
@@ -772,9 +772,9 @@ namespace Lighthouse.Backend.Modules.WorkItemsFixtures.BoundariesOutbound.Reachi
 {
     internal static class AWorkItemServiceUpdatingTeamMetrics
     {
-        public static bool Asks(global::Lighthouse.Backend.Modules.FlowMetrics.Application.IPortfolioMetricsService metrics) => metrics is not null;
+        public static bool Asks(global::Lighthouse.Backend.Modules.FlowMetrics.Contracts.IPortfolioMetricsService metrics) => metrics is not null;
 
-        public static bool Commands(global::Lighthouse.Backend.Modules.FlowMetrics.Application.ITeamMetricsService metrics) => metrics is not null;
+        public static bool Commands(global::Lighthouse.Backend.Modules.FlowMetrics.Contracts.ITeamMetricsService metrics) => metrics is not null;
     }
 }
 

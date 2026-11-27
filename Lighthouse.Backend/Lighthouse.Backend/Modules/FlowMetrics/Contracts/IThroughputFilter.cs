@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
 
-namespace Lighthouse.Backend.Modules.FlowMetrics.Application
+namespace Lighthouse.Backend.Modules.FlowMetrics.Contracts
 {
     /// <summary>
     /// Which of a Team's finished work items count towards the throughput a forecast is built from.

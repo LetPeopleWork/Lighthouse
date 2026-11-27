@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 
 namespace Lighthouse.Backend.API.DTO
 {

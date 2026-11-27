@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
     /// <summary>

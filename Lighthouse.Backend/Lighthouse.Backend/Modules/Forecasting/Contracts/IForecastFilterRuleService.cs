@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
 
-namespace Lighthouse.Backend.Modules.Forecasting.Application
+namespace Lighthouse.Backend.Modules.Forecasting.Contracts
 {
     public interface IForecastFilterRuleService
     {

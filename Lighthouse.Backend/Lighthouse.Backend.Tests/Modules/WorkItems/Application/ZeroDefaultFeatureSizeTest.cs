@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;

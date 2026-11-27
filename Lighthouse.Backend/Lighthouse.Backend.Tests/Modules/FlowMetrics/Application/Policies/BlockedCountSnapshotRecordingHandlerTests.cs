@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Modules.FlowMetrics.Application.Policies;
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;

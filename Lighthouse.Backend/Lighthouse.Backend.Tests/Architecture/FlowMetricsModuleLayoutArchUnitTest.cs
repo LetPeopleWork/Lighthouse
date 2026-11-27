@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Modules.FlowMetricsFixtures.Domain.Clean;
 using Lighthouse.Backend.Modules.FlowMetricsFixtures.Domain.ReachingAdapters;
 using Lighthouse.Backend.Modules.FlowMetricsFixtures.Domain.ReachingApplication;
@@ -30,6 +31,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string ModuleApplicationNamespace = "Lighthouse.Backend.Modules.FlowMetrics.Application";
 
         private const string ModuleApplicationFolder = "Modules/FlowMetrics/Application";
+
+        private const string ModuleContractsFolder = "Modules/FlowMetrics/Contracts";
 
         private const string ModulePoliciesNamespace = "Lighthouse.Backend.Modules.FlowMetrics.Application.Policies";
 
@@ -64,11 +67,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         // Every type the contract files declare, the records and companion interfaces that travel with them included.
         private static readonly string[] ContractTypes =
         [
-            "ITeamMetricsService",
-            "ForecastThroughputStatus",
-            "CycleTimeWorkItem",
-            "IPortfolioMetricsService",
-            "CycleTimeFeature",
             "IPercentileSnapshotWriter",
             "PercentileFamilyReader",
             "IProcessBehaviorSnapshotWriter",
@@ -84,10 +82,23 @@ namespace Lighthouse.Backend.Tests.Architecture
             "IProcessBehaviorSnapshotRepository",
         ];
 
+        // What the other contexts may name, published in the module's Contracts.
+        private static readonly string[] PublishedTypes =
+        [
+            "ITeamMetricsService",
+            "IPortfolioMetricsService",
+            "IForecastDataSufficiency",
+            "IHowManyForecaster",
+            "IThroughputFilter",
+            "ForecastThroughputStatus",
+            "CycleTimeWorkItem",
+            "CycleTimeFeature",
+            "OutlierVerdict",
+            "UpperNaturalProcessLimit",
+        ];
+
         private static readonly string[] ContractFiles =
         [
-            "ITeamMetricsService.cs",
-            "IPortfolioMetricsService.cs",
             "IPercentileSnapshotWriter.cs",
             "IProcessBehaviorSnapshotWriter.cs",
             "IPercentilesOverTimeSeriesQuery.cs",
@@ -195,6 +206,18 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void TheFlowMetricsContractFiles_SitInTheModuleApplicationFolder_AndNowhereElse()
         {
             ThenEachFileSitsOnlyIn(ModuleApplicationFolder, ContractFiles);
+        }
+
+        [Test]
+        public void TheFlowMetricsPublishedTypes_LiveInTheModuleContracts_AndNoneIsLeftUnderServices()
+        {
+            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, typeof(ITeamMetricsService).Namespace!, PublishedTypes).Check();
+        }
+
+        [Test]
+        public void TheFlowMetricsPublishedTypeFiles_SitInTheModuleContractsFolder_AndNowhereElse()
+        {
+            ThenEachFileSitsOnlyIn(ModuleContractsFolder, [.. PublishedTypes.Select(name => $"{name}.cs")]);
         }
 
         [Test]
@@ -309,7 +332,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheModuleDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary()
         {
-            ModuleRules.DomainReachesOnlyTheKernelAndTheBaseLibrary(ProductionModule.Value).Check();
+            ModuleRules.DomainReachesOnlyTheKernelAndTheBaseLibrary(ProductionModule.Value, kernel: $"{KernelRules.TheModels}|^Lighthouse\\.Backend\\.Modules\\.FlowMetrics\\.Contracts(\\.|$)").Check();
         }
 
         [TestCase(ForbiddenReach.Services)]

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Platform.Seeding;
 using Lighthouse.Backend.Tests.TestHelpers;

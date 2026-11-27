@@ -10,6 +10,7 @@ using Lighthouse.Backend.FlowMetricsApplicationOutboundFixtures.ReachingTheModul
 using Lighthouse.Backend.FlowMetricsApplicationOutboundFixtures.SecondForecastingType.Application;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.Forecasting.Application;
+using Lighthouse.Backend.Modules.Forecasting.Contracts;
 using Mono.Cecil;
 
 namespace Lighthouse.Backend.Tests.Architecture

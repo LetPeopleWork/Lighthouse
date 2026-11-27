@@ -3,7 +3,7 @@ using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 
-namespace Lighthouse.Backend.Modules.Forecasting.Application
+namespace Lighthouse.Backend.Modules.Forecasting.Contracts
 {
     public interface IForecastService
     {

@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using System.Linq.Expressions;
 using Lighthouse.Backend.Models;

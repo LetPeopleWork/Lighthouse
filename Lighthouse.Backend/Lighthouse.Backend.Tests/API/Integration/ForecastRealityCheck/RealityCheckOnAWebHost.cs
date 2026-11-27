@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Modules.Forecasting.Application;
+using Lighthouse.Backend.Modules.Forecasting.Contracts;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Tests.TestDoubles;

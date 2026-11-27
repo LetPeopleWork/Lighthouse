@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
+namespace Lighthouse.Backend.Modules.FlowMetrics.Contracts
 {
     /// <summary>
     /// The upper natural process limit of a baseline, unrounded. A value above it is a large change on the process

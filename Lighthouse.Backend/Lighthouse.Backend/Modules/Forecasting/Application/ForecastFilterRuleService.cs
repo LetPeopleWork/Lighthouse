@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
-using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
+using Lighthouse.Backend.Modules.Forecasting.Contracts;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Modules.WorkItems.Application;

@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background;
 using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 
 namespace Lighthouse.Backend.Modules.FlowMetrics
 {

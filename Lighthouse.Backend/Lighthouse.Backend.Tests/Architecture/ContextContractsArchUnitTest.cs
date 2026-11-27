@@ -56,23 +56,13 @@ namespace Lighthouse.Backend.Tests.Architecture
             Edge("FlowMetrics.Application.TeamMetricsService", "OrganisationSetup.Application.IAppSettingService"), // owner: Organisation set-up
             Edge("FlowMetrics.Application.TeamMetricsService", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
             Edge("Forecasting.Adapters.Background.ForecastUpdater", "WorkItems.Application.IRefreshLogService"), // owner: Work Items
-            Edge("Forecasting.Application.ForecastFilterRuleService", "FlowMetrics.Application.IThroughputFilter"), // owner: Flow metrics
             Edge("Forecasting.Application.ForecastFilterRuleService", "WorkItems.Application.IRuleEvaluator`1"), // owner: Work Items
             Edge("Forecasting.Application.ForecastFilterRuleService", "WorkItems.Application.IRuleFieldProvider`1"), // owner: Work Items
-            Edge("Forecasting.Application.ForecastInputFingerprint", "FlowMetrics.Application.ForecastThroughputStatus"), // owner: Flow metrics
-            Edge("Forecasting.Application.ForecastInputs", "FlowMetrics.Application.ForecastThroughputStatus"), // owner: Flow metrics
-            Edge("Forecasting.Application.ForecastRealityCheckService", "FlowMetrics.Application.ITeamMetricsService"), // owner: Flow metrics
             Edge("Forecasting.Application.ForecastRealityCheckService", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
-            Edge("Forecasting.Application.ForecastService", "FlowMetrics.Application.ForecastThroughputStatus"), // owner: Flow metrics
-            Edge("Forecasting.Application.ForecastService", "FlowMetrics.Application.ITeamMetricsService"), // owner: Flow metrics
             Edge("Forecasting.Application.ForecastService", "WorkItems.Application.Dependencies.IWhatTheForecastWaitsFor"), // owner: Work Items
-            Edge("Forecasting.Application.ForecastService+GatheredInputs", "FlowMetrics.Application.ForecastThroughputStatus"), // owner: Flow metrics
-            Edge("Forecasting.Application.ForecastingAnswersToFlowMetrics", "FlowMetrics.Application.IForecastDataSufficiency"), // owner: Flow metrics
-            Edge("Forecasting.Application.ForecastingAnswersToFlowMetrics", "FlowMetrics.Application.IHowManyForecaster"), // owner: Flow metrics
             Edge("Forecasting.Application.WriteBack.WriteBackService", "TrackerIntegration.Application.IWorkTrackingConnector"), // owner: Tracker integration
             Edge("Forecasting.Application.WriteBack.WriteBackService", "TrackerIntegration.Application.IWorkTrackingConnectorFactory"), // owner: Tracker integration
             Edge("Forecasting.Application.WriteBack.WriteBackService", "TrackerIntegration.Application.IWriteBackTarget"), // owner: Tracker integration
-            Edge("Forecasting.Application.WriteBack.WriteBackTriggerService", "FlowMetrics.Application.ITeamMetricsService"), // owner: Flow metrics
             Edge("Forecasting.Application.WriteBack.WriteBackTriggerService", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
             Edge("OrganisationSetup.Application.Connections.ConnectionSaveService", "WorkItems.Domain.FetchFingerprint"), // owner: Work Items
             Edge("Promises.Application.DeliveryForecastBlockRenderer", "TrackerIntegration.Application.IDescriptionBlockMerger"), // owner: Tracker integration
@@ -89,22 +79,13 @@ namespace Lighthouse.Backend.Tests.Architecture
             Edge("Promises.Application.DeliverySourceResolver", "TrackerIntegration.Application.IWorkTrackingConnectorFactory"), // owner: Tracker integration
             Edge("Refinement.Application.RefinementCadenceCalendar", "OrganisationSetup.Domain.WeeklyRecurrence"), // owner: Organisation set-up
             Edge("Refinement.Application.RefinementCalendar", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
-            Edge("Refinement.Application.RefinementNeedCalculator", "FlowMetrics.Application.ForecastThroughputStatus"), // owner: Flow metrics
-            Edge("Refinement.Application.RefinementNeedCalculator", "FlowMetrics.Application.ITeamMetricsService"), // owner: Flow metrics
-            Edge("Refinement.Application.RefinementNeedCalculator", "Forecasting.Application.IForecastService"), // owner: Forecasting
             Edge("Refinement.Application.RefinementNeedCalculator", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
-            Edge("Refinement.Application.SleYardstickResolver", "FlowMetrics.Application.ITeamMetricsService"), // owner: Flow metrics
-            Edge("Refinement.Application.StageRuleHealing", "Forecasting.Application.IForecastFilterRuleService"), // owner: Forecasting
-            Edge("Refinement.Application.StageRuleMatcher", "Forecasting.Application.IForecastFilterRuleService"), // owner: Forecasting
             Edge("Refinement.Application.StageRuleMatcher", "WorkItems.Application.IRuleEvaluator`1"), // owner: Work Items
             Edge("Refinement.Application.StageRuleMatcher", "WorkItems.Application.IRuleFieldProvider`1"), // owner: Work Items
             Edge("Refinement.Application.VoterIdentityResolver", "Access.Application.CurrentUserProfileService"), // owner: Access
             Edge("Reports.Application.Metrics.DailySeriesSummary", "FlowMetrics.Domain.PercentileCalculator"), // owner: Flow metrics
-            Edge("Reports.Application.PortfolioReportMetricSeries", "FlowMetrics.Application.IPortfolioMetricsService"), // owner: Flow metrics
-            Edge("Reports.Application.TeamReportMetricSeries", "FlowMetrics.Application.ITeamMetricsService"), // owner: Flow metrics
             Edge("TrackerIntegration.Application.ConnectionHealth.ConnectionHealthCadence", "OrganisationSetup.Application.IAppSettingService"), // owner: Organisation set-up
             Edge("WorkItems.Application.RefreshLogService", "OrganisationSetup.Application.IAppSettingService"), // owner: Organisation set-up
-            Edge("WorkItems.Application.WorkItemService", "FlowMetrics.Application.IPortfolioMetricsService"), // owner: Flow metrics
             Edge("WorkItems.Application.WorkItemService", "FlowMetrics.Domain.PercentileCalculator"), // owner: Flow metrics
             Edge("WorkItems.Application.WorkItemService", "OrganisationSetup.Application.IFeatureOrdering"), // owner: Organisation set-up
             Edge("WorkItems.Application.WorkItemService", "TrackerIntegration.Application.IFeatureSource"), // owner: Tracker integration

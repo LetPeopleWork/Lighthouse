@@ -720,7 +720,7 @@ namespace Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.Compliant
     internal sealed class ACompliantSizingService(
         global::Lighthouse.Backend.Platform.Host.ILighthouseClock clock,
         global::Lighthouse.Backend.Modules.WorkItems.Application.ITeamDataService teams,
-        global::Lighthouse.Backend.Modules.Forecasting.Application.IForecastService forecasts)
+        global::Lighthouse.Backend.Modules.Forecasting.Contracts.IForecastService forecasts)
     {
         public string Describe() => $"{clock.GetHashCode()} {teams.GetHashCode()} {forecasts.GetHashCode()}";
     }

@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Modules.FlowMetrics.Domain;
 
-namespace Lighthouse.Backend.Modules.FlowMetrics.Application
+namespace Lighthouse.Backend.Modules.FlowMetrics.Contracts
 {
     /// <summary>
     /// Which of the shown items are outliers. Either the baseline gave limits and the verdict names the items above

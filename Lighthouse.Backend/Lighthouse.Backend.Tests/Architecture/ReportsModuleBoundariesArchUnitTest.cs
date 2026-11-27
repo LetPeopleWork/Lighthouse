@@ -764,8 +764,8 @@ namespace Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.Compliant
 {
     internal sealed class ACompliantReportService(
         global::Lighthouse.Backend.Platform.Host.ILighthouseClock clock,
-        global::Lighthouse.Backend.Modules.FlowMetrics.Application.ITeamMetricsService teamMetrics,
-        global::Lighthouse.Backend.Modules.FlowMetrics.Application.IPortfolioMetricsService portfolioMetrics)
+        global::Lighthouse.Backend.Modules.FlowMetrics.Contracts.ITeamMetricsService teamMetrics,
+        global::Lighthouse.Backend.Modules.FlowMetrics.Contracts.IPortfolioMetricsService portfolioMetrics)
     {
         public string Describe() => $"{clock.GetHashCode()} {teamMetrics.GetHashCode()} {portfolioMetrics.GetHashCode()}";
     }

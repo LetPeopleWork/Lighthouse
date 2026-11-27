@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models.Metrics;
 
-namespace Lighthouse.Backend.Modules.FlowMetrics.Application
+namespace Lighthouse.Backend.Modules.FlowMetrics.Contracts
 {
     /// <summary>
     /// Whether a throughput holds enough data to forecast with.

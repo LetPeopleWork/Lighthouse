@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Refinement;
-using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Modules.Refinement.Application
