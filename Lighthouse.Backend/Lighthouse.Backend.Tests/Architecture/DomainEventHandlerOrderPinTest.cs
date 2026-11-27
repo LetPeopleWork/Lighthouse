@@ -72,6 +72,13 @@ namespace Lighthouse.Backend.Tests.Architecture
             "DeliveryForecastPublishingHandler",
         ];
 
+        private static readonly string[] ForecastRoundFinishedOrder =
+        [
+            "ForecastRoundFinishedRefreshLogHandler",
+        ];
+
+        private const string ForecastRoundFinishedEvent = "Lighthouse.Backend.Modules.Forecasting.Contracts.ForecastRoundFinished";
+
         private StartUpDomainEventHandlers handlers = null!;
 
         [OneTimeSetUp]
@@ -166,6 +173,24 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "Register the clean-up reaction for PortfolioDeleted beside the Team deletion handlers, or, if another handler is intended, change the list in this test in the same commit and say why.");
         }
 
+        [Test]
+        public void HandlersOfAFinishedForecastRound_AreTheRefreshLogEntryAlone()
+        {
+            var finishedRound = StartUpDomainEventHandlers.EventNamed(ForecastRoundFinishedEvent);
+            Assert.That(finishedRound, Is.Not.Null,
+                $"There is no event {ForecastRoundFinishedEvent}, so nothing can react to a finished forecast round. " +
+                "Forecasting announces the end of every round with it, and Work Items writes the round's refresh-log entry on hearing it; add the event to Forecasting's contracts.");
+
+            var handedOut = StartUpDomainEventHandlers.RegistrationsOf(finishedRound!)
+                .Select(registration => registration.ImplementationType?.Name ?? "a handler registered through a factory")
+                .ToList();
+
+            Assert.That(handedOut, Is.EqualTo(ForecastRoundFinishedOrder),
+                "The handlers of a finished forecast round are not the Work Items refresh-log reaction alone. " +
+                "Without that registration no forecast round leaves an entry on the System info page, and a second handler would write a second entry or do work the round never asked for. " +
+                "Register the reaction on its own line in the start-up handler block, or, if another handler is intended, change the list in this test in the same commit and say why.");
+        }
+
         private List<string> HandlersInTheOrderTheContainerHandsThemOut<TEvent>() where TEvent : IDomainEvent
             => [.. handlers.Of<TEvent>().Select(handler => handler.Name)];
     }
@@ -207,6 +232,17 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
 
             return new StartUpDomainEventHandlers(handlersByEvent);
+        }
+
+        /// <summary>An event the start-up code may not know yet, looked up by its full name in the product's assembly.</summary>
+        public static Type? EventNamed(string fullName) => typeof(Program).Assembly.GetType(fullName);
+
+        /// <summary>The start-up registrations of the handlers of one event, in the order they were registered, to be added to another container as they are.</summary>
+        public static IReadOnlyList<ServiceDescriptor> RegistrationsOf(Type domainEvent)
+        {
+            var handlerType = typeof(IDomainEventHandler<>).MakeGenericType(domainEvent);
+
+            return [.. TheStartUpRegistrations().Where(registration => registration.ServiceType == handlerType)];
         }
 
         private static Type HandlerTypeOf(ServiceDescriptor registration, IServiceProvider scope)

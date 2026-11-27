@@ -92,6 +92,127 @@
 "stimulus": "F244",
 "user_result": "F246"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F113"
+],
+"still_passes_if": "F259",
+"test": "A_round_that_forecasts_its_Features_logs_a_successful_entry_counting_them",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/ForecastRoundsKeepTheirRefreshLogEntryTest.cs"
+},
+"expected": "F257",
+"stimulus": "F256",
+"user_result": "F258"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F114"
+],
+"still_passes_if": "F259",
+"test": "A_round_whose_forecast_fails_logs_a_failed_entry_counting_nothing",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/ForecastRoundsKeepTheirRefreshLogEntryTest.cs"
+},
+"expected": "F261",
+"stimulus": "F260",
+"user_result": "F262"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F115"
+],
+"still_passes_if": "F266",
+"test": "A_round_the_operator_stops_logs_a_cancelled_entry",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/ForecastRoundsKeepTheirRefreshLogEntryTest.cs"
+},
+"expected": "F264",
+"stimulus": "F263",
+"user_result": "F265"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F116"
+],
+"still_passes_if": "F259",
+"test": "A_round_that_finds_nothing_new_logs_a_successful_skipped_entry_counting_the_Features",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/ForecastRoundsKeepTheirRefreshLogEntryTest.cs"
+},
+"expected": "F268",
+"stimulus": "F267",
+"user_result": "F269"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F119"
+],
+"still_passes_if": "F273",
+"test": "A_round_whose_refresh_log_write_fails_still_completes_and_the_failure_is_logged",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/ForecastRoundsKeepTheirRefreshLogEntryTest.cs"
+},
+"expected": "F271",
+"stimulus": "F270",
+"user_result": "F272"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F122"
+],
+"still_passes_if": "F277",
+"test": "The_forecast_round_no_longer_writes_the_refresh_log_itself",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/ForecastRoundsKeepTheirRefreshLogEntryTest.cs"
+},
+"expected": "F275",
+"stimulus": "F274",
+"user_result": "F276"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F125"
+],
+"still_passes_if": "F281",
+"test": "HandlersOfAFinishedForecastRound_AreTheRefreshLogEntryAlone",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs"
+},
+"expected": "F279",
+"stimulus": "F278",
+"user_result": "F280"
+}
 ]
 },
 "counters": {
@@ -99,7 +220,7 @@
 "C": 1,
 "D": 8,
 "E": 4,
-"F": 255,
+"F": 281,
 "K": 7,
 "L": 6,
 "P": 3,
@@ -3285,9 +3406,35 @@
 "F253": "only if the Architecture run after S2 still names the handler; expected unchanged under S1's event rule",
 "F254": "Work Items' handler names Forecasting.Contracts.ForecastRoundFinished under S1's event rule: Forecasting's Application rule targets ModuleRules.WithoutTheEvents(ForecastingApplication, \"Forecasting\"), whose EventsOf reads ForecastRoundFinished as soon as it exists, so Forecasting's legal callers stay the API and Refinement and no Work Items namespace is admitted. S2 does not edit ForecastingModuleBoundariesArchUnitTest.cs.",
 "F255": "events are outside the front-door target since S1; legal callers unchanged",
+"F256": "A person asks for a forecast of a Portfolio with three Features and the forecast computes new forecasts",
+"F257": "Exactly one forecast refresh-log entry: the Portfolio's id and name, three items, a full sync of nothing, the finishing instant, successful, not cancelled, not skipped",
+"F258": "The System info page shows one successful forecast entry counting the three Features, as before",
+"F259": "the entry's duration were wrong by any non-negative amount",
 "F26": "Do not run the full backend suite under parallel load or any live connector category; the filtered full gate (TestCategory exclusions of CLAUDE.md) runs once before the push, by the host.",
+"F260": "A person asks for a forecast and the forecast fails",
+"F261": "Exactly one forecast entry counting no items, not successful, not cancelled, not skipped",
+"F262": "The System info page shows one failed forecast entry, as before",
+"F263": "A person asks for a forecast and the operator stops it",
+"F264": "Exactly one forecast entry, not successful, cancelled, not skipped, written although the round was stopped",
+"F265": "The System info page shows one stopped forecast entry, as before",
+"F266": "the event were published with the round's stop signal, because the refresh-log write takes no stop signal; only a reaction that honoured the stop would lose the row",
+"F267": "A person asks for a forecast of a Portfolio with two Features and the forecast finds them unchanged",
+"F268": "Exactly one forecast entry counting two items, successful, not cancelled, skipped",
+"F269": "The System info page shows one skipped forecast entry, as before",
 "F27": "Program.cs changes in S1 and S2, so the feature's single push runs every live connector suite once in CI (D-12).",
+"F270": "A person asks for a forecast that succeeds while writing the refresh log fails",
+"F271": "The round completes, exactly one logged error names the Work Items refresh-log reaction and the finished-round event, and no forecast entry exists",
+"F272": "The forecast still lands; the operator finds the failed log write in the log",
+"F273": "another component logged an error whose message named both the reaction and the event",
+"F274": "The compiled forecast updater is read",
+"F275": "Neither the forecast updater nor its compiler-made nested types name the Work Items refresh-log service",
+"F276": "Forecasting no longer commands Work Items to write its forecast entry",
+"F277": "the updater wrote the entry through another Work Items type; the entry rows would then see two entries",
+"F278": "The start-up registrations are read without a host",
+"F279": "The finished-forecast-round event exists and its handlers are exactly the Work Items refresh-log reaction",
 "F28": "Every producer and consumer of the touched contracts (the 15 event types, ForecastRoundFinished, IRefreshLogService, RefreshLog) lives in the one backend deployable and changes in the same commit; nothing is serialised, persisted in a new shape or sent on a wire. The S2 oracle runs the real producer through the real consumer at the service port.",
+"F280": "Every forecast round has exactly one reaction that writes its entry",
+"F281": "the reaction were registered with a lifetime other than scoped",
 "F29": "Architecture rules: the compiled production assembly read through LighthouseArchitecture.Production / IlDependencies (in-process; nearest argv: dotnet test ... --filter FullyQualifiedName~Architecture). RX1: IForecastUpdater.TriggerImmediateUpdate over a ServicePortHarness scope factory, no host.",
 "F3": "Each of the 15 domain event types lives in the Contracts of the context that publishes it, and no event type but IDomainEvent is left in Models.Events; behaviour unchanged.",
 "F30": "IDomainEventDispatcher (platform lane, unchanged)",

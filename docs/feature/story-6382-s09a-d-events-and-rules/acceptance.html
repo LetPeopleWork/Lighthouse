@@ -299,6 +299,197 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A person asks for a forecast of a Portfolio with three Features and the forecast computes new forecasts
+</code></pre>
+
+<pre><code>Exactly one forecast refresh-log entry: the Portfolio&#x27;s id and name, three items, a full sync of nothing, the finishing instant, successful, not cancelled, not skipped
+</code></pre>
+
+<pre><code>The System info page shows one successful forecast entry counting the three Features, as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/ForecastRoundsKeepTheirRefreshLogEntryTest.cs</p>
+
+<p>A_round_that_forecasts_its_Features_logs_a_successful_entry_counting_them</p>
+
+<pre><code>the entry&#x27;s duration were wrong by any non-negative amount
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A person asks for a forecast and the forecast fails
+</code></pre>
+
+<pre><code>Exactly one forecast entry counting no items, not successful, not cancelled, not skipped
+</code></pre>
+
+<pre><code>The System info page shows one failed forecast entry, as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/ForecastRoundsKeepTheirRefreshLogEntryTest.cs</p>
+
+<p>A_round_whose_forecast_fails_logs_a_failed_entry_counting_nothing</p>
+
+<pre><code>the entry&#x27;s duration were wrong by any non-negative amount
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A person asks for a forecast and the operator stops it
+</code></pre>
+
+<pre><code>Exactly one forecast entry, not successful, cancelled, not skipped, written although the round was stopped
+</code></pre>
+
+<pre><code>The System info page shows one stopped forecast entry, as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/ForecastRoundsKeepTheirRefreshLogEntryTest.cs</p>
+
+<p>A_round_the_operator_stops_logs_a_cancelled_entry</p>
+
+<pre><code>the event were published with the round&#x27;s stop signal, because the refresh-log write takes no stop signal; only a reaction that honoured the stop would lose the row
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A person asks for a forecast of a Portfolio with two Features and the forecast finds them unchanged
+</code></pre>
+
+<pre><code>Exactly one forecast entry counting two items, successful, not cancelled, skipped
+</code></pre>
+
+<pre><code>The System info page shows one skipped forecast entry, as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/ForecastRoundsKeepTheirRefreshLogEntryTest.cs</p>
+
+<p>A_round_that_finds_nothing_new_logs_a_successful_skipped_entry_counting_the_Features</p>
+
+<pre><code>the entry&#x27;s duration were wrong by any non-negative amount
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A person asks for a forecast that succeeds while writing the refresh log fails
+</code></pre>
+
+<pre><code>The round completes, exactly one logged error names the Work Items refresh-log reaction and the finished-round event, and no forecast entry exists
+</code></pre>
+
+<pre><code>The forecast still lands; the operator finds the failed log write in the log
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/ForecastRoundsKeepTheirRefreshLogEntryTest.cs</p>
+
+<p>A_round_whose_refresh_log_write_fails_still_completes_and_the_failure_is_logged</p>
+
+<pre><code>another component logged an error whose message named both the reaction and the event
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The compiled forecast updater is read
+</code></pre>
+
+<pre><code>Neither the forecast updater nor its compiler-made nested types name the Work Items refresh-log service
+</code></pre>
+
+<pre><code>Forecasting no longer commands Work Items to write its forecast entry
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/ForecastRoundsKeepTheirRefreshLogEntryTest.cs</p>
+
+<p>The_forecast_round_no_longer_writes_the_refresh_log_itself</p>
+
+<pre><code>the updater wrote the entry through another Work Items type; the entry rows would then see two entries
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The start-up registrations are read without a host
+</code></pre>
+
+<pre><code>The finished-forecast-round event exists and its handlers are exactly the Work Items refresh-log reaction
+</code></pre>
+
+<pre><code>Every forecast round has exactly one reaction that writes its entry
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs</p>
+
+<p>HandlersOfAFinishedForecastRound_AreTheRefreshLogEntryAlone</p>
+
+<pre><code>the reaction were registered with a lifetime other than scoped
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

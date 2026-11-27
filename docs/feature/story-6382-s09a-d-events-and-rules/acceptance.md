@@ -165,6 +165,225 @@ an event is renamed in code and map together
 ###### Obligations
 
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+A person asks for a forecast of a Portfolio with three Features and the forecast computes new forecasts
+```
+
+```text
+Exactly one forecast refresh-log entry: the Portfolio's id and name, three items, a full sync of nothing, the finishing instant, successful, not cancelled, not skipped
+```
+
+```text
+The System info page shows one successful forecast entry counting the three Features, as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/Forecasting\/ForecastRoundsKeepTheirRefreshLogEntryTest\.cs
+
+A\_round\_that\_forecasts\_its\_Features\_logs\_a\_successful\_entry\_counting\_them
+
+```text
+the entry's duration were wrong by any non-negative amount
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A person asks for a forecast and the forecast fails
+```
+
+```text
+Exactly one forecast entry counting no items, not successful, not cancelled, not skipped
+```
+
+```text
+The System info page shows one failed forecast entry, as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/Forecasting\/ForecastRoundsKeepTheirRefreshLogEntryTest\.cs
+
+A\_round\_whose\_forecast\_fails\_logs\_a\_failed\_entry\_counting\_nothing
+
+```text
+the entry's duration were wrong by any non-negative amount
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A person asks for a forecast and the operator stops it
+```
+
+```text
+Exactly one forecast entry, not successful, cancelled, not skipped, written although the round was stopped
+```
+
+```text
+The System info page shows one stopped forecast entry, as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/Forecasting\/ForecastRoundsKeepTheirRefreshLogEntryTest\.cs
+
+A\_round\_the\_operator\_stops\_logs\_a\_cancelled\_entry
+
+```text
+the event were published with the round's stop signal, because the refresh-log write takes no stop signal; only a reaction that honoured the stop would lose the row
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A person asks for a forecast of a Portfolio with two Features and the forecast finds them unchanged
+```
+
+```text
+Exactly one forecast entry counting two items, successful, not cancelled, skipped
+```
+
+```text
+The System info page shows one skipped forecast entry, as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/Forecasting\/ForecastRoundsKeepTheirRefreshLogEntryTest\.cs
+
+A\_round\_that\_finds\_nothing\_new\_logs\_a\_successful\_skipped\_entry\_counting\_the\_Features
+
+```text
+the entry's duration were wrong by any non-negative amount
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A person asks for a forecast that succeeds while writing the refresh log fails
+```
+
+```text
+The round completes, exactly one logged error names the Work Items refresh-log reaction and the finished-round event, and no forecast entry exists
+```
+
+```text
+The forecast still lands; the operator finds the failed log write in the log
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/Forecasting\/ForecastRoundsKeepTheirRefreshLogEntryTest\.cs
+
+A\_round\_whose\_refresh\_log\_write\_fails\_still\_completes\_and\_the\_failure\_is\_logged
+
+```text
+another component logged an error whose message named both the reaction and the event
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+The compiled forecast updater is read
+```
+
+```text
+Neither the forecast updater nor its compiler-made nested types name the Work Items refresh-log service
+```
+
+```text
+Forecasting no longer commands Work Items to write its forecast entry
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/Forecasting\/ForecastRoundsKeepTheirRefreshLogEntryTest\.cs
+
+The\_forecast\_round\_no\_longer\_writes\_the\_refresh\_log\_itself
+
+```text
+the updater wrote the entry through another Work Items type; the entry rows would then see two entries
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+The start-up registrations are read without a host
+```
+
+```text
+The finished-forecast-round event exists and its handlers are exactly the Work Items refresh-log reaction
+```
+
+```text
+Every forecast round has exactly one reaction that writes its entry
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/DomainEventHandlerOrderPinTest\.cs
+
+HandlersOfAFinishedForecastRound\_AreTheRefreshLogEntryAlone
+
+```text
+the reaction were registered with a lifetime other than scoped
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
