@@ -187,7 +187,7 @@
 "T4"
 ],
 "still_passes_if": "F562",
-"test": "compares against the preceding period of the same length",
+"test": "compares the share with the previous period",
 "test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.withinSle.test.ts"
 },
 "expected": "F561",
@@ -238,7 +238,7 @@
 "L2"
 ],
 "still_passes_if": "F566",
-"test": "too few to judge, with no status and no change",
+"test": "says %i closed and that this is too few to judge, with no status and no change",
 "test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.verdicts.test.tsx"
 },
 "expected": "F564",

@@ -378,7 +378,7 @@ Tested
 
 Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/categoryMetadata\.withinSle\.test\.ts
 
-compares against the preceding period of the same length
+compares the share with the previous period
 
 ```text
 A header trend shown for none, or a down arrow for up
@@ -471,7 +471,7 @@ Tested
 
 Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/WithinSleWidget\.verdicts\.test\.tsx
 
-too few to judge\, with no status and no change
+says \%i closed and that this is too few to judge\, with no status and no change
 
 ```text
 A status or trend for too few, or a threshold of 6
