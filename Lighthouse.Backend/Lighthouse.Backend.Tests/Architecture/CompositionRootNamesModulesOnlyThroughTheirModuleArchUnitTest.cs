@@ -71,6 +71,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 $"{TheModulesRoot}.FlowMetrics.Application.Policies.PortfolioFeaturesRefreshedMetricsInvalidationHandler",
                 $"{TheModulesRoot}.FlowMetrics.Application.Policies.ProcessBehaviorRecordingHandler",
                 $"{TheModulesRoot}.FlowMetrics.Application.Policies.TeamDataRefreshedTeamMetricsUpdateHandler",
+                $"{TheModulesRoot}.FlowMetrics.Application.Policies.WithinSleRecordingHandler",
                 $"{TheModulesRoot}.FlowMetrics.Application.ReconstructionMemo",
             ],
             ["Forecasting"] =

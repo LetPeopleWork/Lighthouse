@@ -62,6 +62,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             Of("FlowMetrics", HandlerCategory, "Application.Policies.PortfolioFeaturesRefreshedMetricsInvalidationHandler"),
             Of("FlowMetrics", HandlerCategory, "Application.Policies.ProcessBehaviorRecordingHandler"),
             Of("FlowMetrics", HandlerCategory, "Application.Policies.TeamDataRefreshedTeamMetricsUpdateHandler"),
+            Of("FlowMetrics", HandlerCategory, "Application.Policies.WithinSleRecordingHandler"),
             Of("FlowMetrics", HandlerCategory, "Application.ReconstructionMemo"),
             Of("Forecasting", HandlerCategory, "Application.Policies.FeatureOrderingPolicyChangedForecastTriggerHandler"),
             Of("Forecasting", HandlerCategory, "Application.Policies.FeatureRankChangedForecastTriggerHandler"),

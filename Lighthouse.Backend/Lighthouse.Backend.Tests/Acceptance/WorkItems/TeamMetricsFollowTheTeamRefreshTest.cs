@@ -12,6 +12,7 @@ using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Models.WriteBack;
+using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth;
@@ -461,6 +462,8 @@ namespace Lighthouse.Backend.Tests.Acceptance.WorkItems
             services.AddScoped<IForecastDataSufficiency>(provider => provider.GetRequiredService<ForecastingAnswersToFlowMetrics>());
             services.AddScoped<ITeamMetricsService, TeamMetricsService>();
             services.AddScoped<IPortfolioMetricsService, PortfolioMetricsService>();
+            services.AddScoped<IWithinSleSnapshotRepository, WithinSleSnapshotRepository>();
+            services.AddScoped<IWithinSleSnapshotWriter, WithinSleSnapshotWriter>();
 
             services.AddScoped<IWorkItemService, WorkItemService>();
             services.AddScoped<ITeamDataService, TeamDataService>();
