@@ -1,0 +1,58 @@
+quint 0.33.1
+0fb5b42a0f7a9ea0ebfd4b3e6ff2298f6fa023f5022800142861154bfe5e6ec9  model.qnt
+$ quint typecheck model.qnt
+exit=0
+$ quint run model.qnt --invariant=pastDaysNeverChange --max-samples=3000 --max-steps=8 --seed=1
+Trace length statistics: max=9, min=9, average=9.00
+You may increase --max-samples and --max-steps.
+Use --verbosity to produce more (or less) output.
+Use --seed=0x31edb --backend=rust to reproduce.
+exit=0
+$ quint run model.qnt --invariant=laterRowsOfPastDaysAreFilledIn --max-samples=3000 --max-steps=8 --seed=1
+Trace length statistics: max=9, min=9, average=9.00
+You may increase --max-samples and --max-steps.
+Use --verbosity to produce more (or less) output.
+Use --seed=0x31edb --backend=rust to reproduce.
+exit=0
+$ quint run model.qnt --invariant=withinNeverExceedsClosed --max-samples=3000 --max-steps=8 --seed=1
+Trace length statistics: max=9, min=9, average=9.00
+You may increase --max-samples and --max-steps.
+Use --verbosity to produce more (or less) output.
+Use --seed=0x31edb --backend=rust to reproduce.
+exit=0
+$ quint run model.qnt --invariant=noPointBelowFive --max-samples=3000 --max-steps=8 --seed=1
+Trace length statistics: max=9, min=9, average=9.00
+You may increase --max-samples and --max-steps.
+Use --verbosity to produce more (or less) output.
+Use --seed=0x31edb --backend=rust to reproduce.
+exit=0
+$ quint verify model.qnt --invariant=allInvariants --max-steps=6
+The outcome is: NoError                                           I@14:19:13.269
+[ok] No violation found (14705ms).
+You may increase --max-steps.
+Use --verbosity to produce more (or less) output.
+exit=0
+$ quint run m1.qnt --invariant=pastDaysNeverChange --max-samples=3000 --max-steps=8 --seed=1
+[violation] Found an issue (14ms at 214 traces/second).
+Use --verbosity=3 to show executions.
+Use --seed=0x73 --backend=rust to reproduce.
+error: Invariant violated
+exit=1
+$ quint run m2.qnt --invariant=laterRowsOfPastDaysAreFilledIn --max-samples=3000 --max-steps=8 --seed=1
+[violation] Found an issue (13ms at 77 traces/second).
+Use --verbosity=3 to show executions.
+Use --seed=0x1 --backend=rust to reproduce.
+error: Invariant violated
+exit=1
+$ quint run m3.qnt --invariant=withinNeverExceedsClosed --max-samples=3000 --max-steps=8 --seed=1
+[violation] Found an issue (12ms at 83 traces/second).
+Use --verbosity=3 to show executions.
+Use --seed=0x1 --backend=rust to reproduce.
+error: Invariant violated
+exit=1
+$ quint run m4.qnt --invariant=noPointBelowFive --max-samples=3000 --max-steps=8 --seed=1
+[violation] Found an issue (12ms at 83 traces/second).
+Use --verbosity=3 to show executions.
+Use --seed=0x1 --backend=rust to reproduce.
+error: Invariant violated
+exit=1

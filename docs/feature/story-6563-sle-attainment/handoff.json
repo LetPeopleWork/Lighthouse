@@ -1,48 +1,2510 @@
 {
 "counters": {
-"F": 99,
+"B": 6,
+"C": 2,
+"D": 21,
+"F": 441,
+"K": 26,
+"L": 7,
+"N": 4,
 "P": 15,
-"S": 8
+"S": 8,
+"T": 8,
+"Y": 8
+},
+"design": {
+"adrs": [
+{
+"key": "003",
+"status": "Proposed",
+"title": "Within SLE daily record stores the SLE in force"
+}
+],
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F137",
+"driven_ports": [
+"F133",
+"F134",
+"F135",
+"F136"
+],
+"driving_port": "F132",
+"failures": [
+{
+"condition": "F138",
+"id": "B1",
+"observation": "F139",
+"outcome": "Refusal"
+},
+{
+"condition": "F140",
+"id": "B2",
+"observation": "F141",
+"outcome": "Refusal"
+},
+{
+"condition": "F142",
+"id": "B3",
+"observation": "F143",
+"outcome": "Refusal"
+},
+{
+"condition": "F144",
+"id": "B4",
+"observation": "F145",
+"outcome": "Indeterminate"
+},
+{
+"condition": "F146",
+"id": "B5",
+"observation": "F147",
+"outcome": "Retry"
+},
+{
+"condition": "F148",
+"id": "B6",
+"observation": "F149",
+"outcome": "Indeterminate"
+}
+]
+},
+"claims": [
+{
+"admitted_input": "F200",
+"bypass": "F202",
+"constructor": "WithinSleSnapshotWriter.RecordToday / FillDayIfAbsent",
+"consumer": "IWithinSleOverTimeSeriesQuery",
+"harm": "F199",
+"id": "C1",
+"owner": "WithinSleSnapshotWriter",
+"proposition": "F198",
+"public_observation": "F201"
+},
+{
+"admitted_input": "F205",
+"bypass": "F207",
+"constructor": "WithinSleShare.Of",
+"consumer": "WithinSleInfoQuery, WithinSleOverTimeSeriesQuery",
+"harm": "F204",
+"id": "C2",
+"owner": "WithinSleShare",
+"proposition": "F203",
+"public_observation": "F206"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F227",
+"design": "Pass",
+"evidence": [
+"docs/feature/story-6563-sle-attainment/design/withinSleDailyRecord.qnt",
+"docs/feature/story-6563-sle-attainment/design/withinSleDailyRecord.receipt.txt"
+],
+"runtime": "DesignedNotBuilt",
+"subject": "F226"
+},
+{
+"axis": "Inhabitation",
+"basis": "F229",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F228"
+},
+{
+"axis": "PublicReachability",
+"basis": "F230",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F228"
+},
+{
+"axis": "Liveness",
+"basis": "F232",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F231"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F121"
+},
+{
+"id": "K2",
+"text": "F122"
+},
+{
+"id": "K3",
+"text": "F123"
+},
+{
+"id": "K4",
+"text": "F124"
+},
+{
+"id": "K5",
+"text": "F125"
+},
+{
+"id": "K6",
+"text": "F126"
+},
+{
+"id": "K7",
+"text": "F127"
+},
+{
+"id": "K8",
+"text": "F128"
+},
+{
+"id": "K9",
+"text": "F129"
+},
+{
+"id": "K10",
+"text": "F130"
+},
+{
+"id": "K11",
+"text": "F131"
+},
+{
+"id": "K12",
+"text": "F48"
+},
+{
+"id": "K13",
+"text": "F49"
+},
+{
+"id": "K14",
+"text": "F50"
+},
+{
+"id": "K15",
+"text": "F52"
+},
+{
+"id": "K16",
+"text": "F53"
+},
+{
+"id": "K17",
+"text": "F54"
+},
+{
+"id": "K18",
+"text": "F55"
+},
+{
+"id": "K19",
+"text": "F56"
+},
+{
+"id": "K20",
+"text": "F57"
+},
+{
+"id": "K21",
+"text": "F58"
+},
+{
+"id": "K22",
+"text": "F86"
+},
+{
+"id": "K23",
+"text": "F87"
+},
+{
+"id": "K24",
+"text": "F88"
+},
+{
+"id": "K25",
+"text": "F89"
+},
+{
+"id": "K26",
+"text": "F90"
+}
+],
+"constructors": [
+{
+"name": "WithinSleShare.Of",
+"signature": "static WithinSleShare Of(IReadOnlyList<int> cycleTimesInDays, ServiceLevelExpectation? sle)"
+},
+{
+"name": "ServiceLevelExpectation.For",
+"signature": "static ServiceLevelExpectation? For(WorkTrackingSystemOptionsOwner owner)"
+},
+{
+"name": "WithinSleSnapshotWriter.RecordToday",
+"signature": "void RecordToday(int ownerId, OwnerType ownerType, WithinSleFamilyReader family)"
+},
+{
+"name": "WithinSleSnapshotWriter.FillDayIfAbsent",
+"signature": "void FillDayIfAbsent(int ownerId, OwnerType ownerType, DateOnly day, WithinSleFamilyReader family)"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F100"
+},
+{
+"id": "D2",
+"text": "F101"
+},
+{
+"id": "D3",
+"text": "F102"
+},
+{
+"id": "D4",
+"text": "F103"
+},
+{
+"id": "D5",
+"text": "F104"
+},
+{
+"id": "D6",
+"text": "F105"
+},
+{
+"id": "D7",
+"text": "F106"
+},
+{
+"id": "D8",
+"text": "F107"
+},
+{
+"id": "D9",
+"text": "F108"
+},
+{
+"id": "D10",
+"text": "F109"
+},
+{
+"id": "D11",
+"text": "F110"
+},
+{
+"id": "D12",
+"text": "F111"
+},
+{
+"id": "D13",
+"text": "F112"
+},
+{
+"id": "D14",
+"text": "F113"
+},
+{
+"id": "D15",
+"text": "F114"
+},
+{
+"id": "D16",
+"text": "F115"
+},
+{
+"id": "D17",
+"text": "F116"
+},
+{
+"id": "D18",
+"text": "F117"
+},
+{
+"id": "D19",
+"text": "F118"
+},
+{
+"id": "D20",
+"text": "F119"
+},
+{
+"id": "D21",
+"text": "F120"
+}
+],
+"equality": [
+{
+"definition": "F156",
+"under": "WithinSleDayDto observation"
+},
+{
+"definition": "F157",
+"under": "WithinSleShare observation"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "WithinSleShare",
+"statement": "F158",
+"treatment": {
+"falsifier": "F166",
+"generator": {
+"depth_bound": "flat list",
+"domain": "F159",
+"must_include": [
+"F160",
+"F161",
+"F162",
+"F163"
+],
+"seed_policy": "fixed seed per run printed on failure; NUnit seeded Random generator (no PBT library in the backend test project)",
+"shrinking": "F164",
+"size_bound": "list length 40"
+},
+"independent_observation": "F165",
+"kind": "Broad"
+}
+},
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "ragRulesTimeAndAge.statusAgainstTarget",
+"statement": "F167",
+"treatment": {
+"cases": [
+"F168",
+"F169",
+"F170",
+"F171",
+"F172",
+"F173"
+],
+"kind": "Finite",
+"reason": "F174"
+}
+},
+{
+"evidence": [
+"docs/feature/story-6563-sle-attainment/design/withinSleDailyRecord.qnt"
+],
+"id": "L3",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "WithinSleSnapshotWriter",
+"statement": "F175",
+"treatment": {
+"cases": [
+"F176",
+"F177",
+"F178",
+"F179",
+"F180",
+"F181"
+],
+"kind": "Finite",
+"reason": "F182"
+}
+},
+{
+"id": "L4",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "WithinSleSnapshotWriter.SaveFilledDay",
+"statement": "F183",
+"treatment": {
+"cases": [
+"F184"
+],
+"kind": "Finite",
+"reason": "F185"
+}
+},
+{
+"id": "L5",
+"kind": "RoundTrip",
+"layer": "Adapter",
+"owner": "WithinSleSnapshotRepository",
+"statement": "F186",
+"treatment": {
+"cases": [
+"F187",
+"F188"
+],
+"kind": "Finite",
+"reason": "F189"
+}
+},
+{
+"id": "L6",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "WithinSleInfoQuery",
+"statement": "F190",
+"treatment": {
+"cases": [
+"F191",
+"F192",
+"F193",
+"F194"
+],
+"kind": "Finite",
+"reason": "F195"
+}
+},
+{
+"evidence": [
+"docs/feature/story-6563-sle-attainment/design/withinSleDailyRecord.qnt"
+],
+"id": "L7",
+"kind": "Refinement",
+"layer": "Application",
+"owner": "WithinSleSnapshotWriter",
+"statement": "F196",
+"treatment": {
+"kind": "NoTest",
+"reason": "F197"
+}
+}
+],
+"models": [
+{
+"assumptions": [
+"F220",
+"F221"
+],
+"atoms": [
+{
+"kind": "Action",
+"name": "recordToday",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs",
+"symbol": "WithinSleSnapshotWriter.RecordToday"
+},
+{
+"kind": "Action",
+"name": "fillDayIfAbsent",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs",
+"symbol": "WithinSleSnapshotWriter.FillDayIfAbsent"
+},
+{
+"kind": "Action",
+"name": "changeSle",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs:41",
+"symbol": "WorkTrackingSystemOptionsOwner.ServiceLevelExpectationRange"
+},
+{
+"kind": "Action",
+"name": "advanceDay",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Platform/Host",
+"symbol": "ILighthouseClock.Today"
+},
+{
+"kind": "State",
+"name": "stored",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshot.cs",
+"symbol": "WithinSleSnapshot"
+},
+{
+"kind": "State",
+"name": "currentSle",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ServiceLevelExpectation.cs",
+"symbol": "ServiceLevelExpectation.For"
+},
+{
+"kind": "State",
+"name": "closedDays",
+"site": "docs/feature/story-6563-sle-attainment/design/withinSleDailyRecord.qnt",
+"symbol": "model-only"
+},
+{
+"kind": "Constant",
+"name": "MIN_CLOSED",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/WithinSleShare.cs",
+"symbol": "WithinSleShare.MinimumClosed"
+}
+],
+"language": "Quint",
+"mutants": [
+{
+"description": "F222",
+"id": "N1",
+"kills": [
+"pastDaysNeverChange"
+]
+},
+{
+"description": "F223",
+"id": "N2",
+"kills": [
+"laterRowsOfPastDaysAreFilledIn"
+]
+},
+{
+"description": "F224",
+"id": "N3",
+"kills": [
+"withinNeverExceedsClosed"
+]
+},
+{
+"description": "F225",
+"id": "N4",
+"kills": [
+"noPointBelowFive"
+]
+}
+],
+"path": "docs/feature/story-6563-sle-attainment/design/withinSleDailyRecord.qnt",
+"properties": [
+{
+"kind": "Invariant",
+"name": "pastDaysNeverChange",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs",
+"statement": "F216",
+"symbol": "WithinSleSnapshotWriter.FillDayIfAbsent"
+},
+{
+"kind": "Invariant",
+"name": "laterRowsOfPastDaysAreFilledIn",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshot.cs",
+"statement": "F217",
+"symbol": "WithinSleSnapshotOrigin.FilledIn"
+},
+{
+"kind": "Invariant",
+"name": "withinNeverExceedsClosed",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/WithinSleShare.cs",
+"statement": "F218",
+"symbol": "WithinSleShare.Of"
+},
+{
+"kind": "Invariant",
+"name": "noPointBelowFive",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/WithinSleShare.cs",
+"statement": "F219",
+"symbol": "WithinSleShare.MinimumClosed"
+}
+]
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F151",
+"description": "F150",
+"result_type": "WithinSleInfoDto"
+},
+{
+"cannot_distinguish": "F153",
+"description": "F152",
+"result_type": "WithinSleOverTimeDto"
+},
+{
+"cannot_distinguish": "F155",
+"description": "F154",
+"result_type": "DOM (RTL / Playwright)"
+}
+],
+"risks": [
+{
+"allowed": "F235",
+"forbidden": "F236",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "Product",
+"preserved": "F234",
+"residue": "F237",
+"source": "F233"
+},
+{
+"allowed": "F240",
+"forbidden": "F241",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "FlowMetrics",
+"preserved": "F239",
+"residue": "F242",
+"source": "F238"
+},
+{
+"allowed": "F245",
+"forbidden": "F246",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "FlowMetrics",
+"preserved": "F244",
+"residue": "F242",
+"source": "F243"
+},
+{
+"allowed": "F249",
+"forbidden": "F250",
+"id": "Y4",
+"kind": "Stressor",
+"owner": "Product",
+"preserved": "F248",
+"residue": "F251",
+"source": "F247"
+},
+{
+"allowed": "F254",
+"forbidden": "F255",
+"id": "Y5",
+"kind": "Stressor",
+"owner": "FlowMetrics",
+"preserved": "F253",
+"residue": "F256",
+"source": "F252"
+},
+{
+"allowed": "F259",
+"forbidden": "F260",
+"id": "Y6",
+"kind": "SinglePointOfFailure",
+"owner": "FlowMetrics",
+"preserved": "F258",
+"residue": "F242",
+"source": "F257"
+},
+{
+"allowed": "F263",
+"forbidden": "F264",
+"id": "Y7",
+"kind": "Bypass",
+"owner": "FlowMetrics",
+"preserved": "F262",
+"residue": "F265",
+"source": "F261"
+},
+{
+"allowed": "F268",
+"forbidden": "F269",
+"id": "Y8",
+"kind": "Stressor",
+"owner": "FlowMetrics",
+"preserved": "F267",
+"residue": "F242",
+"source": "F266"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"state": "F208"
+},
+{
+"kind": "Admitted",
+"state": "F209"
+},
+{
+"kind": "Admitted",
+"state": "F210"
+},
+{
+"kind": "Excluded",
+"state": "F211"
+},
+{
+"kind": "Excluded",
+"state": "F212"
+},
+{
+"kind": "Excluded",
+"state": "F213"
+},
+{
+"kind": "Excluded",
+"state": "F214"
+},
+{
+"kind": "Unknown",
+"owner": "Product",
+"state": "F215"
+}
+]
+},
+"slices": {
+"S5": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoAtTheServicePortTest.cs",
+"public_oracle": {
+"expected": "F281",
+"falsifier": "F282",
+"promises": [
+"P1",
+"P11",
+"P13"
+],
+"stimulus": "F280"
+},
+"records": {
+"agreement": [
+{
+"contract": "GET withinSleInfo -> WithinSleInfoDto",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+"party": "Producer",
+"reason": "F319"
+},
+{
+"contract": "GET withinSleInfo -> WithinSleInfoDto",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+"party": "Producer",
+"reason": "F320"
+},
+{
+"contract": "GET withinSleInfo -> WithinSleInfoDto",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+"party": "Consumer",
+"reason": "F321"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest",
+"id": "T1",
+"obligation": "F324",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs"
+},
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest",
+"id": "T2",
+"obligation": "F325",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs"
+},
+{
+"command": "pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/categoryMetadata.test.ts",
+"id": "T3",
+"obligation": "F326",
+"oracle": "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "http-endpoint",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+"reason": "F307"
+},
+{
+"decision": "Changed",
+"kind": "http-endpoint",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+"reason": "F308"
+},
+{
+"decision": "Changed",
+"kind": "module-registration",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs",
+"reason": "F309"
+},
+{
+"decision": "Changed",
+"kind": "frontend-service",
+"locator": "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+"reason": "F310"
+},
+{
+"decision": "Changed",
+"kind": "widget-registry",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts",
+"reason": "F311"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "lighthouse-clients",
+"locator": "Lighthouse-Clients",
+"reason": "F312"
+},
+{
+"decision": "Changed",
+"kind": "value-object",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/WithinSleShare.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "value-object",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ServiceLevelExpectation.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "read-port",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleInfoQuery.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "application-service",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleInfoQuery.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "dto",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleInfoDto.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "frontend-model",
+"locator": "Lighthouse.Frontend/src/models/Metrics/WithinSleInfo.ts",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "fetch-keys",
+"locator": "Lighthouse.Frontend/src/hooks/metricsFetchKeys.ts",
+"reason": "F314"
+},
+{
+"decision": "Changed",
+"kind": "data-hook",
+"locator": "Lighthouse.Frontend/src/hooks/useMetricsData.ts",
+"reason": "F315"
+},
+{
+"decision": "Changed",
+"kind": "view",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+"reason": "F316"
+},
+{
+"decision": "Changed",
+"kind": "info-registry",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts",
+"reason": "F317"
+},
+{
+"decision": "Changed",
+"kind": "widget-registry-nodes",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx",
+"reason": "F318"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.tsx",
+"reason": "F313"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F322"
+},
+{
+"analysis": "prefactoring",
+"reason": "F323"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs:414",
+"reason": "F283",
+"symbol": "GetCycleTimeDataForTeam"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPortfolioMetricsService.cs:61",
+"reason": "F284",
+"symbol": "GetCycleTimeDataForPortfolio"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:3",
+"reason": "F285",
+"symbol": "calculateSLEStats"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs:41",
+"reason": "F286",
+"symbol": "ServiceLevelExpectationRange"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/SleRiskCalculator.cs:12",
+"reason": "F287",
+"symbol": "SleRiskCalculator"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/WithinSleShare.cs",
+"reason": "F288",
+"symbol": "WithinSleShare"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleInfoQuery.cs",
+"reason": "F289",
+"symbol": "IWithinSleInfoQuery"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/hooks/useMetricsQuery.ts:46",
+"reason": "F290",
+"symbol": "useMetricsQuery"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx:484",
+"reason": "F291",
+"symbol": "WidgetShell"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/InfoWidgetDtos.cs:8",
+"reason": "F292",
+"symbol": "InfoWidgetComparisonDto"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs:23",
+"reason": "F293",
+"symbol": "PortfolioMetricsController"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs:23",
+"reason": "F293",
+"symbol": "TeamMetricsController"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleInfoDto.cs",
+"reason": "F294",
+"symbol": "WithinSleInfoDto"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleInfoQuery.cs",
+"reason": "F295",
+"symbol": "WithinSleInfoQuery"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ServiceLevelExpectation.cs",
+"reason": "F296",
+"symbol": "ServiceLevelExpectation"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs:9",
+"reason": "F297",
+"symbol": "AddFlowMetrics"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/hooks/metricsFetchKeys.ts:8",
+"reason": "F298",
+"symbol": "metricsFetchKeys"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/hooks/useMetricsData.ts:141",
+"reason": "F299",
+"symbol": "useMetricsData"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/models/Metrics/WithinSleInfo.ts",
+"reason": "F300",
+"symbol": "WithinSleInfo"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:62",
+"reason": "F301",
+"symbol": "BaseMetricsView"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts:113",
+"reason": "F302",
+"symbol": "trendPolicies"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts:391",
+"reason": "F303",
+"symbol": "percentilesOverTime"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx:487",
+"reason": "F304",
+"symbol": "percentilesOverTime"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.tsx",
+"reason": "F305",
+"symbol": "WithinSleWidget"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/services/Api/MetricsService.ts:219",
+"reason": "F306",
+"symbol": "getCycleTimePercentilesInfo"
+}
+]
+},
+"supports": [
+"Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.test.tsx",
+"Lighthouse.EndToEndTests/tests/specs/metrics/WithinSle.spec.ts",
+"Lighthouse.EndToEndTests/tests/models/metrics/WithinSleWidget.ts"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/WithinSleShare.cs",
+"reason": "F270"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ServiceLevelExpectation.cs",
+"reason": "F271"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleInfoQuery.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleInfoQuery.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleInfoDto.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+"reason": "F272"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+"reason": "F272"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs",
+"reason": "F273"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/models/Metrics/WithinSleInfo.ts"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+"reason": "F274"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/hooks/metricsFetchKeys.ts",
+"reason": "F275"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/hooks/useMetricsData.ts",
+"reason": "F276"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts",
+"reason": "F277"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts",
+"reason": "F278"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+"reason": "F279"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.WithinSle.WithinSleInfoAtTheServicePortTest",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/WithinSleWidget.test.tsx",
+"pnpm --dir Lighthouse.EndToEndTests exec playwright test tests/specs/metrics/WithinSle.spec.ts",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest"
+]
+},
+"S6": {
+"oracle": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.test.tsx",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts",
+"move": "F334",
+"preserved": "F335",
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts"
+]
+},
+"public_oracle": {
+"expected": "F332",
+"falsifier": "F333",
+"promises": [
+"P2",
+"P3",
+"P4",
+"P5",
+"P12"
+],
+"stimulus": "F331"
+},
+"records": {
+"agreement": [
+{
+"contract": "WithinSleInfoDto.Comparison (InfoWidgetComparisonDto)",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleInfoQuery.cs",
+"party": "Producer",
+"reason": "F344"
+},
+{
+"contract": "WithinSleInfoDto.Comparison (InfoWidgetComparisonDto)",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+"party": "Consumer",
+"reason": "F345"
+}
+],
+"architectural_tests": [
+{
+"command": "pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/categoryMetadata.test.ts",
+"id": "T4",
+"obligation": "F347",
+"oracle": "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "rag-rule",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.ts",
+"reason": "F341"
+},
+{
+"decision": "Changed",
+"kind": "application-service",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleInfoQuery.cs",
+"reason": "F342"
+},
+{
+"decision": "Changed",
+"kind": "view",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+"reason": "F343"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.tsx",
+"reason": "F328"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F346"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:75",
+"reason": "F336",
+"symbol": "computeCycleTimePercentilesRag"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BaseMetricsService.cs:1228",
+"reason": "F337",
+"symbol": "BuildCycleTimePercentilesInfoDto"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleInfoQuery.cs",
+"reason": "F338",
+"symbol": "WithinSleInfoQuery"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:62",
+"reason": "F339",
+"symbol": "BaseMetricsView"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.tsx",
+"reason": "F340",
+"symbol": "WithinSleWidget"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoVerdictsAtTheServicePortTest.cs",
+"Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.ts",
+"reason": "F327"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.tsx",
+"reason": "F328"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+"reason": "F329"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleInfoQuery.cs",
+"reason": "F330"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/WithinSleWidget.test.tsx src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.WithinSle.WithinSleInfoVerdictsAtTheServicePortTest"
+]
+},
+"S7": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs",
+"public_oracle": {
+"expected": "F389",
+"falsifier": "F390",
+"promises": [
+"P6",
+"P7",
+"P9",
+"P10",
+"P14"
+],
+"stimulus": "F388"
+},
+"records": {
+"agreement": [
+{
+"contract": "GET within-sle-over-time -> WithinSleOverTimeDto",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+"party": "Producer",
+"reason": "F434"
+},
+{
+"contract": "GET within-sle-over-time -> WithinSleOverTimeDto",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+"party": "Producer",
+"reason": "F434"
+},
+{
+"contract": "GET within-sle-over-time -> WithinSleOverTimeDto",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+"party": "Consumer",
+"reason": "F321"
+},
+{
+"contract": "WithinSleSnapshots table",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs",
+"party": "Producer",
+"reason": "F435"
+},
+{
+"contract": "WithinSleSnapshots table",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Persistence/WithinSleSnapshotRepository.cs",
+"party": "Consumer",
+"reason": "F436"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest",
+"id": "T6",
+"obligation": "F439",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs"
+},
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.DomainEventHandlerOrderPinTest",
+"id": "T7",
+"obligation": "F440",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs"
+},
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.ExpandOnlyMigrationGuardTest",
+"id": "T8",
+"obligation": "F441",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ExpandOnlyMigrationGuardTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "database-schema",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+"reason": "F423"
+},
+{
+"decision": "Changed",
+"kind": "composition-root",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F424"
+},
+{
+"decision": "Changed",
+"kind": "test-pin",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs",
+"reason": "F425"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "database-backup",
+"locator": "Lighthouse.Backend/Restore-DbBackup.ps1",
+"reason": "F426"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "percentiles-over-time",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PercentileSnapshotWriter.cs",
+"reason": "F427"
+},
+{
+"decision": "Changed",
+"kind": "prose",
+"locator": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md",
+"reason": "F428"
+},
+{
+"decision": "Changed",
+"kind": "prose",
+"locator": "ARCHITECTURE.md",
+"reason": "F429"
+},
+{
+"decision": "Changed",
+"kind": "http-endpoint",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+"reason": "F430"
+},
+{
+"decision": "Changed",
+"kind": "http-endpoint",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+"reason": "F430"
+},
+{
+"decision": "Changed",
+"kind": "dto",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleDayDto.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "dto",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleOverTimeDto.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "entity",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshot.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "entity",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshotOrigin.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "repository",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Persistence/WithinSleSnapshotRepository.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "read-port",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleOverTimeSeriesQuery.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "driven-port",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleSnapshotRepository.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "writer-port",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleSnapshotWriter.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "policy",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/WithinSleRecordingHandler.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "family",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleFamilies.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "family",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleFamilyReader.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "application-service",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleOverTimeSeriesQuery.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "writer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "module-registration",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs",
+"reason": "F379"
+},
+{
+"decision": "Changed",
+"kind": "migration",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/LighthouseAppContextModelSnapshot.cs",
+"reason": "F431"
+},
+{
+"decision": "Changed",
+"kind": "migration",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/LighthouseAppContextModelSnapshot.cs",
+"reason": "F431"
+},
+{
+"decision": "Changed",
+"kind": "frontend-model",
+"locator": "Lighthouse.Frontend/src/models/Metrics/WithinSleOverTime.ts",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "widget-registry",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts",
+"reason": "F432"
+},
+{
+"decision": "Changed",
+"kind": "hook",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/useWithinSleOverTime.ts",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "info-registry",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts",
+"reason": "F317"
+},
+{
+"decision": "Changed",
+"kind": "widget-registry-nodes",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx",
+"reason": "F318"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.tsx",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "frontend-service",
+"locator": "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+"reason": "F433"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F437"
+},
+{
+"analysis": "prefactoring",
+"reason": "F438"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPercentileSnapshotWriter.cs:31",
+"reason": "F391",
+"symbol": "IPercentileSnapshotWriter"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/PercentilesOverTimeSnapshot.cs:3",
+"reason": "F392",
+"symbol": "PercentilesOverTimeSnapshot"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandler.cs:10",
+"reason": "F393",
+"symbol": "PercentilesOverTimeRecordingHandler"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PercentileSnapshotWriter.cs:120",
+"reason": "F394",
+"symbol": "LostRaceTolerantSave"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPercentilesOverTimeSeriesQuery.cs:12",
+"reason": "F395",
+"symbol": "IPercentilesOverTimeSeriesQuery"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetStatus.ts:99",
+"reason": "F396",
+"symbol": "seriesStatusOf"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.tsx:30",
+"reason": "F397",
+"symbol": "PercentilesOverTimeWidget"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs",
+"reason": "F398",
+"symbol": "WithinSleSnapshotWriter"
+},
+{
+"decision": "Extend",
+"locator": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:17",
+"reason": "F399",
+"symbol": "Flow metrics"
+},
+{
+"decision": "Extend",
+"locator": "ARCHITECTURE.md:100",
+"reason": "F400",
+"symbol": "FlowMetrics"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs:23",
+"reason": "F378",
+"symbol": "PortfolioMetricsController"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs:23",
+"reason": "F378",
+"symbol": "TeamMetricsController"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs:93",
+"reason": "F401",
+"symbol": "ProcessBehaviorSnapshots"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleDayDto.cs",
+"reason": "F402",
+"symbol": "WithinSleDayDto"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleOverTimeDto.cs",
+"reason": "F403",
+"symbol": "WithinSleOverTimeDto"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshot.cs",
+"reason": "F404",
+"symbol": "WithinSleSnapshot"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshotOrigin.cs",
+"reason": "F405",
+"symbol": "WithinSleSnapshotOrigin"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Persistence/WithinSleSnapshotRepository.cs",
+"reason": "F406",
+"symbol": "WithinSleSnapshotRepository"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleOverTimeSeriesQuery.cs",
+"reason": "F407",
+"symbol": "IWithinSleOverTimeSeriesQuery"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleSnapshotRepository.cs",
+"reason": "F408",
+"symbol": "IWithinSleSnapshotRepository"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleSnapshotWriter.cs",
+"reason": "F409",
+"symbol": "IWithinSleSnapshotWriter"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/WithinSleRecordingHandler.cs",
+"reason": "F410",
+"symbol": "WithinSleRecordingHandler"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleFamilies.cs",
+"reason": "F411",
+"symbol": "WithinSleFamilies"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleFamilyReader.cs",
+"reason": "F412",
+"symbol": "WithinSleFamilyReader"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleOverTimeSeriesQuery.cs",
+"reason": "F413",
+"symbol": "WithinSleOverTimeSeriesQuery"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs:9",
+"reason": "F414",
+"symbol": "AddFlowMetrics"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1426",
+"reason": "F415",
+"symbol": "ProcessBehaviorRecordingHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/LighthouseAppContextModelSnapshot.cs:13",
+"reason": "F416",
+"symbol": "LighthouseAppContextModelSnapshot"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/LighthouseAppContextModelSnapshot.cs:15",
+"reason": "F416",
+"symbol": "LighthouseAppContextModelSnapshot"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/models/Metrics/WithinSleOverTime.ts",
+"reason": "F417",
+"symbol": "WithinSleOverTime"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts:113",
+"reason": "F418",
+"symbol": "trendPolicies"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/useWithinSleOverTime.ts",
+"reason": "F419",
+"symbol": "useWithinSleOverTime"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts:391",
+"reason": "F420",
+"symbol": "percentilesOverTime"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx:487",
+"reason": "F421",
+"symbol": "percentilesOverTime"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.tsx",
+"reason": "F422",
+"symbol": "WithinSleOverTimeWidget"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/services/Api/MetricsService.ts:219",
+"reason": "F381",
+"symbol": "getCycleTimePercentilesInfo"
+}
+]
+},
+"supports": [
+"Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/WithinSleShareTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/WithinSleSnapshotWriterTest.cs"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshot.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshotOrigin.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+"reason": "F376"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleSnapshotRepository.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Persistence/WithinSleSnapshotRepository.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleFamilyReader.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleFamilies.cs",
+"reason": "F377"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleSnapshotWriter.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/WithinSleRecordingHandler.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleOverTimeSeriesQuery.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleOverTimeSeriesQuery.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleOverTimeDto.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleDayDto.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+"reason": "F378"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+"reason": "F378"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs",
+"reason": "F379"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F380"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/models/Metrics/WithinSleOverTime.ts"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+"reason": "F381"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/useWithinSleOverTime.ts",
+"reason": "F382"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts",
+"reason": "F383"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts"
+},
+{
+"change": "Extend",
+"path": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md",
+"reason": "F384"
+},
+{
+"change": "Extend",
+"path": "ARCHITECTURE.md",
+"reason": "F385"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/LighthouseAppContextModelSnapshot.cs",
+"reason": "F386"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/LighthouseAppContextModelSnapshot.cs",
+"reason": "F387"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.WithinSle.WithinSleDailyRecordAtTheServicePortTest",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.DomainEventHandlerOrderPinTest|FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.ExpandOnlyMigrationGuardTest|FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest"
+]
+},
+"S8": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleFillInAtTheServicePortTest.cs",
+"public_oracle": {
+"expected": "F354",
+"falsifier": "F355",
+"promises": [
+"P8",
+"P15"
+],
+"stimulus": "F353"
+},
+"records": {
+"agreement": [
+{
+"contract": "OverTimeFillTarget (internal record)",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/OverTimeFillTarget.cs",
+"party": "Producer",
+"reason": "F371"
+},
+{
+"contract": "OverTimeFillTarget (internal record)",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFiller.cs",
+"party": "Consumer",
+"reason": "F372"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.OverTimeReconstructionSeamArchUnitTest",
+"id": "T5",
+"obligation": "F375",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OverTimeReconstructionSeamArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "background-adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFiller.cs",
+"reason": "F364"
+},
+{
+"decision": "Changed",
+"kind": "fill-target",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/OverTimeFillTargetTest.cs",
+"reason": "F365"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "reconciler",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/OverTimeGapReconciler.cs",
+"reason": "F366"
+},
+{
+"decision": "Changed",
+"kind": "query-wrapper",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/GapAskingWithinSleOverTimeSeriesQuery.cs",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "fill-target",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/OverTimeFillTarget.cs",
+"reason": "F367"
+},
+{
+"decision": "Changed",
+"kind": "retention",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/RetentionEdge.cs",
+"reason": "F368"
+},
+{
+"decision": "Changed",
+"kind": "module-registration",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs",
+"reason": "F369"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.tsx",
+"reason": "F370"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F373"
+},
+{
+"analysis": "prefactoring",
+"reason": "F374"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFiller.cs:20",
+"reason": "F356",
+"symbol": "OverTimeHistoryFiller"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/OverTimeFillTarget.cs:20",
+"reason": "F357",
+"symbol": "OverTimeFillTarget"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/RetentionEdge.cs:63",
+"reason": "F358",
+"symbol": "Guard"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/GapAskingPercentilesOverTimeSeriesQuery.cs:11",
+"reason": "F359",
+"symbol": "GapAskingPercentilesOverTimeSeriesQuery"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ReconstructionMemo.cs:21",
+"reason": "F360",
+"symbol": "ReconstructionMemo"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/GapAskingWithinSleOverTimeSeriesQuery.cs",
+"reason": "F361",
+"symbol": "GapAskingWithinSleOverTimeSeriesQuery"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs:9",
+"reason": "F362",
+"symbol": "AddFlowMetrics"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.tsx",
+"reason": "F363",
+"symbol": "WithinSleOverTimeWidget"
+}
+]
+},
+"supports": [
+"Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/TwoCopiesFillingTheSameWithinSleDayAtThePortTest.cs"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/OverTimeFillTarget.cs",
+"reason": "F348"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/RetentionEdge.cs",
+"reason": "F349"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFiller.cs",
+"reason": "F350"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/GapAskingWithinSleOverTimeSeriesQuery.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs",
+"reason": "F351"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.tsx",
+"reason": "F352"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.WithinSle.WithinSleFillInAtTheServicePortTest|FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.WithinSle.TwoCopiesFillingTheSameWithinSleDayAtThePortTest",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.OverTimeReconstructionSeamArchUnitTest|FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest"
+]
+}
+}
 },
 "facts": {
 "F1": "[the customer] could not find where the SLE is shown. [the informant] looked on the Flow Metrics tab and did not see it until he found the toggle. Benjamin agreed: \"where is it actually? We should have that somewhere.\"\n\nThe SLE is a goal, so the point is to see it next to how the Team actually performs, for example 72.7% of items within 10 days against a target of 70%.\n\nRaised by [the customer]\n\n- Make the SLE more prominent instead of hiding it behind chart toggles and a small header indicator.\n- See how actual performance against the SLE develops over time. [the informant]: tracking this over time is key.\n- Use wording like \"or less\" so it is clear to people new to flow.\n\nDetails to be worked out when we start on it.\n\n(ADO Story #6563 description; customer and informant names replaced because customer identifiers are not committed. Maintainer's scope choice after DIVERGE, 2026-11-27: \"Mix + daily record\" - one new dedicated SLE widget in the overview, plus the SLE over time in Predictability as a persisted daily record.)",
 "F10": "Then the widget's header trend indicator compares the share with the share in the preceding period of the same length, as the other Flow Overview widgets do; the widget body shows no change of its own.",
+"F100": "Paradigm object_oriented: the backend is OO ports-and-adapters (CLAUDE.md); domain rules live on value objects in Modules/FlowMetrics/Domain, application services coordinate ports, frontend keeps its hook-and-pure-function style already used by ragRules*.ts.",
+"F101": "Where the share is computed (Open, Design -> decided): the backend owns the share for both surfaces. New value object WithinSleShare (Modules/FlowMetrics/Domain/WithinSleShare.cs) is a closed choice NoSle | TooFew(closed) | Measured(within, closed, sle), built only by WithinSleShare.Of(cycleTimesInDays, sle). It is the one owner of the rule a Work Item is within when its Cycle Time is at or below the SLE days, and of the minimum of 5 (MinimumClosed). New value object ServiceLevelExpectation (Domain/ServiceLevelExpectation.cs; Percentile 1..100, Days >= 1) with For(WorkTrackingSystemOptionsOwner) returning null when either setting is 0 or less. The widget info and every daily record row go through WithinSleShare; the frontend never recounts.",
+"F102": "S07b #6378 (BaseMetricsService to composition) is NOT a Before item: the share is not added to BaseMetricsService. New application services read closed cycle times through the existing ITeamMetricsService.GetCycleTimeDataForTeam and IPortfolioMetricsService.GetCycleTimeDataForPortfolio (default Cycle Time, cache and filters as the sibling widgets), so the base class gains no capability S07b would have to move.",
+"F103": "Residual duplicate kept on purpose: calculateSLEStats in Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.ts still counts within-SLE for the Cycle Time Percentiles status, because the scope excludes any change to that widget and its status (Q7). Follow-up for the improvement backlog: move that status onto the backend share.",
+"F104": "Read ports follow the S12a #6386 target shape, one query port per capability: IWithinSleInfoQuery (widget) and IWithinSleOverTimeSeriesQuery (chart) in Modules/FlowMetrics/Application, injected into TeamMetricsController and PortfolioMetricsController next to IPercentilesOverTimeSeriesQuery.",
+"F105": "Widget read (S5): new GET teams/{id}/metrics/withinSleInfo and portfolios/{id}/metrics/withinSleInfo with startDate, endDate (inclusive days, inverted window -> 400 with the existing message). Answer WithinSleInfoDto(Verdict NoSle|TooFew|Measured, ClosedCount, WithinCount, SlePercentile?, SleDays?, SharePercent?, Comparison InfoWidgetComparisonDto) in its own file Models/Metrics/WithinSleInfoDto.cs; InfoWidgetDtos.cs is not touched.",
+"F106": "Header trend (S6, Q2 previous-period): the comparison measures the preceding period of the same length exactly as cycleTimePercentilesInfo does (previousEnd = start - 1 day, previousStart = start - periodDays). Direction up/down by the sign of the share difference rounded to 0.1 points, flat at 0.0; delta text like +4.1 pts as sketched. The Proposed rule no comparison when either period is not Measured is adopted (direction none), because a share that is not judged (Q5) cannot be compared; it still awaits Product confirmation.",
+"F107": "Status (S6, Q7) stays a frontend RAG rule like all sibling statuses (Signals is target only): extract statusAgainstTarget(sharePercent, targetPercent) from computeCycleTimePercentilesRag as the one owner of Sustain / Observe up to 20 points below / Act beyond, and add computeWithinSleRag(info, terms) that maps NoSle to Act and TooFew to no status. Cycle Time Percentiles output stays byte-identical.",
+"F108": "Widget placement (Open, Design -> decided): widgetKey withinSle, size small, in flow-overview directly before percentiles (after predictabilityScore), no ownerFilter (Teams and Portfolios, Q6), trendPolicies withinSle previous-period, widgetFetchRequirements withinSle [withinSleInfo, cycleTimeData] because View Data reuses the Cycle Time Percentiles closed-items dialog fed by cycleTimeData. Title from terminology: Within {SLE}.",
+"F109": "Loading and could-not-load looks (Open, Design -> decided): the widget takes WidgetShell status from useMetricsData fetchStates of the new fetch key withinSleInfo (useMetricsQuery, keyed by owner and selected window); the chart owns its fetch through a keyed TanStack query [owner id, ownerUpdatedAt, horizon, from, to] mapped to WidgetShell status by seriesStatusOf, so a late answer for an old horizon or range never lands and the previous answer is never shown as current.",
 "F11": "No SLE set",
+"F110": "Daily record (S7): new entity WithinSleSnapshot (Models/WithinSleSnapshot.cs, entities still sit in Models per ADR-270): Id, OwnerId, OwnerType, RecordedAt (DateOnly, named like the other snapshot tables), Horizon (30|60|90), ClosedCount, WithinCount, SlePercentile, SleDays, Origin (WithinSleSnapshotOrigin Recorded=0 | FilledIn=1). Unique index (OwnerId, OwnerType, Horizon, RecordedAt). Counts are stored, never a percentage; the share and verdict are derived on read by WithinSleShare. A row is written whenever an SLE is set, for any closed count including 0, so the tooltip can state the count; no row is written while no SLE is set.",
+"F111": "Writer (S7): IWithinSleSnapshotWriter / WithinSleSnapshotWriter in Application, the single writer of WithinSleSnapshot rows, shaped like IPercentileSnapshotWriter: RecordToday overwrites today (row takes the SLE in force at the last recording of the day and Origin Recorded), FillDayIfAbsent never touches an existing row and writes Origin FilledIn against the SLE current at fill time (Q4), SaveFilledDay uses LostRaceTolerantSave. Family reader record WithinSleFamilyReader(ReadClosedCycleTimes(windowStart, windowEnd), CurrentSle()) in its own file.",
+"F112": "Refresh events that record the day (Open, Design -> decided): TeamDataRefreshed and PortfolioFeaturesRefreshed, the same events as the percentile snapshots, through a new WithinSleRecordingHandler in Application/Policies with its own failure containment and alert family WithinSle. Registered in Program.cs beside ProcessBehaviorRecordingHandler, not in FlowMetricsModule: AddFlowMetrics runs before the handler block, so module registration would place it before TeamDataRefreshedTeamMetricsUpdateHandler and record stale metrics; DomainEventHandlerOrderPinTest pins the order. Cost accepted: the Program.cs edit runs the full backend Integration suite in S7.",
+"F113": "Chart read (S7, Open -> decided): a new endpoint, not an extension of percentiles-over-time (different row shape; that endpoint already has external client consumers). GET teams/{id}/metrics/within-sle-over-time and portfolios/{id}/... with horizon 30|60|90 (anything else -> 400 naming the allowed values), optional startDate/endDate inclusive. Answer WithinSleOverTimeDto(CurrentSlePercentile?, CurrentSleDays?, Days WithinSleDayDto[]), each day RecordedAt, Horizon, ClosedCount, WithinCount, SlePercentile, SleDays, Origin, Verdict, SharePercent? so the frontend draws a point only where Verdict is Measured and never re-decides the minimum.",
+"F114": "Fill-in (S8): OverTimeFillTarget gains WithinSleFamilies built beside the percentile families and guarded by a new RetentionEdge.Guard(WithinSleFamilyReader) overload; OverTimeHistoryFiller.FillOneDayAsync stages and saves the within-SLE family as a third TryWriteDayAsync, so one pass fills every chart of the owner. GapAskingWithinSleOverTimeSeriesQuery wraps the stored read and asks IOverTimeGapReconciler for missing days, registered in FlowMetricsModule like the percentile wrapper. No demo backfill handler: past days come from the filler when the chart opens.",
+"F115": "Formal verification: claim each recorded day keeps its share and SLE; a fill never changes an existing day; a later row of a past day is always FilledIn; within never exceeds closed; no point below 5 -> Quint (state model over record, fill, SLE change and day advance), docs/feature/story-6563-sle-attainment/design/withinSleDailyRecord.qnt, checked by quint run per invariant and quint verify (Apalache, 6 steps). TLA+/TLC not needed: no fairness or temporal claim. Agda not needed: no type-level proof. Concurrency of two app copies is not modelled: the unique index plus LostRaceTolerantSave covers it and is observed by a SQLite service-port test like TwoCopiesFillingTheSameDayAtThePortTest. The share arithmetic (WithinSleShare.Of) is a pure function law checked by a default-suite property test, not by the model.",
+"F116": "No liveness claim: no product promise says a missing day is eventually filled; filling is bounded per chart load (90 days, 10 s) and resumes on the next load, so progress depends on readers opening the chart, which no fairness assumption can honestly cover.",
+"F117": "Second stressor walkthrough (not executed, design reading): blackout periods and the forecast filter reach the share through the same cycle-time population as Cycle Time Percentiles, so both widgets agree; a named Cycle Time selected on Cycle Time Percentiles does not change Within SLE (default Cycle Time only, scope); a demo load firing a refresh on partial data rewrites only today, which the next refresh corrects; a Portfolio with no closed Deliveries gives TooFew(0), not NoSle; the RetentionEdge guard makes a day reaching past retained items read empty so it is not filled as a false 0 share.",
+"F118": "Usage-data event: not decided here; asked in the DEVOPS wave (Open, owner Product).",
+"F119": "Context map: Flow metrics only. New glossary terms for ADR-270 Flow metrics: share within the SLE (of the Work Items closed in a window, the part whose Cycle Time is at or below the SLE days) and SLE in force on a day (the SLE stored with each daily record row). New concept: the Within SLE daily record (a fourth day-keyed snapshot table). No domain event published; reacts to TeamDataRefreshed and PortfolioFeaturesRefreshed. UI surfaces: the unit Metrics tab, Flow Overview and Predictability, unchanged. ADR-270 and ARCHITECTURE.md section 4 are updated in S7, where the table lands (Proposed -> confirmed).",
 "F12": "Given the Team or Portfolio has no SLE set",
+"F120": "Slice split confirmed as proposed: S5 is the walking skeleton (real closed Work Items and the owner real SLE through the running app); S6 carries the four verdict states; S7 carries the chart own too-few, no-SLE and no-history states; S8 the fill-in. Named Cycle Times out (confirmed). Between S5 and S6 nothing is pushed (AFK: nothing pushed until the maintainer says so), so the S5 body for NoSle/TooFew is never released alone.",
+"F121": "Minimum closed Work Items for a verdict or a chart point: 5 (Q5); fewer gives TooFew with the count. Bound applies to the selected range (widget) and to each day trailing window (chart).",
+"F122": "Status thresholds (Q7): Sustain when share >= target; Observe when below by up to and including 20 points; Act when more than 20 points below or no SLE set (Q10).",
+"F123": "Horizons: exactly 30, 60, 90 trailing days (Q3); no other horizon is stored or served.",
+"F124": "SLE inputs as validated today: probability (percentile) and range (days) are integers; an SLE exists only when both are greater than 0. No upper bound on days is introduced; percentile is 1..100 as the settings already accept. No narrower or wider bound is designed.",
+"F125": "Date range: no maximum length is imposed on the widget range or the chart window (as siblings); the chart fill is bounded by the existing filler budget, 90 days and 10 s per pass.",
+"F126": "Counts: 0 <= WithinCount <= ClosedCount; no upper bound on ClosedCount.",
+"F127": "Free (Q8): no licence check on either endpoint or surface.",
+"F128": "EF migration additive only, generated with the CreateMigration PowerShell script for every provider; RecordedAt keys the day.",
+"F129": "Backend acceptance scenarios drive the application-service ports (IWithinSleInfoQuery, IWithinSleSnapshotWriter, IWithinSleOverTimeSeriesQuery) through ServicePortHarness; no test host except a named skeleton or wire contract (TestHostUseGuardTest). Test-writing skill rules override nWave timing and PBT density.",
 "F13": "Then the widget reads that no SLE is set and its status is Act, prompting to define an SLE.",
+"F130": "Configurable terms (SLE, Work Item, Cycle Time) render through useTerminology; no customer or informant name anywhere.",
+"F131": "Out of scope and unchanged: Cycle Time Percentiles widget and status, SLE Risk, status tooltips wording, Aging chart SLE line, Then & Now reports, Lighthouse-Clients, Named Cycle Times.",
+"F132": "HTTP GET withinSleInfo and within-sle-over-time on TeamMetricsController / PortfolioMetricsController, delegating to the application ports IWithinSleInfoQuery and IWithinSleOverTimeSeriesQuery; domain events TeamDataRefreshed / PortfolioFeaturesRefreshed driving WithinSleRecordingHandler; chart loads driving the OverTimeHistoryFiller through IOverTimeGapReconciler",
+"F133": "ITeamMetricsService / IPortfolioMetricsService (closed cycle-time population, existing)",
+"F134": "IWithinSleSnapshotRepository (new, persistence of WithinSleSnapshot through LighthouseAppContext)",
+"F135": "ILighthouseClock (existing, the instance day)",
+"F136": "IRepository<Team> / IRepository<Portfolio> (existing, the owner and its SLE settings)",
+"F137": "API controllers -> FlowMetrics Application ports -> FlowMetrics Domain (WithinSleShare, ServiceLevelExpectation are pure, no I/O); Adapters/Persistence and Adapters/Background implement or drive Application ports; Domain depends on nothing in Application or Adapters; frontend widgets -> MetricsService -> HTTP only",
+"F138": "horizon not 30, 60 or 90 on within-sle-over-time",
+"F139": "400 with a message naming the allowed horizons",
 "F14": "Too few closed Work Items in the range",
+"F140": "startDate after endDate on either endpoint",
+"F141": "400 with the existing start-before-end message",
+"F142": "owner id unknown",
+"F143": "404 via GetEntityByIdAnExecuteAction",
+"F144": "recording throws on a refresh",
+"F145": "error logged with family WithinSle; no row that day; other families unaffected; next refresh records again",
+"F146": "a fill day cannot be written",
+"F147": "logged once per pass; not memoised; the next chart load asks again",
+"F148": "frontend request fails",
+"F149": "WidgetShell could-not-load look; no previous answer shown as current",
 "F15": "Given an SLE is set and fewer than 5 Work Items closed in the selected range",
+"F150": "Widget answer WithinSleInfoDto: Verdict, ClosedCount, WithinCount, SharePercent, SLE target and the previous-period Comparison for the selected range",
+"F151": "which Work Items are within or late (the View Data dialog shows them); Named Cycle Times; whether the SLE changed inside the range (only the current SLE is applied)",
+"F152": "Chart answer WithinSleOverTimeDto: current SLE and, per stored day, counts, SLE in force, Origin, Verdict and SharePercent",
+"F153": "a day never attempted from a day outside the stored history or one recorded while no SLE was set (all are absent days); which SLE was set on a filled-in day before recording started (Q4)",
+"F154": "Rendered widget and chart: large share with count, sentence, target, status colour and word, header trend; chart points, open versus filled markers, stepped target line, notes",
+"F155": "how the share was computed; stale cache versus fresh value within the same owner update",
+"F156": "Two stored days are equal when OwnerId, OwnerType, Horizon, RecordedAt, ClosedCount, WithinCount, SlePercentile, SleDays and Origin agree; Id is not observed",
+"F157": "Two shares are equal when Verdict, ClosedCount, WithinCount and the SLE (percentile, days) agree; the order of the input cycle times is not observed",
+"F158": "For every list of cycle times and every SLE or none, WithinSleShare.Of gives NoSle when the SLE is absent; TooFew(n) when n < 5; otherwise Measured with within = count of cycle times <= SLE days, 0 <= within <= closed and SharePercent = within / closed * 100; the result does not depend on input order",
+"F159": "cycle times 0..400 days, list length 0..40, SLE absent or percentile 1..100 with days 1..60",
 "F16": "Then the widget shows how many closed and that this is too few to judge, and gives no pass or fail status.",
+"F160": "empty list",
+"F161": "exactly 4 and exactly 5 cycle times",
+"F162": "a cycle time equal to the SLE days",
+"F163": "no SLE",
+"F164": "manual: on failure retry with the list halved and each element moved toward 0, report the smallest failing case",
+"F165": "oracle counts by a direct loop over the list and compares with the verdict fields",
+"F166": "counting < instead of <=, a minimum of 4 or 6, or a share computed over all Work Items rather than closed ones",
+"F167": "statusAgainstTarget(share, target) is Sustain when share >= target, Observe when 0 < target - share <= 20, Act when target - share > 20; computeWithinSleRag maps NoSle to Act and TooFew to no status",
+"F168": "share 70 target 70 -> Sustain",
+"F169": "share 69.9 target 70 -> Observe",
 "F17": "A reader of a Team's or Portfolio's Predictability category sees a chart of the share within the SLE day by day, against that day's SLE target, for the Work Items closed in the trailing 30, 60 or 90 days, chosen with a toggle, over the days inside the selected date range.",
+"F170": "share 50 target 70 -> Observe",
+"F171": "share 49.9 target 70 -> Act",
+"F172": "NoSle -> Act",
+"F173": "TooFew(3) -> no status",
+"F174": "closed set of boundary cases of a threshold rule",
+"F175": "A day that ended with a row keeps that row (counts, SLE, origin) under every later record, fill and SLE change; a later row for a past day is FilledIn; RecordToday overwrites only today",
+"F176": "record day 1 at SLE 70/10, change SLE to 85/14, advance and record day 2 -> day 1 still 70/10 Recorded",
+"F177": "fill a day already recorded -> row unchanged",
+"F178": "fill an absent past day -> FilledIn against the current SLE",
+"F179": "fill today then record today -> Recorded",
 "F18": "Each day keeps its own SLE",
+"F180": "no SLE set -> no row written",
+"F181": "day with 3 closed -> row stored, Verdict TooFew, no point",
+"F182": "the state space is covered by the Quint model; these examples are its executable projection on the pure writer with an in-memory repository",
+"F183": "Two copies filling the same owner, horizon and day leave one row: the unique index refuses the second insert and SaveFilledDay drops it",
+"F184": "two scopes fill the same day on one SQLite file -> one row, first copy values",
+"F185": "only a real database enforces the unique index; one race case at the service port",
+"F186": "A WithinSleSnapshot staged by the writer and read back through IWithinSleOverTimeSeriesQuery is equal under the WithinSleDayDto observation",
+"F187": "Recorded row 8/11 at 70/10 horizon 30",
+"F188": "FilledIn row 0/0 at 85/14 horizon 90",
+"F189": "finite field mapping; both origins and a zero-count row",
 "F19": "Given days were recorded while the SLE was 70% within 10 days",
+"F190": "The header comparison is none when the current or the previous period is not Measured; otherwise direction is the sign of the share difference rounded to 0.1 points",
+"F191": "current 72.7, previous 68.6 -> up +4.1 pts",
+"F192": "equal shares -> flat",
+"F193": "previous TooFew -> none",
+"F194": "current NoSle -> none",
+"F195": "closed set of comparison cases",
+"F196": "The writer and handler refine the Quint model: RecordToday = recordToday, FillDayIfAbsent = fillDayIfAbsent, an SLE settings save = changeSle, ILighthouseClock.Today moving = advanceDay",
+"F197": "mapping claim; its consequences are tested by the Application invariant examples",
+"F198": "A recorded day keeps its share and the SLE in force that day; no SLE change and no fill rewrites it",
+"F199": "history silently rewritten: the chart would show past days against an SLE they were never held to",
 "F2": "A person reading a Team's or Portfolio's metrics sees, without a toggle, how many closed Work Items finished within the SLE against its target, and how that share has moved day by day, so they can say whether the SLE is kept and whether it is getting better or worse.",
 "F20": "When the SLE is changed",
+"F200": "refresh events, gap asks for missing days, SLE settings saves",
+"F201": "within-sle-over-time Days[*].SlePercentile, SleDays, Origin",
+"F202": "any other writer of the WithinSleSnapshots table (direct EF use, a future migration data step, a database restore); covered only by the single-writer convention and the module layout test, not by the C# type checker",
+"F203": "A Measured share always has at least 5 closed Work Items and an SLE",
+"F204": "a pass or fail verdict on too little data (breaks Q5)",
+"F205": "closed cycle times and the owner SLE settings",
+"F206": "Verdict field of both answers",
+"F207": "C# construction is centralised by a private constructor, not proved; reflection could build one; the frontend trusts Verdict and must not recount",
+"F208": "stored day Recorded, Measured (>= 5 closed)",
+"F209": "stored day Recorded or FilledIn with fewer than 5 closed (TooFew, kept for the count, no point)",
 "F21": "Then those recorded days keep their share and target as recorded, and only later days use the new SLE.",
+"F210": "stored day FilledIn against the SLE current at fill time",
+"F211": "a stored row without an SLE",
+"F212": "WithinCount greater than ClosedCount",
+"F213": "two rows for one owner, horizon and day",
+"F214": "a past Recorded row changed after its day ended",
+"F215": "which SLE was set on a filled-in day before recording started (Q4 accepts today SLE)",
+"F216": "a day that ended with a row keeps that row",
+"F217": "a past day that ended without a row is only ever FilledIn",
+"F218": "within <= closed on every row",
+"F219": "a row draws a point only with at least 5 closed",
 "F22": "Past days are filled in",
+"F220": "one owner, one horizon, days 1..3, two SLE values or none, closed counts 0..6",
+"F221": "two app copies and crash windows are not modelled; covered by the unique index and the SQLite service-port test",
+"F222": "fill without the absence check overwrites an existing day",
+"F223": "fill marks its row Recorded",
+"F224": "within not bounded by closed",
+"F225": "a point is drawn at any count",
+"F226": "daily record keeps each day SLE and share",
+"F227": "Quint run per invariant and verify allInvariants NoError at 6 steps; each invariant killed by its mutant",
+"F228": "Within SLE widget and chart",
+"F229": "closed cycle times + ServiceLevelExpectation.For(owner) -> WithinSleShare.Of -> WithinSleInfoQuery / WithinSleSnapshotWriter -> WithinSleSnapshot -> WithinSleOverTimeSeriesQuery; every value built from admitted input, no cycle",
 "F23": "Given a Team or Portfolio whose stored history reaches back before the first recorded day",
+"F230": "withinSleInfo and within-sle-over-time on both metrics controllers -> MetricsService.getWithinSleInfo / getWithinSleOverTime -> WithinSleWidget (flow-overview) and WithinSleOverTimeWidget (predictability) through widgetNodes.tsx and categoryMetadata.ts",
+"F231": "fill-in of missing days",
+"F232": "not applicable: no promise of eventual fill; each pass is bounded and resumes on the next chart load, so no liveness property is claimed",
+"F233": "assumption: the owner refreshes every day; negated: no refresh for a week",
+"F234": "recorded days",
+"F235": "missing days filled from history as FilledIn, open markers and the note",
+"F236": "interpolated or carried-forward points",
+"F237": "filled days use the SLE set at fill time (Q4)",
+"F238": "assumption: the SLE is stable within a day; negated: changed between two refreshes of the same day",
+"F239": "all past days",
 "F24": "When the reader opens the chart for a range with missing days",
+"F240": "today row takes the SLE of the last recording that day",
+"F241": "a past day re-measured against the new SLE",
+"F242": "none",
+"F243": "assumption: one application copy; negated: two copies fill the same day",
+"F244": "one row per owner, horizon, day",
+"F245": "the second insert is dropped",
+"F246": "a duplicate point or a failed pass",
+"F247": "assumption: tracker history is stable; negated: items reopened or deleted after a day was recorded",
+"F248": "recorded day counts",
+"F249": "recorded and freshly computed values disagree",
 "F25": "Then the missing days are worked out from stored history in the same way as Percentiles Over Time, measured against the SLE set when they are filled in, and the chart says that filled-in days use that SLE.",
+"F250": "rewriting recorded days",
+"F251": "accepted: recorded days show what was observed then",
+"F252": "assumption: ReconstructionMemo forgets on refresh; negated: SLE set after a day was declined while no SLE was set",
+"F253": "other days",
+"F254": "that day stays missing until the next refresh clears the memo",
+"F255": "a row without an SLE",
+"F256": "gap until next refresh",
+"F257": "OverTimeHistoryFiller is the single reader of the fill queue",
+"F258": "recorded days and the chart answer",
+"F259": "a failed pass is logged and the next chart load asks again",
 "F26": "Too few closed Work Items on a day",
+"F260": "an exception ending the reader loop",
+"F261": "any writer of WithinSleSnapshots other than WithinSleSnapshotWriter (EF context, migrations, restore of an older database)",
+"F262": "the single-writer convention",
+"F263": "restore replaces history as a whole",
+"F264": "a second production writer",
+"F265": "not enforced by the type checker; the module layout test lists the writer and repository",
+"F266": "assumption: the instance day is the server day; negated: reader east or west of UTC",
+"F267": "day keys from ILighthouseClock.Today",
+"F268": "frontend formats days with formatLocalDate",
+"F269": "reducing an instant to a day in the writer",
 "F27": "Given a day whose trailing window holds fewer than 5 closed Work Items",
+"F270": "owner of within rule and minimum 5",
+"F271": "SLE value object",
+"F272": "withinSleInfo action",
+"F273": "register IWithinSleInfoQuery",
+"F274": "getWithinSleInfo",
+"F275": "withinSleInfo key",
+"F276": "withinSleInfo query and fetch state",
+"F277": "placement, trend policy, fetch requirements",
+"F278": "info text, higher is better",
+"F279": "View Data reuses the closed-items dialog",
 "F28": "When the chart is drawn",
+"F280": "Team (and a Portfolio) with SLE 70 % within 10 days and 11 Work Items closed in the selected range, 8 of them with Cycle Time <= 10 days, no Premium licence; ask IWithinSleInfoQuery for the range; in the UI open the Flow Overview and select View Data on the Within SLE widget",
+"F281": "Verdict Measured, ClosedCount 11, WithinCount 8, SharePercent 72.7, SlePercentile 70, SleDays 10; widget body reads 72.7 % (8 / 11), of Work Items closed within 10 days or less, Target 70 %; View Data opens the closed-items dialog with the 11 Work Items, close day, Cycle Time coloured against the SLE, longest first; shown without a licence",
+"F282": "a Work Item at exactly 10 days counted as late, items closed outside the range counted, the share computed in the frontend, a Premium gate, or the widget missing from a Portfolio",
+"F283": "the closed population and Cycle Time the sibling widgets use, with cache and filters",
+"F284": "same for Portfolios",
+"F285": "left in place for Cycle Time Percentiles only; not consumed by the new widget, whose share comes from WithinSleShare (no second owner added)",
+"F286": "the SLE settings stay where they are; ServiceLevelExpectation.For reads them",
+"F287": "considered: it judges open items against the SLE days, a different question; not extended",
+"F288": "no backend owner of the share or the minimum of 5 exists; SleRiskCalculator answers risk of open items",
+"F289": "S12a shape: one read port per capability instead of growing BaseMetricsService",
 "F29": "Then that day draws no point, and the chart says why.",
+"F290": "keyed TanStack fetch and fetch state for the widget",
+"F291": "header with View Data, trend, status; loading and could-not-load looks",
+"F292": "header trend carrier as used by every sibling",
+"F293": "existing driving adapter gains withinSleInfo",
+"F294": "no carrier holds verdict, counts and target; own file keeps InfoWidgetDtos.cs untouched",
+"F295": "implements the new read port; composes the metrics services instead of extending BaseMetricsService",
+"F296": "no SLE value object exists; two raw ints on the owner today",
+"F297": "module registration point",
+"F298": "one more fetch key",
+"F299": "owner of dashboard fetches and fetch states",
 "F30": "No SLE set for the chart",
+"F300": "frontend shape of the new answer",
+"F301": "owns View Data dialogs; reuses the closed-items dialog",
+"F302": "single registry of placement, trend policy and fetch requirements",
+"F303": "info text registry",
+"F304": "widget node registry",
+"F305": "no tile shows a share with count and target",
+"F306": "existing metrics API client gains getWithinSleInfo beside the sibling info call",
+"F307": "new action only; existing actions unchanged",
+"F308": "new action only",
+"F309": "one AddScoped line",
 "F31": "When the reader opens the chart",
+"F310": "new method on IMetricsService and BaseMetricsService; every mock of IMetricsService in tests needs the method (test helpers updated by their owners)",
+"F311": "categoryMetadata.test.ts requires a fetch entry and trend policy for every widget; both added",
+"F312": "new endpoint is additive; clients follow in a later Story (Q11)",
+"F313": "new",
+"F314": "one key added; MetricsFetchKey union widens, existing switches must stay total",
+"F315": "one query added; existing queries unchanged",
+"F316": "View Data case for withinSle",
+"F317": "one entry",
+"F318": "one node",
+"F319": "new contract, produced in this slice",
 "F32": "Then the chart says that no SLE is set instead of drawing a line.",
+"F320": "same contract for Portfolios",
+"F321": "only consumer, same commit",
+"F322": "producer and consumer ship in one deployable in the same commit; the primary oracle and the frontend test cover them; no external consumer until the Lighthouse-Clients Story",
+"F323": "Per touched file: TeamMetricsController.cs, PortfolioMetricsController.cs and FlowMetricsModule.cs each hold one type -> not-applicable; WithinSleShare.cs, ServiceLevelExpectation.cs, IWithinSleInfoQuery.cs, WithinSleInfoQuery.cs, WithinSleInfoDto.cs, WithinSleInfo.ts, WithinSleWidget.tsx are new -> not-applicable; MetricsService.ts holds IMetricsService, IFeatureSizeMetricsService, ITeamMetricsService, IProjectMetricsService and BaseMetricsService -> not-applicable in this slice: the interfaces describe the one service class family, every frontend import goes through this module, and the frontend convention keeps a service interface beside its implementation, so a split is a separate frontend improvement item, not a move this slice needs; metricsFetchKeys.ts, useMetricsData.ts, categoryMetadata.ts, widgetNodes.tsx, widgetInfoMetadata.ts, BaseMetricsView.tsx hold supporting types of one module (props and key unions) -> not-applicable, no type is touched",
+"F324": "WithinSleShare and ServiceLevelExpectation live in FlowMetrics Domain (pure), IWithinSleInfoQuery in Application contracts, WithinSleInfoQuery in Application implementations; Domain reaches no Application or Adapter type",
+"F325": "no new acceptance test starts a web host",
+"F326": "every widget has a fetch requirement entry and a trend policy",
+"F327": "statusAgainstTarget extracted, computeWithinSleRag added",
+"F328": "NoSle and TooFew bodies, status colour",
+"F329": "RAG wiring for withinSle",
 "F33": "Free",
+"F330": "previous-period comparison",
+"F331": "render the Within SLE widget for answers: 72.7 % vs target 70 (previous 68.6 %), 60 % vs 70, 49.9 % vs 70, NoSle, TooFew(3), and a previous period TooFew",
+"F332": "status Sustain green, Observe amber, Act red, Act with No SLE set, no status with 3 Work Items closed - too few to judge (needs at least 5) in a neutral colour; header trend up +4.1 pts, none when either period is not Measured; Cycle Time Percentiles status unchanged for the same data",
+"F333": "Observe at exactly 20.1 points below, a status or trend shown for TooFew, a green colour without the status word, or a changed Cycle Time Percentiles status",
+"F334": "L2 extract function: move the Sustain/Observe/Act threshold branch of computeCycleTimePercentilesRag into statusAgainstTarget(sharePercent, targetPercent), separate refactor commit before the behaviour; makes computeWithinSleRag reuse the one Q7 rule. Per touched file: ragRulesTimeAndAge.ts holds functions only -> this move; WithinSleWidget.tsx, BaseMetricsView.tsx, WithinSleInfoQuery.cs one component or type -> not-applicable",
+"F335": "computeCycleTimePercentilesRag status and tip text for every input",
+"F336": "its threshold branch becomes statusAgainstTarget, the one owner of Q7, reused by computeWithinSleRag",
+"F337": "pattern only: same previous-period window arithmetic; not called, the base class is not extended",
+"F338": "created in S5, extended here with the comparison",
+"F339": "RAG wiring lives here for every Flow Overview widget",
 "F34": "Given an instance without a Premium licence",
+"F340": "created in S5, extended here with the verdict bodies",
+"F341": "extraction preserves computeCycleTimePercentilesRag output; new rule added",
+"F342": "Comparison filled",
+"F343": "computeWithinSleRag wired; other RAG untouched",
+"F344": "same DTO shape all header trends read",
+"F345": "existing previous-period trend rendering",
+"F346": "same deployable, same commit; primary oracle covers producer and consumer",
+"F347": "every widget has a trend policy; withinSle is previous-period",
+"F348": "WithinSleFamilies",
+"F349": "Guard(WithinSleFamilyReader)",
 "F35": "When a reader opens the Flow Overview or the Predictability category",
+"F350": "third family in FillOneDayAsync",
+"F351": "interface resolves to the gap-asking wrapper",
+"F352": "open markers and the note",
+"F353": "Team with SLE 70/10, closed Work Items stored back 20 days, day 5 already Recorded at 60/8; ask IWithinSleOverTimeSeriesQuery for days 1..10 horizon 30, drain OverTimeHistoryFiller, ask again; render the answer",
+"F354": "first answer holds only day 5; after the drain days 1..10 inside the stored history are FilledIn against 70/10 and day 5 still Recorded at 60/8; days before the first finished Work Item absent; filled days draw open markers, recorded days filled markers, and the note says filled-in days are measured against today SLE",
+"F355": "day 5 rewritten, a filled day carrying Origin Recorded, a day before the history filled with 0 %, or filled and recorded markers alike",
+"F356": "one pass fills every chart of an owner; a second filler would split budgets and the maintenance gate",
+"F357": "holds every family of an owner",
+"F358": "same retention edge for the new family",
+"F359": "wrapper pattern; IOverTimeGapReconciler reused unchanged",
 "F36": "Then the widget and the chart are shown.",
+"F360": "per owner and day across families, unchanged",
+"F361": "wrapper like GapAskingPercentilesOverTimeSeriesQuery",
+"F362": "interface resolves to the wrapper",
+"F363": "created in S7, extended here with open markers and the note",
+"F364": "third write per day; percentile and process-behaviour behaviour unchanged",
+"F365": "record gains a member; test constructs it",
+"F366": "asked with the within-SLE held days",
+"F367": "WithinSleFamilies member",
+"F368": "Guard overload; existing guards unchanged",
+"F369": "registration swap",
 "F37": "A new SLE widget on the Flow Overview of Teams and Portfolios: the share within the SLE over the selected range, the count and the target; status and header trend indicator.",
+"F370": "markers and note",
+"F371": "adds WithinSleFamilies",
+"F372": "reads it, same commit",
+"F373": "internal record and in-process ports, one deployable, same commit",
+"F374": "Per touched file: OverTimeFillTarget.cs one record, RetentionEdge.cs one class, OverTimeHistoryFiller.cs one class with private nested helpers, FlowMetricsModule.cs one class, WithinSleOverTimeWidget.tsx one component -> not-applicable; GapAskingWithinSleOverTimeSeriesQuery.cs new -> not-applicable",
+"F375": "reconstruction stays behind the filler seam; the wrapper is the only gap asker of the new series",
+"F376": "DbSet and unique index",
+"F377": "one list for live recording and fill, like PercentileFamilies",
+"F378": "within-sle-over-time action",
+"F379": "repository, writer, query",
 "F38": "A persisted daily record of the share within the SLE for trailing 30, 60 and 90 days, storing the SLE in force that day, filled in for past days like Percentiles Over Time.",
+"F380": "WithinSleRecordingHandler after the metrics update handler",
+"F381": "getWithinSleOverTime",
+"F382": "keyed TanStack query",
+"F383": "predictability placement after percentilesOverTime, trend none, own fetch lifecycle",
+"F384": "Flow metrics glossary rows",
+"F385": "section 4 daily record",
+"F386": "Create-Migration.ps1 AddWithinSleSnapshots regenerates it and adds the migration file",
+"F387": "same for Postgres",
+"F388": "on a real SQLite service-port harness: Team with SLE 70/10 refreshed on day 1 (8 of 11 within, trailing 30), SLE changed to 85/14, refreshed on day 2; a day with 3 closed; then IWithinSleOverTimeSeriesQuery for horizon 30 over days 1..3; a Team with no SLE; the chart rendered for these answers with the 30/60/90 toggle",
+"F389": "day 1 Recorded 8/11 at 70/10 Measured 72.7; day 2 Recorded against 85/14; the 3-closed day TooFew with no point and the chart says why; day 3 absent and draws no point; no-SLE owner shows the no SLE set message instead of a line; target line steps on day 2; horizon 45 refused with 400",
 "F39": "A chart of that daily record in the Predictability category of Teams and Portfolios.",
+"F390": "day 1 re-measured against 85/14, a point for the 3-closed day, a 0 % point for an absent day, a line drawn while no SLE is set, or an old horizon answer shown after switching",
+"F391": "shape copied (RecordToday / FillDayIfAbsent / SaveFilledDay), not extended: its rows carry percentiles, not counts and an SLE",
+"F392": "considered and not extended: adding counts, SLE and origin would widen every percentile row and its client contract",
+"F393": "pattern for events, containment and cache invalidation; its alert family stays Percentiles, so a sibling handler is created",
+"F394": "drops the refused duplicate day",
+"F395": "S12a read-port shape for IWithinSleOverTimeSeriesQuery",
+"F396": "loading and failure mapping to WidgetShell status",
+"F397": "horizon toggle, empty-state sentence and axis conventions reused; separate widget because series and target line differ",
+"F398": "single writer of the new table; no existing writer owns counts with an SLE",
+"F399": "glossary rows added to the existing Flow metrics context",
 "F4": "Status follows the percentiles rule",
 "F40": "Docs for both, in the configurable terms, at finalize.",
+"F400": "section 4 names the daily record",
+"F401": "DbSet and index beside the other snapshot tables",
+"F402": "per-day answer row",
+"F403": "series answer with current SLE",
+"F404": "see ADR: counts with the SLE in force, not a percentile row",
+"F405": "recorded versus filled-in has no carrier today",
+"F406": "one repository per snapshot table, like PercentilesOverTimeSnapshotRepository",
+"F407": "S12a read port",
+"F408": "driven port for the table",
+"F409": "single-writer port",
 "F41": "The status tooltips' wording ('@ 10 days' to 'or less') and the Work Item Aging chart's SLE line default: maintainer answered Neither (2026-11-27).",
+"F410": "own alert family and containment",
+"F411": "one family list for live recording and fill",
+"F412": "reader record for the family",
+"F413": "stored read",
+"F414": "registrations",
+"F415": "handler registered beside the other recorders",
+"F416": "regenerated by Create-Migration.ps1 with the new migration",
+"F417": "frontend shape of the series",
+"F418": "predictability placement",
+"F419": "keyed TanStack query; usePercentilesOverTime keeps its own state cache",
 "F42": "Readouts in the Quick Settings header and a configurable info bar: maintainer called it too much for now.",
+"F420": "info text",
+"F421": "node",
+"F422": "chart",
+"F423": "additive table and index; ExpandOnlyMigrationGuardTest",
+"F424": "two handler registrations; forces the full backend Integration suite",
+"F425": "TeamDataRefreshed and PortfolioFeaturesRefreshed orders list the new handler; owned by the acceptance designer",
+"F426": "restore runs migrations; an older backup gains the empty table",
+"F427": "not touched",
+"F428": "glossary rows",
+"F429": "section 4",
 "F43": "An SLE panel in a Then & Now report; flow metric reports are planned separately.",
+"F430": "new action",
+"F431": "additive table",
+"F432": "predictability entry, trend none, empty fetch requirement like percentilesOverTime",
+"F433": "new method; IMetricsService mocks need it",
+"F434": "new contract",
+"F435": "single writer",
+"F436": "reads for the series query",
+"F437": "API producer and consumer in one deployable and commit; persisted rows have one writer and one reader in the same assembly, version-crossing is covered by the expand-only migration guard and the round-trip law",
+"F438": "Per touched file: TeamMetricsController.cs, PortfolioMetricsController.cs, FlowMetricsModule.cs, Program.cs, LighthouseAppContext.cs each hold one type -> not-applicable; MetricsService.ts several interfaces plus one class -> not-applicable, reason as in S5; categoryMetadata.ts, widgetNodes.tsx, widgetInfoMetadata.ts supporting types of one module, none touched -> not-applicable; every other file is new -> not-applicable; ADR-270 and ARCHITECTURE.md are prose",
+"F439": "new types sit in their FlowMetrics layer: WithinSleSnapshotWriter, WithinSleOverTimeSeriesQuery implementations; IWithinSleSnapshotWriter, IWithinSleSnapshotRepository, IWithinSleOverTimeSeriesQuery contracts; WithinSleRecordingHandler in Policies; WithinSleSnapshotRepository in Adapters/Persistence and seen by every repository rule",
 "F44": "Lighthouse-Clients CLI and MCP: a follow-up Story once the API is settled; no client version bump here.",
+"F440": "refresh handlers run in the pinned order with the metrics update first",
+"F441": "the migration is additive only",
 "F45": "Named Cycle Times: the SLE targets the default Cycle Time only.",
 "F46": "Any change to SLE Risk or to the Cycle Time Percentiles widget and its status.",
 "F48": "Q1: the widget counts the Work Items closed in the selected date range, like its sibling widgets; filters apply.",

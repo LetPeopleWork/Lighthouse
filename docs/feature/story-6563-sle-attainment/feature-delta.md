@@ -114,6 +114,19 @@ DELIVER, with "higher is better"; grey plus one accent, and the widget's colour 
 no bars; no forecast shown; loading, failure and too-little-data distinct from no data; phone width, dark mode,
 enlarged view and the PDF export are checked on the built screen at finalize.
 
+## Rigor profile and AFK options (agreed 2026-11-27, before AFK mode)
+
+| Slice | Profile | Crafter, acceptance designer | Reviewers, examiner |
+|---|---|---|---|
+| S5 the Within SLE widget | standard | sonnet | haiku |
+| S6 the widget's verdict states | standard | sonnet | haiku |
+| S7 the daily record and its chart | thorough | opus | sonnet |
+| S8 filling in past days | thorough | opus | sonnet |
+| DESIGN (architect) | thorough | opus | sonnet |
+
+The whole-candidate review and EXAMINE use sonnet, the strictest reviewer model in the table. AFK options: each slice
+ends with refactor + review (mutation once, in the final gates); nothing is pushed until the maintainer says so.
+
 ## DISCUSS: what stays open
 
 - **Proposed (Product):** the header trend shows no comparison when either period has fewer than 5 closed Work
@@ -175,3 +188,21 @@ query-port shape; DESIGN decides on S07b once it knows where the share is comput
   the percentile snapshots today (to be confirmed at DESIGN).
 - **UI surface (ADR-271):** a unit's page, Metrics tab — the widget in the Flow Overview category and the chart in
   the Predictability category, for Teams and Portfolios. Both are their target surfaces already; nothing moves.
+
+## DESIGN (2026-11-27, AFK, propose mode)
+
+The design is in `handoff.json` (read it in `architecture.md`), with the Proposed ADR
+`docs/product/architecture/ADR-003.md` and the Quint model and receipt under `design/`. Design review
+(`runs/review.design.json`, sonnet): accepted, no findings. The slices are numbered S5–S8 since the DISCUSS revision.
+
+Taken autonomously in AFK mode, for the maintainer to revisit:
+
+- **Header trend with too few:** the Proposed DISCUSS rule (no comparison when either period has fewer than 5 closed
+  Work Items, or no SLE) is adopted. It follows from Q5; S6 pins it.
+- **Widget place:** `withinSle` sits in the Flow Overview directly before Cycle Time Percentiles, for Teams and
+  Portfolios.
+- **Share computed in the backend** for both surfaces (one owner of the rule and the minimum of 5); the frontend's
+  `calculateSLEStats` stays only for the Cycle Time Percentiles status, which is out of scope. S07b #6378 is not a
+  Before item: `BaseMetricsService` gets nothing new.
+- **Program.cs registration** of the recording handler, for handler order after the metrics update; S7 therefore runs
+  the full backend Integration suite.

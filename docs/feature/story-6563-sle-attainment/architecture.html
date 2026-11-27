@@ -156,18 +156,3516 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Paradigm</h2>
 
-<p>None.</p>
+<p>object_oriented</p>
 
 <h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>Paradigm object_oriented: the backend is OO ports-and-adapters (CLAUDE.md); domain rules live on value objects in Modules/FlowMetrics/Domain, application services coordinate ports, frontend keeps its hook-and-pure-function style already used by ragRules*.ts.
+</code></pre>
+
+<h4>D2</h4>
+
+<pre><code>Where the share is computed (Open, Design -&gt; decided): the backend owns the share for both surfaces. New value object WithinSleShare (Modules/FlowMetrics/Domain/WithinSleShare.cs) is a closed choice NoSle | TooFew(closed) | Measured(within, closed, sle), built only by WithinSleShare.Of(cycleTimesInDays, sle). It is the one owner of the rule a Work Item is within when its Cycle Time is at or below the SLE days, and of the minimum of 5 (MinimumClosed). New value object ServiceLevelExpectation (Domain/ServiceLevelExpectation.cs; Percentile 1..100, Days &gt;= 1) with For(WorkTrackingSystemOptionsOwner) returning null when either setting is 0 or less. The widget info and every daily record row go through WithinSleShare; the frontend never recounts.
+</code></pre>
+
+<h4>D3</h4>
+
+<pre><code>S07b #6378 (BaseMetricsService to composition) is NOT a Before item: the share is not added to BaseMetricsService. New application services read closed cycle times through the existing ITeamMetricsService.GetCycleTimeDataForTeam and IPortfolioMetricsService.GetCycleTimeDataForPortfolio (default Cycle Time, cache and filters as the sibling widgets), so the base class gains no capability S07b would have to move.
+</code></pre>
+
+<h4>D4</h4>
+
+<pre><code>Residual duplicate kept on purpose: calculateSLEStats in Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.ts still counts within-SLE for the Cycle Time Percentiles status, because the scope excludes any change to that widget and its status (Q7). Follow-up for the improvement backlog: move that status onto the backend share.
+</code></pre>
+
+<h4>D5</h4>
+
+<pre><code>Read ports follow the S12a #6386 target shape, one query port per capability: IWithinSleInfoQuery (widget) and IWithinSleOverTimeSeriesQuery (chart) in Modules/FlowMetrics/Application, injected into TeamMetricsController and PortfolioMetricsController next to IPercentilesOverTimeSeriesQuery.
+</code></pre>
+
+<h4>D6</h4>
+
+<pre><code>Widget read (S5): new GET teams/{id}/metrics/withinSleInfo and portfolios/{id}/metrics/withinSleInfo with startDate, endDate (inclusive days, inverted window -&gt; 400 with the existing message). Answer WithinSleInfoDto(Verdict NoSle|TooFew|Measured, ClosedCount, WithinCount, SlePercentile?, SleDays?, SharePercent?, Comparison InfoWidgetComparisonDto) in its own file Models/Metrics/WithinSleInfoDto.cs; InfoWidgetDtos.cs is not touched.
+</code></pre>
+
+<h4>D7</h4>
+
+<pre><code>Header trend (S6, Q2 previous-period): the comparison measures the preceding period of the same length exactly as cycleTimePercentilesInfo does (previousEnd = start - 1 day, previousStart = start - periodDays). Direction up/down by the sign of the share difference rounded to 0.1 points, flat at 0.0; delta text like +4.1 pts as sketched. The Proposed rule no comparison when either period is not Measured is adopted (direction none), because a share that is not judged (Q5) cannot be compared; it still awaits Product confirmation.
+</code></pre>
+
+<h4>D8</h4>
+
+<pre><code>Status (S6, Q7) stays a frontend RAG rule like all sibling statuses (Signals is target only): extract statusAgainstTarget(sharePercent, targetPercent) from computeCycleTimePercentilesRag as the one owner of Sustain / Observe up to 20 points below / Act beyond, and add computeWithinSleRag(info, terms) that maps NoSle to Act and TooFew to no status. Cycle Time Percentiles output stays byte-identical.
+</code></pre>
+
+<h4>D9</h4>
+
+<pre><code>Widget placement (Open, Design -&gt; decided): widgetKey withinSle, size small, in flow-overview directly before percentiles (after predictabilityScore), no ownerFilter (Teams and Portfolios, Q6), trendPolicies withinSle previous-period, widgetFetchRequirements withinSle [withinSleInfo, cycleTimeData] because View Data reuses the Cycle Time Percentiles closed-items dialog fed by cycleTimeData. Title from terminology: Within {SLE}.
+</code></pre>
+
+<h4>D10</h4>
+
+<pre><code>Loading and could-not-load looks (Open, Design -&gt; decided): the widget takes WidgetShell status from useMetricsData fetchStates of the new fetch key withinSleInfo (useMetricsQuery, keyed by owner and selected window); the chart owns its fetch through a keyed TanStack query [owner id, ownerUpdatedAt, horizon, from, to] mapped to WidgetShell status by seriesStatusOf, so a late answer for an old horizon or range never lands and the previous answer is never shown as current.
+</code></pre>
+
+<h4>D11</h4>
+
+<pre><code>Daily record (S7): new entity WithinSleSnapshot (Models/WithinSleSnapshot.cs, entities still sit in Models per ADR-270): Id, OwnerId, OwnerType, RecordedAt (DateOnly, named like the other snapshot tables), Horizon (30|60|90), ClosedCount, WithinCount, SlePercentile, SleDays, Origin (WithinSleSnapshotOrigin Recorded=0 | FilledIn=1). Unique index (OwnerId, OwnerType, Horizon, RecordedAt). Counts are stored, never a percentage; the share and verdict are derived on read by WithinSleShare. A row is written whenever an SLE is set, for any closed count including 0, so the tooltip can state the count; no row is written while no SLE is set.
+</code></pre>
+
+<h4>D12</h4>
+
+<pre><code>Writer (S7): IWithinSleSnapshotWriter / WithinSleSnapshotWriter in Application, the single writer of WithinSleSnapshot rows, shaped like IPercentileSnapshotWriter: RecordToday overwrites today (row takes the SLE in force at the last recording of the day and Origin Recorded), FillDayIfAbsent never touches an existing row and writes Origin FilledIn against the SLE current at fill time (Q4), SaveFilledDay uses LostRaceTolerantSave. Family reader record WithinSleFamilyReader(ReadClosedCycleTimes(windowStart, windowEnd), CurrentSle()) in its own file.
+</code></pre>
+
+<h4>D13</h4>
+
+<pre><code>Refresh events that record the day (Open, Design -&gt; decided): TeamDataRefreshed and PortfolioFeaturesRefreshed, the same events as the percentile snapshots, through a new WithinSleRecordingHandler in Application/Policies with its own failure containment and alert family WithinSle. Registered in Program.cs beside ProcessBehaviorRecordingHandler, not in FlowMetricsModule: AddFlowMetrics runs before the handler block, so module registration would place it before TeamDataRefreshedTeamMetricsUpdateHandler and record stale metrics; DomainEventHandlerOrderPinTest pins the order. Cost accepted: the Program.cs edit runs the full backend Integration suite in S7.
+</code></pre>
+
+<h4>D14</h4>
+
+<pre><code>Chart read (S7, Open -&gt; decided): a new endpoint, not an extension of percentiles-over-time (different row shape; that endpoint already has external client consumers). GET teams/{id}/metrics/within-sle-over-time and portfolios/{id}/... with horizon 30|60|90 (anything else -&gt; 400 naming the allowed values), optional startDate/endDate inclusive. Answer WithinSleOverTimeDto(CurrentSlePercentile?, CurrentSleDays?, Days WithinSleDayDto[]), each day RecordedAt, Horizon, ClosedCount, WithinCount, SlePercentile, SleDays, Origin, Verdict, SharePercent? so the frontend draws a point only where Verdict is Measured and never re-decides the minimum.
+</code></pre>
+
+<h4>D15</h4>
+
+<pre><code>Fill-in (S8): OverTimeFillTarget gains WithinSleFamilies built beside the percentile families and guarded by a new RetentionEdge.Guard(WithinSleFamilyReader) overload; OverTimeHistoryFiller.FillOneDayAsync stages and saves the within-SLE family as a third TryWriteDayAsync, so one pass fills every chart of the owner. GapAskingWithinSleOverTimeSeriesQuery wraps the stored read and asks IOverTimeGapReconciler for missing days, registered in FlowMetricsModule like the percentile wrapper. No demo backfill handler: past days come from the filler when the chart opens.
+</code></pre>
+
+<h4>D16</h4>
+
+<pre><code>Formal verification: claim each recorded day keeps its share and SLE; a fill never changes an existing day; a later row of a past day is always FilledIn; within never exceeds closed; no point below 5 -&gt; Quint (state model over record, fill, SLE change and day advance), docs/feature/story-6563-sle-attainment/design/withinSleDailyRecord.qnt, checked by quint run per invariant and quint verify (Apalache, 6 steps). TLA+/TLC not needed: no fairness or temporal claim. Agda not needed: no type-level proof. Concurrency of two app copies is not modelled: the unique index plus LostRaceTolerantSave covers it and is observed by a SQLite service-port test like TwoCopiesFillingTheSameDayAtThePortTest. The share arithmetic (WithinSleShare.Of) is a pure function law checked by a default-suite property test, not by the model.
+</code></pre>
+
+<h4>D17</h4>
+
+<pre><code>No liveness claim: no product promise says a missing day is eventually filled; filling is bounded per chart load (90 days, 10 s) and resumes on the next load, so progress depends on readers opening the chart, which no fairness assumption can honestly cover.
+</code></pre>
+
+<h4>D18</h4>
+
+<pre><code>Second stressor walkthrough (not executed, design reading): blackout periods and the forecast filter reach the share through the same cycle-time population as Cycle Time Percentiles, so both widgets agree; a named Cycle Time selected on Cycle Time Percentiles does not change Within SLE (default Cycle Time only, scope); a demo load firing a refresh on partial data rewrites only today, which the next refresh corrects; a Portfolio with no closed Deliveries gives TooFew(0), not NoSle; the RetentionEdge guard makes a day reaching past retained items read empty so it is not filled as a false 0 share.
+</code></pre>
+
+<h4>D19</h4>
+
+<pre><code>Usage-data event: not decided here; asked in the DEVOPS wave (Open, owner Product).
+</code></pre>
+
+<h4>D20</h4>
+
+<pre><code>Context map: Flow metrics only. New glossary terms for ADR-270 Flow metrics: share within the SLE (of the Work Items closed in a window, the part whose Cycle Time is at or below the SLE days) and SLE in force on a day (the SLE stored with each daily record row). New concept: the Within SLE daily record (a fourth day-keyed snapshot table). No domain event published; reacts to TeamDataRefreshed and PortfolioFeaturesRefreshed. UI surfaces: the unit Metrics tab, Flow Overview and Predictability, unchanged. ADR-270 and ARCHITECTURE.md section 4 are updated in S7, where the table lands (Proposed -&gt; confirmed).
+</code></pre>
+
+<h4>D21</h4>
+
+<pre><code>Slice split confirmed as proposed: S5 is the walking skeleton (real closed Work Items and the owner real SLE through the running app); S6 carries the four verdict states; S7 carries the chart own too-few, no-SLE and no-history states; S8 the fill-in. Named Cycle Times out (confirmed). Between S5 and S6 nothing is pushed (AFK: nothing pushed until the maintainer says so), so the S5 body for NoSle/TooFew is never released alone.
+</code></pre>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Minimum closed Work Items for a verdict or a chart point: 5 (Q5); fewer gives TooFew with the count. Bound applies to the selected range (widget) and to each day trailing window (chart).
+</code></pre>
+
+<h4>K2</h4>
+
+<pre><code>Status thresholds (Q7): Sustain when share &gt;= target; Observe when below by up to and including 20 points; Act when more than 20 points below or no SLE set (Q10).
+</code></pre>
+
+<h4>K3</h4>
+
+<pre><code>Horizons: exactly 30, 60, 90 trailing days (Q3); no other horizon is stored or served.
+</code></pre>
+
+<h4>K4</h4>
+
+<pre><code>SLE inputs as validated today: probability (percentile) and range (days) are integers; an SLE exists only when both are greater than 0. No upper bound on days is introduced; percentile is 1..100 as the settings already accept. No narrower or wider bound is designed.
+</code></pre>
+
+<h4>K5</h4>
+
+<pre><code>Date range: no maximum length is imposed on the widget range or the chart window (as siblings); the chart fill is bounded by the existing filler budget, 90 days and 10 s per pass.
+</code></pre>
+
+<h4>K6</h4>
+
+<pre><code>Counts: 0 &lt;= WithinCount &lt;= ClosedCount; no upper bound on ClosedCount.
+</code></pre>
+
+<h4>K7</h4>
+
+<pre><code>Free (Q8): no licence check on either endpoint or surface.
+</code></pre>
+
+<h4>K8</h4>
+
+<pre><code>EF migration additive only, generated with the CreateMigration PowerShell script for every provider; RecordedAt keys the day.
+</code></pre>
+
+<h4>K9</h4>
+
+<pre><code>Backend acceptance scenarios drive the application-service ports (IWithinSleInfoQuery, IWithinSleSnapshotWriter, IWithinSleOverTimeSeriesQuery) through ServicePortHarness; no test host except a named skeleton or wire contract (TestHostUseGuardTest). Test-writing skill rules override nWave timing and PBT density.
+</code></pre>
+
+<h4>K10</h4>
+
+<pre><code>Configurable terms (SLE, Work Item, Cycle Time) render through useTerminology; no customer or informant name anywhere.
+</code></pre>
+
+<h4>K11</h4>
+
+<pre><code>Out of scope and unchanged: Cycle Time Percentiles widget and status, SLE Risk, status tooltips wording, Aging chart SLE line, Then &amp; Now reports, Lighthouse-Clients, Named Cycle Times.
+</code></pre>
+
+<h4>K12</h4>
+
+<pre><code>Q1: the widget counts the Work Items closed in the selected date range, like its sibling widgets; filters apply.
+</code></pre>
+
+<h4>K13</h4>
+
+<pre><code>Q2: the change against the preceding period lives in the widget&#x27;s header trend indicator (previous-period policy), not in the widget body.
+</code></pre>
+
+<h4>K14</h4>
+
+<pre><code>Q3: the daily record has trailing 30, 60 and 90 day horizons with a toggle, like Percentiles Over Time.
+</code></pre>
+
+<h4>K15</h4>
+
+<pre><code>Q5: fewer than 5 closed Work Items gives no verdict on the widget and no point on the chart.
+</code></pre>
+
+<h4>K16</h4>
+
+<pre><code>Q6: both the widget and the chart appear for Teams and Portfolios.
+</code></pre>
+
+<h4>K17</h4>
+
+<pre><code>Q7: the widget reuses the Cycle Time Percentiles status rule (Sustain at or above target, Observe up to 20 points below, Act beyond or no SLE); Cycle Time Percentiles keeps its own status.
+</code></pre>
+
+<h4>K18</h4>
+
+<pre><code>Q8: free, no Premium gate.
+</code></pre>
+
+<h4>K19</h4>
+
+<pre><code>Q9: the tooltip wording and the Aging chart line default are out of this Story.
+</code></pre>
+
+<h4>K20</h4>
+
+<pre><code>Q10: with no SLE set the widget says so and its status is Act.
+</code></pre>
+
+<h4>K21</h4>
+
+<pre><code>Q11: Lighthouse-Clients follow in a later Story.
+</code></pre>
+
+<h4>K22</h4>
+
+<pre><code>Q4: answer &#x27;Record SLE per day&#x27;, whose option read: &#x27;Each recorded day stores the SLE in force that day, so changing the SLE does not rewrite history. Filled-in past days (before recording) use today&#x27;s SLE and the chart says so.&#x27;
+</code></pre>
+
+<h4>K23</h4>
+
+<pre><code>Q12: answer &#x27;Decide at finalize&#x27; - a deferral: whether the website gets a line is decided at finalize.
+</code></pre>
+
+<h4>K24</h4>
+
+<pre><code>Sketch review: the widget is titled &#x27;Within SLE&#x27;; View Data reuses the Cycle Time Percentiles closed-items dialog; View Data, the trend and the status sit in the WidgetShell header, not in the widget body.
+</code></pre>
+
+<h4>K25</h4>
+
+<pre><code>Sketch review: the chart has a fixed 0-100 axis &#x27;Within SLE (%)&#x27;, one accent line, a dashed grey target line labelled at its right end that steps on the day the SLE changed, the 30/60/90 day toggle, and a tooltip with day, share, count, horizon and target.
+</code></pre>
+
+<h4>K26</h4>
+
+<pre><code>Scope: no SLE panel in a Then &amp; Now report, and no change to Cycle Time Percentiles&#x27; status - from the maintainer&#x27;s DIVERGE scope choice &#x27;Mix + daily record&#x27; and the Q7 option &#x27;Cycle Time Percentiles keeps its own status unchanged&#x27;.
+</code></pre>
+
+<h3>Reuse</h3>
+
+<p>None.</p>
+
+<h3>Impact</h3>
+
+<p>None.</p>
+
+<h3>Agreement</h3>
+
+<p>None.</p>
+
+<h3>Not applicable</h3>
+
+<p>None.</p>
+
+<h3>Boundaries</h3>
+
+<pre><code>HTTP GET withinSleInfo and within-sle-over-time on TeamMetricsController / PortfolioMetricsController, delegating to the application ports IWithinSleInfoQuery and IWithinSleOverTimeSeriesQuery; domain events TeamDataRefreshed / PortfolioFeaturesRefreshed driving WithinSleRecordingHandler; chart loads driving the OverTimeHistoryFiller through IOverTimeGapReconciler
+</code></pre>
+
+<h4>Driven ports</h4>
+
+<pre><code>ITeamMetricsService / IPortfolioMetricsService (closed cycle-time population, existing)
+</code></pre>
+
+<pre><code>IWithinSleSnapshotRepository (new, persistence of WithinSleSnapshot through LighthouseAppContext)
+</code></pre>
+
+<pre><code>ILighthouseClock (existing, the instance day)
+</code></pre>
+
+<pre><code>IRepository&lt;Team&gt; / IRepository&lt;Portfolio&gt; (existing, the owner and its SLE settings)
+</code></pre>
+
+<pre><code>API controllers -&gt; FlowMetrics Application ports -&gt; FlowMetrics Domain (WithinSleShare, ServiceLevelExpectation are pure, no I/O); Adapters/Persistence and Adapters/Background implement or drive Application ports; Domain depends on nothing in Application or Adapters; frontend widgets -&gt; MetricsService -&gt; HTTP only
+</code></pre>
+
+<h4>Failures</h4>
+
+<h5>B1</h5>
+
+<pre><code>horizon not 30, 60 or 90 on within-sle-over-time
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>400 with a message naming the allowed horizons
+</code></pre>
+
+<h5>B2</h5>
+
+<pre><code>startDate after endDate on either endpoint
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>400 with the existing start-before-end message
+</code></pre>
+
+<h5>B3</h5>
+
+<pre><code>owner id unknown
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>404 via GetEntityByIdAnExecuteAction
+</code></pre>
+
+<h5>B4</h5>
+
+<pre><code>recording throws on a refresh
+</code></pre>
+
+<p>Indeterminate</p>
+
+<pre><code>error logged with family WithinSle; no row that day; other families unaffected; next refresh records again
+</code></pre>
+
+<h5>B5</h5>
+
+<pre><code>a fill day cannot be written
+</code></pre>
+
+<p>Retry</p>
+
+<pre><code>logged once per pass; not memoised; the next chart load asks again
+</code></pre>
+
+<h5>B6</h5>
+
+<pre><code>frontend request fails
+</code></pre>
+
+<p>Indeterminate</p>
+
+<pre><code>WidgetShell could-not-load look; no previous answer shown as current
+</code></pre>
+
+<h3>Observations</h3>
+
+<pre><code>Widget answer WithinSleInfoDto: Verdict, ClosedCount, WithinCount, SharePercent, SLE target and the previous-period Comparison for the selected range
+</code></pre>
+
+<p>WithinSleInfoDto</p>
+
+<pre><code>which Work Items are within or late (the View Data dialog shows them); Named Cycle Times; whether the SLE changed inside the range (only the current SLE is applied)
+</code></pre>
+
+<pre><code>Chart answer WithinSleOverTimeDto: current SLE and, per stored day, counts, SLE in force, Origin, Verdict and SharePercent
+</code></pre>
+
+<p>WithinSleOverTimeDto</p>
+
+<pre><code>a day never attempted from a day outside the stored history or one recorded while no SLE was set (all are absent days); which SLE was set on a filled-in day before recording started (Q4)
+</code></pre>
+
+<pre><code>Rendered widget and chart: large share with count, sentence, target, status colour and word, header trend; chart points, open versus filled markers, stepped target line, notes
+</code></pre>
+
+<p>DOM (RTL / Playwright)</p>
+
+<pre><code>how the share was computed; stale cache versus fresh value within the same owner update
+</code></pre>
+
+<h3>Equality</h3>
+
+<p>WithinSleDayDto observation</p>
+
+<pre><code>Two stored days are equal when OwnerId, OwnerType, Horizon, RecordedAt, ClosedCount, WithinCount, SlePercentile, SleDays and Origin agree; Id is not observed
+</code></pre>
+
+<p>WithinSleShare observation</p>
+
+<pre><code>Two shares are equal when Verdict, ClosedCount, WithinCount and the SLE (percentile, days) agree; the order of the input cycle times is not observed
+</code></pre>
+
+<h3>Constructors</h3>
+
+<p>WithinSleShare.Of</p>
+
+<p>static WithinSleShare Of(IReadOnlyList&lt;int&gt; cycleTimesInDays, ServiceLevelExpectation? sle)</p>
+
+<p>ServiceLevelExpectation.For</p>
+
+<p>static ServiceLevelExpectation? For(WorkTrackingSystemOptionsOwner owner)</p>
+
+<p>WithinSleSnapshotWriter.RecordToday</p>
+
+<p>void RecordToday(int ownerId, OwnerType ownerType, WithinSleFamilyReader family)</p>
+
+<p>WithinSleSnapshotWriter.FillDayIfAbsent</p>
+
+<p>void FillDayIfAbsent(int ownerId, OwnerType ownerType, DateOnly day, WithinSleFamilyReader family)</p>
+
+<h3>Laws</h3>
+
+<h4>L1</h4>
+
+<pre><code>For every list of cycle times and every SLE or none, WithinSleShare.Of gives NoSle when the SLE is absent; TooFew(n) when n &lt; 5; otherwise Measured with within = count of cycle times &lt;= SLE days, 0 &lt;= within &lt;= closed and SharePercent = within / closed * 100; the result does not depend on input order
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Domain</p>
+
+<p>WithinSleShare</p>
+
+<h5>Treatment</h5>
+
+<p>Broad</p>
+
+<h6>Generator</h6>
+
+<pre><code>cycle times 0..400 days, list length 0..40, SLE absent or percentile 1..100 with days 1..60
+</code></pre>
+
+<p>list length 40</p>
+
+<p>fixed seed per run printed on failure; NUnit seeded Random generator (no PBT library in the backend test project)</p>
+
+<h6>Must include</h6>
+
+<pre><code>empty list
+</code></pre>
+
+<pre><code>exactly 4 and exactly 5 cycle times
+</code></pre>
+
+<pre><code>a cycle time equal to the SLE days
+</code></pre>
+
+<pre><code>no SLE
+</code></pre>
+
+<p>flat list</p>
+
+<pre><code>manual: on failure retry with the list halved and each element moved toward 0, report the smallest failing case
+</code></pre>
+
+<pre><code>oracle counts by a direct loop over the list and compares with the verdict fields
+</code></pre>
+
+<pre><code>counting &lt; instead of &lt;=, a minimum of 4 or 6, or a share computed over all Work Items rather than closed ones
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h4>L2</h4>
+
+<pre><code>statusAgainstTarget(share, target) is Sustain when share &gt;= target, Observe when 0 &lt; target - share &lt;= 20, Act when target - share &gt; 20; computeWithinSleRag maps NoSle to Act and TooFew to no status
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Domain</p>
+
+<p>ragRulesTimeAndAge.statusAgainstTarget</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>share 70 target 70 -&gt; Sustain
+</code></pre>
+
+<pre><code>share 69.9 target 70 -&gt; Observe
+</code></pre>
+
+<pre><code>share 50 target 70 -&gt; Observe
+</code></pre>
+
+<pre><code>share 49.9 target 70 -&gt; Act
+</code></pre>
+
+<pre><code>NoSle -&gt; Act
+</code></pre>
+
+<pre><code>TooFew(3) -&gt; no status
+</code></pre>
+
+<pre><code>closed set of boundary cases of a threshold rule
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h4>L3</h4>
+
+<pre><code>A day that ended with a row keeps that row (counts, SLE, origin) under every later record, fill and SLE change; a later row for a past day is FilledIn; RecordToday overwrites only today
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>WithinSleSnapshotWriter</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>record day 1 at SLE 70/10, change SLE to 85/14, advance and record day 2 -&gt; day 1 still 70/10 Recorded
+</code></pre>
+
+<pre><code>fill a day already recorded -&gt; row unchanged
+</code></pre>
+
+<pre><code>fill an absent past day -&gt; FilledIn against the current SLE
+</code></pre>
+
+<pre><code>fill today then record today -&gt; Recorded
+</code></pre>
+
+<pre><code>no SLE set -&gt; no row written
+</code></pre>
+
+<pre><code>day with 3 closed -&gt; row stored, Verdict TooFew, no point
+</code></pre>
+
+<pre><code>the state space is covered by the Quint model; these examples are its executable projection on the pure writer with an in-memory repository
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>docs/feature/story-6563-sle-attainment/design/withinSleDailyRecord.qnt</p>
+
+<h4>L4</h4>
+
+<pre><code>Two copies filling the same owner, horizon and day leave one row: the unique index refuses the second insert and SaveFilledDay drops it
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>WithinSleSnapshotWriter.SaveFilledDay</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>two scopes fill the same day on one SQLite file -&gt; one row, first copy values
+</code></pre>
+
+<pre><code>only a real database enforces the unique index; one race case at the service port
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h4>L5</h4>
+
+<pre><code>A WithinSleSnapshot staged by the writer and read back through IWithinSleOverTimeSeriesQuery is equal under the WithinSleDayDto observation
+</code></pre>
+
+<p>RoundTrip</p>
+
+<p>Adapter</p>
+
+<p>WithinSleSnapshotRepository</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Recorded row 8/11 at 70/10 horizon 30
+</code></pre>
+
+<pre><code>FilledIn row 0/0 at 85/14 horizon 90
+</code></pre>
+
+<pre><code>finite field mapping; both origins and a zero-count row
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h4>L6</h4>
+
+<pre><code>The header comparison is none when the current or the previous period is not Measured; otherwise direction is the sign of the share difference rounded to 0.1 points
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>WithinSleInfoQuery</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>current 72.7, previous 68.6 -&gt; up +4.1 pts
+</code></pre>
+
+<pre><code>equal shares -&gt; flat
+</code></pre>
+
+<pre><code>previous TooFew -&gt; none
+</code></pre>
+
+<pre><code>current NoSle -&gt; none
+</code></pre>
+
+<pre><code>closed set of comparison cases
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h4>L7</h4>
+
+<pre><code>The writer and handler refine the Quint model: RecordToday = recordToday, FillDayIfAbsent = fillDayIfAbsent, an SLE settings save = changeSle, ILighthouseClock.Today moving = advanceDay
+</code></pre>
+
+<p>Refinement</p>
+
+<p>Application</p>
+
+<p>WithinSleSnapshotWriter</p>
+
+<h5>Treatment</h5>
+
+<p>NoTest</p>
+
+<pre><code>mapping claim; its consequences are tested by the Application invariant examples
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>docs/feature/story-6563-sle-attainment/design/withinSleDailyRecord.qnt</p>
+
+<h3>Refuted</h3>
+
+<p>None.</p>
+
+<h3>Claims</h3>
+
+<h4>C1</h4>
+
+<pre><code>A recorded day keeps its share and the SLE in force that day; no SLE change and no fill rewrites it
+</code></pre>
+
+<pre><code>history silently rewritten: the chart would show past days against an SLE they were never held to
+</code></pre>
+
+<p>WithinSleSnapshotWriter</p>
+
+<pre><code>refresh events, gap asks for missing days, SLE settings saves
+</code></pre>
+
+<p>WithinSleSnapshotWriter.RecordToday / FillDayIfAbsent</p>
+
+<p>IWithinSleOverTimeSeriesQuery</p>
+
+<pre><code>within-sle-over-time Days[*].SlePercentile, SleDays, Origin
+</code></pre>
+
+<pre><code>any other writer of the WithinSleSnapshots table (direct EF use, a future migration data step, a database restore); covered only by the single-writer convention and the module layout test, not by the C# type checker
+</code></pre>
+
+<h4>C2</h4>
+
+<pre><code>A Measured share always has at least 5 closed Work Items and an SLE
+</code></pre>
+
+<pre><code>a pass or fail verdict on too little data (breaks Q5)
+</code></pre>
+
+<p>WithinSleShare</p>
+
+<pre><code>closed cycle times and the owner SLE settings
+</code></pre>
+
+<p>WithinSleShare.Of</p>
+
+<p>WithinSleInfoQuery, WithinSleOverTimeSeriesQuery</p>
+
+<pre><code>Verdict field of both answers
+</code></pre>
+
+<pre><code>C# construction is centralised by a private constructor, not proved; reflection could build one; the frontend trusts Verdict and must not recount
+</code></pre>
+
+<h3>States</h3>
+
+<p>Admitted</p>
+
+<pre><code>stored day Recorded, Measured (&gt;= 5 closed)
+</code></pre>
+
+<p>None.</p>
+
+<p>Admitted</p>
+
+<pre><code>stored day Recorded or FilledIn with fewer than 5 closed (TooFew, kept for the count, no point)
+</code></pre>
+
+<p>None.</p>
+
+<p>Admitted</p>
+
+<pre><code>stored day FilledIn against the SLE current at fill time
+</code></pre>
+
+<p>None.</p>
+
+<p>Excluded</p>
+
+<pre><code>a stored row without an SLE
+</code></pre>
+
+<p>None.</p>
+
+<p>Excluded</p>
+
+<pre><code>WithinCount greater than ClosedCount
+</code></pre>
+
+<p>None.</p>
+
+<p>Excluded</p>
+
+<pre><code>two rows for one owner, horizon and day
+</code></pre>
+
+<p>None.</p>
+
+<p>Excluded</p>
+
+<pre><code>a past Recorded row changed after its day ended
+</code></pre>
+
+<p>None.</p>
+
+<p>Unknown</p>
+
+<pre><code>which SLE was set on a filled-in day before recording started (Q4 accepts today SLE)
+</code></pre>
+
+<p>Product</p>
+
+<h3>Models</h3>
+
+<p>Quint</p>
+
+<p>docs/feature/story-6563-sle-attainment/design/withinSleDailyRecord.qnt</p>
+
+<h5>Properties</h5>
+
+<p>pastDaysNeverChange</p>
+
+<p>Invariant</p>
+
+<pre><code>a day that ended with a row keeps that row
+</code></pre>
+
+<p>WithinSleSnapshotWriter.FillDayIfAbsent</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs</p>
+
+<p>laterRowsOfPastDaysAreFilledIn</p>
+
+<p>Invariant</p>
+
+<pre><code>a past day that ended without a row is only ever FilledIn
+</code></pre>
+
+<p>WithinSleSnapshotOrigin.FilledIn</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshot.cs</p>
+
+<p>withinNeverExceedsClosed</p>
+
+<p>Invariant</p>
+
+<pre><code>within &lt;= closed on every row
+</code></pre>
+
+<p>WithinSleShare.Of</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/WithinSleShare.cs</p>
+
+<p>noPointBelowFive</p>
+
+<p>Invariant</p>
+
+<pre><code>a row draws a point only with at least 5 closed
+</code></pre>
+
+<p>WithinSleShare.MinimumClosed</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/WithinSleShare.cs</p>
+
+<h5>Atoms</h5>
+
+<p>Action</p>
+
+<p>recordToday</p>
+
+<p>WithinSleSnapshotWriter.RecordToday</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs</p>
+
+<p>None.</p>
+
+<p>Action</p>
+
+<p>fillDayIfAbsent</p>
+
+<p>WithinSleSnapshotWriter.FillDayIfAbsent</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs</p>
+
+<p>None.</p>
+
+<p>Action</p>
+
+<p>changeSle</p>
+
+<p>WorkTrackingSystemOptionsOwner.ServiceLevelExpectationRange</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs:41</p>
+
+<p>None.</p>
+
+<p>Action</p>
+
+<p>advanceDay</p>
+
+<p>ILighthouseClock.Today</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/Host</p>
+
+<p>None.</p>
+
+<p>State</p>
+
+<p>stored</p>
+
+<p>WithinSleSnapshot</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshot.cs</p>
+
+<p>None.</p>
+
+<p>State</p>
+
+<p>currentSle</p>
+
+<p>ServiceLevelExpectation.For</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ServiceLevelExpectation.cs</p>
+
+<p>None.</p>
+
+<p>State</p>
+
+<p>closedDays</p>
+
+<p>model-only</p>
+
+<p>docs/feature/story-6563-sle-attainment/design/withinSleDailyRecord.qnt</p>
+
+<p>None.</p>
+
+<p>Constant</p>
+
+<p>MIN_CLOSED</p>
+
+<p>WithinSleShare.MinimumClosed</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/WithinSleShare.cs</p>
+
+<p>None.</p>
+
+<h5>Assumptions</h5>
+
+<pre><code>one owner, one horizon, days 1..3, two SLE values or none, closed counts 0..6
+</code></pre>
+
+<pre><code>two app copies and crash windows are not modelled; covered by the unique index and the SQLite service-port test
+</code></pre>
+
+<h5>Mutants</h5>
+
+<h6>N1</h6>
+
+<pre><code>fill without the absence check overwrites an existing day
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>pastDaysNeverChange</p>
+
+<h6>N2</h6>
+
+<pre><code>fill marks its row Recorded
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>laterRowsOfPastDaysAreFilledIn</p>
+
+<h6>N3</h6>
+
+<pre><code>within not bounded by closed
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>withinNeverExceedsClosed</p>
+
+<h6>N4</h6>
+
+<pre><code>a point is drawn at any count
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>noPointBelowFive</p>
+
+<h3>Closure</h3>
+
+<pre><code>daily record keeps each day SLE and share
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Quint run per invariant and verify allInvariants NoError at 6 steps; each invariant killed by its mutant
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>docs/feature/story-6563-sle-attainment/design/withinSleDailyRecord.qnt</p>
+
+<p>docs/feature/story-6563-sle-attainment/design/withinSleDailyRecord.receipt.txt</p>
+
+<pre><code>Within SLE widget and chart
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>closed cycle times + ServiceLevelExpectation.For(owner) -&gt; WithinSleShare.Of -&gt; WithinSleInfoQuery / WithinSleSnapshotWriter -&gt; WithinSleSnapshot -&gt; WithinSleOverTimeSeriesQuery; every value built from admitted input, no cycle
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Within SLE widget and chart
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>withinSleInfo and within-sle-over-time on both metrics controllers -&gt; MetricsService.getWithinSleInfo / getWithinSleOverTime -&gt; WithinSleWidget (flow-overview) and WithinSleOverTimeWidget (predictability) through widgetNodes.tsx and categoryMetadata.ts
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>fill-in of missing days
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>not applicable: no promise of eventual fill; each pass is bounded and resumes on the next chart load, so no liveness property is claimed
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Stressor</p>
+
+<pre><code>assumption: the owner refreshes every day; negated: no refresh for a week
+</code></pre>
+
+<pre><code>recorded days
+</code></pre>
+
+<pre><code>missing days filled from history as FilledIn, open markers and the note
+</code></pre>
+
+<pre><code>interpolated or carried-forward points
+</code></pre>
+
+<pre><code>filled days use the SLE set at fill time (Q4)
+</code></pre>
+
+<p>Product</p>
+
+<h4>Y2</h4>
+
+<p>Stressor</p>
+
+<pre><code>assumption: the SLE is stable within a day; negated: changed between two refreshes of the same day
+</code></pre>
+
+<pre><code>all past days
+</code></pre>
+
+<pre><code>today row takes the SLE of the last recording that day
+</code></pre>
+
+<pre><code>a past day re-measured against the new SLE
+</code></pre>
+
+<pre><code>none
+</code></pre>
+
+<p>FlowMetrics</p>
+
+<h4>Y3</h4>
+
+<p>Stressor</p>
+
+<pre><code>assumption: one application copy; negated: two copies fill the same day
+</code></pre>
+
+<pre><code>one row per owner, horizon, day
+</code></pre>
+
+<pre><code>the second insert is dropped
+</code></pre>
+
+<pre><code>a duplicate point or a failed pass
+</code></pre>
+
+<pre><code>none
+</code></pre>
+
+<p>FlowMetrics</p>
+
+<h4>Y4</h4>
+
+<p>Stressor</p>
+
+<pre><code>assumption: tracker history is stable; negated: items reopened or deleted after a day was recorded
+</code></pre>
+
+<pre><code>recorded day counts
+</code></pre>
+
+<pre><code>recorded and freshly computed values disagree
+</code></pre>
+
+<pre><code>rewriting recorded days
+</code></pre>
+
+<pre><code>accepted: recorded days show what was observed then
+</code></pre>
+
+<p>Product</p>
+
+<h4>Y5</h4>
+
+<p>Stressor</p>
+
+<pre><code>assumption: ReconstructionMemo forgets on refresh; negated: SLE set after a day was declined while no SLE was set
+</code></pre>
+
+<pre><code>other days
+</code></pre>
+
+<pre><code>that day stays missing until the next refresh clears the memo
+</code></pre>
+
+<pre><code>a row without an SLE
+</code></pre>
+
+<pre><code>gap until next refresh
+</code></pre>
+
+<p>FlowMetrics</p>
+
+<h4>Y6</h4>
+
+<p>SinglePointOfFailure</p>
+
+<pre><code>OverTimeHistoryFiller is the single reader of the fill queue
+</code></pre>
+
+<pre><code>recorded days and the chart answer
+</code></pre>
+
+<pre><code>a failed pass is logged and the next chart load asks again
+</code></pre>
+
+<pre><code>an exception ending the reader loop
+</code></pre>
+
+<pre><code>none
+</code></pre>
+
+<p>FlowMetrics</p>
+
+<h4>Y7</h4>
+
+<p>Bypass</p>
+
+<pre><code>any writer of WithinSleSnapshots other than WithinSleSnapshotWriter (EF context, migrations, restore of an older database)
+</code></pre>
+
+<pre><code>the single-writer convention
+</code></pre>
+
+<pre><code>restore replaces history as a whole
+</code></pre>
+
+<pre><code>a second production writer
+</code></pre>
+
+<pre><code>not enforced by the type checker; the module layout test lists the writer and repository
+</code></pre>
+
+<p>FlowMetrics</p>
+
+<h4>Y8</h4>
+
+<p>Stressor</p>
+
+<pre><code>assumption: the instance day is the server day; negated: reader east or west of UTC
+</code></pre>
+
+<pre><code>day keys from ILighthouseClock.Today
+</code></pre>
+
+<pre><code>frontend formats days with formatLocalDate
+</code></pre>
+
+<pre><code>reducing an instant to a day in the writer
+</code></pre>
+
+<pre><code>none
+</code></pre>
+
+<p>FlowMetrics</p>
+
+<h3>Architectural tests</h3>
+
+<p>None.</p>
+
+<h3>Contract tests</h3>
 
 <p>None.</p>
 
 <h2>Slices</h2>
 
+<h3>S5</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/WithinSleShare.cs</p>
+
+<p>Create</p>
+
+<pre><code>owner of within rule and minimum 5
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ServiceLevelExpectation.cs</p>
+
+<p>Create</p>
+
+<pre><code>SLE value object
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleInfoQuery.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleInfoQuery.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleInfoDto.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>withinSleInfo action
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>withinSleInfo action
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs</p>
+
+<p>Extend</p>
+
+<pre><code>register IWithinSleInfoQuery
+</code></pre>
+
+<p>Lighthouse.Frontend/src/models/Metrics/WithinSleInfo.ts</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/services/Api/MetricsService.ts</p>
+
+<p>Extend</p>
+
+<pre><code>getWithinSleInfo
+</code></pre>
+
+<p>Lighthouse.Frontend/src/hooks/metricsFetchKeys.ts</p>
+
+<p>Extend</p>
+
+<pre><code>withinSleInfo key
+</code></pre>
+
+<p>Lighthouse.Frontend/src/hooks/useMetricsData.ts</p>
+
+<p>Extend</p>
+
+<pre><code>withinSleInfo query and fetch state
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.tsx</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts</p>
+
+<p>Extend</p>
+
+<pre><code>placement, trend policy, fetch requirements
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts</p>
+
+<p>Extend</p>
+
+<pre><code>info text, higher is better
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>View Data reuses the closed-items dialog
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoAtTheServicePortTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.WithinSle.WithinSleInfoAtTheServicePortTest
+pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/WithinSleWidget.test.tsx
+pnpm --dir Lighthouse.EndToEndTests exec playwright test tests/specs/metrics/WithinSle.spec.ts
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.test.tsx</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/metrics/WithinSle.spec.ts</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/metrics/WithinSleWidget.ts</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Team (and a Portfolio) with SLE 70 % within 10 days and 11 Work Items closed in the selected range, 8 of them with Cycle Time &lt;= 10 days, no Premium licence; ask IWithinSleInfoQuery for the range; in the UI open the Flow Overview and select View Data on the Within SLE widget
+</code></pre>
+
+<pre><code>Verdict Measured, ClosedCount 11, WithinCount 8, SharePercent 72.7, SlePercentile 70, SleDays 10; widget body reads 72.7 % (8 / 11), of Work Items closed within 10 days or less, Target 70 %; View Data opens the closed-items dialog with the 11 Work Items, close day, Cycle Time coloured against the SLE, longest first; shown without a licence
+</code></pre>
+
+<pre><code>a Work Item at exactly 10 days counted as late, items closed outside the range counted, the share computed in the frontend, a Premium gate, or the widget missing from a Portfolio
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P11</p>
+
+<p>P13</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>GetCycleTimeDataForTeam</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs:414</p>
+
+<p>Reuse</p>
+
+<pre><code>the closed population and Cycle Time the sibling widgets use, with cache and filters
+</code></pre>
+
+<p>GetCycleTimeDataForPortfolio</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPortfolioMetricsService.cs:61</p>
+
+<p>Reuse</p>
+
+<pre><code>same for Portfolios
+</code></pre>
+
+<p>calculateSLEStats</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:3</p>
+
+<p>Reuse</p>
+
+<pre><code>left in place for Cycle Time Percentiles only; not consumed by the new widget, whose share comes from WithinSleShare (no second owner added)
+</code></pre>
+
+<p>ServiceLevelExpectationRange</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs:41</p>
+
+<p>Reuse</p>
+
+<pre><code>the SLE settings stay where they are; ServiceLevelExpectation.For reads them
+</code></pre>
+
+<p>SleRiskCalculator</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/SleRiskCalculator.cs:12</p>
+
+<p>Reuse</p>
+
+<pre><code>considered: it judges open items against the SLE days, a different question; not extended
+</code></pre>
+
+<p>WithinSleShare</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/WithinSleShare.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>no backend owner of the share or the minimum of 5 exists; SleRiskCalculator answers risk of open items
+</code></pre>
+
+<p>IWithinSleInfoQuery</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleInfoQuery.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>S12a shape: one read port per capability instead of growing BaseMetricsService
+</code></pre>
+
+<p>useMetricsQuery</p>
+
+<p>Lighthouse.Frontend/src/hooks/useMetricsQuery.ts:46</p>
+
+<p>Reuse</p>
+
+<pre><code>keyed TanStack fetch and fetch state for the widget
+</code></pre>
+
+<p>WidgetShell</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx:484</p>
+
+<p>Reuse</p>
+
+<pre><code>header with View Data, trend, status; loading and could-not-load looks
+</code></pre>
+
+<p>InfoWidgetComparisonDto</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/InfoWidgetDtos.cs:8</p>
+
+<p>Reuse</p>
+
+<pre><code>header trend carrier as used by every sibling
+</code></pre>
+
+<p>PortfolioMetricsController</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs:23</p>
+
+<p>Extend</p>
+
+<pre><code>existing driving adapter gains withinSleInfo
+</code></pre>
+
+<p>TeamMetricsController</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs:23</p>
+
+<p>Extend</p>
+
+<pre><code>existing driving adapter gains withinSleInfo
+</code></pre>
+
+<p>WithinSleInfoDto</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleInfoDto.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>no carrier holds verdict, counts and target; own file keeps InfoWidgetDtos.cs untouched
+</code></pre>
+
+<p>WithinSleInfoQuery</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleInfoQuery.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>implements the new read port; composes the metrics services instead of extending BaseMetricsService
+</code></pre>
+
+<p>ServiceLevelExpectation</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ServiceLevelExpectation.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>no SLE value object exists; two raw ints on the owner today
+</code></pre>
+
+<p>AddFlowMetrics</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs:9</p>
+
+<p>Extend</p>
+
+<pre><code>module registration point
+</code></pre>
+
+<p>metricsFetchKeys</p>
+
+<p>Lighthouse.Frontend/src/hooks/metricsFetchKeys.ts:8</p>
+
+<p>Extend</p>
+
+<pre><code>one more fetch key
+</code></pre>
+
+<p>useMetricsData</p>
+
+<p>Lighthouse.Frontend/src/hooks/useMetricsData.ts:141</p>
+
+<p>Extend</p>
+
+<pre><code>owner of dashboard fetches and fetch states
+</code></pre>
+
+<p>WithinSleInfo</p>
+
+<p>Lighthouse.Frontend/src/models/Metrics/WithinSleInfo.ts</p>
+
+<p>CreateNew</p>
+
+<pre><code>frontend shape of the new answer
+</code></pre>
+
+<p>BaseMetricsView</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:62</p>
+
+<p>Extend</p>
+
+<pre><code>owns View Data dialogs; reuses the closed-items dialog
+</code></pre>
+
+<p>trendPolicies</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts:113</p>
+
+<p>Extend</p>
+
+<pre><code>single registry of placement, trend policy and fetch requirements
+</code></pre>
+
+<p>percentilesOverTime</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts:391</p>
+
+<p>Extend</p>
+
+<pre><code>info text registry
+</code></pre>
+
+<p>percentilesOverTime</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx:487</p>
+
+<p>Extend</p>
+
+<pre><code>widget node registry
+</code></pre>
+
+<p>WithinSleWidget</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.tsx</p>
+
+<p>CreateNew</p>
+
+<pre><code>no tile shows a share with count and target
+</code></pre>
+
+<p>getCycleTimePercentilesInfo</p>
+
+<p>Lighthouse.Frontend/src/services/Api/MetricsService.ts:219</p>
+
+<p>Extend</p>
+
+<pre><code>existing metrics API client gains getWithinSleInfo beside the sibling info call
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>http-endpoint</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new action only; existing actions unchanged
+</code></pre>
+
+<p>http-endpoint</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new action only
+</code></pre>
+
+<p>module-registration</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs</p>
+
+<p>Changed</p>
+
+<pre><code>one AddScoped line
+</code></pre>
+
+<p>frontend-service</p>
+
+<p>Lighthouse.Frontend/src/services/Api/MetricsService.ts</p>
+
+<p>Changed</p>
+
+<pre><code>new method on IMetricsService and BaseMetricsService; every mock of IMetricsService in tests needs the method (test helpers updated by their owners)
+</code></pre>
+
+<p>widget-registry</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts</p>
+
+<p>Changed</p>
+
+<pre><code>categoryMetadata.test.ts requires a fetch entry and trend policy for every widget; both added
+</code></pre>
+
+<p>lighthouse-clients</p>
+
+<p>Lighthouse-Clients</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>new endpoint is additive; clients follow in a later Story (Q11)
+</code></pre>
+
+<p>value-object</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/WithinSleShare.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>value-object</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ServiceLevelExpectation.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>read-port</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleInfoQuery.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>application-service</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleInfoQuery.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>dto</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleInfoDto.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>frontend-model</p>
+
+<p>Lighthouse.Frontend/src/models/Metrics/WithinSleInfo.ts</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>fetch-keys</p>
+
+<p>Lighthouse.Frontend/src/hooks/metricsFetchKeys.ts</p>
+
+<p>Changed</p>
+
+<pre><code>one key added; MetricsFetchKey union widens, existing switches must stay total
+</code></pre>
+
+<p>data-hook</p>
+
+<p>Lighthouse.Frontend/src/hooks/useMetricsData.ts</p>
+
+<p>Changed</p>
+
+<pre><code>one query added; existing queries unchanged
+</code></pre>
+
+<p>view</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx</p>
+
+<p>Changed</p>
+
+<pre><code>View Data case for withinSle
+</code></pre>
+
+<p>info-registry</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts</p>
+
+<p>Changed</p>
+
+<pre><code>one entry
+</code></pre>
+
+<p>widget-registry-nodes</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx</p>
+
+<p>Changed</p>
+
+<pre><code>one node
+</code></pre>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.tsx</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>GET withinSleInfo -&gt; WithinSleInfoDto</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>new contract, produced in this slice
+</code></pre>
+
+<p>GET withinSleInfo -&gt; WithinSleInfoDto</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>same contract for Portfolios
+</code></pre>
+
+<p>GET withinSleInfo -&gt; WithinSleInfoDto</p>
+
+<p>Lighthouse.Frontend/src/services/Api/MetricsService.ts</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>only consumer, same commit
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>contract_tests</p>
+
+<pre><code>producer and consumer ship in one deployable in the same commit; the primary oracle and the frontend test cover them; no external consumer until the Lighthouse-Clients Story
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>Per touched file: TeamMetricsController.cs, PortfolioMetricsController.cs and FlowMetricsModule.cs each hold one type -&gt; not-applicable; WithinSleShare.cs, ServiceLevelExpectation.cs, IWithinSleInfoQuery.cs, WithinSleInfoQuery.cs, WithinSleInfoDto.cs, WithinSleInfo.ts, WithinSleWidget.tsx are new -&gt; not-applicable; MetricsService.ts holds IMetricsService, IFeatureSizeMetricsService, ITeamMetricsService, IProjectMetricsService and BaseMetricsService -&gt; not-applicable in this slice: the interfaces describe the one service class family, every frontend import goes through this module, and the frontend convention keeps a service interface beside its implementation, so a split is a separate frontend improvement item, not a move this slice needs; metricsFetchKeys.ts, useMetricsData.ts, categoryMetadata.ts, widgetNodes.tsx, widgetInfoMetadata.ts, BaseMetricsView.tsx hold supporting types of one module (props and key unions) -&gt; not-applicable, no type is touched
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T1</h6>
+
+<pre><code>WithinSleShare and ServiceLevelExpectation live in FlowMetrics Domain (pure), IWithinSleInfoQuery in Application contracts, WithinSleInfoQuery in Application implementations; Domain reaches no Application or Adapter type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest
+</code></pre>
+
+<h6>T2</h6>
+
+<pre><code>no new acceptance test starts a web host
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest
+</code></pre>
+
+<h6>T3</h6>
+
+<pre><code>every widget has a fetch requirement entry and a trend policy
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts</p>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/categoryMetadata.test.ts
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S6</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.ts</p>
+
+<p>Extend</p>
+
+<pre><code>statusAgainstTarget extracted, computeWithinSleRag added
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>NoSle and TooFew bodies, status colour
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>RAG wiring for withinSle
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleInfoQuery.cs</p>
+
+<p>Extend</p>
+
+<pre><code>previous-period comparison
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/WithinSleWidget.test.tsx src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.WithinSle.WithinSleInfoVerdictsAtTheServicePortTest
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoVerdictsAtTheServicePortTest.cs</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>render the Within SLE widget for answers: 72.7 % vs target 70 (previous 68.6 %), 60 % vs 70, 49.9 % vs 70, NoSle, TooFew(3), and a previous period TooFew
+</code></pre>
+
+<pre><code>status Sustain green, Observe amber, Act red, Act with No SLE set, no status with 3 Work Items closed - too few to judge (needs at least 5) in a neutral colour; header trend up +4.1 pts, none when either period is not Measured; Cycle Time Percentiles status unchanged for the same data
+</code></pre>
+
+<pre><code>Observe at exactly 20.1 points below, a status or trend shown for TooFew, a green colour without the status word, or a changed Cycle Time Percentiles status
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<p>P3</p>
+
+<p>P4</p>
+
+<p>P5</p>
+
+<p>P12</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>L2 extract function: move the Sustain/Observe/Act threshold branch of computeCycleTimePercentilesRag into statusAgainstTarget(sharePercent, targetPercent), separate refactor commit before the behaviour; makes computeWithinSleRag reuse the one Q7 rule. Per touched file: ragRulesTimeAndAge.ts holds functions only -&gt; this move; WithinSleWidget.tsx, BaseMetricsView.tsx, WithinSleInfoQuery.cs one component or type -&gt; not-applicable
+</code></pre>
+
+<pre><code>computeCycleTimePercentilesRag status and tip text for every input
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts</p>
+
+<h5>Verification</h5>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>computeCycleTimePercentilesRag</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:75</p>
+
+<p>Extend</p>
+
+<pre><code>its threshold branch becomes statusAgainstTarget, the one owner of Q7, reused by computeWithinSleRag
+</code></pre>
+
+<p>BuildCycleTimePercentilesInfoDto</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BaseMetricsService.cs:1228</p>
+
+<p>Reuse</p>
+
+<pre><code>pattern only: same previous-period window arithmetic; not called, the base class is not extended
+</code></pre>
+
+<p>WithinSleInfoQuery</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleInfoQuery.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>created in S5, extended here with the comparison
+</code></pre>
+
+<p>BaseMetricsView</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:62</p>
+
+<p>Extend</p>
+
+<pre><code>RAG wiring lives here for every Flow Overview widget
+</code></pre>
+
+<p>WithinSleWidget</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.tsx</p>
+
+<p>CreateNew</p>
+
+<pre><code>created in S5, extended here with the verdict bodies
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>rag-rule</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.ts</p>
+
+<p>Changed</p>
+
+<pre><code>extraction preserves computeCycleTimePercentilesRag output; new rule added
+</code></pre>
+
+<p>application-service</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleInfoQuery.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Comparison filled
+</code></pre>
+
+<p>view</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx</p>
+
+<p>Changed</p>
+
+<pre><code>computeWithinSleRag wired; other RAG untouched
+</code></pre>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleWidget.tsx</p>
+
+<p>Changed</p>
+
+<pre><code>NoSle and TooFew bodies, status colour
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>WithinSleInfoDto.Comparison (InfoWidgetComparisonDto)</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleInfoQuery.cs</p>
+
+<p>Producer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>same DTO shape all header trends read
+</code></pre>
+
+<p>WithinSleInfoDto.Comparison (InfoWidgetComparisonDto)</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>existing previous-period trend rendering
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>contract_tests</p>
+
+<pre><code>same deployable, same commit; primary oracle covers producer and consumer
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T4</h6>
+
+<pre><code>every widget has a trend policy; withinSle is previous-period
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts</p>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/categoryMetadata.test.ts
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S7</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshot.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshotOrigin.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs</p>
+
+<p>Extend</p>
+
+<pre><code>DbSet and unique index
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleSnapshotRepository.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Persistence/WithinSleSnapshotRepository.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleFamilyReader.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleFamilies.cs</p>
+
+<p>Create</p>
+
+<pre><code>one list for live recording and fill, like PercentileFamilies
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleSnapshotWriter.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/WithinSleRecordingHandler.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleOverTimeSeriesQuery.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleOverTimeSeriesQuery.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleOverTimeDto.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleDayDto.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>within-sle-over-time action
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>within-sle-over-time action
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs</p>
+
+<p>Extend</p>
+
+<pre><code>repository, writer, query
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<pre><code>WithinSleRecordingHandler after the metrics update handler
+</code></pre>
+
+<p>Lighthouse.Frontend/src/models/Metrics/WithinSleOverTime.ts</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/services/Api/MetricsService.ts</p>
+
+<p>Extend</p>
+
+<pre><code>getWithinSleOverTime
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/useWithinSleOverTime.ts</p>
+
+<p>Create</p>
+
+<pre><code>keyed TanStack query
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.tsx</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts</p>
+
+<p>Extend</p>
+
+<pre><code>predictability placement after percentilesOverTime, trend none, own fetch lifecycle
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md</p>
+
+<p>Extend</p>
+
+<pre><code>Flow metrics glossary rows
+</code></pre>
+
+<p>ARCHITECTURE.md</p>
+
+<p>Extend</p>
+
+<pre><code>section 4 daily record
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/LighthouseAppContextModelSnapshot.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Create-Migration.ps1 AddWithinSleSnapshots regenerates it and adds the migration file
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/LighthouseAppContextModelSnapshot.cs</p>
+
+<p>Extend</p>
+
+<pre><code>same for Postgres
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.WithinSle.WithinSleDailyRecordAtTheServicePortTest
+pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.DomainEventHandlerOrderPinTest|FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.ExpandOnlyMigrationGuardTest|FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/WithinSleShareTest.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/WithinSleSnapshotWriterTest.cs</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>on a real SQLite service-port harness: Team with SLE 70/10 refreshed on day 1 (8 of 11 within, trailing 30), SLE changed to 85/14, refreshed on day 2; a day with 3 closed; then IWithinSleOverTimeSeriesQuery for horizon 30 over days 1..3; a Team with no SLE; the chart rendered for these answers with the 30/60/90 toggle
+</code></pre>
+
+<pre><code>day 1 Recorded 8/11 at 70/10 Measured 72.7; day 2 Recorded against 85/14; the 3-closed day TooFew with no point and the chart says why; day 3 absent and draws no point; no-SLE owner shows the no SLE set message instead of a line; target line steps on day 2; horizon 45 refused with 400
+</code></pre>
+
+<pre><code>day 1 re-measured against 85/14, a point for the 3-closed day, a 0 % point for an absent day, a line drawn while no SLE is set, or an old horizon answer shown after switching
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P6</p>
+
+<p>P7</p>
+
+<p>P9</p>
+
+<p>P10</p>
+
+<p>P14</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>IPercentileSnapshotWriter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPercentileSnapshotWriter.cs:31</p>
+
+<p>Reuse</p>
+
+<pre><code>shape copied (RecordToday / FillDayIfAbsent / SaveFilledDay), not extended: its rows carry percentiles, not counts and an SLE
+</code></pre>
+
+<p>PercentilesOverTimeSnapshot</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/PercentilesOverTimeSnapshot.cs:3</p>
+
+<p>Reuse</p>
+
+<pre><code>considered and not extended: adding counts, SLE and origin would widen every percentile row and its client contract
+</code></pre>
+
+<p>PercentilesOverTimeRecordingHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandler.cs:10</p>
+
+<p>Reuse</p>
+
+<pre><code>pattern for events, containment and cache invalidation; its alert family stays Percentiles, so a sibling handler is created
+</code></pre>
+
+<p>LostRaceTolerantSave</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PercentileSnapshotWriter.cs:120</p>
+
+<p>Reuse</p>
+
+<pre><code>drops the refused duplicate day
+</code></pre>
+
+<p>IPercentilesOverTimeSeriesQuery</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPercentilesOverTimeSeriesQuery.cs:12</p>
+
+<p>Reuse</p>
+
+<pre><code>S12a read-port shape for IWithinSleOverTimeSeriesQuery
+</code></pre>
+
+<p>seriesStatusOf</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetStatus.ts:99</p>
+
+<p>Reuse</p>
+
+<pre><code>loading and failure mapping to WidgetShell status
+</code></pre>
+
+<p>PercentilesOverTimeWidget</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.tsx:30</p>
+
+<p>Reuse</p>
+
+<pre><code>horizon toggle, empty-state sentence and axis conventions reused; separate widget because series and target line differ
+</code></pre>
+
+<p>WithinSleSnapshotWriter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>single writer of the new table; no existing writer owns counts with an SLE
+</code></pre>
+
+<p>Flow metrics</p>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:17</p>
+
+<p>Extend</p>
+
+<pre><code>glossary rows added to the existing Flow metrics context
+</code></pre>
+
+<p>FlowMetrics</p>
+
+<p>ARCHITECTURE.md:100</p>
+
+<p>Extend</p>
+
+<pre><code>section 4 names the daily record
+</code></pre>
+
+<p>PortfolioMetricsController</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs:23</p>
+
+<p>Extend</p>
+
+<pre><code>within-sle-over-time action
+</code></pre>
+
+<p>TeamMetricsController</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs:23</p>
+
+<p>Extend</p>
+
+<pre><code>within-sle-over-time action
+</code></pre>
+
+<p>ProcessBehaviorSnapshots</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs:93</p>
+
+<p>Extend</p>
+
+<pre><code>DbSet and index beside the other snapshot tables
+</code></pre>
+
+<p>WithinSleDayDto</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleDayDto.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>per-day answer row
+</code></pre>
+
+<p>WithinSleOverTimeDto</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleOverTimeDto.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>series answer with current SLE
+</code></pre>
+
+<p>WithinSleSnapshot</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshot.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>see ADR: counts with the SLE in force, not a percentile row
+</code></pre>
+
+<p>WithinSleSnapshotOrigin</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshotOrigin.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>recorded versus filled-in has no carrier today
+</code></pre>
+
+<p>WithinSleSnapshotRepository</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Persistence/WithinSleSnapshotRepository.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>one repository per snapshot table, like PercentilesOverTimeSnapshotRepository
+</code></pre>
+
+<p>IWithinSleOverTimeSeriesQuery</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleOverTimeSeriesQuery.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>S12a read port
+</code></pre>
+
+<p>IWithinSleSnapshotRepository</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleSnapshotRepository.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>driven port for the table
+</code></pre>
+
+<p>IWithinSleSnapshotWriter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleSnapshotWriter.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>single-writer port
+</code></pre>
+
+<p>WithinSleRecordingHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/WithinSleRecordingHandler.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>own alert family and containment
+</code></pre>
+
+<p>WithinSleFamilies</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleFamilies.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>one family list for live recording and fill
+</code></pre>
+
+<p>WithinSleFamilyReader</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleFamilyReader.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>reader record for the family
+</code></pre>
+
+<p>WithinSleOverTimeSeriesQuery</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleOverTimeSeriesQuery.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>stored read
+</code></pre>
+
+<p>AddFlowMetrics</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs:9</p>
+
+<p>Extend</p>
+
+<pre><code>registrations
+</code></pre>
+
+<p>ProcessBehaviorRecordingHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:1426</p>
+
+<p>Extend</p>
+
+<pre><code>handler registered beside the other recorders
+</code></pre>
+
+<p>LighthouseAppContextModelSnapshot</p>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/LighthouseAppContextModelSnapshot.cs:13</p>
+
+<p>Extend</p>
+
+<pre><code>regenerated by Create-Migration.ps1 with the new migration
+</code></pre>
+
+<p>LighthouseAppContextModelSnapshot</p>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/LighthouseAppContextModelSnapshot.cs:15</p>
+
+<p>Extend</p>
+
+<pre><code>regenerated by Create-Migration.ps1 with the new migration
+</code></pre>
+
+<p>WithinSleOverTime</p>
+
+<p>Lighthouse.Frontend/src/models/Metrics/WithinSleOverTime.ts</p>
+
+<p>CreateNew</p>
+
+<pre><code>frontend shape of the series
+</code></pre>
+
+<p>trendPolicies</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts:113</p>
+
+<p>Extend</p>
+
+<pre><code>predictability placement
+</code></pre>
+
+<p>useWithinSleOverTime</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/useWithinSleOverTime.ts</p>
+
+<p>CreateNew</p>
+
+<pre><code>keyed TanStack query; usePercentilesOverTime keeps its own state cache
+</code></pre>
+
+<p>percentilesOverTime</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts:391</p>
+
+<p>Extend</p>
+
+<pre><code>info text
+</code></pre>
+
+<p>percentilesOverTime</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx:487</p>
+
+<p>Extend</p>
+
+<pre><code>node
+</code></pre>
+
+<p>WithinSleOverTimeWidget</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.tsx</p>
+
+<p>CreateNew</p>
+
+<pre><code>chart
+</code></pre>
+
+<p>getCycleTimePercentilesInfo</p>
+
+<p>Lighthouse.Frontend/src/services/Api/MetricsService.ts:219</p>
+
+<p>Extend</p>
+
+<pre><code>getWithinSleOverTime
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>database-schema</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs</p>
+
+<p>Changed</p>
+
+<pre><code>additive table and index; ExpandOnlyMigrationGuardTest
+</code></pre>
+
+<p>composition-root</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Changed</p>
+
+<pre><code>two handler registrations; forces the full backend Integration suite
+</code></pre>
+
+<p>test-pin</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs</p>
+
+<p>Changed</p>
+
+<pre><code>TeamDataRefreshed and PortfolioFeaturesRefreshed orders list the new handler; owned by the acceptance designer
+</code></pre>
+
+<p>database-backup</p>
+
+<p>Lighthouse.Backend/Restore-DbBackup.ps1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>restore runs migrations; an older backup gains the empty table
+</code></pre>
+
+<p>percentiles-over-time</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PercentileSnapshotWriter.cs</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>not touched
+</code></pre>
+
+<p>prose</p>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md</p>
+
+<p>Changed</p>
+
+<pre><code>glossary rows
+</code></pre>
+
+<p>prose</p>
+
+<p>ARCHITECTURE.md</p>
+
+<p>Changed</p>
+
+<pre><code>section 4
+</code></pre>
+
+<p>http-endpoint</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new action
+</code></pre>
+
+<p>http-endpoint</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new action
+</code></pre>
+
+<p>dto</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleDayDto.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>dto</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/WithinSleOverTimeDto.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>entity</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshot.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>entity</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WithinSleSnapshotOrigin.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>repository</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Persistence/WithinSleSnapshotRepository.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>read-port</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleOverTimeSeriesQuery.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>driven-port</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleSnapshotRepository.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>writer-port</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IWithinSleSnapshotWriter.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>policy</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/WithinSleRecordingHandler.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>family</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleFamilies.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>family</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleFamilyReader.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>application-service</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleOverTimeSeriesQuery.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>writer</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>module-registration</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs</p>
+
+<p>Changed</p>
+
+<pre><code>repository, writer, query
+</code></pre>
+
+<p>migration</p>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/LighthouseAppContextModelSnapshot.cs</p>
+
+<p>Changed</p>
+
+<pre><code>additive table
+</code></pre>
+
+<p>migration</p>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/LighthouseAppContextModelSnapshot.cs</p>
+
+<p>Changed</p>
+
+<pre><code>additive table
+</code></pre>
+
+<p>frontend-model</p>
+
+<p>Lighthouse.Frontend/src/models/Metrics/WithinSleOverTime.ts</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>widget-registry</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts</p>
+
+<p>Changed</p>
+
+<pre><code>predictability entry, trend none, empty fetch requirement like percentilesOverTime
+</code></pre>
+
+<p>hook</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/useWithinSleOverTime.ts</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>info-registry</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts</p>
+
+<p>Changed</p>
+
+<pre><code>one entry
+</code></pre>
+
+<p>widget-registry-nodes</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx</p>
+
+<p>Changed</p>
+
+<pre><code>one node
+</code></pre>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.tsx</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>frontend-service</p>
+
+<p>Lighthouse.Frontend/src/services/Api/MetricsService.ts</p>
+
+<p>Changed</p>
+
+<pre><code>new method; IMetricsService mocks need it
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>GET within-sle-over-time -&gt; WithinSleOverTimeDto</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>new contract
+</code></pre>
+
+<p>GET within-sle-over-time -&gt; WithinSleOverTimeDto</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>new contract
+</code></pre>
+
+<p>GET within-sle-over-time -&gt; WithinSleOverTimeDto</p>
+
+<p>Lighthouse.Frontend/src/services/Api/MetricsService.ts</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>only consumer, same commit
+</code></pre>
+
+<p>WithinSleSnapshots table</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/WithinSleSnapshotWriter.cs</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>single writer
+</code></pre>
+
+<p>WithinSleSnapshots table</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Persistence/WithinSleSnapshotRepository.cs</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>reads for the series query
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>contract_tests</p>
+
+<pre><code>API producer and consumer in one deployable and commit; persisted rows have one writer and one reader in the same assembly, version-crossing is covered by the expand-only migration guard and the round-trip law
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>Per touched file: TeamMetricsController.cs, PortfolioMetricsController.cs, FlowMetricsModule.cs, Program.cs, LighthouseAppContext.cs each hold one type -&gt; not-applicable; MetricsService.ts several interfaces plus one class -&gt; not-applicable, reason as in S5; categoryMetadata.ts, widgetNodes.tsx, widgetInfoMetadata.ts supporting types of one module, none touched -&gt; not-applicable; every other file is new -&gt; not-applicable; ADR-270 and ARCHITECTURE.md are prose
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T6</h6>
+
+<pre><code>new types sit in their FlowMetrics layer: WithinSleSnapshotWriter, WithinSleOverTimeSeriesQuery implementations; IWithinSleSnapshotWriter, IWithinSleSnapshotRepository, IWithinSleOverTimeSeriesQuery contracts; WithinSleRecordingHandler in Policies; WithinSleSnapshotRepository in Adapters/Persistence and seen by every repository rule
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest
+</code></pre>
+
+<h6>T7</h6>
+
+<pre><code>refresh handlers run in the pinned order with the metrics update first
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.DomainEventHandlerOrderPinTest
+</code></pre>
+
+<h6>T8</h6>
+
+<pre><code>the migration is additive only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ExpandOnlyMigrationGuardTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.ExpandOnlyMigrationGuardTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S8</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/OverTimeFillTarget.cs</p>
+
+<p>Extend</p>
+
+<pre><code>WithinSleFamilies
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/RetentionEdge.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Guard(WithinSleFamilyReader)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFiller.cs</p>
+
+<p>Extend</p>
+
+<pre><code>third family in FillOneDayAsync
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/GapAskingWithinSleOverTimeSeriesQuery.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs</p>
+
+<p>Extend</p>
+
+<pre><code>interface resolves to the gap-asking wrapper
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>open markers and the note
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleFillInAtTheServicePortTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.WithinSle.WithinSleFillInAtTheServicePortTest|FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.WithinSle.TwoCopiesFillingTheSameWithinSleDayAtThePortTest
+pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.OverTimeReconstructionSeamArchUnitTest|FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/TwoCopiesFillingTheSameWithinSleDayAtThePortTest.cs</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Team with SLE 70/10, closed Work Items stored back 20 days, day 5 already Recorded at 60/8; ask IWithinSleOverTimeSeriesQuery for days 1..10 horizon 30, drain OverTimeHistoryFiller, ask again; render the answer
+</code></pre>
+
+<pre><code>first answer holds only day 5; after the drain days 1..10 inside the stored history are FilledIn against 70/10 and day 5 still Recorded at 60/8; days before the first finished Work Item absent; filled days draw open markers, recorded days filled markers, and the note says filled-in days are measured against today SLE
+</code></pre>
+
+<pre><code>day 5 rewritten, a filled day carrying Origin Recorded, a day before the history filled with 0 %, or filled and recorded markers alike
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P8</p>
+
+<p>P15</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>OverTimeHistoryFiller</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFiller.cs:20</p>
+
+<p>Extend</p>
+
+<pre><code>one pass fills every chart of an owner; a second filler would split budgets and the maintenance gate
+</code></pre>
+
+<p>OverTimeFillTarget</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/OverTimeFillTarget.cs:20</p>
+
+<p>Extend</p>
+
+<pre><code>holds every family of an owner
+</code></pre>
+
+<p>Guard</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/RetentionEdge.cs:63</p>
+
+<p>Extend</p>
+
+<pre><code>same retention edge for the new family
+</code></pre>
+
+<p>GapAskingPercentilesOverTimeSeriesQuery</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/GapAskingPercentilesOverTimeSeriesQuery.cs:11</p>
+
+<p>Reuse</p>
+
+<pre><code>wrapper pattern; IOverTimeGapReconciler reused unchanged
+</code></pre>
+
+<p>ReconstructionMemo</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ReconstructionMemo.cs:21</p>
+
+<p>Reuse</p>
+
+<pre><code>per owner and day across families, unchanged
+</code></pre>
+
+<p>GapAskingWithinSleOverTimeSeriesQuery</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/GapAskingWithinSleOverTimeSeriesQuery.cs</p>
+
+<p>CreateNew</p>
+
+<pre><code>wrapper like GapAskingPercentilesOverTimeSeriesQuery
+</code></pre>
+
+<p>AddFlowMetrics</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs:9</p>
+
+<p>Extend</p>
+
+<pre><code>interface resolves to the wrapper
+</code></pre>
+
+<p>WithinSleOverTimeWidget</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.tsx</p>
+
+<p>CreateNew</p>
+
+<pre><code>created in S7, extended here with open markers and the note
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>background-adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFiller.cs</p>
+
+<p>Changed</p>
+
+<pre><code>third write per day; percentile and process-behaviour behaviour unchanged
+</code></pre>
+
+<p>fill-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/OverTimeFillTargetTest.cs</p>
+
+<p>Changed</p>
+
+<pre><code>record gains a member; test constructs it
+</code></pre>
+
+<p>reconciler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/OverTimeGapReconciler.cs</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>asked with the within-SLE held days
+</code></pre>
+
+<p>query-wrapper</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/GapAskingWithinSleOverTimeSeriesQuery.cs</p>
+
+<p>Changed</p>
+
+<pre><code>new
+</code></pre>
+
+<p>fill-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/OverTimeFillTarget.cs</p>
+
+<p>Changed</p>
+
+<pre><code>WithinSleFamilies member
+</code></pre>
+
+<p>retention</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/RetentionEdge.cs</p>
+
+<p>Changed</p>
+
+<pre><code>Guard overload; existing guards unchanged
+</code></pre>
+
+<p>module-registration</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/FlowMetricsModule.cs</p>
+
+<p>Changed</p>
+
+<pre><code>registration swap
+</code></pre>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.tsx</p>
+
+<p>Changed</p>
+
+<pre><code>markers and note
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>OverTimeFillTarget (internal record)</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/OverTimeFillTarget.cs</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>adds WithinSleFamilies
+</code></pre>
+
+<p>OverTimeFillTarget (internal record)</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFiller.cs</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>reads it, same commit
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>contract_tests</p>
+
+<pre><code>internal record and in-process ports, one deployable, same commit
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>Per touched file: OverTimeFillTarget.cs one record, RetentionEdge.cs one class, OverTimeHistoryFiller.cs one class with private nested helpers, FlowMetricsModule.cs one class, WithinSleOverTimeWidget.tsx one component -&gt; not-applicable; GapAskingWithinSleOverTimeSeriesQuery.cs new -&gt; not-applicable
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T5</h6>
+
+<pre><code>reconstruction stays behind the filler seam; the wrapper is the only gap asker of the new series
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OverTimeReconstructionSeamArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.OverTimeReconstructionSeamArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
 <p>None.</p>
 
 <h2>ADRs</h2>
 
-<p>None.</p>
+<p>- 003 Within SLE daily record stores the SLE in force — Proposed</p>
 
 </body></html>
