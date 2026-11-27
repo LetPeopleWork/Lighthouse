@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Modules.Licensing.Contracts;
@@ -11,7 +12,6 @@ using Moq;
 using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.TestHelpers

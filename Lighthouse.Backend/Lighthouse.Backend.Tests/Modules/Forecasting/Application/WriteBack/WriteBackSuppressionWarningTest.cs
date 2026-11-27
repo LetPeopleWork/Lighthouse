@@ -1,11 +1,11 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.WriteBack;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Modules.Forecasting.Application.WriteBack;
 
 namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application.WriteBack

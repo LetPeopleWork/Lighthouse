@@ -2,9 +2,9 @@ using System.Diagnostics;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.WriteBack;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Modules.Forecasting.Application.WriteBack
 {

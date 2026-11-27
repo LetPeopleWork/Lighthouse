@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
 
-namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Contracts
 {
     /// <summary>
     /// Writing field values back into the tracker a connection points at. Declared apart from reading, because

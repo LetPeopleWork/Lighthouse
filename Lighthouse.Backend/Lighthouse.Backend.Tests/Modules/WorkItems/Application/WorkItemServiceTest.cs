@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestDoubles;
@@ -14,7 +15,6 @@ using System.Linq.Expressions;
 using System.Text.Json;
 using Lighthouse.Backend.Modules.WorkItems.Domain;
 using Lighthouse.Backend.Modules.WorkItems.Application;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application

@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Microsoft.Extensions.Logging;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {

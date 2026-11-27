@@ -5,6 +5,7 @@ using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background;
 using Lighthouse.Backend.Modules.Forecasting.Contracts;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Implementation.Repositories;
@@ -28,7 +29,6 @@ using Serilog.Extensions.Logging;
 using System.Net.Http.Json;
 using Lighthouse.Backend.Modules.WorkItems.Domain;
 using Lighthouse.Backend.Modules.WorkItems.Application;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 {

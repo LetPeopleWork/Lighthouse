@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Modules.Forecasting.Contracts;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using System.Net;
 using System.Text.Json;
@@ -24,7 +25,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts

@@ -4,6 +4,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.WriteBack;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Forecasting.Application;
@@ -13,7 +14,6 @@ using Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
 {

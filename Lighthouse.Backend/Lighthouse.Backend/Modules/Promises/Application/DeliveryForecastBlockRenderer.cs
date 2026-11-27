@@ -3,7 +3,7 @@ using System.Text;
 using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Modules.Promises.Domain;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 
 namespace Lighthouse.Backend.Modules.Promises.Application
 {

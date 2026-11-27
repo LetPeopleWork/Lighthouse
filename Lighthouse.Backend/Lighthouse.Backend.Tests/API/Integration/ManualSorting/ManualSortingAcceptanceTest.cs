@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Modules.Forecasting.Contracts;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Modules.Licensing.Application;
@@ -21,7 +22,6 @@ using Moq;
 using Microsoft.Extensions.Time.Testing;
 using NUnit.Framework;
 using System.Security.Claims;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting

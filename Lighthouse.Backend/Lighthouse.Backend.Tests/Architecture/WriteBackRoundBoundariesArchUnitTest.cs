@@ -37,9 +37,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static string[] TheEdgesOfTheRoundIntoTrackerIntegration =>
         [
-            $"{WriteBackMembership.TheNewNamespace}.WriteBackService -> Lighthouse.Backend.Modules.TrackerIntegration.Application.IWorkTrackingConnector",
-            $"{WriteBackMembership.TheNewNamespace}.WriteBackService -> Lighthouse.Backend.Modules.TrackerIntegration.Application.IWorkTrackingConnectorFactory",
-            $"{WriteBackMembership.TheNewNamespace}.WriteBackService -> Lighthouse.Backend.Modules.TrackerIntegration.Application.IWriteBackTarget",
+            $"{WriteBackMembership.TheNewNamespace}.WriteBackService -> Lighthouse.Backend.Modules.TrackerIntegration.Contracts.IWorkTrackingConnector",
+            $"{WriteBackMembership.TheNewNamespace}.WriteBackService -> Lighthouse.Backend.Modules.TrackerIntegration.Contracts.IWorkTrackingConnectorFactory",
+            $"{WriteBackMembership.TheNewNamespace}.WriteBackService -> Lighthouse.Backend.Modules.TrackerIntegration.Contracts.IWriteBackTarget",
         ];
 
         private static string[] TheForecastingTypesReachingTheRound =>

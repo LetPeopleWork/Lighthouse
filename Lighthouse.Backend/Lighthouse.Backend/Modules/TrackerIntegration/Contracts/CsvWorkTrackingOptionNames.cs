@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Contracts
 {
     public static class CsvWorkTrackingOptionNames
     {

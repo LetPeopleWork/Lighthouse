@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DeliverySources;
 
-namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Contracts
 {
     /// <summary>
     /// Reading the remote objects a Delivery can bind its date to. A capability of the connection rather

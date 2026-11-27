@@ -721,7 +721,7 @@ namespace Lighthouse.Backend.Modules.PromisesFixtures.BoundariesOutbound.Complia
     internal sealed class ACompliantDeliveryService(
         global::Lighthouse.Backend.Platform.Host.ILighthouseClock clock,
         global::Lighthouse.Backend.Modules.WorkItems.Application.ITeamDataService teams,
-        global::Lighthouse.Backend.Modules.TrackerIntegration.Application.IWorkTrackingConnectorFactory connectors)
+        global::Lighthouse.Backend.Modules.TrackerIntegration.Contracts.IWorkTrackingConnectorFactory connectors)
     {
         public string Describe() => $"{clock.GetHashCode()} {teams.GetHashCode()} {connectors.GetHashCode()}";
     }

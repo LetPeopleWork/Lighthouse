@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Modules.Forecasting.Contracts;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Modules.Licensing.Contracts;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Platform.Seeding;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -21,7 +22,6 @@ using Serilog.Events;
 using Serilog.Extensions.Logging;
 using System.Globalization;
 using System.Text.Json;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 {

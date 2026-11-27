@@ -1,6 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Contracts
 {
     public interface IWorkTrackingConnectorFactory
     {

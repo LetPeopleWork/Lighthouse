@@ -37,7 +37,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string[] CsvTypes =
         [
             "CsvWorkTrackingConnector",
-            "CsvWorkTrackingOptionNames",
         ];
 
         private static readonly string[] JiraTypes =
@@ -126,7 +125,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void TheCsvConnectorAndItsOptionNames_LiveInTheirTrackerFolder_AndNoneIsLeftUnderServices()
+        public void TheCsvConnector_LivesInItsTrackerFolder_AndIsNotLeftUnderServices()
         {
             ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, $"{ConnectorsNamespace}.Csv", CsvTypes, WhereTheTypesLivedBefore).Check();
         }

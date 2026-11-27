@@ -2,11 +2,11 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.AzureDevOps;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
-using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Linear;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 
 namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application
 {

@@ -20,13 +20,13 @@ GITHUB_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tes
 # run (a regression here can break any connector):
 #   - The connectors' shared subfolders (Adapters/Connectors/Auth/, Adapters/Connectors/OAuth/) of Tracker
 #     integration, under production OR tests
-#   - Tracker integration's Application and Domain (factories, schema, keys, the connector interfaces) and
+#   - Tracker integration's Application, Contracts and Domain (factories, schema, keys, the connector interfaces) and
 #     its OAuth adapters
 #   - Connector-shared models (Models/WorkTrackingSystemConnection*, Models/OAuth/)
 #   - Models/WorkTrackingSystems.cs, the enum every connector switches on
 #   - Program.cs (DI graph for every connector)
 #   - Solution + csproj files
-SHARED_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Modules/TrackerIntegration/Adapters/Connectors/(Auth|OAuth)/|^Lighthouse\.Backend/Lighthouse\.Backend/Modules/TrackerIntegration/(Application|Domain)/|^Lighthouse\.Backend/Lighthouse\.Backend/Modules/TrackerIntegration/Adapters/OAuth/|^Lighthouse\.Backend/Lighthouse\.Backend/Models/(WorkTrackingSystemConnection|OAuth/)|^Lighthouse\.Backend/Lighthouse\.Backend/Models/WorkTrackingSystems\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Program\.cs$|^Lighthouse\.Backend/Lighthouse\.sln$|^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/[^/]*\.csproj$'
+SHARED_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Modules/TrackerIntegration/Adapters/Connectors/(Auth|OAuth)/|^Lighthouse\.Backend/Lighthouse\.Backend/Modules/TrackerIntegration/(Application|Contracts|Domain)/|^Lighthouse\.Backend/Lighthouse\.Backend/Modules/TrackerIntegration/Adapters/OAuth/|^Lighthouse\.Backend/Lighthouse\.Backend/Models/(WorkTrackingSystemConnection|OAuth/)|^Lighthouse\.Backend/Lighthouse\.Backend/Models/WorkTrackingSystems\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Program\.cs$|^Lighthouse\.Backend/Lighthouse\.sln$|^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/[^/]*\.csproj$'
 
 classify_backend() { printf '%s\n' "$1" | grep -Eq "$BACKEND_REGEX" && echo true || echo false; }
 classify_jira()   { printf '%s\n' "$1" | grep -Eq "$JIRA_REGEX"   && echo true || echo false; }

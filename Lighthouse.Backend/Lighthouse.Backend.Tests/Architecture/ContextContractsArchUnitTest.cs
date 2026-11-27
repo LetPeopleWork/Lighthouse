@@ -54,21 +54,11 @@ namespace Lighthouse.Backend.Tests.Architecture
             Edge("FlowMetrics.Application.TeamMetricsService", "OrganisationSetup.Application.IAppSettingService"), // owner: Organisation set-up
             Edge("FlowMetrics.Application.TeamMetricsService", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
             Edge("Forecasting.Application.ForecastRealityCheckService", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
-            Edge("Forecasting.Application.WriteBack.WriteBackService", "TrackerIntegration.Application.IWorkTrackingConnector"), // owner: Tracker integration
-            Edge("Forecasting.Application.WriteBack.WriteBackService", "TrackerIntegration.Application.IWorkTrackingConnectorFactory"), // owner: Tracker integration
-            Edge("Forecasting.Application.WriteBack.WriteBackService", "TrackerIntegration.Application.IWriteBackTarget"), // owner: Tracker integration
             Edge("Forecasting.Application.WriteBack.WriteBackTriggerService", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
             Edge("OrganisationSetup.Application.Connections.ConnectionSaveService", "WorkItems.Domain.FetchFingerprint"), // owner: Work Items
-            Edge("Promises.Application.DeliveryForecastBlockRenderer", "TrackerIntegration.Application.IDescriptionBlockMerger"), // owner: Tracker integration
-            Edge("Promises.Application.DeliveryForecastPublishingService", "TrackerIntegration.Application.IDeliveryForecastPublisher"), // owner: Tracker integration
-            Edge("Promises.Application.DeliveryForecastPublishingService", "TrackerIntegration.Application.IWorkTrackingConnector"), // owner: Tracker integration
-            Edge("Promises.Application.DeliveryForecastPublishingService", "TrackerIntegration.Application.IWorkTrackingConnectorFactory"), // owner: Tracker integration
             Edge("Promises.Application.DeliveryMetricValuesProjector", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
             Edge("Promises.Application.DeliveryRuleService", "WorkItems.Application.FeatureFieldProvider"), // owner: Work Items
             Edge("Promises.Application.DeliveryRuleService", "WorkItems.Application.RuleEvaluator`1"), // owner: Work Items
-            Edge("Promises.Application.DeliverySourceResolver", "TrackerIntegration.Application.IDeliverySourceProvider"), // owner: Tracker integration
-            Edge("Promises.Application.DeliverySourceResolver", "TrackerIntegration.Application.IWorkTrackingConnector"), // owner: Tracker integration
-            Edge("Promises.Application.DeliverySourceResolver", "TrackerIntegration.Application.IWorkTrackingConnectorFactory"), // owner: Tracker integration
             Edge("Refinement.Application.RefinementCadenceCalendar", "OrganisationSetup.Domain.WeeklyRecurrence"), // owner: Organisation set-up
             Edge("Refinement.Application.RefinementCalendar", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
             Edge("Refinement.Application.RefinementNeedCalculator", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
@@ -78,12 +68,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             Edge("WorkItems.Application.RefreshLogService", "OrganisationSetup.Application.IAppSettingService"), // owner: Organisation set-up
             Edge("WorkItems.Application.WorkItemService", "FlowMetrics.Domain.PercentileCalculator"), // owner: Flow metrics
             Edge("WorkItems.Application.WorkItemService", "OrganisationSetup.Application.IFeatureOrdering"), // owner: Organisation set-up
-            Edge("WorkItems.Application.WorkItemService", "TrackerIntegration.Application.IFeatureSource"), // owner: Tracker integration
-            Edge("WorkItems.Application.WorkItemService", "TrackerIntegration.Application.IIncrementalSource"), // owner: Tracker integration
-            Edge("WorkItems.Application.WorkItemService", "TrackerIntegration.Application.IWorkTrackingConnector"), // owner: Tracker integration
-            Edge("WorkItems.Application.WorkItemService", "TrackerIntegration.Application.IWorkTrackingConnectorFactory"), // owner: Tracker integration
             Edge("WorkItems.Application.WorkItemService", "TrackerIntegration.Domain.ParentSourceSelector"), // owner: Tracker integration
-            Edge("WorkItems.Application.WorkItemService+IdentityScan", "TrackerIntegration.Application.IIncrementalSource"), // owner: Tracker integration
         ];
 
         private static IReadOnlyList<string> ContractsEdgesBeyondTheKernelAndOtherContracts => [];

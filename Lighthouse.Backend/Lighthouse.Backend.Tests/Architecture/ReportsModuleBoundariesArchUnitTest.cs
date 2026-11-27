@@ -462,7 +462,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .SetName("AReportsApplicationTypeReachingTheApi_IsNamed");
             yield return new TestCaseData(typeof(AReportServiceReachingAnAdapter), "Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater")
                 .SetName("AReportsApplicationTypeReachingAModuleAdapter_IsNamed");
-            yield return new TestCaseData(typeof(AReportServiceReachingTrackerIntegration), "Lighthouse.Backend.Modules.TrackerIntegration.Application.IWorkTrackingConnectorFactory")
+            yield return new TestCaseData(typeof(AReportServiceReachingTrackerIntegration), "Lighthouse.Backend.Modules.TrackerIntegration.Contracts.IWorkTrackingConnectorFactory")
                 .SetName("AReportsApplicationTypeReachingTrackerIntegration_IsNamed");
             yield return new TestCaseData(typeof(AReportServiceReachingTheRbacService), "Lighthouse.Backend.Modules.Access.Contracts.IRbacAdministrationService")
                 .SetName("AReportsApplicationTypeReachingTheRbacService_IsNamed");
@@ -824,7 +824,7 @@ namespace Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingA
 
 namespace Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingTrackerIntegration.Application
 {
-    internal sealed class AReportServiceReachingTrackerIntegration(global::Lighthouse.Backend.Modules.TrackerIntegration.Application.IWorkTrackingConnectorFactory connectors)
+    internal sealed class AReportServiceReachingTrackerIntegration(global::Lighthouse.Backend.Modules.TrackerIntegration.Contracts.IWorkTrackingConnectorFactory connectors)
     {
         public int Describe() => connectors.GetHashCode();
     }

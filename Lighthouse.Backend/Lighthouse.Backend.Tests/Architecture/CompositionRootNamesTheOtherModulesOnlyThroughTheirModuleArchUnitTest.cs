@@ -111,7 +111,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["OrganisationSetup"] = [],
             ["Refinement"] = [],
             ["Reports"] = [],
-            ["TrackerIntegration"] = [$"{TheModulesRoot}.TrackerIntegration.Application.IDescriptionBlockMerger"],
+            ["TrackerIntegration"] = [$"{TheModulesRoot}.TrackerIntegration.Contracts.IDescriptionBlockMerger"],
             ["WorkItems"] = [],
         };
 

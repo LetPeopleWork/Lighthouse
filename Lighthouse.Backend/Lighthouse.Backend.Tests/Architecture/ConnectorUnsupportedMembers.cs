@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         // The two factories sit beside the connector port but build connectors; they are not connectors themselves.
         private static readonly HashSet<string> FactoryInterfaces =
         [
-            "Lighthouse.Backend.Modules.TrackerIntegration.Application.IWorkTrackingConnectorFactory",
+            "Lighthouse.Backend.Modules.TrackerIntegration.Contracts.IWorkTrackingConnectorFactory",
             "Lighthouse.Backend.Modules.TrackerIntegration.Application.IWorkTrackingSystemFactory",
         ];
 

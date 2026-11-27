@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Lighthouse.Backend.Models;
@@ -15,7 +16,6 @@ using Moq;
 using NUnit.Framework;
 using System.Net;
 using System.Text.Json;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 {

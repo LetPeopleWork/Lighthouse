@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static TheModules TheRealModules => new(ModuleBoundariesArchUnitTest.TrackerIntegrationPattern, ModuleRules.PromisesModule);
 
         private static TheMergeNames TheRealMergeNames => new(
-            Port: "Lighthouse.Backend.Modules.TrackerIntegration.Application.IDescriptionBlockMerger",
+            Port: "Lighthouse.Backend.Modules.TrackerIntegration.Contracts.IDescriptionBlockMerger",
             Renderer: "Lighthouse.Backend.Modules.Promises.Application.DeliveryForecastBlockRenderer",
             RendererPort: "Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastBlockRenderer",
             Connector: "Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira.JiraWorkTrackingConnector",

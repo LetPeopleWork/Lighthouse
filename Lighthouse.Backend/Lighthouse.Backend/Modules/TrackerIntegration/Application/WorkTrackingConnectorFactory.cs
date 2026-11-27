@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Linear;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 
 namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
 {

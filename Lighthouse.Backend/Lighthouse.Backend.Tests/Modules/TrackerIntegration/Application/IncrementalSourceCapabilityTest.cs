@@ -3,10 +3,10 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.AzureDevOps;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application
 {
@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application
     [TestFixture]
     public class IncrementalSourceCapabilityTest
     {
-        private const string IncrementalSourceCapabilityName = "Lighthouse.Backend.Modules.TrackerIntegration.Application.IIncrementalSource";
+        private const string IncrementalSourceCapabilityName = "Lighthouse.Backend.Modules.TrackerIntegration.Contracts.IIncrementalSource";
 
         private const string ProbeMember = "SupportsIncrementalSync";
 
@@ -146,7 +146,7 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application
                 Is.Not.Null,
                 $"WHAT: there is no {IncrementalSourceCapabilityName} in Lighthouse.Backend. WHY: without a sweeping capability of its own, " +
                 "every connector is asked to sweep and to fetch by id, and CSV, Linear and ServiceNow can only refuse what they claim to do. " +
-                "HOW: add the interface in Modules/TrackerIntegration/Application, move the per-connection probe, the three sweeps and " +
+                "HOW: add the interface in Modules/TrackerIntegration/Contracts, move the per-connection probe, the three sweeps and " +
                 "the two fetches by id onto it, and let only the Jira and Azure DevOps connectors take it on.");
             Assert.That(capability!.IsInterface, Is.True, $"WHAT: {IncrementalSourceCapabilityName} is not an interface. WHY: a connector takes a capability on by implementing it. HOW: declare it as an interface.");
 

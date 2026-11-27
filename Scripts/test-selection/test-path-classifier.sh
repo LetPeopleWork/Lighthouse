@@ -58,9 +58,13 @@ assert "shared-auth: shared=true"        "$(classify_shared "$diff_shared_auth")
 diff_shared_top=$'Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/AuthenticationMethodSchema.cs'
 assert "shared-top: shared=true"         "$(classify_shared "$diff_shared_top")"   "true"
 
-# Scenario 7: shared interfaces
-diff_shared_iface=$'Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IWorkTrackingConnector.cs'
+# Scenario 7: shared interfaces in the Application
+diff_shared_iface=$'Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IJiraWorkTrackingConnector.cs'
 assert "shared-iface: shared=true"       "$(classify_shared "$diff_shared_iface")" "true"
+
+# Scenario 7b: the connector port in Tracker integration's Contracts
+diff_shared_contracts=$'Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Contracts/IWorkTrackingConnector.cs'
+assert "shared-contracts: shared=true"   "$(classify_shared "$diff_shared_contracts")" "true"
 
 # Scenario 8: shared models
 diff_shared_model=$'Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemConnection.cs'

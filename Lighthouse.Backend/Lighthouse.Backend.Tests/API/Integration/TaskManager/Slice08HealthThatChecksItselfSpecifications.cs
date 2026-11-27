@@ -7,6 +7,7 @@ using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Background;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Platform.UsageData;
@@ -23,7 +24,6 @@ using Moq;
 using NUnit.Framework;
 using System.Net;
 using System.Text.Json;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Platform.Host;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 

@@ -2,12 +2,12 @@ using Lighthouse.Backend.Models.OAuth;
 using System.Reflection;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Modules.Forecasting.Application.WriteBack;
 
 namespace Lighthouse.Backend.Tests.Architecture
@@ -79,7 +79,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Is.Not.Null,
                 $"WHAT: there is no {WriteBackCapabilityName} in Lighthouse.Backend. WHY: without a write-back capability of its own, " +
                 "every connector is asked to write back, and CSV, Linear and ServiceNow can only refuse what they claim to do. HOW: add " +
-                "the interface in Modules/TrackerIntegration/Application, move WriteFieldsToWorkItems onto it, and let only the Jira " +
+                "the interface in Modules/TrackerIntegration/Contracts, move WriteFieldsToWorkItems onto it, and let only the Jira " +
                 "and Azure DevOps connectors take it on.");
             Assert.That(capability!.IsInterface, Is.True, $"WHAT: {WriteBackCapabilityName} is not an interface. WHY: a connector takes a capability on by implementing it. HOW: declare it as an interface.");
 

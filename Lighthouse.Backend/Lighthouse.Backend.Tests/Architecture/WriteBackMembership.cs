@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             Kernel("WriteBackResult", "on the signature of Tracker integration's write-back port"),
             Kernel("WriteBackItemResult", "on the signature of Tracker integration's write-back port"),
             Kernel("NotificationSuppression", "read by the tracker connectors when they write"),
-            new("Lighthouse.Backend.Modules.TrackerIntegration.Application.IWriteBackTarget", "Tracker integration", "translating a write into a tracker's fields is the tracker connectors' job, not the round's"),
+            new("Lighthouse.Backend.Modules.TrackerIntegration.Contracts.IWriteBackTarget", "Tracker integration", "translating a write into a tracker's fields is the tracker connectors' job, not the round's"),
             new("Lighthouse.Backend.API.DTO.WriteBackMappingDefinitionDto", "connection settings", "the shape the API shows a mapping in; a driving adapter"),
             new("Lighthouse.Backend.API.Helpers.WriteBackMappingValidator", "connection settings", "checks a mapping a user saves; a driving adapter"),
             new("Lighthouse.Backend.API.Helpers.WriteBackMappingsHelper", "connection settings", "maps saved mappings for the API; a driving adapter"),

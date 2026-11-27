@@ -1,17 +1,21 @@
 using System.Text.RegularExpressions;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Modules.TrackerIntegrationFixtures.ApplicationLayout.Ports;
 using Mono.Cecil;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
-    /// The connector port with its capabilities, the connector and system factories with their interfaces, the authentication
-    /// schema and the board types live in the Tracker integration module's Application, and none is left under Services or
-    /// Factories. The types are named as strings and read from the compiled production assembly, so a type that is missing,
-    /// renamed or left behind is a failure that names it. Two leaks are closed by placement: a factory interface and its class
-    /// share one namespace, and the board port names no implementation namespace in its signatures. Both rules also run on
-    /// made-up types: an offender must be reported and its compliant twin must not be.
+    /// The tracker-specific connector ports, the connector and system factories, the authentication schema and the board types
+    /// live in the Tracker integration module's Application, and none is left under Services or Factories. What the other
+    /// contexts reach (the connector port with its capabilities, the connector factory's interface and the CSV option names)
+    /// lives in the module's Contracts instead, and none of it is left in the Application or the Adapters. The types are named
+    /// as strings and read from the compiled production assembly, so a type that is missing, renamed or left behind is a
+    /// failure that names it. Two leaks are closed by placement: the system factory's interface and its class share one
+    /// namespace, and the board port names no implementation namespace in its signatures. Both rules also run on made-up
+    /// types: an offender must be reported and its compliant twin must not be.
     /// </summary>
     [TestFixture]
     public class TrackerIntegrationApplicationLayoutArchUnitTest
@@ -19,6 +23,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string ApplicationNamespace = "Lighthouse.Backend.Modules.TrackerIntegration.Application";
 
         private const string WhereTheTypesLivedBefore = @"^Lighthouse\.Backend\.(Services|Factories)(\.|$)";
+
+        private static string ContractsNamespace => typeof(IWorkTrackingConnector).Namespace!;
+
+        private static string WhereTheContractsTypesLivedBefore => $"^({Regex.Escape(ApplicationNamespace)}|{Regex.Escape(typeof(CsvWorkTrackingConnector).Namespace!)})$";
 
         private const string TheWholeAssembly = @"^Lighthouse\.Backend\.";
 
@@ -39,17 +47,11 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly string[] ConnectorPortTypes =
         [
-            "IWorkTrackingConnector",
             "IAzureDevOpsWorkTrackingConnector",
             "IJiraWorkTrackingConnector",
             "ILinearWorkTrackingConnector",
             "IServiceNowWorkTrackingConnector",
             "IBoardInformationProvider",
-            "IDeliveryForecastPublisher",
-            "IDeliverySourceProvider",
-            "IFeatureSource",
-            "IIncrementalSource",
-            "IWriteBackTarget",
             "IWorkTrackingAuthStrategy",
             "IWorkTrackingAuthStrategyFactory",
             "WorkTrackingReadException",
@@ -58,10 +60,22 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly string[] FactoryTypes =
         [
-            "IWorkTrackingConnectorFactory",
             "WorkTrackingConnectorFactory",
             "IWorkTrackingSystemFactory",
             "WorkTrackingSystemFactory",
+        ];
+
+        private static readonly string[] ContractsTypes =
+        [
+            "IWorkTrackingConnector",
+            "IWorkTrackingConnectorFactory",
+            "IDeliveryForecastPublisher",
+            "IDeliverySourceProvider",
+            "IDescriptionBlockMerger",
+            "IFeatureSource",
+            "IIncrementalSource",
+            "IWriteBackTarget",
+            "CsvWorkTrackingOptionNames",
         ];
 
         private static readonly string[] AuthenticationSchemaTypes =
@@ -92,15 +106,21 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void TheConnectorPortAndItsCapabilities_LiveInTheTrackerIntegrationApplication_AndNoneIsLeftUnderServices()
+        public void TheTrackerSpecificConnectorPorts_LiveInTheTrackerIntegrationApplication_AndNoneIsLeftUnderServices()
         {
             ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ApplicationNamespace, ConnectorPortTypes, WhereTheTypesLivedBefore).Check();
         }
 
         [Test]
-        public void TheConnectorAndSystemFactoriesAndTheirInterfaces_LiveInTheTrackerIntegrationApplication_AndNoneIsLeftUnderFactories()
+        public void TheConnectorAndSystemFactories_LiveInTheTrackerIntegrationApplication_AndNoneIsLeftUnderFactories()
         {
             ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ApplicationNamespace, FactoryTypes, WhereTheTypesLivedBefore).Check();
+        }
+
+        [Test]
+        public void TheTypesTheOtherContextsReach_LiveInTheModuleContracts_AndNoneIsLeftInTheApplicationOrTheAdapters()
+        {
+            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ContractsNamespace, ContractsTypes, WhereTheContractsTypesLivedBefore).Check();
         }
 
         [Test]
@@ -115,7 +135,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ApplicationNamespace, BoardTypes, WhereTheTypesLivedBefore).Check();
         }
 
-        [TestCase("IWorkTrackingConnectorFactory", "WorkTrackingConnectorFactory")]
         [TestCase("IWorkTrackingSystemFactory", "WorkTrackingSystemFactory")]
         public void AFactoryInterfaceAndItsClass_ShareOneNamespace(string factoryInterface, string factory)
         {

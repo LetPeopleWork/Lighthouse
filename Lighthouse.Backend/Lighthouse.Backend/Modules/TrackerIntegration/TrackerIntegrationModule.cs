@@ -10,6 +10,7 @@ using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Modules.TrackerIntegration

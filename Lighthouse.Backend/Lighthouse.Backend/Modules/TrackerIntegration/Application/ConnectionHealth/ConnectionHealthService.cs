@@ -2,10 +2,10 @@
 using Lighthouse.Backend.Models.ConnectionHealth;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.Validation;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth

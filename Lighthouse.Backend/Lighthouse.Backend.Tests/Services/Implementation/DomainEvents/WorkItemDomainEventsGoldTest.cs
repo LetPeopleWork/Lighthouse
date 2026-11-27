@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.OptionalFeatures;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Platform.DomainEvents;
@@ -10,7 +11,6 @@ using Lighthouse.Backend.Modules.WorkItems.Application;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 {

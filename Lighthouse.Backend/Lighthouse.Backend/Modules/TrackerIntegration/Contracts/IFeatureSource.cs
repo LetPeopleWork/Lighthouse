@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Contracts
 {
     /// <summary>
     /// Reading the Features of a Portfolio, and the parents of those Features, from the tracker a connection points at.

@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Contracts
 {
     /// <summary>
     /// Merges a block of text into a description a human also writes in. Tracker integration owns this port so a

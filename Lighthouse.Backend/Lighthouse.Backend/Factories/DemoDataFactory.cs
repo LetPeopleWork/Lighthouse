@@ -1,9 +1,9 @@
 ﻿﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Models.WorkItemRules;
-using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using System.Text.RegularExpressions;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Factories

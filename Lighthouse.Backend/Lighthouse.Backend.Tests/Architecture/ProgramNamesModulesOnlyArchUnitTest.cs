@@ -88,7 +88,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             Of("Forecasting", WiringCategory, "Application.ForecastFilterRuleService"),
             Of("Forecasting", WiringCategory, "Application.ForecastingAnswersToFlowMetrics"),
             Of("Promises", WiringCategory, "Application.DeliveryForecastBlockRenderer"),
-            Of("TrackerIntegration", WiringCategory, "Application.IDescriptionBlockMerger"),
+            Of("TrackerIntegration", WiringCategory, "Contracts.IDescriptionBlockMerger"),
         ];
 
         // The forecast thread count is read for the start-up banner; the group writer is called by the sign-in event of the

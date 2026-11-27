@@ -9,6 +9,7 @@ using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.AzureDev
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Linear;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.ServiceNow;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

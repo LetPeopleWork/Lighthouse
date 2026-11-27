@@ -419,7 +419,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .SetName("ARefinementApplicationTypeReachingTheApi_IsNamed");
             yield return new TestCaseData(typeof(ASizingServiceReachingAnAdapter), "Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater")
                 .SetName("ARefinementApplicationTypeReachingAModuleAdapter_IsNamed");
-            yield return new TestCaseData(typeof(ASizingServiceReachingTrackerIntegration), "Lighthouse.Backend.Modules.TrackerIntegration.Application.IWorkTrackingConnectorFactory")
+            yield return new TestCaseData(typeof(ASizingServiceReachingTrackerIntegration), "Lighthouse.Backend.Modules.TrackerIntegration.Contracts.IWorkTrackingConnectorFactory")
                 .SetName("ARefinementApplicationTypeReachingTrackerIntegration_IsNamed");
             yield return new TestCaseData(typeof(ASizingServiceTouchingTheUpdateCode), "Lighthouse.Backend.Platform.UpdateQueue.UpdateKey")
                 .SetName("ARefinementApplicationTypeReachingTheUpdateCode_IsNamed");
@@ -760,7 +760,7 @@ namespace Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingA
 
 namespace Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingTrackerIntegration.Application
 {
-    internal sealed class ASizingServiceReachingTrackerIntegration(global::Lighthouse.Backend.Modules.TrackerIntegration.Application.IWorkTrackingConnectorFactory connectors)
+    internal sealed class ASizingServiceReachingTrackerIntegration(global::Lighthouse.Backend.Modules.TrackerIntegration.Contracts.IWorkTrackingConnectorFactory connectors)
     {
         public int Describe() => connectors.GetHashCode();
     }

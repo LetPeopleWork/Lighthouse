@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.TrackerIntegration.Contracts;
 using Lighthouse.Backend.Services.Implementation;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
