@@ -462,7 +462,7 @@
 "C": 1,
 "D": 16,
 "E": 6,
-"F": 256,
+"F": 263,
 "K": 4,
 "L": 2,
 "P": 5,
@@ -9750,6 +9750,60 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F257",
+"F258",
+"F259",
+"F260",
+"F261",
+"F262"
+],
+"verdict": "met"
+},
+"E2": {
+"reason": "F263",
+"verdict": "not_examined"
+},
+"E3": {
+"observations": [
+"F257",
+"F258",
+"F259",
+"F260",
+"F261",
+"F262"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F257",
+"F258",
+"F259",
+"F260",
+"F261",
+"F262"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F257",
+"F258",
+"F259",
+"F260",
+"F261",
+"F262"
+],
+"verdict": "met"
+},
+"E6": {
+"reason": "F263",
+"verdict": "not_examined"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -9968,7 +10022,14 @@
 "F254": "the list is padded with a type nobody reaches",
 "F255": "S5 open-host narrowing keeps the property route (option A), with one owner: ModuleRules owns the set-up boundary. ModuleRules holds SetUpContracts, the positive pattern of Organisation set-up's Contracts namespace built from ContextContractsMembership.ContractsOf(\"OrganisationSetup\"), and SetUpBehindItsContracts, the negative pattern derived from the same name; both are properties, not constants, so the namespace-move law does not read them as rule patterns. Every downstream rule reuses them: WorkItems' SetUpOpenToTheContextsBuildingOnIt becomes ModuleRules.SetUpContracts (or is removed and its readers use it), the composites in Promises (TheNamespacedUpstreamCodeAndSetUpBehindItsContracts) and Refinement (TheForbiddenCodeAndSetUpBehindItsContracts) and the Access, Licensing, Reports and WorkItems layer patterns compose ModuleRules.SetUpBehindItsContracts, and OrganisationSetupIsAnOpenHostArchUnitTest's open list uses ContextContractsMembership.ContractsOf(\"OrganisationSetup\") instead of SetUpModule + \".Contracts\". The declared pattern roles (ContextContractsPatternRoles, OrganisationSetupPatternRoles) stay unchanged: they describe what the namespace-move law sees, not the open host, and moving the narrowing there would put a boundary owner inside the move law. Option B rejected for that reason.",
 "F256": "Open-host narrowing: holds or composes the one set-up boundary owner ModuleRules.SetUpBehindItsContracts / SetUpContracts",
+"F257": "Probe architecture-rules PublishesItsContracts: 17/17 passed (WorkItems, TrackerIntegration, OrganisationSetup: each published type found once in own Contracts, none left in old namespace, no outside type names old name via IL; open host admits only Organisation set-up Contracts; Csv option names live only in Tracker Contracts; connector port Contracts path still makes CI run every connector suite; tolerated cross-context edge list holds no edge into published type).",
+"F258": "Probe architecture-rules PublishTheirContracts: 8/8 passed (Licensing+Access and FlowMetrics+Forecasting: each published type found once in own Contracts, none left in old namespace, no outside type names old name, lists non-empty). Limitation: only structural architecture rules observed; no behaviour-equivalence probe (answers-compare, backend-tests) run; no R-C1 list deletion mutation observed directly.",
+"F259": "Probe access-answers-compare 2db405ff5 (base before feature C vs candidate dc2e7e1ff): exit 0, VERDICT IDENTICAL, all 10 Access or Licensing answers match (api-keys, auth-mode, everyone-signed-in, licence status before/after import, my-summary, rbac-status, session, system-wide-rules x2; concurrencyToken masked).",
 "F26": "Tracker integration contract types (connector port and capabilities, factory, description block merger, CSV option names, write-back target) are available from Contracts; a change touching a Contracts path is treated as shared by CI; connecting, syncing and writing back to trackers behave as before.",
+"F260": "Probe forecast-answers-compare 2db405ff5 vs candidate dc2e7e1ff: exit 0, VERDICT IDENTICAL, all 128 forecast answers over 9 scenarios match (backtest, deliveries, feature-list, features, item-creation-prediction, manual how-many/when, reality-check; timestamps/tokens masked).",
+"F261": "Probe refresh-answers-compare 2db405ff5 vs candidate dc2e7e1ff: exit 0, VERDICT IDENTICAL, all 343 refresh answers over 9 scenarios match (blocked today/a week ago, blocked-count-history, finished, in-progress, work-items 180, features-with-dependencies, parent-placement 2136 incl. 1248 naming a parent).",
+"F262": "Probe backend-tests (full backend suite on candidate dc2e7e1ff): exit 0, Test Run Successful, 15524 total, 15512 passed, 12 skipped, 0 failed.",
+"F263": "Structure (O1,O2), forecast answers identical (O4) and backend suite green (O7) observed, but metric values were not compared: metrics-answers-compare failed twice building the base (O6). Owner: evidence capture/tool owner; remedy: fix base capture (Lighthouse.dll not found) and rerun metrics-answers-compare 2db405ff5.",
 "F27": "The oracle does not see real connector sync or write-back results, nor that the CI classifier marks a Contracts-only change as shared.",
 "F28": "Organisation set-up contract types are available from Contracts, its open host exposes only Contracts rather than Application or Domain, the remaining contract-breach list (R-C1) names only owned non-contract residue, and set-up behaves as before.",
 "F29": "The oracle does not see that set-up still works for a user, nor that the residue list is complete and free of contract types.",
