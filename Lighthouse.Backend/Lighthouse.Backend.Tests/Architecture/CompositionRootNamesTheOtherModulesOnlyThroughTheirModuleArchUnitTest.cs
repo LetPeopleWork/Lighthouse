@@ -68,6 +68,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 $"{TheModulesRoot}.WorkItems.Application.Policies.ConnectionFetchShapeChangedUpdateTriggerHandler",
                 $"{TheModulesRoot}.WorkItems.Application.Policies.FeatureBlockedTransitionCaptureHandler",
                 $"{TheModulesRoot}.WorkItems.Application.Policies.FeatureBlockedTransitionCloseHandler",
+                $"{TheModulesRoot}.WorkItems.Application.Policies.ForecastRoundFinishedRefreshLogHandler",
                 $"{TheModulesRoot}.WorkItems.Application.Policies.PortfolioDeletedOrphanedFeatureCleanupHandler",
                 $"{TheModulesRoot}.WorkItems.Application.Policies.TeamDeletedRefreshLogCleanupHandler",
                 $"{TheModulesRoot}.WorkItems.Application.Policies.WorkItemBlockedTransitionCaptureHandler",

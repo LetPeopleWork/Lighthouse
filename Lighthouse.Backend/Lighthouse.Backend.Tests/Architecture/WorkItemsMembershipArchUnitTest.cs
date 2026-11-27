@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "WorkItemBlockedTransitionCaptureHandler", "WorkItemBlockedTransitionCloseHandler",
             "FeatureBlockedTransitionCaptureHandler", "FeatureBlockedTransitionCloseHandler",
             "TeamDeletedRefreshLogCleanupHandler", "ConnectionFetchShapeChangedUpdateTriggerHandler",
-            "PortfolioDeletedOrphanedFeatureCleanupHandler",
+            "PortfolioDeletedOrphanedFeatureCleanupHandler", "ForecastRoundFinishedRefreshLogHandler",
             "RefreshLogService", "IRefreshLogService",
             "WorkItemTransitioned", "WorkItemBlocked", "WorkItemUnblocked", "WorkItemBecameStale",
             "FeatureBlocked", "FeatureUnblocked", "TeamDataRefreshed", "PortfolioFeaturesRefreshed",

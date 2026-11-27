@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly Dictionary<string, string[]> ByContext = new(StringComparer.Ordinal)
         {
-            ["Forecasting"] = ["PortfolioForecastsUpdated"],
+            ["Forecasting"] = ["ForecastRoundFinished", "PortfolioForecastsUpdated"],
             ["OrganisationSetup"] =
             [
                 "BlackoutConfigurationChanged", "ConnectionFetchShapeChanged", "FeatureOrderingPolicyChanged",

@@ -36,7 +36,6 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
         private Mock<IForecastService> forecastServiceMock;
         private Mock<IWriteBackTriggerService> writeBackTriggerServiceMock;
         private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
-        private Mock<IRefreshLogService> refreshLogServiceMock;
         private Mock<IUpdateStatusStore> updateStatusStoreMock;
         private InProcessUpdateStatusStore inProcessUpdateStatusStore;
         private UpdateCancellationContext cancellationContext;
@@ -94,11 +93,6 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
             loggerMock = new Mock<ILogger<ForecastUpdater>>();
             inProcessUpdateStatusStore = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
 
-            refreshLogServiceMock = new Mock<IRefreshLogService>();
-            refreshLogServiceMock
-                .Setup(x => x.LogRefreshAsync(It.IsAny<RefreshLog>()))
-                .Returns(Task.CompletedTask);
-
             SetupServiceProviderMock(appSettingServiceMock.Object);
             forecastInputsMock = new Mock<IPortfolioRepository>();
             forecastInputsMock
@@ -126,7 +120,6 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
             SetupServiceProviderMock(featureRepositoryMock.Object);
             SetupServiceProviderMock(forecastServiceMock.Object);
             SetupServiceProviderMock(writeBackTriggerServiceMock.Object);
-            SetupServiceProviderMock(refreshLogServiceMock.Object);
             SetupServiceProviderMock<ILighthouseClock>(new FakeLighthouseClock(new DateTimeOffset(InstanceDay, new TimeOnly(10, 0), TimeSpan.Zero)));
 
             forecastLane = new ForecastLane(new ForecastSimulationLimits(1, 1) { CoresSeen = 8 });
@@ -265,7 +258,7 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
             forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, "fresh"));
             featureRepositoryMock.Setup(x => x.FeaturesOfPortfolio(It.IsAny<int>())).Throws(new InvalidOperationException("database is locked"));
-            var recorded = CaptureRefreshLog();
+            var recorded = CaptureTheFinishedRound();
 
             CreateSubject().TriggerUpdate(portfolio.Id);
 
@@ -279,7 +272,7 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
             forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, "fresh"));
             connectionRepositoryMock.Setup(x => x.GetById(TheConnectionId)).Throws(new InvalidOperationException("database is locked"));
-            var recorded = CaptureRefreshLog();
+            var recorded = CaptureTheFinishedRound();
 
             CreateSubject().TriggerUpdate(portfolio.Id);
 
@@ -384,19 +377,18 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
             var portfolio = CreatePortfolio();
             forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
-            var recorded = CaptureRefreshLog();
+            var recorded = CaptureTheFinishedRound();
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(recorded.Entry.Type, Is.EqualTo(RefreshType.Forecast));
-                Assert.That(recorded.Entry.EntityId, Is.EqualTo(portfolio.Id));
-                Assert.That(recorded.Entry.EntityName, Is.EqualTo(portfolio.Name));
-                Assert.That(recorded.Entry.Success, Is.True);
+                Assert.That(recorded.Round.PortfolioId, Is.EqualTo(portfolio.Id));
+                Assert.That(recorded.Round.PortfolioName, Is.EqualTo(portfolio.Name));
+                Assert.That(recorded.Round.Outcome, Is.EqualTo(ForecastRoundFinished.RoundOutcome.Succeeded));
 
-                Assert.That(recorded.Entry.Cancelled, Is.False,
+                Assert.That(recorded.Round.Outcome, Is.Not.EqualTo(ForecastRoundFinished.RoundOutcome.Cancelled),
                     "Nobody stopped this one. Marked cancelled, every healthy forecast would be excluded "
                     + "from the success rate and the panel would report nothing at all.");
             }
@@ -408,11 +400,11 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
             var portfolio = CreatePortfolio();
             forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
-            var recorded = CaptureRefreshLog();
+            var recorded = CaptureTheFinishedRound();
 
             CreateSubject().TriggerUpdate(portfolio.Id);
 
-            Assert.That(recorded.Entry.ExecutedAt, Is.EqualTo(Now));
+            Assert.That(recorded.Round.FinishedAt, Is.EqualTo(Now));
         }
 
         [Test]
@@ -428,12 +420,12 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
                     return ForecastServiceDoubles.Computed;
                 });
 
-            var recorded = CaptureRefreshLog();
+            var recorded = CaptureTheFinishedRound();
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
 
-            Assert.That(recorded.Entry.DurationMs, Is.GreaterThanOrEqualTo(ShortestCredibleDurationMilliseconds));
+            Assert.That(recorded.Round.DurationMs, Is.GreaterThanOrEqualTo(ShortestCredibleDurationMilliseconds));
         }
 
         [Test]
@@ -445,16 +437,15 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
                 .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new Exception("Test exception"));
 
-            var recorded = CaptureRefreshLog();
+            var recorded = CaptureTheFinishedRound();
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(recorded.Entry.Type, Is.EqualTo(RefreshType.Forecast));
-                Assert.That(recorded.Entry.EntityId, Is.EqualTo(portfolio.Id));
-                Assert.That(recorded.Entry.Success, Is.False);
+                Assert.That(recorded.Round.PortfolioId, Is.EqualTo(portfolio.Id));
+                Assert.That(recorded.Round.Outcome, Is.EqualTo(ForecastRoundFinished.RoundOutcome.Failed));
             }
         }
 
@@ -465,18 +456,18 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
             forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastIsStopped();
 
-            var recorded = CaptureRefreshLog();
+            var recorded = CaptureTheFinishedRound();
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(recorded.Entry.Cancelled, Is.True,
-                    "Forecasts log their own refresh, so this half can report a cancel as a failure whatever "
+                Assert.That(recorded.Round.Outcome, Is.EqualTo(ForecastRoundFinished.RoundOutcome.Cancelled),
+                    "The forecast reports how its own round ended, so this half can tell a cancel from a failure whatever "
                     + "the team and portfolio halves do.");
 
-                Assert.That(recorded.Entry.Success, Is.False,
+                Assert.That(recorded.Round.Outcome, Is.Not.AnyOf(ForecastRoundFinished.RoundOutcome.Succeeded, ForecastRoundFinished.RoundOutcome.Skipped),
                     "Still not a refresh that finished - the forecast it was asked for never ran.");
 
                 Assert.That(WhatTheRefreshThrew, Is.InstanceOf<OperationCanceledException>(),
@@ -494,16 +485,16 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
                 .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new TaskCanceledException("A call inside the forecast timed out."));
 
-            var recorded = CaptureRefreshLog();
+            var recorded = CaptureTheFinishedRound();
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(recorded.Entry.Cancelled, Is.False,
+                Assert.That(recorded.Round.Outcome, Is.Not.EqualTo(ForecastRoundFinished.RoundOutcome.Cancelled),
                     "Nobody stopped this forecast, and the queue reports it as failed; the refresh history must agree.");
-                Assert.That(recorded.Entry.Success, Is.False);
+                Assert.That(recorded.Round.Outcome, Is.EqualTo(ForecastRoundFinished.RoundOutcome.Failed));
                 Assert.That(ReadUpdateSummary(), Does.Contain(" | forecast=failed after "));
                 Assert.That(WhatTheRefreshThrew, Is.InstanceOf<OperationCanceledException>(),
                     "Lighthouse is not stopping either, so nothing explains the cancellation and the queue must see the failure.");
@@ -522,7 +513,7 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
                     ? Task.FromCanceled<ForecastRunOutcome>(stop)
                     : Task.FromResult(ForecastServiceDoubles.Computed));
 
-            var recorded = CaptureRefreshLog();
+            var recorded = CaptureTheFinishedRound();
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
@@ -534,7 +525,7 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(recorded.Entry.Cancelled, Is.True, "The forecast was handed a stop that Lighthouse stopping should have raised.");
+                Assert.That(recorded.Round.Outcome, Is.EqualTo(ForecastRoundFinished.RoundOutcome.Cancelled), "The forecast was handed a stop that Lighthouse stopping should have raised.");
                 Assert.That(WhatTheRefreshThrew, Is.Null, "A forecast stopped because Lighthouse is stopping did not fail, and the queue must not read it as failed.");
                 Assert.That(informationLines, Has.Some.Contains("because Lighthouse is stopping"));
             }
@@ -826,16 +817,14 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
             forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.ConfirmedUnchanged([]));
 
-            var recorded = CaptureRefreshLog();
+            var recorded = CaptureTheFinishedRound();
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(recorded.Entry.Skipped, Is.True);
-                Assert.That(recorded.Entry.Success, Is.True, "A skipped forecast is a successful one.");
-                Assert.That(recorded.Entry.Cancelled, Is.False);
+                Assert.That(recorded.Round.Outcome, Is.EqualTo(ForecastRoundFinished.RoundOutcome.Skipped), "A skipped forecast is a successful one, and never a stopped one.");
                 Assert.That(ReadUpdateSummary(), Does.Contain(" | forecast=skipped after "));
             }
         }
@@ -889,15 +878,14 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
             forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, null));
 
-            var recorded = CaptureRefreshLog();
+            var recorded = CaptureTheFinishedRound();
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(recorded.Entry.Success, Is.True);
-                Assert.That(recorded.Entry.Skipped, Is.False);
+                Assert.That(recorded.Round.Outcome, Is.EqualTo(ForecastRoundFinished.RoundOutcome.Succeeded));
                 Assert.That(WhatTheRefreshThrew, Is.Null);
             }
 
@@ -947,7 +935,7 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
                 .Setup(x => x.ForgetForecastInputs(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("The database is gone"));
 
-            var recorded = CaptureRefreshLog();
+            var recorded = CaptureTheFinishedRound();
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
@@ -955,7 +943,7 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(WhatTheRefreshThrew, Is.SameAs(forecastFailure));
-                Assert.That(recorded.Entry.Success, Is.False);
+                Assert.That(recorded.Round.Outcome, Is.EqualTo(ForecastRoundFinished.RoundOutcome.Failed));
             }
         }
 
@@ -1016,12 +1004,12 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
                 .Setup(x => x.Stage(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
                 .Throws(new InvalidOperationException("Staging failed"));
 
-            var recorded = CaptureRefreshLog();
+            var recorded = CaptureTheFinishedRound();
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
 
-            Assert.That(recorded.Entry.Success, Is.False);
+            Assert.That(recorded.Round.Outcome, Is.EqualTo(ForecastRoundFinished.RoundOutcome.Failed));
             VerifyNoOtherInputRecordingCalls();
         }
 
@@ -1200,12 +1188,12 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
             featureRepositoryMock.VerifyNoOtherCalls();
         }
 
-        private void VerifyTheRoundSurvivedAWriteBackThatCouldNotBeRead(Portfolio portfolio, RecordedRefreshLog recorded)
+        private void VerifyTheRoundSurvivedAWriteBackThatCouldNotBeRead(Portfolio portfolio, RecordedFinishedRound recorded)
         {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(WhatTheRefreshThrew, Is.Null);
-                Assert.That(recorded.Entry.Success, Is.True);
+                Assert.That(recorded.Round.Outcome, Is.EqualTo(ForecastRoundFinished.RoundOutcome.Succeeded));
                 domainEventDispatcherMock.Verify(x => x.PublishAsync(It.Is<PortfolioForecastsUpdated>(e => e.PortfolioId == portfolio.Id), It.IsAny<CancellationToken>()), Times.Once);
                 forecastInputsMock.Verify(x => x.TryRecordForecastInputs(portfolio.Id, TheRunMark, "fresh", It.IsAny<CancellationToken>()), Times.Once);
                 forecastInputsMock.Verify(x => x.ForgetForecastInputs(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -1249,26 +1237,26 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
             return summary!;
         }
 
-        private RecordedRefreshLog CaptureRefreshLog()
+        private RecordedFinishedRound CaptureTheFinishedRound()
         {
-            var recorded = new RecordedRefreshLog();
-            refreshLogServiceMock
-                .Setup(x => x.LogRefreshAsync(It.IsAny<RefreshLog>()))
-                .Callback<RefreshLog>(recorded.Record)
+            var recorded = new RecordedFinishedRound();
+            domainEventDispatcherMock
+                .Setup(x => x.PublishAsync(It.IsAny<ForecastRoundFinished>(), It.IsAny<CancellationToken>()))
+                .Callback<ForecastRoundFinished, CancellationToken>((finished, _) => recorded.Record(finished))
                 .Returns(Task.CompletedTask);
 
             return recorded;
         }
 
-        private sealed class RecordedRefreshLog
+        private sealed class RecordedFinishedRound
         {
-            private RefreshLog? entry;
+            private ForecastRoundFinished? round;
 
-            public RefreshLog Entry => entry ?? throw new AssertionException("No refresh was recorded for the forecast.");
+            public ForecastRoundFinished Round => round ?? throw new AssertionException("The forecast round did not announce that it finished.");
 
-            public void Record(RefreshLog refreshLog)
+            public void Record(ForecastRoundFinished finished)
             {
-                entry = refreshLog;
+                round = finished;
             }
         }
 

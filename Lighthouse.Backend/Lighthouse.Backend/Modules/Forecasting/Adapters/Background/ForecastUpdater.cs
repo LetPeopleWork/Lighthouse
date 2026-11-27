@@ -3,7 +3,6 @@ using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Modules.Forecasting.Contracts;
-using Lighthouse.Backend.Modules.WorkItems.Contracts;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.DomainEvents;
@@ -190,7 +189,6 @@ namespace Lighthouse.Backend.Modules.Forecasting.Adapters.Background
                 return;
             }
 
-            var refreshLogService = serviceProvider.GetRequiredService<IRefreshLogService>();
             var stopwatch = Stopwatch.StartNew();
             var success = false;
             var cancelled = false;
@@ -224,7 +222,9 @@ namespace Lighthouse.Backend.Modules.Forecasting.Adapters.Background
                     await ForgetWhatTheForecastWasComputedFrom(portfolio.Id);
                 }
 
-                await LogForecastRefresh(refreshLogService, portfolio, itemCount, stopwatch.ElapsedMilliseconds, success, cancelled, skipped);
+                await domainEventDispatcher.PublishAsync(
+                    ForecastRoundFinished.For(portfolio, itemCount, stopwatch.ElapsedMilliseconds, CurrentInstant, success, cancelled, skipped),
+                    CancellationToken.None);
                 ReportForecastSummary(serviceProvider, portfolio.Name, stopwatch.ElapsedMilliseconds, success, cancelled, skipped);
             }
         }
@@ -372,32 +372,6 @@ namespace Lighthouse.Backend.Modules.Forecasting.Adapters.Background
             {
                 Logger.LogWarning(exception, "Could not forget the forecast inputs of Portfolio {Id}: {Exception}", portfolioId, exception.Message);
             }
-        }
-
-        /// <summary>
-        /// Forecasting reads what an earlier refresh already fetched, so it never contacts the work
-        /// tracking system - there is nothing scanned or downloaded to record.
-        /// </summary>
-        private Task LogForecastRefresh(
-            IRefreshLogService refreshLogService, Portfolio portfolio, int itemCount, long durationMs, bool success, bool cancelled, bool skipped)
-        {
-            var nothingFetched = SyncOutcome.None;
-
-            return refreshLogService.LogRefreshAsync(new RefreshLog
-            {
-                Type = RefreshType.Forecast,
-                EntityId = portfolio.Id,
-                EntityName = portfolio.Name,
-                ItemCount = itemCount,
-                Mode = nothingFetched.Mode,
-                RecordsScanned = nothingFetched.RecordsScanned,
-                RecordsFetched = nothingFetched.RecordsFetched,
-                DurationMs = durationMs,
-                ExecutedAt = CurrentInstant,
-                Success = success,
-                Cancelled = cancelled,
-                Skipped = skipped
-            });
         }
     }
 }

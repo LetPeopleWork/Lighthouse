@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
     /// The Work Items reactions to domain events (blocked-transition capture and close for Work Items and Features, the
-    /// refresh-log clean-up on a deleted Team, the update trigger on a changed fetch shape, and the orphaned-Feature clean-up
+    /// refresh-log clean-up on a deleted Team, the refresh-log entry of a finished forecast round, the update trigger on a changed fetch shape, and the orphaned-Feature clean-up
     /// on a deleted Portfolio) live in the module's
     /// Application policies, none is left under Services, and the policies hold nothing but domain-event handlers. The types are
     /// named as strings and read from the compiled production assembly, so this class compiles before and after the move, and a
@@ -50,6 +50,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "TeamDeletedRefreshLogCleanupHandler",
             "ConnectionFetchShapeChangedUpdateTriggerHandler",
             "PortfolioDeletedOrphanedFeatureCleanupHandler",
+            "ForecastRoundFinishedRefreshLogHandler",
         ];
 
         private static readonly Regex AnOldFullName = new(

@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string[] WhatTheOtherContextsReach =
         [
             "WorkItems:IBlockedItemService",
-            "WorkItems:IRefreshLogService",
             "WorkItems:IRuleEvaluator`1",
             "WorkItems:IRuleFieldProvider`1",
             "WorkItems:IWhatTheForecastWaitsFor",
@@ -61,7 +60,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(
                 published,
                 Is.EqualTo(WhatTheOtherContextsReach),
-                $"The published types of Work Items were read as [{string.Join(" | ", published)}]. Expected the five Work Items types that the other contexts reach. Why it matters: an empty or shrunk list lets every check below pass without looking at anything. How to fix: keep the map of what each context publishes complete for Work Items.");
+                $"The published types of Work Items were read as [{string.Join(" | ", published)}]. Expected the four Work Items types that the other contexts reach. Why it matters: an empty or shrunk list lets every check below pass without looking at anything. How to fix: keep the map of what each context publishes complete for Work Items.");
         }
 
         [Test]

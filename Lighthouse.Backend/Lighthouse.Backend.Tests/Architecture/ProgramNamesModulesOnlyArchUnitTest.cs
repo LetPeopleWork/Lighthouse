@@ -75,6 +75,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             Of("WorkItems", HandlerCategory, "Application.Policies.ConnectionFetchShapeChangedUpdateTriggerHandler"),
             Of("WorkItems", HandlerCategory, "Application.Policies.FeatureBlockedTransitionCaptureHandler"),
             Of("WorkItems", HandlerCategory, "Application.Policies.FeatureBlockedTransitionCloseHandler"),
+            Of("WorkItems", HandlerCategory, "Application.Policies.ForecastRoundFinishedRefreshLogHandler"),
             Of("WorkItems", HandlerCategory, "Application.Policies.PortfolioDeletedOrphanedFeatureCleanupHandler"),
             Of("WorkItems", HandlerCategory, "Application.Policies.TeamDeletedRefreshLogCleanupHandler"),
             Of("WorkItems", HandlerCategory, "Application.Policies.WorkItemBlockedTransitionCaptureHandler"),

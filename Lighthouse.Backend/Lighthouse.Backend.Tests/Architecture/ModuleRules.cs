@@ -64,10 +64,11 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         /// <summary>
         /// A front-door pattern that leaves out the context's own event types: a context publishing an event lets any
-        /// reacting context name it, so the rule about who may reach the context's front door is about everything else.
+        /// reacting context name it, and the types nested in an event travel with it, so the rule about who may reach the context's
+        /// front door is about everything else.
         /// </summary>
         public static string WithoutTheEvents(string frontDoor, string context)
-            => EventsOf(context) is { } events ? $"{EventExemptionPrefix}{events})$)(?:{frontDoor})" : frontDoor;
+            => EventsOf(context) is { } events ? $"{EventExemptionPrefix}{events})(?:[+/].*)?$)(?:{frontDoor})" : frontDoor;
 
         // A pattern that starts like this exempts whole types by full name, so it is matched against the type's full name;
         // every other pattern is about namespaces.
