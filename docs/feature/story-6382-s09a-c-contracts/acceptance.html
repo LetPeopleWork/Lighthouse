@@ -998,108 +998,53 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h4>Observations</h4>
 
-<pre><code>Probe architecture-rules PublishesItsContracts: 17/17 passed (WorkItems, TrackerIntegration, OrganisationSetup: each published type found once in own Contracts, none left in old namespace, no outside type names old name via IL; open host admits only Organisation set-up Contracts; Csv option names live only in Tracker Contracts; connector port Contracts path still makes CI run every connector suite; tolerated cross-context edge list holds no edge into published type).
+<pre><code>Probe architecture-rules PublishTheirContracts (Debug build, Architecture filter): 8 of 8 passed, exit 0. Includes each-published-type-found-once-in-own-Contracts, no-type-left-in-old-namespace, and no-outside-type-names-old-name for Licensing+Access and Flow metrics+Forecasting. Only these two slices&#x27; rules matched the fragment; Work Items, Tracker integration and Organisation set-up rule classes were not run in this probe.
 </code></pre>
 
-<pre><code>Probe architecture-rules PublishTheirContracts: 8/8 passed (Licensing+Access and FlowMetrics+Forecasting: each published type found once in own Contracts, none left in old namespace, no outside type names old name, lists non-empty). Limitation: only structural architecture rules observed; no behaviour-equivalence probe (answers-compare, backend-tests) run; no R-C1 list deletion mutation observed directly.
-</code></pre>
-
-<pre><code>Probe access-answers-compare 2db405ff5 (base before feature C vs candidate dc2e7e1ff): exit 0, VERDICT IDENTICAL, all 10 Access or Licensing answers match (api-keys, auth-mode, everyone-signed-in, licence status before/after import, my-summary, rbac-status, session, system-wide-rules x2; concurrencyToken masked).
-</code></pre>
-
-<pre><code>Probe forecast-answers-compare 2db405ff5 vs candidate dc2e7e1ff: exit 0, VERDICT IDENTICAL, all 128 forecast answers over 9 scenarios match (backtest, deliveries, feature-list, features, item-creation-prediction, manual how-many/when, reality-check; timestamps/tokens masked).
-</code></pre>
-
-<pre><code>Probe refresh-answers-compare 2db405ff5 vs candidate dc2e7e1ff: exit 0, VERDICT IDENTICAL, all 343 refresh answers over 9 scenarios match (blocked today/a week ago, blocked-count-history, finished, in-progress, work-items 180, features-with-dependencies, parent-placement 2136 incl. 1248 naming a parent).
-</code></pre>
-
-<pre><code>Probe backend-tests (full backend suite on candidate dc2e7e1ff): exit 0, Test Run Successful, 15524 total, 15512 passed, 12 skipped, 0 failed.
+<pre><code>Probe access-answers-compare 2db405ff5 (candidate 33b37aa17): 10 Access/Licensing answers (api-keys, auth-mode, everyone-signed-in, licence status before and after import, my-summary, rbac-status, session, system-wide-rules x2), 0 different; VERDICT IDENTICAL, exit 0.
 </code></pre>
 
 <h3>E2</h3>
 
-<p>not_examined</p>
+<p>met</p>
 
-<pre><code>Structure (O1,O2), forecast answers identical (O4) and backend suite green (O7) observed, but metric values were not compared: metrics-answers-compare failed twice building the base (O6). Owner: evidence capture/tool owner; remedy: fix base capture (Lighthouse.dll not found) and rerun metrics-answers-compare 2db405ff5.
+<h4>Observations</h4>
+
+<pre><code>Probe architecture-rules PublishTheirContracts (Debug build, Architecture filter): 8 of 8 passed, exit 0. Includes each-published-type-found-once-in-own-Contracts, no-type-left-in-old-namespace, and no-outside-type-names-old-name for Licensing+Access and Flow metrics+Forecasting. Only these two slices&#x27; rules matched the fragment; Work Items, Tracker integration and Organisation set-up rule classes were not run in this probe.
+</code></pre>
+
+<pre><code>Probe metrics-answers-compare 2db405ff5 vs candidate 33b37aa17, same seeded database hashes, window 2026-07-20..2026-10-17, 366 requests per round, teams 1 4 5, portfolios 1 4 5: IDENTICAL, 366 responses and 3 snapshot tables, exit 0.
+</code></pre>
+
+<pre><code>Probe forecast-answers-compare 2db405ff5 vs candidate 33b37aa17: 128 forecast answers over 9 scenarios (backtest, deliveries, feature-list, features, item-creation-prediction, manual-how-many, manual-when-and-how-many, manual-when-filtered, reality-check), 0 different; VERDICT IDENTICAL, exit 0.
 </code></pre>
 
 <h3>E3</h3>
 
-<p>met</p>
+<p>not_examined</p>
 
-<h4>Observations</h4>
-
-<pre><code>Probe architecture-rules PublishesItsContracts: 17/17 passed (WorkItems, TrackerIntegration, OrganisationSetup: each published type found once in own Contracts, none left in old namespace, no outside type names old name via IL; open host admits only Organisation set-up Contracts; Csv option names live only in Tracker Contracts; connector port Contracts path still makes CI run every connector suite; tolerated cross-context edge list holds no edge into published type).
-</code></pre>
-
-<pre><code>Probe architecture-rules PublishTheirContracts: 8/8 passed (Licensing+Access and FlowMetrics+Forecasting: each published type found once in own Contracts, none left in old namespace, no outside type names old name, lists non-empty). Limitation: only structural architecture rules observed; no behaviour-equivalence probe (answers-compare, backend-tests) run; no R-C1 list deletion mutation observed directly.
-</code></pre>
-
-<pre><code>Probe access-answers-compare 2db405ff5 (base before feature C vs candidate dc2e7e1ff): exit 0, VERDICT IDENTICAL, all 10 Access or Licensing answers match (api-keys, auth-mode, everyone-signed-in, licence status before/after import, my-summary, rbac-status, session, system-wide-rules x2; concurrencyToken masked).
-</code></pre>
-
-<pre><code>Probe forecast-answers-compare 2db405ff5 vs candidate dc2e7e1ff: exit 0, VERDICT IDENTICAL, all 128 forecast answers over 9 scenarios match (backtest, deliveries, feature-list, features, item-creation-prediction, manual how-many/when, reality-check; timestamps/tokens masked).
-</code></pre>
-
-<pre><code>Probe refresh-answers-compare 2db405ff5 vs candidate dc2e7e1ff: exit 0, VERDICT IDENTICAL, all 343 refresh answers over 9 scenarios match (blocked today/a week ago, blocked-count-history, finished, in-progress, work-items 180, features-with-dependencies, parent-placement 2136 incl. 1248 naming a parent).
-</code></pre>
-
-<pre><code>Probe backend-tests (full backend suite on candidate dc2e7e1ff): exit 0, Test Run Successful, 15524 total, 15512 passed, 12 skipped, 0 failed.
+<pre><code>Probe budget of 4 spent on access, metrics, forecast and architecture-rules PublishTheirContracts (only Licensing/Access and Flow metrics/Forecasting rules matched). No refresh, tracker, CI-classifier, Organisation set-up or full-suite observation was captured in this revision; the earlier published met verdict is not re-observed here.
 </code></pre>
 
 <h3>E4</h3>
 
-<p>met</p>
+<p>not_examined</p>
 
-<h4>Observations</h4>
-
-<pre><code>Probe architecture-rules PublishesItsContracts: 17/17 passed (WorkItems, TrackerIntegration, OrganisationSetup: each published type found once in own Contracts, none left in old namespace, no outside type names old name via IL; open host admits only Organisation set-up Contracts; Csv option names live only in Tracker Contracts; connector port Contracts path still makes CI run every connector suite; tolerated cross-context edge list holds no edge into published type).
-</code></pre>
-
-<pre><code>Probe architecture-rules PublishTheirContracts: 8/8 passed (Licensing+Access and FlowMetrics+Forecasting: each published type found once in own Contracts, none left in old namespace, no outside type names old name, lists non-empty). Limitation: only structural architecture rules observed; no behaviour-equivalence probe (answers-compare, backend-tests) run; no R-C1 list deletion mutation observed directly.
-</code></pre>
-
-<pre><code>Probe access-answers-compare 2db405ff5 (base before feature C vs candidate dc2e7e1ff): exit 0, VERDICT IDENTICAL, all 10 Access or Licensing answers match (api-keys, auth-mode, everyone-signed-in, licence status before/after import, my-summary, rbac-status, session, system-wide-rules x2; concurrencyToken masked).
-</code></pre>
-
-<pre><code>Probe forecast-answers-compare 2db405ff5 vs candidate dc2e7e1ff: exit 0, VERDICT IDENTICAL, all 128 forecast answers over 9 scenarios match (backtest, deliveries, feature-list, features, item-creation-prediction, manual how-many/when, reality-check; timestamps/tokens masked).
-</code></pre>
-
-<pre><code>Probe refresh-answers-compare 2db405ff5 vs candidate dc2e7e1ff: exit 0, VERDICT IDENTICAL, all 343 refresh answers over 9 scenarios match (blocked today/a week ago, blocked-count-history, finished, in-progress, work-items 180, features-with-dependencies, parent-placement 2136 incl. 1248 naming a parent).
-</code></pre>
-
-<pre><code>Probe backend-tests (full backend suite on candidate dc2e7e1ff): exit 0, Test Run Successful, 15524 total, 15512 passed, 12 skipped, 0 failed.
+<pre><code>Probe budget of 4 spent on access, metrics, forecast and architecture-rules PublishTheirContracts (only Licensing/Access and Flow metrics/Forecasting rules matched). No refresh, tracker, CI-classifier, Organisation set-up or full-suite observation was captured in this revision; the earlier published met verdict is not re-observed here.
 </code></pre>
 
 <h3>E5</h3>
 
-<p>met</p>
+<p>not_examined</p>
 
-<h4>Observations</h4>
-
-<pre><code>Probe architecture-rules PublishesItsContracts: 17/17 passed (WorkItems, TrackerIntegration, OrganisationSetup: each published type found once in own Contracts, none left in old namespace, no outside type names old name via IL; open host admits only Organisation set-up Contracts; Csv option names live only in Tracker Contracts; connector port Contracts path still makes CI run every connector suite; tolerated cross-context edge list holds no edge into published type).
-</code></pre>
-
-<pre><code>Probe architecture-rules PublishTheirContracts: 8/8 passed (Licensing+Access and FlowMetrics+Forecasting: each published type found once in own Contracts, none left in old namespace, no outside type names old name, lists non-empty). Limitation: only structural architecture rules observed; no behaviour-equivalence probe (answers-compare, backend-tests) run; no R-C1 list deletion mutation observed directly.
-</code></pre>
-
-<pre><code>Probe access-answers-compare 2db405ff5 (base before feature C vs candidate dc2e7e1ff): exit 0, VERDICT IDENTICAL, all 10 Access or Licensing answers match (api-keys, auth-mode, everyone-signed-in, licence status before/after import, my-summary, rbac-status, session, system-wide-rules x2; concurrencyToken masked).
-</code></pre>
-
-<pre><code>Probe forecast-answers-compare 2db405ff5 vs candidate dc2e7e1ff: exit 0, VERDICT IDENTICAL, all 128 forecast answers over 9 scenarios match (backtest, deliveries, feature-list, features, item-creation-prediction, manual how-many/when, reality-check; timestamps/tokens masked).
-</code></pre>
-
-<pre><code>Probe refresh-answers-compare 2db405ff5 vs candidate dc2e7e1ff: exit 0, VERDICT IDENTICAL, all 343 refresh answers over 9 scenarios match (blocked today/a week ago, blocked-count-history, finished, in-progress, work-items 180, features-with-dependencies, parent-placement 2136 incl. 1248 naming a parent).
-</code></pre>
-
-<pre><code>Probe backend-tests (full backend suite on candidate dc2e7e1ff): exit 0, Test Run Successful, 15524 total, 15512 passed, 12 skipped, 0 failed.
+<pre><code>Probe budget of 4 spent on access, metrics, forecast and architecture-rules PublishTheirContracts (only Licensing/Access and Flow metrics/Forecasting rules matched). No refresh, tracker, CI-classifier, Organisation set-up or full-suite observation was captured in this revision; the earlier published met verdict is not re-observed here.
 </code></pre>
 
 <h3>E6</h3>
 
 <p>not_examined</p>
 
-<pre><code>Structure (O1,O2), forecast answers identical (O4) and backend suite green (O7) observed, but metric values were not compared: metrics-answers-compare failed twice building the base (O6). Owner: evidence capture/tool owner; remedy: fix base capture (Lighthouse.dll not found) and rerun metrics-answers-compare 2db405ff5.
+<pre><code>Probe budget of 4 spent on access, metrics, forecast and architecture-rules PublishTheirContracts (only Licensing/Access and Flow metrics/Forecasting rules matched). No refresh, tracker, CI-classifier, Organisation set-up or full-suite observation was captured in this revision; the earlier published met verdict is not re-observed here.
 </code></pre>
 
 </body></html>
