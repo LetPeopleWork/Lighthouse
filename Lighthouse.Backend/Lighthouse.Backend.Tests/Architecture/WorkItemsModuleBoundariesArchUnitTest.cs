@@ -151,16 +151,12 @@ namespace Lighthouse.Backend.Tests.Architecture
         // Work Items' two queries of Flow metrics stay until Flow metrics answers them itself. The list only shrinks.
         private static readonly string[] EdgesOfTheApplicationIntoFlowMetrics =
         [
-            "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Modules.FlowMetrics.Contracts.IPortfolioMetricsService",
-            "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Modules.FlowMetrics.Domain.PercentileCalculator",
         ];
 
         // Work Items builds on Organisation set-up through its Contracts, so its edges into them are legal and not listed;
         // the services still in the loose Services namespaces and the platform's clock and update queue are listed until they move.
         private static readonly string[] EdgesOfTheApplicationIntoAccessLicensingOrganisationSetUpAndTheUpdateQueue =
         [
-            "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService",
-            "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.FeatureDependencyRendering -> Lighthouse.Backend.Modules.Access.Contracts.IRbacAdministrationService",
             "Lighthouse.Backend.Modules.WorkItems.Application.Policies.PortfolioDeletedOrphanedFeatureCleanupHandler -> Lighthouse.Backend.Services.Interfaces.IOrphanedFeatureCleanupService",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Platform.UpdateQueue.UpdateCancellationContext",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
@@ -171,6 +167,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static string AccessLicensingOrganisationSetUpAndTheUpdateQueue =>
             $"^(?!{ModuleRules.SetUpContracts})(?:(?:{AccessAndLicensing})|(?:{OrganisationSetUp})|(?:{KernelRules.TheUpdateQueue}))";
+
+        private static string AccessAndLicensingBehindTheirContracts => ModuleRules.WithoutTheContractsOf(AccessLicensingOrganisationSetUpAndTheUpdateQueue, "Access", "Licensing");
 
         private static readonly string WorkItemsLegalCallers =
             $"(?:{ApplicationCoreRules.TheApi})|(?:{ModuleRules.FlowMetricsModule})|(?:{ModuleRules.ForecastingModule})|(?:{ModuleBoundariesArchUnitTest.RefinementPattern})|(?:{PromisesApplicationOutsideItsPolicies})";
@@ -199,10 +197,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         private static IEnumerable<string> Layers => TypesByLayer.Keys;
-
-        private static string PortfolioMetricsService => typeof(global::Lighthouse.Backend.Modules.FlowMetrics.Contracts.IPortfolioMetricsService).FullName!;
-
-        private static string LicenceService => typeof(global::Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService).FullName!;
 
         private static string OrphanedFeatureCleanup => typeof(global::Lighthouse.Backend.Services.Interfaces.IOrphanedFeatureCleanupService).FullName!;
 
@@ -249,7 +243,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         [TestCase(ListedRule.OutsideTypesReachingTheDomain)]
         [TestCase(ListedRule.OutsideTypesReachingTheApplication)]
-        [TestCase(ListedRule.ApplicationEdgesIntoFlowMetrics)]
         [TestCase(ListedRule.ApplicationEdgesIntoAccessLicensingOrganisationSetUpAndTheUpdateQueue)]
         [TestCase(ListedRule.FlowMetricsInboundList)]
         public void EveryEntryDeletedFromAListedRule_FailsTheRuleAndIsNamed_AndAnEntryWithNoEdgeIsNamedForDeletion(ListedRule rule)
@@ -350,12 +343,12 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void AWorkItemsApplicationTypeReachingFlowMetricsOnlyThroughAListedEdge_PassesTheRule()
+        public void AWorkItemsApplicationTypeReachingFlowMetricsThroughItsContracts_PassesTheRuleWithNothingListed()
         {
             var offender = typeof(AWorkItemQueryService);
-            var verdict = FlowMetricsOutboundRule(TestModule.Value, OutboundCase(offender), [$"{offender.FullName} -> {PortfolioMetricsService}"]);
+            var verdict = FlowMetricsOutboundRule(TestModule.Value, OutboundCase(offender), []);
 
-            ThenTheRuleHolds(verdict.Check, "a listed Flow metrics query edge");
+            ThenTheRuleHolds(verdict.Check, "a Flow metrics query through its Contracts");
         }
 
         [Test]
@@ -387,13 +380,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             yield return new TestCaseData(typeof(AWorkItemServiceShapingAnApiType), Array.Empty<string>(), OutboundTarget.LayersBelowTheApplication, Edge(typeof(AWorkItemServiceShapingAnApiType), "Lighthouse.Backend.API.DTO.FeatureDto"))
                 .SetName("AWorkItemsApplicationTypeShapingAnApiType_IsNamed");
             yield return new TestCaseData(
-                    typeof(AWorkItemServiceUpdatingTeamMetrics),
-                    new[] { $"{typeof(AWorkItemServiceUpdatingTeamMetrics).FullName} -> {PortfolioMetricsService}" },
-                    OutboundTarget.FlowMetrics, Edge(typeof(AWorkItemServiceUpdatingTeamMetrics), "Lighthouse.Backend.Modules.FlowMetrics.Contracts.ITeamMetricsService"))
-                .SetName("AWorkItemsApplicationTypeReachingAnUnlistedFlowMetricsType_IsNamed");
-            yield return new TestCaseData(
                     typeof(AWorkItemServiceReadingTheLicenceTwice),
-                    new[] { $"{typeof(AWorkItemServiceReadingTheLicenceTwice).FullName} -> {LicenceService}" },
+                    Array.Empty<string>(),
                     OutboundTarget.AccessLicensingOrganisationSetUpAndTheUpdateQueue, Edge(typeof(AWorkItemServiceReadingTheLicenceTwice), "Lighthouse.Backend.Modules.Licensing.Application.ILicenseVerifier"))
                 .SetName("AWorkItemsApplicationTypeReachingASecondLicenceType_IsNamed");
         }
@@ -468,7 +456,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             => ModuleRules.OutboundEdges(
                 module,
                 application,
-                ModuleRules.FlowMetricsModule,
+                ModuleRules.WithoutTheContextsOf(ModuleRules.FlowMetricsModule, "FlowMetrics"),
                 listed,
                 $"Types in Work Items' Application, namespaces matching \"{application}\", should reach Flow metrics, namespaces matching " +
                 $"\"{ModuleRules.FlowMetricsModule}\", only through the listed edges, because Flow metrics builds on Work Items, not the other way " +
@@ -479,7 +467,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             => ModuleRules.OutboundEdges(
                 module,
                 application,
-                AccessLicensingOrganisationSetUpAndTheUpdateQueue,
+                AccessAndLicensingBehindTheirContracts,
                 listed,
                 $"Types in Work Items' Application, namespaces matching \"{application}\", should reach Access, Licensing, the services still in " +
                 $"the loose services named by full name (matching \"{StrayLooseServices}\"), set-up's adapters and the update queue, namespaces matching \"{AccessLicensingOrganisationSetUpAndTheUpdateQueue}\", " +

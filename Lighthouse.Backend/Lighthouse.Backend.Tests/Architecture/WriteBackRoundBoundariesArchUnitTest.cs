@@ -13,7 +13,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// <summary>
     /// The write-back round, five classes and three ports in Forecasting's Application under WriteBack, has rules of its own,
     /// read from the compiled code. Each of its types lives there and none is left in the loose Services namespaces; inside
-    /// Forecasting only the write-back service reaches Tracker integration, along its listed edges; Promises, Access and
+    /// Forecasting only the round reaches Tracker integration; Promises, Access and
     /// Licensing reach no round type; and inside Forecasting only the forecast updater and the round itself reach the round.
     /// Every list is compared both ways. The same rules run on made-up types, one per way a rule can be broken, so a rule that
     /// names nothing cannot pass.
@@ -34,13 +34,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static string TheRoundsNamespace => $"^{Regex.Escape(WriteBackMembership.TheNewNamespace)}(\\.|$)";
 
         private static string ForecastingOutsideTheRound => @"^Lighthouse\.Backend\.Modules\.Forecasting(?!\.Application\.WriteBack(\.|$))(\.|$)";
-
-        private static string[] TheEdgesOfTheRoundIntoTrackerIntegration =>
-        [
-            $"{WriteBackMembership.TheNewNamespace}.WriteBackService -> Lighthouse.Backend.Modules.TrackerIntegration.Contracts.IWorkTrackingConnector",
-            $"{WriteBackMembership.TheNewNamespace}.WriteBackService -> Lighthouse.Backend.Modules.TrackerIntegration.Contracts.IWorkTrackingConnectorFactory",
-            $"{WriteBackMembership.TheNewNamespace}.WriteBackService -> Lighthouse.Backend.Modules.TrackerIntegration.Contracts.IWriteBackTarget",
-        ];
 
         private static string[] TheForecastingTypesReachingTheRound =>
         [
@@ -79,11 +72,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void InsideForecastingOnlyTheWriteBackServiceReachesTrackerIntegration_AlongTheListedEdges()
+        public void NothingInForecastingOutsideTheRoundReachesTrackerIntegration()
         {
-            var verdict = ModuleRules.OutboundEdges(ProductionModule.Value, ModuleRules.ForecastingModule, TrackerIntegration, TheEdgesOfTheRoundIntoTrackerIntegration, "The write-back service alone reaches Tracker integration");
+            var verdict = ModuleRules.OutboundEdges(ProductionModule.Value, ForecastingOutsideTheRound, TrackerIntegration, [], "Only the write-back round reaches Tracker integration");
 
-            var (unlisted, gone) = WhenTheEdgesAreComparedWithTheList(verdict.Edges, TheEdgesOfTheRoundIntoTrackerIntegration);
+            var (unlisted, gone) = WhenTheEdgesAreComparedWithTheList(verdict.Edges, []);
 
             ThenTheEdgesAreExactlyTheListed(unlisted, gone);
         }

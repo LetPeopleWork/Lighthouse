@@ -187,7 +187,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .. table!.Cast<ITuple>()
                     .Select(row => (RuleClass: (Type)row[0]!, Module: (string)row[1]!, Rule: (string)row[2]!))
                     .Select(row => (Description: $"{row.Module} {row.Rule}", Target: StaticValueOf(row.RuleClass, row.Rule) as string ?? string.Empty))
-                    .Where(rule => Reads(rule.Target, TheSetUpModule + ".Adapters")),
+                    .Where(rule => Reads(rule.Target, TheSetUpModule + ".Adapters") && Reads(rule.Target, TheSetUpModule + ".Application")),
             ];
         }
 

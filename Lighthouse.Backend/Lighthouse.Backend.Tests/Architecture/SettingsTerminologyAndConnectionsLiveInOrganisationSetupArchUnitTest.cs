@@ -200,7 +200,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void TrackerIntegrationListsExactlyOneEdgeIntoOrganisationSetup_TheCadenceReadingTheSettingsPort()
+        public void TrackerIntegrationListsNoEdgeIntoOrganisationSetup_TheCadenceReadsTheSettingsPortThroughItsContracts()
         {
             var listed = TheEdgesTrackerIntegrationListsIntoOtherContexts();
 
@@ -209,36 +209,28 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(
                 problems,
                 Is.Empty,
-                $"WHAT: the Tracker integration list of edges into other contexts is [{string.Join("; ", listed)}] and {string.Join("; ", problems)}. WHY: the connection health cadence reads the settings port, which now lives in another context, so that one edge crosses a module boundary and must be listed; any other entry would be a new coupling. HOW: list exactly '{TheEdgeTheMoveAdds}' in EdgesOfTheModuleIntoOtherContexts of the Tracker integration rule, with the work item that removes it.");
+                $"WHAT: the Tracker integration list of edges into other contexts is [{string.Join("; ", listed)}] and {string.Join("; ", problems)}. WHY: the connection health cadence reads the settings port through set-up's Contracts, which every context reaches by right, so no per-module list names the edge. HOW: take the entry off EdgesOfTheModuleIntoOtherContexts of the Tracker integration rule.");
         }
 
         [Test]
-        public void AnEmptyTrackerIntegrationList_IsNamedAsMissingTheCadenceEdge()
+        public void AnEmptyTrackerIntegrationList_IsNamedNoProblem()
         {
             var problems = TheListedEdgesAgainstTheOneTheMoveAdds([]);
 
-            Assert.That(problems, Has.Count.EqualTo(1).And.Some.Contain("ConnectionHealthCadence"), "WHAT: an empty list was not named as missing the cadence edge. WHY: the check would pass before the move adds the edge. HOW: name the edge the list lacks.");
+            Assert.That(problems, Is.Empty, "WHAT: an empty list was named as a problem. WHY: Tracker integration lists no edge into set-up. HOW: name only the listed edges.");
         }
 
         [Test]
-        public void ATrackerIntegrationListWithAnExtraEdge_IsNamedAsHoldingMoreThanTheOneEdge()
+        public void ATrackerIntegrationListNamingTheCadenceEdge_IsNamedAsHoldingAnEdge()
         {
-            var problems = TheListedEdgesAgainstTheOneTheMoveAdds([TheEdgeTheMoveAdds, $"{TheCadence} -> Lighthouse.Backend.Modules.OrganisationSetupFixtures.SettingsAndConnections.Application.AMadeUpForeignType"]);
+            var problems = TheListedEdgesAgainstTheOneTheMoveAdds([TheEdgeTheMoveAdds]);
 
-            Assert.That(problems, Has.Count.EqualTo(1).And.Some.Contain("AMadeUpForeignType"), "WHAT: a made-up second edge was not named. WHY: the list may hold the one edge and no other, so a new coupling would pass unseen. HOW: name each listed edge that is not the one the move adds.");
+            Assert.That(problems, Has.Count.EqualTo(1).And.Some.Contain("ConnectionHealthCadence"), "WHAT: the cadence edge on the list was not named. WHY: the list may hold no edge into set-up, so a second owner would pass unseen. HOW: name each listed edge.");
         }
 
         private static List<string> TheListedEdgesAgainstTheOneTheMoveAdds(IReadOnlyCollection<string> listed)
         {
-            var expected = TheEdgeTheMoveAdds;
-            var problems = new List<string>();
-            if (!listed.Contains(expected))
-            {
-                problems.Add($"the edge '{expected}' is missing, so ConnectionHealthCadence reads the settings port unlisted");
-            }
-
-            problems.AddRange(listed.Where(edge => edge != expected).Select(edge => $"the edge '{edge}' is listed beside the one the move adds"));
-            return problems;
+            return [.. listed.Select(edge => $"the edge '{edge}' is listed")];
         }
 
         private static string[] TheEdgesTrackerIntegrationListsIntoOtherContexts()

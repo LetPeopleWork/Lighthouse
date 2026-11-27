@@ -128,21 +128,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.Licensing.Application.LicenseService -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1",
         ];
 
-        // The Access and Licensing entries the neighbours' edge lists hold, under the modules' names.
-        private static readonly Dictionary<Neighbour, string[]> AccessAndLicensingEntriesOfTheNeighbours = new()
-        {
-            [Neighbour.WorkItems] =
-            [
-                "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService",
-                "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.FeatureDependencyRendering -> Lighthouse.Backend.Modules.Access.Contracts.IRbacAdministrationService",
-            ],
-            [Neighbour.Forecasting] =
-            [
-                "Lighthouse.Backend.Modules.Forecasting.Application.ForecastFilterRuleService -> Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService",
-                "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackTriggerService -> Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService",
-            ],
-        };
-
         private static string TheLayersBelowTheApplicationAndThePlatform =>
             $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{AnyModuleAdapters})|(?:{ThePlatform})|(?:{ModuleRules.SetUpBehindItsContracts})";
 
@@ -239,7 +224,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         [TestCase(Neighbour.WorkItems)]
         [TestCase(Neighbour.Forecasting)]
-        public void TheEdgeListOfANeighbourModule_KeepsItsAccessAndLicensingEntriesUnderTheModules(Neighbour neighbour)
+        public void TheEdgeListOfANeighbourModule_NamesNoAccessOrLicensingEntry(Neighbour neighbour)
         {
             var list = TheEdgeListOf(neighbour);
 
@@ -448,14 +433,12 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static void ThenTheListKeepsItsAccessAndLicensingEntries(Neighbour neighbour, IReadOnlyCollection<string> list)
         {
-            var expected = AccessAndLicensingEntriesOfTheNeighbours[neighbour];
-
             Assert.That(
                 AccessAndLicensingEntriesOf(list),
-                Is.EquivalentTo(expected),
-                $"Expected the {neighbour} edge list to keep exactly these Access and Licensing entries: [{string.Join(", ", expected)}]. Why it " +
-                "matters: these are the module's real edges into Access and Licensing; one that goes missing or comes in unseen changes who " +
-                "depends on the two modules. How to fix: keep the entries under the modules' names, and change the list only with the code.");
+                Is.Empty,
+                $"The {neighbour} edge list names Access or Licensing entries. Why it matters: a module reaches Access and Licensing through their " +
+                "Contracts, which the contracts rule makes legal, so a second list naming such an edge gives it two owners. How to fix: take the " +
+                "entry off the list; reach the other context only through its Contracts.");
         }
 
         private static IEnumerable<string> AccessAndLicensingEntriesOf(IEnumerable<string> list)

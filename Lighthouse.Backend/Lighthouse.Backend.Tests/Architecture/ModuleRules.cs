@@ -36,6 +36,20 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public static string SetUpBehindItsContracts => $@"^(?!{Regex.Escape(TheSetUpContractsNamespace)}(\.|$)){Regex.Escape(TheModulesRoot)}\.OrganisationSetup\.";
 
+        /// <summary>
+        /// A forbidden-code pattern that leaves out the Contracts of the given contexts: a context's Contracts are what other
+        /// contexts reach it through, so the contracts rule makes that reach legal and a per-context rule only governs the rest.
+        /// </summary>
+        public static string WithoutTheContractsOf(string forbidden, params string[] contexts)
+            => $"^{string.Concat(contexts.Select(context => $"(?!{Regex.Escape(ContextContractsMembership.ContractsOf(context))}(\\.|$))"))}(?:{forbidden})";
+
+        /// <summary>
+        /// A forbidden-code pattern that leaves out the whole of the given contexts: the contracts rule owns every edge into another
+        /// context's code outside its Contracts, so a per-context rule that reads that context as forbidden would give the edge a second owner.
+        /// </summary>
+        public static string WithoutTheContextsOf(string forbidden, params string[] contexts)
+            => $"^{string.Concat(contexts.Select(context => $"(?!{Regex.Escape(TheModulesRoot)}\\.{Regex.Escape(context)}(\\.|$))"))}(?:{forbidden})";
+
         private static string TheModulesRoot => ContextContractsMembership.TheModulesRoot;
 
         private static string TheSetUpContractsNamespace => ContextContractsMembership.ContractsOf("OrganisationSetup");

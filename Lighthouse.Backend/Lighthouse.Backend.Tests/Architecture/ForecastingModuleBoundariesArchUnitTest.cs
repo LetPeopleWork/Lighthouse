@@ -21,7 +21,6 @@ using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.Re
 using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.SecondLicensingType.Application;
 using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.SecondUpdateType.Adapters;
 using Lighthouse.Backend.Modules.Licensing.Application;
-using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Mono.Cecil;
 
 namespace Lighthouse.Backend.Tests.Architecture
@@ -114,12 +113,10 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateServiceBase`1",
         ];
 
-        // The edges from Forecasting's Application into EF Core, the data layer, the API, its own Adapters or the licence.
-        // The list only shrinks.
+        // The edges from Forecasting's Application into EF Core, the data layer, the API, its own Adapters or the licence
+        // outside its Contracts. The list only shrinks.
         private static readonly string[] EdgesOfTheApplicationBelowItOrIntoTheLicence =
         [
-            "Lighthouse.Backend.Modules.Forecasting.Application.ForecastFilterRuleService -> Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService",
-            "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackTriggerService -> Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService",
         ];
 
         // The edges from Forecasting's Adapters into the update code the Team and Portfolio updaters use too. It stays
@@ -160,8 +157,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         private static string MadeUpCompositionRoot => typeof(AForecastCompositionRoot).FullName!;
-
-        private static string LicenceService => typeof(ILicenseService).FullName!;
 
         private static string UpdateKeyType => typeof(UpdateKey).FullName!;
 
@@ -300,13 +295,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void AForecastingApplicationReachingOnlyItsModelsAndAListedLicenceEdge_PassesTheOutboundRule()
+        public void AForecastingApplicationReachingOnlyItsModelsAndTheLicencesContracts_PassesTheOutboundRule()
         {
-            var compliantEdge = Edge(typeof(ACompliantForecastService), LicenceService);
+            var verdict = MadeUpApplicationOutbound(typeof(ACompliantForecastService), []);
 
-            var verdict = MadeUpApplicationOutbound(typeof(ACompliantForecastService), [compliantEdge]);
-
-            ThenTheOutboundRuleSawExactlyAndPasses(verdict, [compliantEdge]);
+            ThenTheOutboundRuleSawExactlyAndPasses(verdict, []);
         }
 
         [TestCaseSource(nameof(ApplicationTypesReachingBelowOrIntoTheLicence))]
@@ -320,10 +313,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void AListedLicenceEdgeOfTheForecastingApplicationThatIsGone_FailsAndIsNamedForDeletion()
         {
-            var compliantEdge = Edge(typeof(ACompliantForecastService), LicenceService);
             var goneEdge = Edge(typeof(ACompliantForecastService), typeof(ILicenseVerifier).FullName!);
 
-            var verdict = MadeUpApplicationOutbound(typeof(ACompliantForecastService), [compliantEdge, goneEdge]);
+            var verdict = MadeUpApplicationOutbound(typeof(ACompliantForecastService), [goneEdge]);
 
             ThenTheOutboundRuleFailsNamingOnlyTheStaleEdgeForDeletion(verdict, goneEdge);
         }
@@ -379,7 +371,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .SetName("AForecastingApplicationTypeReachingAModuleAdapter_FailsAndIsNamed");
             yield return new TestCaseData(
                     typeof(AForecastServiceReadingTheLicenceTwice),
-                    new[] { Edge(typeof(AForecastServiceReadingTheLicenceTwice), typeof(ILicenseService).FullName!) },
+                    Array.Empty<string>(),
                     Edge(typeof(AForecastServiceReadingTheLicenceTwice), typeof(ILicenseVerifier).FullName!))
                 .SetName("AListedForecastingApplicationTypeReachingASecondLicenceType_FailsAndNamesOnlyTheNewEdge");
         }
@@ -437,10 +429,10 @@ namespace Lighthouse.Backend.Tests.Architecture
             => ModuleRules.OutboundEdges(
                 module,
                 application,
-                below,
+                ModuleRules.WithoutTheContractsOf(below, "Licensing"),
                 listed,
                 $"Types in Forecasting's Application, namespaces matching \"{application}\", should not depend on any type in namespaces matching " +
-                $"\"{below}\" except through the listed edges, because Forecasting's Application decides what a forecast answers and reads its " +
+                $"\"{below}\", leaving out the licence's Contracts, except through the listed edges, because Forecasting's Application decides what a forecast answers and reads its " +
                 "records only through repository ports. An Application type that holds a DbSet or the database context, runs one of the " +
                 "module's adapters or shapes an API type ties forecasts to how they are stored and shown; one that asks the licence in a " +
                 "new place spreads the premium check across the module. Read the records through a repository port, return a Models type, " +

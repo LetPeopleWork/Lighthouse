@@ -8,8 +8,6 @@ using Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.HoldingADbSet
 using Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.OnlyCatching.Application;
 using Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingAnAdapter.Application;
 using Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingAnApiType.Application;
-using Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingAnUnlistedFlowMetricsDomainType.Application;
-using Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingAnUnlistedLicensingType.Application;
 using Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingAnUnlistedPlatformType.Application;
 using Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingAnUnlistedSetUpType.Application;
 using Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingTheData.Application;
@@ -170,14 +168,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         // and six types read the clock. The list only shrinks.
         private static readonly string[] EdgesOfTheApplicationIntoFlowMetricsLicensingSetUpAndPlatform =
         [
-            "Lighthouse.Backend.Modules.Reports.Application.Metrics.DailySeriesSummary -> Lighthouse.Backend.Modules.FlowMetrics.Domain.PercentileCalculator",
             "Lighthouse.Backend.Modules.Reports.Application.PortfolioReportMetricSeries -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
             "Lighthouse.Backend.Modules.Reports.Application.PortfolioReportMetricSeries -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1",
             "Lighthouse.Backend.Modules.Reports.Application.ReportBulkCommands -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
-            "Lighthouse.Backend.Modules.Reports.Application.ReportCommands -> Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService",
             "Lighthouse.Backend.Modules.Reports.Application.ReportCommands -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
             "Lighthouse.Backend.Modules.Reports.Application.ReportOwnerLookup -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1",
-            "Lighthouse.Backend.Modules.Reports.Application.ReportQueries -> Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService",
             "Lighthouse.Backend.Modules.Reports.Application.ReportQueries -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
             "Lighthouse.Backend.Modules.Reports.Application.TeamReportMetricSeries -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
             "Lighthouse.Backend.Modules.Reports.Application.TeamReportMetricSeries -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1",
@@ -393,8 +388,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void AListedEdgeThatNoLongerExists_IsNamedForDeletion_AndEachListedEdgeDeletedIsNamedAsOffending()
         {
-            var offender = typeof(AnApplicationTypeReachingAnUnlistedLicensingType);
-            var listed = Edge(offender, "Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService");
+            var offender = typeof(AnApplicationTypeReachingAnUnlistedPlatformType);
+            var listed = Edge(offender, "Lighthouse.Backend.Platform.Host.ILighthouseClock");
             var namespaces = NamespacePatternOf(offender);
 
             ThenTheRuleHolds(() => FlowMetricsLicensingSetUpAndPlatformRule(TestModule.Value, namespaces, [listed]).Check(), "the made-up listed edge");
@@ -474,10 +469,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static IEnumerable<TestCaseData> ReportsApplicationTypesReachingUnlistedEdges()
         {
-            yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedFlowMetricsDomainType), "Lighthouse.Backend.Modules.FlowMetrics.Domain.PercentileCalculator")
-                .SetName("AReportsApplicationTypeReachingAnUnlistedFlowMetricsDomainType_IsNamed");
-            yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedLicensingType), "Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService")
-                .SetName("AReportsApplicationTypeReachingAnUnlistedLicensingType_IsNamed");
             yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedSetUpType), "Lighthouse.Backend.Services.Interfaces.IFeatureListService")
                 .SetName("AReportsApplicationTypeReachingAnUnlistedSetUpType_IsNamed");
             yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedPlatformType), "Lighthouse.Backend.Platform.Host.ILighthouseClock")
@@ -545,7 +536,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             => ModuleRules.OutboundEdges(
                 module,
                 application,
-                FlowMetricsLicensingSetUpAndPlatform,
+                ModuleRules.WithoutTheContextsOf(FlowMetricsLicensingSetUpAndPlatform, "FlowMetrics", "Licensing"),
                 listed,
                 $"Types in Reports' Application, namespaces matching \"{application}\", should reach Flow metrics' Domain, Licensing, Organisation set-up and the " +
                 $"platform infrastructure, namespaces matching \"{FlowMetricsLicensingSetUpAndPlatform}\", only through the listed edges, because each of them is another " +
@@ -851,22 +842,6 @@ namespace Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.TouchingT
     internal sealed class AReportServiceReachingTheUpdateContracts(global::Lighthouse.Backend.Services.Interfaces.Update.IUpdateService updates)
     {
         public int Describe() => updates.GetHashCode();
-    }
-}
-
-namespace Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingAnUnlistedFlowMetricsDomainType.Application
-{
-    internal static class AnApplicationTypeReachingAnUnlistedFlowMetricsDomainType
-    {
-        public static string Describe() => typeof(global::Lighthouse.Backend.Modules.FlowMetrics.Domain.PercentileCalculator).Name;
-    }
-}
-
-namespace Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingAnUnlistedLicensingType.Application
-{
-    internal sealed class AnApplicationTypeReachingAnUnlistedLicensingType(global::Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService licenses)
-    {
-        public int Describe() => licenses.GetHashCode();
     }
 }
 

@@ -146,7 +146,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         // port Tracker integration owns, so the module reaches no other context. The list only shrinks.
         private static readonly string[] EdgesOfTheModuleIntoOtherContexts =
         [
-            "Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth.ConnectionHealthCadence -> Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService",
         ];
 
         private static readonly string[] TheApplicationTypesThatNameConnectors =
@@ -166,9 +165,11 @@ namespace Lighthouse.Backend.Tests.Architecture
             $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{AnyModuleAdapters})" +
             $"|(?:{RepositoryRecognition.StoredRecordsPattern})|(?:{TheKeyRing})|(?:{TheDemoData})";
 
-        private static readonly string OtherContexts =
+        // A property apart from the declared patterns it is built from: it leaves out set-up's Contracts, which the move laws read as a
+        // part of the code that takes in the whole context.
+        private static string OtherContexts =>
             $"(?:{OtherModules})|(?:{PromisesAndTheUpdateCode})|(?:{RefinementReportsAccessAndLicensing})" +
-            @"|^Lighthouse\.Backend\.Modules\.OrganisationSetup(\.|$)";
+            $"|{ModuleRules.SetUpBehindItsContracts}";
 
         private static readonly string TrackerIntegrationLegalCallers = $"(?:{ApplicationCoreRules.TheApi})|(?:{WorkItemsModule})|(?:{PromisesApplicationOutsideItsPolicies})";
 
@@ -238,8 +239,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             Assert.That(
                 EdgesOfTheModuleIntoOtherContexts,
-                Has.Length.EqualTo(1).And.All.EndsWith("ConnectionHealthCadence -> Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService"),
-                "Tracker integration's list of edges into other contexts holds more than the settings read of the connection health cadence. " +
+                Is.Empty,
+                "Tracker integration's list of edges into other contexts is not empty. " +
                 "Why it matters: the module is a leaf that translates what trackers send, and another context that needs something from " +
                 "a connector implements a port Tracker integration owns. How to fix: undo the edge the rule names, through such a port.");
         }

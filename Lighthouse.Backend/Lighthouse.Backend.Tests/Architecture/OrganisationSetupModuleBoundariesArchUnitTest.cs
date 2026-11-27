@@ -6,17 +6,15 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// <summary>
     /// Organisation set-up is a module with rules of its own, checked by the shared module rules and read from the compiled
     /// production assembly: every set-up type lives in its layer and none is left under Services; its Domain reaches only
-    /// the shared kernel and the base library; its Application reaches no API, module adapter, data layer, EF Core or
-    /// downstream context (Work Items, Flow metrics, Forecasting, Promises, Refinement, Reports) except along the listed
-    /// edges; and Tracker integration reaches set-up only along its one listed edge. Every list is compared both ways and
+    /// the shared kernel and the base library; its Application reaches no API, module adapter, data layer or EF Core
+    /// except along the listed edges; and Tracker integration reaches set-up
+    /// outside its Contracts only along the listed edges, none today. Every list is compared both ways and
     /// only shrinks: deleting an entry names it, and an entry with no edge is named for deletion. Where set-up's events may
     /// be constructed is checked with the open-host rules.
     /// </summary>
     [TestFixture]
     public class OrganisationSetupModuleBoundariesArchUnitTest
     {
-        private static string SetUpModule => @"^Lighthouse\.Backend\.Modules\.OrganisationSetup(\.|$)";
-
         private static string SetUpDomain => @"^Lighthouse\.Backend\.Modules\.OrganisationSetup\.Domain(\.|$)";
 
         private static string SetUpApplication => @"^Lighthouse\.Backend\.Modules\.OrganisationSetup\.Application(\.|$)";
@@ -25,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static string TheLayersBelowAndTheDownstreamContexts =>
             @"^Lighthouse\.Backend\.API(\.|$)|^Lighthouse\.Backend\.Modules\.[^.]+\.Adapters(\.|$)|^Lighthouse\.Backend\.Data(\.|$)" +
-            @"|^Microsoft\.EntityFrameworkCore(\.|$)|^Lighthouse\.Backend\.Modules\.(WorkItems|FlowMetrics|Forecasting|Promises|Refinement|Reports)(\.|$)";
+            @"|^Microsoft\.EntityFrameworkCore(\.|$)";
 
         private static string AMadeUpEntry => "Lighthouse.Backend.Modules.OrganisationSetup.Application.AMadeUpService -> Lighthouse.Backend.API.AMadeUpController";
 
@@ -55,11 +53,9 @@ namespace Lighthouse.Backend.Tests.Architecture
             ],
         };
 
-        // Feature ranking writes its ranks in one transaction, and a saved connection compares its fetch shape with Work
-        // Items' fingerprint. The list only shrinks.
+        // Feature ranking writes its ranks in one transaction. The list only shrinks.
         private static readonly string[] EdgesOfTheApplicationBelowItOrIntoDownstreamContexts =
         [
-            "Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections.ConnectionSaveService -> Lighthouse.Backend.Modules.WorkItems.Domain.FetchFingerprint",
             "Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections.ConnectionSaveService -> Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions",
             "Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections.ConnectionSaveService -> Microsoft.EntityFrameworkCore.Query.IIncludableQueryable`2",
             "Lighthouse.Backend.Modules.OrganisationSetup.Application.FeatureRankingService -> Lighthouse.Backend.Data.LighthouseAppContext",
@@ -77,10 +73,9 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.OrganisationSetup.Application.FeatureRankSeeder -> Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions",
         ];
 
-        // The connection-health cadence reads its interval from the settings. The list only shrinks.
+        // Tracker integration reaches set-up's Contracts by right, so no edge into set-up's other code is allowed. The list only shrinks.
         private static readonly string[] EdgesOfTrackerIntegrationIntoSetUp =
         [
-            "Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth.ConnectionHealthCadence -> Lighthouse.Backend.Modules.OrganisationSetup.Contracts.IAppSettingService",
         ];
 
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(Feature).Assembly));
@@ -168,11 +163,11 @@ namespace Lighthouse.Backend.Tests.Architecture
             ListedRule.TrackerIntegrationIntoSetUp => ModuleRules.OutboundEdges(
                 ProductionModule.Value,
                 TrackerIntegrationModule,
-                SetUpModule,
+                ModuleRules.SetUpBehindItsContracts,
                 listed,
-                $"Types in Tracker integration, namespaces matching \"{TrackerIntegrationModule}\", should reach Organisation set-up, namespaces " +
-                $"matching \"{SetUpModule}\", only through the listed edge, because Tracker integration translates what the trackers send and does " +
-                "not build on set-up. Hand the value in from the caller instead; the list only shrinks."),
+                $"Types in Tracker integration, namespaces matching \"{TrackerIntegrationModule}\", should reach Organisation set-up outside its Contracts, " +
+                $"namespaces matching \"{ModuleRules.SetUpBehindItsContracts}\", only through the listed edges, because Tracker integration translates what the " +
+                "trackers send and builds on set-up only through its Contracts. Reach set-up through its Contracts or hand the value in from the caller instead; the list only shrinks."),
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "Every listed rule has a check."),
         };
 

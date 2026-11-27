@@ -213,6 +213,13 @@ them from the code or the walk, and the maintainer accepted them with the ADR.
 | Public HTTP API → SPA, Lighthouse-Clients (CLI and MCP) | open host service with a published language | HTTP, the clients' contract | Yes (the API is the driving adapter) | |
 | Platform lane → PostHog | external downstream | The usage-data pipe forwards events the clients hand in | n/a (composition root) | |
 | GitHub Releases → Platform lane | external upstream | Version check and release notes | n/a (composition root) | |
+| Forecasting → Work Items | customer/supplier, by events | Work Items reacts to `ForecastRoundFinished` (Forecasting's Contracts) and writes the round's entry in its own refresh log; Forecasting no longer calls Work Items to write it | Yes, by event only, through Contracts. The reverse of Work Items → Forecasting above; both run in one deployable | |
+
+Since Story 6382 (feature D) every row between two packaged contexts is read through the context's `Contracts`: a
+context reaches another context's code only in its `Contracts` (rule R-C1), and the per-module rules keep only the
+direction of the edge (who may depend on whom). An edge into another context's `Contracts` is legal by namespace and
+sits in no list. An edge outside `Contracts` sits in R-C1's list, which is the one owner of it (see "Ratchet
+candidates").
 
 ### Edges measured by the Flow metrics pilot (2026-11-09)
 
@@ -687,6 +694,24 @@ guard (ADR-268) or removes it.
    *Story 6360:* the Team and Portfolio updaters did not move, so their calls were not measured; Epic 6474 slice 12
    replaces both updaters.
 
+**The contracts rule's residue (Story 6382).** R-C1 (`ContextContractsArchUnitTest`) owns every edge from one packaged
+context into another context's code outside its `Contracts`, and no other list may name such an edge. Eight edges
+remain, each with the owner of its target, and the list only shrinks:
+
+| Edge | Owner of the target |
+|---|---|
+| Set-up's connection save → Work Items' fetch fingerprint | Work Items |
+| Promises' delivery rule service → Work Items' feature field provider and rule evaluator | Work Items |
+| Refinement's cadence calendar → set-up's weekly recurrence | Organisation set-up |
+| Refinement's voter identity resolver → Access' current user profile service | Access |
+| Reports' daily series summary → Flow metrics' percentile calculator | Flow metrics |
+| Work Items' work item service → Flow metrics' percentile calculator | Flow metrics |
+| Work Items' work item service → Tracker integration's parent source selector | Tracker integration |
+
+(The delivery rule service has two edges, so the table's seven rows are eight edges.) Each one is an implementation, not
+a shape, so publishing it would freeze an algorithm for every caller; the owner of the target either moves the
+behaviour behind a published interface or the caller stops needing it.
+
 ## Decision 3: domain events are the default way contexts react to each other
 
 When something happens in one context and another context must react, the upstream **publishes a domain event** and
@@ -741,6 +766,23 @@ feature work, not packaging, unless a packaging Story needs one to remove a ratc
   (ratchet candidate 4).
 - Two event vocabularies: the browser's usage-data names (`TeamCreated`, `PortfolioDeleted`, `ReportCreated` and so on)
   name facts the backend has no event for. Usage data stays in the platform lane; the domain events are the model's.
+
+**Where each event lives (Story 6382).** An event type belongs to the `Contracts` of the context that publishes it, and
+`IDomainEvent` stays in the shared kernel. The owner follows this decision, even where today's publisher is a controller
+or an updater that is not yet in a module.
+
+| Events | Contracts of |
+|---|---|
+| `WorkItemTransitioned`, `WorkItemBlocked`, `WorkItemUnblocked`, `WorkItemBecameStale`, `FeatureBlocked`, `FeatureUnblocked`, `TeamDataRefreshed`, `PortfolioFeaturesRefreshed` | Work Items |
+| `PortfolioForecastsUpdated`, `ForecastRoundFinished` | Forecasting |
+| `TeamDeleted`, `PortfolioDeleted`, `BlackoutConfigurationChanged`, `FeatureOrderingPolicyChanged`, `FeatureRankChanged` | Organisation set-up |
+| `ConnectionFetchShapeChanged` | Organisation set-up, because its publisher is the connection save there (this decision first named Tracker integration) |
+
+`ForecastRoundFinished` turns the one command between modules into a reaction: Forecasting says a forecast round
+finished, with the Portfolio, item count, duration, time and outcome, and Work Items writes the round's entry in its
+refresh log. That adds the edge Forecasting → Work Items, by event only; Work Items → Forecasting stays as it was.
+Other commands that cross contexts (the Portfolio refresh calling Promises and Forecasting, controllers publishing
+set-up events, the refresh paths reading the licence) are not in a module and stay with their ratchet candidates.
 
 ## Decision 4: key distinctions in the language
 
@@ -880,6 +922,12 @@ the maintainer). The refresh process itself is still called sync.
 | Applies to | The part of a rule that says which units it covers. "All Teams and Portfolios" is its first and only value, so another could be added without changing the read check | `PermissionScopeType`, `AppliesTo` | |
 | Licence | Whether Premium is available and how many units are allowed | `License*` (American spelling in code) | |
 
+### Context contract
+
+The set of types a context publishes in its `Contracts` folder for other contexts to use: interfaces, enums, records,
+constants and the domain events it publishes. It promises a shape, not an implementation. A change to a context's
+`Contracts` is a change every consumer must hear about; a change to its `Domain`, `Application` or `Adapters` is not.
+
 ### Role names instead of `*Service`
 
 A class name says which role it plays. The generic `*Service` suffix hides it: `WorkItemService` runs both the Team
@@ -990,6 +1038,25 @@ the existing `src/context/`).
 
 **Coexistence.** Old and new layouts live side by side until a context is fully moved. A context is moved in one
 packaging Story, behaviour-free. The exact folder names were fixed by the Flow metrics pilot (see above).
+
+**Contracts, the fourth layer (Story 6382).** Next to `Domain`, `Application` and `Adapters`, a context that another
+context reaches has a `Contracts` folder: the types it publishes, and nothing else. A type is published when another
+context reaches it and it is a shape rather than behaviour: an interface, an enum, a record or constants without injected
+dependencies, or a domain event; the types named in the signature of a published type come along. A context nobody
+reaches has no `Contracts` folder. Five rules, all in the architecture tests, hold it:
+
+- **R-C1, surface.** A type in one context reaches a type in another only through that context's `Contracts`, except along
+  the listed residue above. It is the one owner of every cross-context edge outside `Contracts`.
+- **R-C2, Contracts point inward only.** A `Contracts` type reaches only the kernel, the base library, the Microsoft
+  extension abstractions and `Contracts` of contexts.
+- **R-C3, the enumerator.** The contexts are read from the compiled code and compared both ways with the list of the ten
+  packaged contexts, so a new module folder fails until it is named.
+- **R-C4, the composition root.** Only `Program` names a context's module class, and it names no type inside a module
+  except the handlers and the host types measured for it.
+- **R-C5, events.** Each domain event type lives in the `Contracts` of the context that publishes it.
+
+Surface (R-C1) and direction (the per-module rules) are two laws with one owner each: a per-module rule never lists an edge
+between two contexts, and R-C1 never says which context may depend on which.
 
 ## Decision 7: what the shared kernel may hold
 

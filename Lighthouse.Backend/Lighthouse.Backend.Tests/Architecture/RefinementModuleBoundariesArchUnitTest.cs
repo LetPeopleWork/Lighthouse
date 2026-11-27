@@ -7,7 +7,6 @@ using Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.Compliant.App
 using Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.HoldingADbSet.Application;
 using Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingAnAdapter.Application;
 using Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingAnApiType.Application;
-using Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingAnUnlistedAccessType.Application;
 using Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingAnUnlistedPlatformType.Application;
 using Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingAnUnlistedRepository.Application;
 using Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingAnUnlistedSetUpType.Application;
@@ -147,11 +146,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         ];
 
         // The edges from Refinement's Application into EF Core, the data layer, the API, any module's adapters, Tracker
-        // integration, the update code or Organisation set-up behind its Contracts. The cadence arithmetic still takes the
-        // weekly recurrence from set-up's Domain, which set-up does not publish.
+        // integration or the update code. The list only shrinks.
         private static readonly string[] EdgesOfTheApplicationIntoForbiddenCode =
         [
-            "Lighthouse.Backend.Modules.Refinement.Application.RefinementCadenceCalendar -> Lighthouse.Backend.Modules.OrganisationSetup.Domain.WeeklyRecurrence",
         ];
 
         // The edges from Refinement's Application into Access, Organisation set-up, the Platform lane and the repositories.
@@ -169,8 +166,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.Refinement.Application.SizingLogCommands -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1",
             "Lighthouse.Backend.Modules.Refinement.Application.SizingLogCommands -> Lighthouse.Backend.Services.Interfaces.Repositories.ISizingLogRepository",
             "Lighthouse.Backend.Modules.Refinement.Application.SleYardstickResolver -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
-            "Lighthouse.Backend.Modules.Refinement.Application.VoterIdentityResolver -> Lighthouse.Backend.Modules.Access.Application.CurrentUserProfileService",
-            "Lighthouse.Backend.Modules.Refinement.Application.VoterIdentityResolver -> Lighthouse.Backend.Modules.Access.Contracts.IAuthModeResolver",
         ];
 
         private const string TheUpdateCode = @"^Lighthouse\.Backend\.Services\.(Implementation\.BackgroundServices\.Update|Interfaces\.Update)(\.|$)|^Lighthouse\.Backend\.Platform\.UpdateQueue(\.|$)";
@@ -178,9 +173,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string TheForbiddenCode =
             $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{AnyModuleAdapters})|(?:{TrackerIntegration})|(?:{TheUpdateCode})";
 
-        // Apart from the declared pattern, so that this one is a property and no rule pattern the move laws read.
-        private static string TheForbiddenCodeAndSetUpBehindItsContracts =>
-            $"(?:{TheForbiddenCode})|(?:{ModuleRules.SetUpBehindItsContracts})";
+        // Apart from the declared pattern, so that this one is a property and no rule pattern the move laws read. Set-up is
+        // read through its Contracts by right and the rest of it is owned by the contracts rule, so it is not forbidden here;
+        // the name stays because the open-host check looks this member up.
+        private static string TheForbiddenCodeAndSetUpBehindItsContracts => TheForbiddenCode;
 
         // Organisation set-up has no namespace of its own yet: its settings, blackout periods and recurrence sit in the
         // top-level Services namespaces, and the Platform lane and the repositories sit under Services and Platform too.
@@ -372,8 +368,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void AListedEdgeThatNoLongerExists_IsNamedForDeletion_AndEachListedEdgeDeletedIsNamedAsOffending()
         {
-            var offender = typeof(AnApplicationTypeReachingAnUnlistedAccessType);
-            var listed = Edge(offender, "Lighthouse.Backend.Modules.Access.Contracts.IAuthModeResolver");
+            var offender = typeof(AnApplicationTypeReachingAnUnlistedPlatformType);
+            var listed = Edge(offender, "Lighthouse.Backend.Platform.Host.ILighthouseClock");
             var namespaces = NamespacePatternOf(offender);
 
             ThenTheRuleHolds(() => AccessSetUpPlatformAndRepositoriesRule(TestModule.Value, namespaces, [listed]).Check(), "the made-up listed edge");
@@ -435,8 +431,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static IEnumerable<TestCaseData> RefinementApplicationTypesReachingUnlistedEdges()
         {
-            yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedAccessType), "Lighthouse.Backend.Modules.Access.Contracts.IAuthModeResolver")
-                .SetName("ARefinementApplicationTypeReachingAnUnlistedAccessType_IsNamed");
             yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedSetUpType), typeof(global::Lighthouse.Backend.Services.Interfaces.IFeatureListService).FullName!)
                 .SetName("ARefinementApplicationTypeReachingAnUnlistedSetUpType_IsNamed");
             yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedPlatformType), "Lighthouse.Backend.Platform.Host.ILighthouseClock")
@@ -506,7 +500,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             => ModuleRules.OutboundEdges(
                 module,
                 application,
-                AccessSetUpPlatformAndRepositories,
+                ModuleRules.WithoutTheContextsOf(AccessSetUpPlatformAndRepositories, "Access"),
                 listed,
                 $"Types in Refinement's Application, namespaces matching \"{application}\", should reach Access, Organisation set-up, the Platform lane and the " +
                 $"repositories, namespaces matching \"{AccessSetUpPlatformAndRepositories}\", only through the listed edges, because each of them is another " +
@@ -785,14 +779,6 @@ namespace Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.TouchingT
     internal sealed class ASizingServiceReachingTheUpdateContracts(global::Lighthouse.Backend.Services.Interfaces.Update.IUpdateService updates)
     {
         public int Describe() => updates.GetHashCode();
-    }
-}
-
-namespace Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingAnUnlistedAccessType.Application
-{
-    internal sealed class AnApplicationTypeReachingAnUnlistedAccessType(global::Lighthouse.Backend.Modules.Access.Contracts.IAuthModeResolver authMode)
-    {
-        public int Describe() => authMode.GetHashCode();
     }
 }
 

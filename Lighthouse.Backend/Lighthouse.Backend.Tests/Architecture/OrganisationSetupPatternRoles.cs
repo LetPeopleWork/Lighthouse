@@ -24,7 +24,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["WorkItemsModuleBoundariesArchUnitTest.AccessLicensingOrganisationSetUpAndTheUpdateQueue"] = PatternDeclaration.Composite("WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp", "built from the organisation set-up key; the other parts see no moving type"),
             ["RecurringBlackoutEventsSeamArchUnitTest.ServiceImplementationNamespace"] = PatternDeclaration.Context(Namespace, "the service implementations the recurring-rule entity must not depend on, among them the blackout period service"),
             ["TrackerIntegrationApplicationLayoutArchUnitTest.AnImplementationNamespace"] = PatternDeclaration.Context(Namespace, "the implementation code the board port must not name, set-up's services among it"),
-            ["TrackerIntegrationModuleBoundariesArchUnitTest.OtherContexts"] = PatternDeclaration.Context(Namespace, "the other contexts Tracker integration reaches only through listed edges; set-up is one of them, in its own Connections and OptionalFeatures folders before the move and in its module after"),
             ["RefinementModuleArchUnitTest.WeeklyRecurrenceAndItsNestedTypesPattern"] = PatternDeclaration.Context(FullName, "the weekly recurrence Refinement's cadence calendar may use, wherever it lives"),
 
             // Parts of the code that see a set-up type only because it lives in the loose Services namespaces; they are
@@ -88,7 +87,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp"] = "Work Items reaches set-up in its module; the services still loose are named by full name in their own list",
             ["RecurringBlackoutEventsSeamArchUnitTest.ServiceImplementationNamespace"] = "the recurring-rule entity must not depend on set-up's module; the implementations still loose are named by full name",
             ["TrackerIntegrationApplicationLayoutArchUnitTest.AnImplementationNamespace"] = "the board port must not name set-up's module; the implementations still loose are named by full name",
-            ["TrackerIntegrationModuleBoundariesArchUnitTest.OtherContexts"] = "set-up is one of the other contexts in its module; its old Connections and OptionalFeatures folders are empty",
             ["RefinementModuleArchUnitTest.WeeklyRecurrenceAndItsNestedTypesPattern"] = "the weekly recurrence lives in set-up's Domain only",
         };
 
