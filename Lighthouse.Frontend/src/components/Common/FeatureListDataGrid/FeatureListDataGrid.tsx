@@ -15,6 +15,7 @@ import type { FeatureMoveTarget } from "../../../models/FeatureOrdering";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { WidgetBody } from "../../../pages/Common/MetricsView/WidgetShell";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import DataGridBase from "../DataGrid/DataGridBase";
@@ -63,7 +64,9 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 	const searchReported = useRef(false);
 	const reportSearchOnce = (text: string) => {
 		if (searchReported.current || text.trim() === "") return;
-		searchReported.current = reportUsage({ name: "FeatureListSearched" });
+		searchReported.current = reportUsage({
+			name: UsageDataEventName.FeatureListSearched,
+		});
 	};
 
 	const { hideCompleted, handleToggleChange } = useHideCompletedFeatures(

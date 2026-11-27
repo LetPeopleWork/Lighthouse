@@ -1,13 +1,19 @@
 import type { GridColDef } from "@mui/x-data-grid";
 
+/** What a person means by the typed text: all of it, without surrounding spaces, or nothing when it is blank. */
+const searchTermOf = (typed: string): string | null => {
+	const trimmed = typed.trim();
+	return trimmed === "" ? null : trimmed;
+};
+
 /**
  * The text typed into a list's search box is one literal piece of text, so it is handed to the grid
  * as a single value; the grid's own quick filter would otherwise treat each word as its own search.
  * A blank box hands over nothing, which leaves every row in the list.
  */
 export const quickSearchValues = (typed: string): string[] => {
-	const trimmed = typed.trim();
-	return trimmed === "" ? [] : [trimmed];
+	const term = searchTermOf(typed);
+	return term === null ? [] : [term];
 };
 
 type ShownCellTest = (cellValue: unknown) => boolean;
@@ -24,8 +30,9 @@ const shownTextOf = (cellValue: unknown): string | null => {
  * would test an object cell as "[object Object]", so a person typing "object" would find rows.
  */
 export const shownTextQuickFilter = (typed: string): ShownCellTest | null => {
-	const needle = typed.trim().toLowerCase();
-	if (needle === "") return null;
+	const term = searchTermOf(typed);
+	if (term === null) return null;
+	const needle = term.toLowerCase();
 	return (cellValue) =>
 		shownTextOf(cellValue)?.toLowerCase().includes(needle) ?? false;
 };
