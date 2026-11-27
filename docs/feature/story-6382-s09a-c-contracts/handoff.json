@@ -150,6 +150,84 @@
 "stimulus": "F188",
 "user_result": "F190"
 }
+],
+"S3": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F66",
+"L1/F67",
+"T1"
+],
+"still_passes_if": "F195",
+"test": "WorkItemsPublishesTheTypesTheOthersReach_AndTheListOfThemIsNotEmpty",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F193",
+"stimulus": "F192",
+"user_result": "F194"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F66",
+"L1/F67",
+"T1"
+],
+"still_passes_if": "F199",
+"test": "EachPublishedTypeIsFoundOnceAndInTheContractsOfItsOwnContext",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F197",
+"stimulus": "F196",
+"user_result": "F198"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F66",
+"L1/F67",
+"T1"
+],
+"still_passes_if": "F203",
+"test": "NoPublishedTypeIsLeftInTheNamespaceItHadBefore",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F201",
+"stimulus": "F200",
+"user_result": "F202"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F66",
+"L1/F67",
+"T1"
+],
+"still_passes_if": "F207",
+"test": "NoTypeOutsideWorkItemsNamesAPublishedTypeByItsOldName",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F205",
+"stimulus": "F204",
+"user_result": "F206"
+}
 ]
 },
 "counters": {
@@ -157,7 +235,7 @@
 "C": 1,
 "D": 15,
 "E": 6,
-"F": 191,
+"F": 207,
 "K": 4,
 "L": 2,
 "P": 5,
@@ -9529,8 +9607,24 @@
 "F19": "Organisation set-up is named only through Contracts; the ratchet list is down to its owned residue.",
 "F190": "Behaviour is unchanged and every user of a moved type follows the move; the scan reads compiled code only, so a full name written inside a string is not covered by this row",
 "F191": "An old full name kept only inside a string literal would pass, because the scan reads compiled type references only",
+"F192": "Read the measured map of what Work Items publishes, without events.",
+"F193": "Exactly five types: blocked items, refresh log, rule evaluation, rule fields, what the forecast waits for. Passes today (list already measured); guards against an empty list making the other checks vacuous.",
+"F194": "Work Items has a non-empty, complete list of types other contexts may name.",
+"F195": "A list that drops or adds one type while the other checks still pass on the remaining ones.",
+"F196": "Look up each published Work Items type by name in the compiled production code.",
+"F197": "Each is found exactly once, in the Work Items Contracts namespace. RED today: all five sit in their old Application namespaces.",
+"F198": "Other contexts can name Work Items through its Contracts only.",
+"F199": "A type left in place, copied into both places, or moved into another context's Contracts.",
 "F2": "Every cross-context reference goes through the publisher's Contracts namespace or is a listed, owned residue edge, so the contracts-only rule holds and S09b can turn Contracts into an assembly boundary, with no behaviour change.",
 "F20": "Licensing and Access contract types (license service, RBAC administration service and the types they use) are available from their Contracts namespaces, and the product behaves as before for licence checks and access decisions.",
+"F200": "Look in the old namespace of each published Work Items type.",
+"F201": "None remains there. RED today: all five remain.",
+"F202": "No way around the Contracts to reach these types.",
+"F203": "A duplicate left behind that still compiles.",
+"F204": "Scan the IL of production and test assemblies for types outside Work Items that reference a published type by its old name; the scan sees compiled references only, so a full type name written in a string is not seen.",
+"F205": "No type outside Work Items names one by the old name. RED today: controllers, services and tests still do.",
+"F206": "Every consumer follows the move; behaviour unchanged.",
+"F207": "A type name kept only inside a string literal, which the IL scan cannot see.",
 "F21": "The oracle sees structure and build success; it does not see that licence checks and RBAC decisions still give the same answers for the same users.",
 "F22": "Flow metrics and Forecasting contract types (metrics queries, forecast throughput status, ports Forecasting fills, what Refinement and Promises read of Forecasting) are available from Contracts, and metrics and forecasts show the same numbers as before.",
 "F23": "The oracle does not see whether forecast and metric values a user reads are unchanged, nor that Refinement and Promises still read the same forecast data.",

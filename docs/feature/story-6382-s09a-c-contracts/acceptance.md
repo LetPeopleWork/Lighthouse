@@ -265,6 +265,140 @@ An old full name kept only inside a string literal would pass, because the scan 
 
 
 
+### S3
+
+##### Covers
+
+P3
+
+```text
+Read the measured map of what Work Items publishes, without events.
+```
+
+```text
+Exactly five types: blocked items, refresh log, rule evaluation, rule fields, what the forecast waits for. Passes today (list already measured); guards against an empty list making the other checks vacuous.
+```
+
+```text
+Work Items has a non-empty, complete list of types other contexts may name.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsPublishesItsContractsArchUnitTest\.cs
+
+WorkItemsPublishesTheTypesTheOthersReach\_AndTheListOfThemIsNotEmpty
+
+```text
+A list that drops or adds one type while the other checks still pass on the remaining ones.
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P3
+
+```text
+Look up each published Work Items type by name in the compiled production code.
+```
+
+```text
+Each is found exactly once, in the Work Items Contracts namespace. RED today: all five sit in their old Application namespaces.
+```
+
+```text
+Other contexts can name Work Items through its Contracts only.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsPublishesItsContractsArchUnitTest\.cs
+
+EachPublishedTypeIsFoundOnceAndInTheContractsOfItsOwnContext
+
+```text
+A type left in place, copied into both places, or moved into another context's Contracts.
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P3
+
+```text
+Look in the old namespace of each published Work Items type.
+```
+
+```text
+None remains there. RED today: all five remain.
+```
+
+```text
+No way around the Contracts to reach these types.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsPublishesItsContractsArchUnitTest\.cs
+
+NoPublishedTypeIsLeftInTheNamespaceItHadBefore
+
+```text
+A duplicate left behind that still compiles.
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P3
+
+```text
+Scan the IL of production and test assemblies for types outside Work Items that reference a published type by its old name; the scan sees compiled references only, so a full type name written in a string is not seen.
+```
+
+```text
+No type outside Work Items names one by the old name. RED today: controllers, services and tests still do.
+```
+
+```text
+Every consumer follows the move; behaviour unchanged.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsPublishesItsContractsArchUnitTest\.cs
+
+NoTypeOutsideWorkItemsNamesAPublishedTypeByItsOldName
+
+```text
+A type name kept only inside a string literal, which the IL scan cannot see.
+```
+
+###### Obligations
+
+
+
+
 ## Expectations
 
 ### Rows

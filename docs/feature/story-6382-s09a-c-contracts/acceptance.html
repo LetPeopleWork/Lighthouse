@@ -387,6 +387,124 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Read the measured map of what Work Items publishes, without events.
+</code></pre>
+
+<pre><code>Exactly five types: blocked items, refresh log, rule evaluation, rule fields, what the forecast waits for. Passes today (list already measured); guards against an empty list making the other checks vacuous.
+</code></pre>
+
+<pre><code>Work Items has a non-empty, complete list of types other contexts may name.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPublishesItsContractsArchUnitTest.cs</p>
+
+<p>WorkItemsPublishesTheTypesTheOthersReach_AndTheListOfThemIsNotEmpty</p>
+
+<pre><code>A list that drops or adds one type while the other checks still pass on the remaining ones.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Look up each published Work Items type by name in the compiled production code.
+</code></pre>
+
+<pre><code>Each is found exactly once, in the Work Items Contracts namespace. RED today: all five sit in their old Application namespaces.
+</code></pre>
+
+<pre><code>Other contexts can name Work Items through its Contracts only.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPublishesItsContractsArchUnitTest.cs</p>
+
+<p>EachPublishedTypeIsFoundOnceAndInTheContractsOfItsOwnContext</p>
+
+<pre><code>A type left in place, copied into both places, or moved into another context&#x27;s Contracts.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Look in the old namespace of each published Work Items type.
+</code></pre>
+
+<pre><code>None remains there. RED today: all five remain.
+</code></pre>
+
+<pre><code>No way around the Contracts to reach these types.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPublishesItsContractsArchUnitTest.cs</p>
+
+<p>NoPublishedTypeIsLeftInTheNamespaceItHadBefore</p>
+
+<pre><code>A duplicate left behind that still compiles.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Scan the IL of production and test assemblies for types outside Work Items that reference a published type by its old name; the scan sees compiled references only, so a full type name written in a string is not seen.
+</code></pre>
+
+<pre><code>No type outside Work Items names one by the old name. RED today: controllers, services and tests still do.
+</code></pre>
+
+<pre><code>Every consumer follows the move; behaviour unchanged.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPublishesItsContractsArchUnitTest.cs</p>
+
+<p>NoTypeOutsideWorkItemsNamesAPublishedTypeByItsOldName</p>
+
+<pre><code>A type name kept only inside a string literal, which the IL scan cannot see.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
