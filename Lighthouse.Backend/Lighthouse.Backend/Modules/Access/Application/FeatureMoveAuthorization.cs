@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
 using System.Security.Claims;
+using Lighthouse.Backend.Modules.Access.Contracts;
 
 namespace Lighthouse.Backend.Modules.Access.Application
 {

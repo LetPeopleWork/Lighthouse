@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;

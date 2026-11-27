@@ -5,6 +5,7 @@ using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Modules.Refinement.Application;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;

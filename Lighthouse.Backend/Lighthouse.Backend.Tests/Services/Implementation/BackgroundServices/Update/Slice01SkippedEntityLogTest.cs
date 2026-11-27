@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Modules.WorkItems.Application;

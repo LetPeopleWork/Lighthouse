@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Modules.Reports.Application.Metrics;
 using Lighthouse.Backend.Modules.Reports.Application;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;

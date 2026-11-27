@@ -154,8 +154,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         // the services still in the loose Services namespaces and the platform's clock and update queue are listed until they move.
         private static readonly string[] EdgesOfTheApplicationIntoAccessLicensingOrganisationSetUpAndTheUpdateQueue =
         [
-            "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService",
-            "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.FeatureDependencyRendering -> Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService",
+            "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService",
+            "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.FeatureDependencyRendering -> Lighthouse.Backend.Modules.Access.Contracts.IRbacAdministrationService",
             "Lighthouse.Backend.Modules.WorkItems.Application.Policies.PortfolioDeletedOrphanedFeatureCleanupHandler -> Lighthouse.Backend.Services.Interfaces.IOrphanedFeatureCleanupService",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Platform.UpdateQueue.UpdateCancellationContext",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
@@ -201,7 +201,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static string PortfolioMetricsService => typeof(global::Lighthouse.Backend.Modules.FlowMetrics.Application.IPortfolioMetricsService).FullName!;
 
-        private static string LicenceService => typeof(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService).FullName!;
+        private static string LicenceService => typeof(global::Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService).FullName!;
 
         private static string OrphanedFeatureCleanup => typeof(global::Lighthouse.Backend.Services.Interfaces.IOrphanedFeatureCleanupService).FullName!;
 
@@ -629,7 +629,7 @@ namespace Lighthouse.Backend.Modules.WorkItemsFixtures.Boundaries.Domain
 
     internal static class ADomainCalculationAskingTheLicence
     {
-        public static bool Allows(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService licence) => licence is not null;
+        public static bool Allows(global::Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService licence) => licence is not null;
     }
 }
 
@@ -782,7 +782,7 @@ namespace Lighthouse.Backend.Modules.WorkItemsFixtures.BoundariesOutbound.Readin
 {
     internal static class AWorkItemServiceReadingTheLicenceTwice
     {
-        public static bool Asks(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService licence) => licence is not null;
+        public static bool Asks(global::Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService licence) => licence is not null;
 
         public static bool Verifies(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseVerifier verifier) => verifier is not null;
     }

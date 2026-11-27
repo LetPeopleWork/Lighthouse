@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 
 namespace Lighthouse.Backend.API.Helpers
 {

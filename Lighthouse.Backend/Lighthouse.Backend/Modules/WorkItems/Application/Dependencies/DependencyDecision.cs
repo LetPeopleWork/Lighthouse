@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 
 namespace Lighthouse.Backend.Modules.WorkItems.Application.Dependencies

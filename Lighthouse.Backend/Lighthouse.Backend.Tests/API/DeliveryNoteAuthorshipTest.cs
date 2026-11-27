@@ -7,6 +7,7 @@ using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

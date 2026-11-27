@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 
 namespace Lighthouse.Backend.Modules.Access
 {

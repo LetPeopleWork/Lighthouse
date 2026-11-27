@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 

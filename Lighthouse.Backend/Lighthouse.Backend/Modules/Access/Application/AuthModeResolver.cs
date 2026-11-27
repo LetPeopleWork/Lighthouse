@@ -1,7 +1,9 @@
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Microsoft.Extensions.Options;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.Access.Contracts;
 
 namespace Lighthouse.Backend.Modules.Access.Application
 {

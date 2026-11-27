@@ -1,3 +1,6 @@
+using Lighthouse.Backend.Modules.Access.Contracts;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
+
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
@@ -38,6 +41,12 @@ namespace Lighthouse.Backend.Tests.Architecture
             "RbacAdministrationService",
         ];
 
+        public static IReadOnlyList<string> AccessContracts { get; } =
+        [
+            "IAuthModeResolver",
+            "IRbacAdministrationService",
+        ];
+
         public static IReadOnlyList<string> AccessAdaptersHttp { get; } =
         [
             "AccessMarkerAttribute",
@@ -61,6 +70,11 @@ namespace Lighthouse.Backend.Tests.Architecture
             "ILicenseVerifier",
             "LicenseService",
             "LicenseVerifier",
+        ];
+
+        public static IReadOnlyList<string> LicensingContracts { get; } =
+        [
+            "ILicenseService",
         ];
 
         public static IReadOnlyList<string> LicensingAdaptersHttp { get; } =

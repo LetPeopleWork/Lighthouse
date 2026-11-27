@@ -5,6 +5,7 @@ using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;

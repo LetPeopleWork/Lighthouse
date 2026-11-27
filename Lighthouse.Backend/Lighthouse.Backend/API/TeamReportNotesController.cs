@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Lighthouse.Backend.Modules.Reports.Application;
 using Lighthouse.Backend.Platform.Host;
 using Microsoft.AspNetCore.Mvc;

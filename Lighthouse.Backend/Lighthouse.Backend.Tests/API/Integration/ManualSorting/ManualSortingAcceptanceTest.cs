@@ -6,6 +6,7 @@ using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Modules.WorkItems.Application;

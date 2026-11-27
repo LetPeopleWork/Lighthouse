@@ -1,6 +1,7 @@
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.API.Helpers

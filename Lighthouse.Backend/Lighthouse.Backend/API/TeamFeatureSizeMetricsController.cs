@@ -7,6 +7,7 @@ using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Microsoft.AspNetCore.Mvc;

@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Microsoft.EntityFrameworkCore;
 using System.Data.Common;
 using System.Security.Claims;

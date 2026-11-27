@@ -8,6 +8,7 @@ using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;

@@ -7,6 +7,7 @@ using Lighthouse.Backend.Modules.Access.Domain;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

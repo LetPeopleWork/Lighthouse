@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;

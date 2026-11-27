@@ -8,6 +8,7 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using System.Reflection;
 using System.Security.Claims;

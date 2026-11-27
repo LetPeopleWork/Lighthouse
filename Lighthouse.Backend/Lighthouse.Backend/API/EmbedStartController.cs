@@ -2,6 +2,7 @@ using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;

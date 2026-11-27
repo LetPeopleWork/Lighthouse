@@ -453,8 +453,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             yield return OtherContextCase("ReachingTheUpdateCode", "Lighthouse.Backend.Platform.UpdateQueue.UpdateKey", "ATrackerIntegrationTypeReachingTheUpdateCode_IsNamed");
             yield return OtherContextCase("ReachingRefinement", "Lighthouse.Backend.Modules.Refinement.Application.IRefinementViewQuery", "ATrackerIntegrationTypeReachingRefinement_IsNamed");
             yield return OtherContextCase("ReachingReports", "Lighthouse.Backend.Modules.Reports.Application.IReportQueries", "ATrackerIntegrationTypeReachingReports_IsNamed");
-            yield return OtherContextCase("ReachingAccess", "Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService", "ATrackerIntegrationTypeReachingAccess_IsNamed");
-            yield return OtherContextCase("ReachingTheLicence", "Lighthouse.Backend.Modules.Licensing.Application.ILicenseService", "ATrackerIntegrationTypeReachingTheLicence_IsNamed");
+            yield return OtherContextCase("ReachingAccess", "Lighthouse.Backend.Modules.Access.Contracts.IRbacAdministrationService", "ATrackerIntegrationTypeReachingAccess_IsNamed");
+            yield return OtherContextCase("ReachingTheLicence", "Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService", "ATrackerIntegrationTypeReachingTheLicence_IsNamed");
         }
 
         private static TestCaseData OtherContextCase(string caseName, string target, string name)
@@ -630,7 +630,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.Boundaries.Domai
 
     internal static class ADomainRuleAskingTheLicence
     {
-        public static bool Allows(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService licence) => licence is not null;
+        public static bool Allows(global::Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService licence) => licence is not null;
     }
 }
 
@@ -902,7 +902,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.BoundariesOutbou
 {
     internal static class AConnector
     {
-        public static bool Reaches(global::Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService other) => other is not null;
+        public static bool Reaches(global::Lighthouse.Backend.Modules.Access.Contracts.IRbacAdministrationService other) => other is not null;
     }
 
     internal static class AConnectorMergingTheForecastBlock
@@ -915,7 +915,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.BoundariesOutbou
 {
     internal static class AConnector
     {
-        public static bool Reaches(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService other) => other is not null;
+        public static bool Reaches(global::Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService other) => other is not null;
     }
 
     internal static class AConnectorMergingTheForecastBlock

@@ -7,6 +7,7 @@ using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Modules.WorkItems.Application;

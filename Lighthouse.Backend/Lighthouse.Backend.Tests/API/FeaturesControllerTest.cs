@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -614,7 +615,7 @@ namespace Lighthouse.Backend.Tests.API
                 .ReturnsAsync((ClaimsPrincipal _, IReadOnlyCollection<Feature> requested, ISet<int> _, CancellationToken _) =>
                     requested.ToDictionary(feature => feature.Id, _ => moveVerdict));
 
-            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object, blackoutPeriodServiceMock.Object, rbacAdministrationServiceMock.Object, Mock.Of<Lighthouse.Backend.Modules.WorkItems.Application.IBlockedItemService>(), featurePositionMapMock.Object, featureMoveAuthorizationMock.Object, featureRankingServiceMock.Object, featureOrderingPolicyProviderMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow), new Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision(new Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies.DependencyHonourPolicy(), Mock.Of<Lighthouse.Backend.Modules.Licensing.Application.ILicenseService>(licence => licence.CanUsePremiumFeatures())));
+            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object, blackoutPeriodServiceMock.Object, rbacAdministrationServiceMock.Object, Mock.Of<Lighthouse.Backend.Modules.WorkItems.Application.IBlockedItemService>(), featurePositionMapMock.Object, featureMoveAuthorizationMock.Object, featureRankingServiceMock.Object, featureOrderingPolicyProviderMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow), new Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision(new Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies.DependencyHonourPolicy(), Mock.Of<Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService>(licence => licence.CanUsePremiumFeatures())));
         }
     }
 }

@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models.UsageData;
 using Lighthouse.Backend.Platform.UsageData;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Options;
 using Moq;

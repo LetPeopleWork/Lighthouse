@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Modules.Refinement.Application;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Microsoft.AspNetCore.Http;
 using Moq;
 

@@ -1,3 +1,6 @@
+using Lighthouse.Backend.Modules.Access.Contracts;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
+
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>Why a type belongs to what its context publishes.</summary>

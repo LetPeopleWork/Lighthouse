@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Services.Implementation

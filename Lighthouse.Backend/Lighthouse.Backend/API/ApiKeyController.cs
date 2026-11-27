@@ -3,6 +3,7 @@ using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;

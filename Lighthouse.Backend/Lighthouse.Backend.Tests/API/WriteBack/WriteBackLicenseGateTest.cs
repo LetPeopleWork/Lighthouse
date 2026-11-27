@@ -7,6 +7,7 @@ using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Moq;

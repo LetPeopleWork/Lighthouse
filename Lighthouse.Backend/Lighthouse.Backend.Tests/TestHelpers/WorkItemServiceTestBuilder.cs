@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Platform.DomainEvents;

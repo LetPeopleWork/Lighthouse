@@ -7,6 +7,7 @@ using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;

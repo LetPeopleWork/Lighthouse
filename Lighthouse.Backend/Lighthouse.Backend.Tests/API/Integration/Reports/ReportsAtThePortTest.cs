@@ -16,6 +16,7 @@ using Lighthouse.Backend.Modules.Reports.Domain;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;

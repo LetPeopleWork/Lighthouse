@@ -7,6 +7,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;

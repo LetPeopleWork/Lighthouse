@@ -10,6 +10,7 @@ using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;

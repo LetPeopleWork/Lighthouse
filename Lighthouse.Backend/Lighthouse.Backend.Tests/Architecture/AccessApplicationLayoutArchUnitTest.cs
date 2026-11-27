@@ -2,6 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.Access.Domain.LayoutFixtures.Clean;
 using Lighthouse.Backend.Modules.Access.Domain.LayoutFixtures.ReachingARepository;
 using Mono.Cecil;
+using Lighthouse.Backend.Modules.Access.Contracts;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -108,7 +109,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheAccessServicesAndTheirInterfaces_LiveInTheAccessApplication_AndNoneIsLeftUnderServices()
         {
-            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ApplicationNamespace, AccessAndLicensingMembership.AccessApplication, WhereAccessLivedBefore).Check();
+            IReadOnlyCollection<string> applicationTypes = [.. AccessAndLicensingMembership.AccessApplication.Except(AccessAndLicensingMembership.AccessContracts)];
+
+            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ApplicationNamespace, applicationTypes, WhereAccessLivedBefore).Check();
         }
 
         [Test]

@@ -9,6 +9,7 @@ using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Modules.WorkItems.Application;

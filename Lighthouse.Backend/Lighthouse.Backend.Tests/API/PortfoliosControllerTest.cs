@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.TestHelpers;

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Modules.Access.Application

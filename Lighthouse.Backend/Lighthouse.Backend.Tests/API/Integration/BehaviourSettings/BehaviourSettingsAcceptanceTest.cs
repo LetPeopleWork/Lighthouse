@@ -8,6 +8,7 @@ using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Platform.Seeding;
 using Lighthouse.Backend.Services.Interfaces.Update;

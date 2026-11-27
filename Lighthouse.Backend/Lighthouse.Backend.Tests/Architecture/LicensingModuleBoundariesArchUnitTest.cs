@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         // The types each Licensing layer holds, measured from the compiled code.
         private static readonly Dictionary<string, IReadOnlyList<string>> TypesByLayer = new(StringComparer.Ordinal)
         {
-            [LicensingApplicationNamespace] = AccessAndLicensingMembership.LicensingApplication,
+            [LicensingApplicationNamespace] = [.. AccessAndLicensingMembership.LicensingApplication.Except(AccessAndLicensingMembership.LicensingContracts)],
             [LicensingAdaptersHttpNamespace] = AccessAndLicensingMembership.LicensingAdaptersHttp,
         };
 
@@ -133,13 +133,13 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             [Neighbour.WorkItems] =
             [
-                "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService",
-                "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.FeatureDependencyRendering -> Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService",
+                "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService",
+                "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.FeatureDependencyRendering -> Lighthouse.Backend.Modules.Access.Contracts.IRbacAdministrationService",
             ],
             [Neighbour.Forecasting] =
             [
-                "Lighthouse.Backend.Modules.Forecasting.Application.ForecastFilterRuleService -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService",
-                "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackTriggerService -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService",
+                "Lighthouse.Backend.Modules.Forecasting.Application.ForecastFilterRuleService -> Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService",
+                "Lighthouse.Backend.Modules.Forecasting.Application.WriteBack.WriteBackTriggerService -> Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService",
             ],
         };
 
@@ -250,7 +250,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void ANeighbourListEntryUnderAnOldServicesName_IsNamed_AndItsTwinUnderTheModuleIsNot()
         {
-            const string underTheModule = "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService";
+            const string underTheModule = "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService";
             const string underTheOldName = "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService";
             const string underAGoneModuleType = "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Modules.Access.Application.IAFormerAccessPort";
             const string notAccessOrLicensing = "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Platform.Host.ILighthouseClock";
@@ -347,7 +347,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static IEnumerable<TestCaseData> LicensingTypesReachingForbiddenCode()
         {
-            yield return new TestCaseData(typeof(ALicenceServiceAskingAccess), OutboundTarget.AccessOrAnotherContext, "Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService")
+            yield return new TestCaseData(typeof(ALicenceServiceAskingAccess), OutboundTarget.AccessOrAnotherContext, "Lighthouse.Backend.Modules.Access.Contracts.IRbacAdministrationService")
                 .SetName("ALicensingTypeReachingAccess_IsNamed");
             yield return new TestCaseData(typeof(ALicenceServiceAskingWorkItems), OutboundTarget.AccessOrAnotherContext, "Lighthouse.Backend.Modules.WorkItems.Application.IWorkItemService")
                 .SetName("ALicensingTypeReachingAnotherContext_IsNamed");
@@ -719,7 +719,7 @@ namespace Lighthouse.Backend.Modules.LicensingFixtures.BoundariesOutbound.Compli
 
 namespace Lighthouse.Backend.Modules.LicensingFixtures.BoundariesOutbound.ReachingAccess.Application
 {
-    internal sealed class ALicenceServiceAskingAccess(global::Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService rbac)
+    internal sealed class ALicenceServiceAskingAccess(global::Lighthouse.Backend.Modules.Access.Contracts.IRbacAdministrationService rbac)
     {
         public int Describe() => rbac.GetHashCode();
     }

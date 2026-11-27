@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.Licensing.Adapters.Http;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

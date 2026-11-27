@@ -10,6 +10,7 @@ using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.AzureDevOps;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Modules.WorkItems.Application;

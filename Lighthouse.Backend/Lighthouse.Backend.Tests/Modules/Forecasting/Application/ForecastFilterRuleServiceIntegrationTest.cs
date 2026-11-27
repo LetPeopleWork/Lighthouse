@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Moq;
 using NUnit.Framework;

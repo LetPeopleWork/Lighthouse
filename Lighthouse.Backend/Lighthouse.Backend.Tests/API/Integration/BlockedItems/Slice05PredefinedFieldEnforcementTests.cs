@@ -3,6 +3,7 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;

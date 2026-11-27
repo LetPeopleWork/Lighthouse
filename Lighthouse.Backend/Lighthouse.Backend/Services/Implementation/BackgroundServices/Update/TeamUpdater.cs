@@ -4,6 +4,7 @@ using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Modules.WorkItems.Application;

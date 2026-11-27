@@ -2,7 +2,9 @@ using System.Text.RegularExpressions;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Platform.Releases;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Platform.UsageData

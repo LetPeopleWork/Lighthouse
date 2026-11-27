@@ -6,6 +6,7 @@ using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.AspNetCore.Mvc;

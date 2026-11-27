@@ -3,11 +3,13 @@ using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Modules.Access.Domain;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Globalization;
 using System.Security.Claims;
 using System.Text.Json;
+using Lighthouse.Backend.Modules.Access.Contracts;
 
 namespace Lighthouse.Backend.Modules.Access.Application
 {

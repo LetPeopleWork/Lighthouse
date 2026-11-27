@@ -1,6 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Modules.Licensing.Application
+namespace Lighthouse.Backend.Modules.Licensing.Contracts
 {
     public interface ILicenseService
     {

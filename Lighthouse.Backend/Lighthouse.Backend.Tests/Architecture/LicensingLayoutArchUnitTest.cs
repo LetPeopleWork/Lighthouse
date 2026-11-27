@@ -35,7 +35,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheLicenseServicesAndTheirInterfaces_LiveInTheLicensingApplication_AndNoneIsLeftUnderServices()
         {
-            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ApplicationNamespace, AccessAndLicensingMembership.LicensingApplication, WhereLicensingLivedBefore).Check();
+            IReadOnlyCollection<string> applicationTypes = [.. AccessAndLicensingMembership.LicensingApplication.Except(AccessAndLicensingMembership.LicensingContracts)];
+
+            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ApplicationNamespace, applicationTypes, WhereLicensingLivedBefore).Check();
         }
 
         [Test]

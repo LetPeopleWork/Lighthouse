@@ -3,6 +3,7 @@ using Lighthouse.Backend.API;
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Lighthouse.Backend.Modules.Access.Domain;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;

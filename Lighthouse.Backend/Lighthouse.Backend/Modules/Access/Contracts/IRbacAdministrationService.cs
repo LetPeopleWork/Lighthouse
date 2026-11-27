@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models.Authorization;
 using System.Security.Claims;
 
-namespace Lighthouse.Backend.Modules.Access.Application
+namespace Lighthouse.Backend.Modules.Access.Contracts
 {
     public interface IRbacAdministrationService
     {

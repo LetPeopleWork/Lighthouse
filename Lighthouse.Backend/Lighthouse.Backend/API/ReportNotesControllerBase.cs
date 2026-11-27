@@ -2,6 +2,7 @@ using Lighthouse.Backend.API.DTO.Reports;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Lighthouse.Backend.Modules.Reports.Application;
 using Lighthouse.Backend.Modules.Reports.Domain;
 using Lighthouse.Backend.Platform.Host;

@@ -11,6 +11,7 @@ using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;

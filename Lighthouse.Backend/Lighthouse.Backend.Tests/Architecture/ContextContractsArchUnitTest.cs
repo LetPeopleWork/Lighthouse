@@ -50,17 +50,13 @@ namespace Lighthouse.Backend.Tests.Architecture
         // Each edge names its source and target under the modules root; the comment names the context that owns the target.
         private static IReadOnlyList<string> CrossContextEdgesOutsideContracts =>
         [
-            Edge("Access.Application.AuthModeResolver", "Licensing.Application.ILicenseService"), // owner: Licensing
-            Edge("Access.Application.RbacAdministrationService", "Licensing.Application.ILicenseService"), // owner: Licensing
             Edge("FlowMetrics.Application.Policies.BlockedCountSnapshotRecordingHandler", "WorkItems.Application.IBlockedItemService"), // owner: Work Items
             Edge("FlowMetrics.Application.Policies.DemoBlockedHistoryBackfillHandler", "WorkItems.Application.IBlockedItemService"), // owner: Work Items
             Edge("FlowMetrics.Application.PortfolioMetricsService", "OrganisationSetup.Application.IAppSettingService"), // owner: Organisation set-up
             Edge("FlowMetrics.Application.TeamMetricsService", "OrganisationSetup.Application.IAppSettingService"), // owner: Organisation set-up
             Edge("FlowMetrics.Application.TeamMetricsService", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
-            Edge("Forecasting.Adapters.Background.ForecastUpdater", "Licensing.Application.ILicenseService"), // owner: Licensing
             Edge("Forecasting.Adapters.Background.ForecastUpdater", "WorkItems.Application.IRefreshLogService"), // owner: Work Items
             Edge("Forecasting.Application.ForecastFilterRuleService", "FlowMetrics.Application.IThroughputFilter"), // owner: Flow metrics
-            Edge("Forecasting.Application.ForecastFilterRuleService", "Licensing.Application.ILicenseService"), // owner: Licensing
             Edge("Forecasting.Application.ForecastFilterRuleService", "WorkItems.Application.IRuleEvaluator`1"), // owner: Work Items
             Edge("Forecasting.Application.ForecastFilterRuleService", "WorkItems.Application.IRuleFieldProvider`1"), // owner: Work Items
             Edge("Forecasting.Application.ForecastInputFingerprint", "FlowMetrics.Application.ForecastThroughputStatus"), // owner: Flow metrics
@@ -77,7 +73,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             Edge("Forecasting.Application.WriteBack.WriteBackService", "TrackerIntegration.Application.IWorkTrackingConnectorFactory"), // owner: Tracker integration
             Edge("Forecasting.Application.WriteBack.WriteBackService", "TrackerIntegration.Application.IWriteBackTarget"), // owner: Tracker integration
             Edge("Forecasting.Application.WriteBack.WriteBackTriggerService", "FlowMetrics.Application.ITeamMetricsService"), // owner: Flow metrics
-            Edge("Forecasting.Application.WriteBack.WriteBackTriggerService", "Licensing.Application.ILicenseService"), // owner: Licensing
             Edge("Forecasting.Application.WriteBack.WriteBackTriggerService", "OrganisationSetup.Application.IBlackoutPeriodService"), // owner: Organisation set-up
             Edge("OrganisationSetup.Application.Connections.ConnectionSaveService", "WorkItems.Domain.FetchFingerprint"), // owner: Work Items
             Edge("Promises.Application.DeliveryForecastBlockRenderer", "TrackerIntegration.Application.IDescriptionBlockMerger"), // owner: Tracker integration
@@ -104,15 +99,10 @@ namespace Lighthouse.Backend.Tests.Architecture
             Edge("Refinement.Application.StageRuleMatcher", "WorkItems.Application.IRuleEvaluator`1"), // owner: Work Items
             Edge("Refinement.Application.StageRuleMatcher", "WorkItems.Application.IRuleFieldProvider`1"), // owner: Work Items
             Edge("Refinement.Application.VoterIdentityResolver", "Access.Application.CurrentUserProfileService"), // owner: Access
-            Edge("Refinement.Application.VoterIdentityResolver", "Access.Application.IAuthModeResolver"), // owner: Access
             Edge("Reports.Application.Metrics.DailySeriesSummary", "FlowMetrics.Domain.PercentileCalculator"), // owner: Flow metrics
             Edge("Reports.Application.PortfolioReportMetricSeries", "FlowMetrics.Application.IPortfolioMetricsService"), // owner: Flow metrics
-            Edge("Reports.Application.ReportCommands", "Licensing.Application.ILicenseService"), // owner: Licensing
-            Edge("Reports.Application.ReportQueries", "Licensing.Application.ILicenseService"), // owner: Licensing
             Edge("Reports.Application.TeamReportMetricSeries", "FlowMetrics.Application.ITeamMetricsService"), // owner: Flow metrics
             Edge("TrackerIntegration.Application.ConnectionHealth.ConnectionHealthCadence", "OrganisationSetup.Application.IAppSettingService"), // owner: Organisation set-up
-            Edge("WorkItems.Application.Dependencies.DependencyDecision", "Licensing.Application.ILicenseService"), // owner: Licensing
-            Edge("WorkItems.Application.Dependencies.FeatureDependencyRendering", "Access.Application.IRbacAdministrationService"), // owner: Access
             Edge("WorkItems.Application.RefreshLogService", "OrganisationSetup.Application.IAppSettingService"), // owner: Organisation set-up
             Edge("WorkItems.Application.WorkItemService", "FlowMetrics.Application.IPortfolioMetricsService"), // owner: Flow metrics
             Edge("WorkItems.Application.WorkItemService", "FlowMetrics.Domain.PercentileCalculator"), // owner: Flow metrics

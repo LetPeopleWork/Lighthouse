@@ -168,7 +168,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.Refinement.Application.SizingLogCommands -> Lighthouse.Backend.Services.Interfaces.Repositories.ISizingLogRepository",
             "Lighthouse.Backend.Modules.Refinement.Application.SleYardstickResolver -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
             "Lighthouse.Backend.Modules.Refinement.Application.VoterIdentityResolver -> Lighthouse.Backend.Modules.Access.Application.CurrentUserProfileService",
-            "Lighthouse.Backend.Modules.Refinement.Application.VoterIdentityResolver -> Lighthouse.Backend.Modules.Access.Application.IAuthModeResolver",
+            "Lighthouse.Backend.Modules.Refinement.Application.VoterIdentityResolver -> Lighthouse.Backend.Modules.Access.Contracts.IAuthModeResolver",
         ];
 
         private const string TheUpdateCode = @"^Lighthouse\.Backend\.Services\.(Implementation\.BackgroundServices\.Update|Interfaces\.Update)(\.|$)|^Lighthouse\.Backend\.Platform\.UpdateQueue(\.|$)";
@@ -367,7 +367,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void AListedEdgeThatNoLongerExists_IsNamedForDeletion_AndEachListedEdgeDeletedIsNamedAsOffending()
         {
             var offender = typeof(AnApplicationTypeReachingAnUnlistedAccessType);
-            var listed = Edge(offender, "Lighthouse.Backend.Modules.Access.Application.IAuthModeResolver");
+            var listed = Edge(offender, "Lighthouse.Backend.Modules.Access.Contracts.IAuthModeResolver");
             var namespaces = NamespacePatternOf(offender);
 
             ThenTheRuleHolds(() => AccessSetUpPlatformAndRepositoriesRule(TestModule.Value, namespaces, [listed]).Check(), "the made-up listed edge");
@@ -429,7 +429,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static IEnumerable<TestCaseData> RefinementApplicationTypesReachingUnlistedEdges()
         {
-            yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedAccessType), "Lighthouse.Backend.Modules.Access.Application.IAuthModeResolver")
+            yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedAccessType), "Lighthouse.Backend.Modules.Access.Contracts.IAuthModeResolver")
                 .SetName("ARefinementApplicationTypeReachingAnUnlistedAccessType_IsNamed");
             yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedSetUpType), typeof(global::Lighthouse.Backend.Services.Interfaces.IFeatureListService).FullName!)
                 .SetName("ARefinementApplicationTypeReachingAnUnlistedSetUpType_IsNamed");
@@ -784,7 +784,7 @@ namespace Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.TouchingT
 
 namespace Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingAnUnlistedAccessType.Application
 {
-    internal sealed class AnApplicationTypeReachingAnUnlistedAccessType(global::Lighthouse.Backend.Modules.Access.Application.IAuthModeResolver authMode)
+    internal sealed class AnApplicationTypeReachingAnUnlistedAccessType(global::Lighthouse.Backend.Modules.Access.Contracts.IAuthModeResolver authMode)
     {
         public int Describe() => authMode.GetHashCode();
     }

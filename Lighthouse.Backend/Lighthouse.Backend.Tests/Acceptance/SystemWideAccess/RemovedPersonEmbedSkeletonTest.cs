@@ -1,5 +1,6 @@
 using System.Net;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 

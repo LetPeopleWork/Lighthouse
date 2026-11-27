@@ -2,6 +2,7 @@ using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Modules.Access.Domain;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;

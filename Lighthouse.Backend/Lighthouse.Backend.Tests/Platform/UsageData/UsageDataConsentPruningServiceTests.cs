@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Platform.UsageData;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.DependencyInjection;

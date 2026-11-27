@@ -8,6 +8,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.ServiceNow;
 using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;

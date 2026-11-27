@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {

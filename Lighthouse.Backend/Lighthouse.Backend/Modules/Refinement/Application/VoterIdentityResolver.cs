@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 
 namespace Lighthouse.Backend.Modules.Refinement.Application
 {

@@ -128,7 +128,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 new TestCaseData("Access", typeof(Backend.Modules.Access.Application.ApiKeyService).FullName),
                 new TestCaseData("FlowMetrics", typeof(Backend.Modules.FlowMetrics.Application.IPercentilesOverTimeSeriesQuery).FullName),
                 new TestCaseData("Forecasting", typeof(Backend.Modules.Forecasting.Application.IForecastRealityCheckService).FullName),
-                new TestCaseData("Licensing", typeof(Backend.Modules.Licensing.Application.ILicenseService).FullName),
+                new TestCaseData("Licensing", typeof(Backend.Modules.Licensing.Contracts.ILicenseService).FullName),
                 new TestCaseData("OrganisationSetup", typeof(Backend.Modules.OrganisationSetup.Application.OptionalFeatures.OptionalFeatureApplierRegistry).FullName),
                 new TestCaseData("Promises", typeof(Backend.Modules.Promises.Application.IDeliveryRuleService).FullName),
                 new TestCaseData("Refinement", typeof(Backend.Modules.Refinement.Application.RefinementList).FullName),
@@ -185,7 +185,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void AMadeUpCompositionRootNamingATypeOnlyInsideALambda_IsReportedNamingIt()
         {
-            var licensingService = typeof(Backend.Modules.Licensing.Application.ILicenseService).FullName!;
+            var licensingService = typeof(Backend.Modules.Licensing.Contracts.ILicenseService).FullName!;
 
             var verdict = WhenWhatTheCompositionRootNamesIsComparedWithTheLists(TestModule.Value, ARootNamingATypeInsideALambda, TheModulesRoot, "Licensing", [], ProductionModule.Value);
 
@@ -354,7 +354,7 @@ namespace Lighthouse.Backend.Tests.Architecture.ProgramNamesFixtures.Roots
             services.AddScoped<Lighthouse.Backend.Modules.Access.Application.ApiKeyService>();
             services.AddScoped<Lighthouse.Backend.Modules.FlowMetrics.Application.IPercentilesOverTimeSeriesQuery>(_ => null!);
             services.AddScoped<Lighthouse.Backend.Modules.Forecasting.Application.IForecastRealityCheckService>(_ => null!);
-            services.AddScoped<Lighthouse.Backend.Modules.Licensing.Application.ILicenseService>(_ => null!);
+            services.AddScoped<Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService>(_ => null!);
             services.AddScoped<Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures.OptionalFeatureApplierRegistry>();
             services.AddScoped<Lighthouse.Backend.Modules.Promises.Application.IDeliveryRuleService>(_ => null!);
             services.AddScoped<Lighthouse.Backend.Modules.Refinement.Application.RefinementList>();
@@ -370,7 +370,7 @@ namespace Lighthouse.Backend.Tests.Architecture.ProgramNamesFixtures.Roots
         public static void Compose(IServiceCollection services)
             => services.AddScoped(provider =>
             {
-                _ = provider.GetRequiredService<Lighthouse.Backend.Modules.Licensing.Application.ILicenseService>();
+                _ = provider.GetRequiredService<Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService>();
                 return new Shared.AClockOutsideTheContexts();
             });
     }

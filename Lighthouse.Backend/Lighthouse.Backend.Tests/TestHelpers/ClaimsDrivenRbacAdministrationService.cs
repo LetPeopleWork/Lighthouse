@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {

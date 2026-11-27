@@ -7,6 +7,7 @@ using Lighthouse.Backend.Modules.FlowMetrics.Domain;
 using Lighthouse.Backend.Modules.Licensing.Adapters.Http;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;

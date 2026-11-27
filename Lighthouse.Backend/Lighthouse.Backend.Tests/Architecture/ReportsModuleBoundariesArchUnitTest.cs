@@ -174,10 +174,10 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.Reports.Application.PortfolioReportMetricSeries -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
             "Lighthouse.Backend.Modules.Reports.Application.PortfolioReportMetricSeries -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1",
             "Lighthouse.Backend.Modules.Reports.Application.ReportBulkCommands -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
-            "Lighthouse.Backend.Modules.Reports.Application.ReportCommands -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService",
+            "Lighthouse.Backend.Modules.Reports.Application.ReportCommands -> Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService",
             "Lighthouse.Backend.Modules.Reports.Application.ReportCommands -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
             "Lighthouse.Backend.Modules.Reports.Application.ReportOwnerLookup -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1",
-            "Lighthouse.Backend.Modules.Reports.Application.ReportQueries -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService",
+            "Lighthouse.Backend.Modules.Reports.Application.ReportQueries -> Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService",
             "Lighthouse.Backend.Modules.Reports.Application.ReportQueries -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
             "Lighthouse.Backend.Modules.Reports.Application.TeamReportMetricSeries -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
             "Lighthouse.Backend.Modules.Reports.Application.TeamReportMetricSeries -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1",
@@ -394,7 +394,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void AListedEdgeThatNoLongerExists_IsNamedForDeletion_AndEachListedEdgeDeletedIsNamedAsOffending()
         {
             var offender = typeof(AnApplicationTypeReachingAnUnlistedLicensingType);
-            var listed = Edge(offender, "Lighthouse.Backend.Modules.Licensing.Application.ILicenseService");
+            var listed = Edge(offender, "Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService");
             var namespaces = NamespacePatternOf(offender);
 
             ThenTheRuleHolds(() => FlowMetricsLicensingSetUpAndPlatformRule(TestModule.Value, namespaces, [listed]).Check(), "the made-up listed edge");
@@ -464,7 +464,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .SetName("AReportsApplicationTypeReachingAModuleAdapter_IsNamed");
             yield return new TestCaseData(typeof(AReportServiceReachingTrackerIntegration), "Lighthouse.Backend.Modules.TrackerIntegration.Application.IWorkTrackingConnectorFactory")
                 .SetName("AReportsApplicationTypeReachingTrackerIntegration_IsNamed");
-            yield return new TestCaseData(typeof(AReportServiceReachingTheRbacService), "Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService")
+            yield return new TestCaseData(typeof(AReportServiceReachingTheRbacService), "Lighthouse.Backend.Modules.Access.Contracts.IRbacAdministrationService")
                 .SetName("AReportsApplicationTypeReachingTheRbacService_IsNamed");
             yield return new TestCaseData(typeof(AReportServiceTouchingTheUpdateCode), "Lighthouse.Backend.Platform.UpdateQueue.UpdateKey")
                 .SetName("AReportsApplicationTypeReachingTheUpdateCode_IsNamed");
@@ -476,7 +476,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedFlowMetricsDomainType), "Lighthouse.Backend.Modules.FlowMetrics.Domain.PercentileCalculator")
                 .SetName("AReportsApplicationTypeReachingAnUnlistedFlowMetricsDomainType_IsNamed");
-            yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedLicensingType), "Lighthouse.Backend.Modules.Licensing.Application.ILicenseService")
+            yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedLicensingType), "Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService")
                 .SetName("AReportsApplicationTypeReachingAnUnlistedLicensingType_IsNamed");
             yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedSetUpType), "Lighthouse.Backend.Services.Interfaces.IFeatureListService")
                 .SetName("AReportsApplicationTypeReachingAnUnlistedSetUpType_IsNamed");
@@ -832,7 +832,7 @@ namespace Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingT
 
 namespace Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingTheRbacService.Application
 {
-    internal sealed class AReportServiceReachingTheRbacService(global::Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService rbac)
+    internal sealed class AReportServiceReachingTheRbacService(global::Lighthouse.Backend.Modules.Access.Contracts.IRbacAdministrationService rbac)
     {
         public int Describe() => rbac.GetHashCode();
     }
@@ -864,7 +864,7 @@ namespace Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingA
 
 namespace Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingAnUnlistedLicensingType.Application
 {
-    internal sealed class AnApplicationTypeReachingAnUnlistedLicensingType(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService licenses)
+    internal sealed class AnApplicationTypeReachingAnUnlistedLicensingType(global::Lighthouse.Backend.Modules.Licensing.Contracts.ILicenseService licenses)
     {
         public int Describe() => licenses.GetHashCode();
     }
