@@ -973,6 +973,7 @@ describe("BaseMetricsView component", () => {
 				},
 			}),
 			getWithinSleInfo: vi.fn(),
+			getWithinSleOverTime: vi.fn(),
 			getCycleTimePercentilesInfo: vi.fn().mockResolvedValue({
 				percentiles: [],
 				comparison: {
@@ -1561,6 +1562,7 @@ describe("BaseMetricsView component", () => {
 				.fn()
 				.mockRejectedValue(new Error("API error")),
 			getWithinSleInfo: vi.fn(),
+			getWithinSleOverTime: vi.fn(),
 			getCycleTimePercentilesInfo: vi
 				.fn()
 				.mockRejectedValue(new Error("API error")),
@@ -2382,6 +2384,7 @@ describe("BaseMetricsView component", () => {
 					.fn()
 					.mockRejectedValue(new Error("API error")),
 				getWithinSleInfo: vi.fn(),
+				getWithinSleOverTime: vi.fn(),
 				getCycleTimePercentilesInfo: vi
 					.fn()
 					.mockRejectedValue(new Error("API error")),

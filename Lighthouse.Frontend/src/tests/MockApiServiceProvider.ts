@@ -271,6 +271,7 @@ export const createMockTeamMetricsService = (): ITeamMetricsService => {
 		getPredictabilityScoreInfo: vi.fn(),
 		getCycleTimePercentilesInfo: vi.fn(),
 		getWithinSleInfo: vi.fn(),
+		getWithinSleOverTime: vi.fn(),
 		getCumulativeStateTimeForTeam: vi.fn().mockResolvedValue({ states: [] }),
 		getCumulativeStateTimeItemsForTeam: vi
 			.fn()
@@ -325,6 +326,7 @@ export const createMockProjectMetricsService = (): IProjectMetricsService => {
 		getPredictabilityScoreInfo: vi.fn(),
 		getCycleTimePercentilesInfo: vi.fn(),
 		getWithinSleInfo: vi.fn(),
+		getWithinSleOverTime: vi.fn(),
 		getCumulativeStateTimeForTeam: vi.fn().mockResolvedValue({ states: [] }),
 		getCumulativeStateTimeItemsForTeam: vi
 			.fn()

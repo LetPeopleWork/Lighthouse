@@ -628,6 +628,632 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S7</h3>
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>A Team recorded on 20 November at 70 % within 10 days, the SLE changed to 85 % within 14 days the same day, and refreshed again that day
+</code></pre>
+
+<pre><code>20 November recorded 10 of 11 at 85 % within 14 days, share 90.9
+</code></pre>
+
+<pre><code>Today shows the SLE in force at the last refresh of the day
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs</p>
+
+<p>Refreshing_again_on_the_same_day_replaces_that_day_with_the_SLE_in_force_at_the_last_refresh</p>
+
+<pre><code>a writer that kept two rows for today and a query that returned only the newer one
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>A Team with 11 Work Items closed early in November, one closed 40 days and one 80 days before 20 November, refreshed on 20 November; the chart asks for the trailing 30, 60 and 90 days
+</code></pre>
+
+<pre><code>the 30 day horizon counts 11 closed, the 60 day horizon 12, the 90 day horizon 13
+</code></pre>
+
+<pre><code>The 30, 60 and 90 day toggle shows the Work Items closed in that trailing window
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs</p>
+
+<p>Each_day_counts_the_Work_Items_closed_in_its_trailing_window_of_30_60_or_90_days</p>
+
+<pre><code>a window off by one day at its far end, since no Work Item closes exactly on a window edge
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P9</p>
+
+<pre><code>A Team or Portfolio with SLE 70 % within 10 days and 3 Work Items closed is refreshed on 20 November
+</code></pre>
+
+<pre><code>20 November stored with 3 closed, verdict too few, no share, SLE 70 % within 10 days
+</code></pre>
+
+<pre><code>A day with fewer than 5 closed Work Items draws no point but keeps its count
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs</p>
+
+<p>A_day_with_fewer_than_five_closed_Work_Items_is_kept_with_its_count_and_draws_no_point</p>
+
+<pre><code>a minimum of 4 instead of 5, since 3 closed is too few under both; the minimum itself is pinned by the share rule row
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P9</p>
+
+<pre><code>Lists of 0 to 40 Cycle Times, exactly 4 and exactly 5, one equal to the SLE days, from fixed seeds
+</code></pre>
+
+<pre><code>too few below 5, otherwise the share follows a direct count of Cycle Times at or below the SLE days whatever their order
+</code></pre>
+
+<pre><code>The minimum of 5 and the within rule are the same for the chart as for the widget
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoAtTheServicePortTest.cs</p>
+
+<p>The_share_within_the_SLE_follows_a_direct_count_of_the_Cycle_Times_whatever_their_order</p>
+
+<pre><code>a chart writer that bypassed the shared share rule; the chart rows pin 8 of 11 and too few for 3 against that
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>A Team or Portfolio with no SLE set and 11 closed Work Items is refreshed on 20 November; the chart asks for 20 November
+</code></pre>
+
+<pre><code>no day is answered and no current SLE is named
+</code></pre>
+
+<pre><code>With no SLE set nothing is recorded and the chart can say no SLE is set
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs</p>
+
+<p>Without_an_SLE_no_day_is_recorded_and_the_chart_is_told_no_SLE_is_set</p>
+
+<pre><code>a writer that stored a row with no SLE that the query then filtered out
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>A Team recorded on 20 and 21 November; the chart asks for 21 November only
+</code></pre>
+
+<pre><code>only 21 November is answered
+</code></pre>
+
+<pre><code>The chart covers the days inside the selected date range
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs</p>
+
+<p>Only_the_days_inside_the_selected_range_are_answered</p>
+
+<pre><code>a range whose start is exclusive, since start and end are the same day here; the first row pins the inclusive end
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P14</p>
+
+<pre><code>A Team recorded only on 21 November; the chart asks for 10 to 20 November
+</code></pre>
+
+<pre><code>no day is answered
+</code></pre>
+
+<pre><code>Days the stored history does not reach draw no point
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs</p>
+
+<p>A_range_before_anything_was_recorded_answers_no_day</p>
+
+<pre><code>a query that answered absent days with a zero count that the frontend then hid
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>A Team recorded on 20 November at 70 % within 10 days, the SLE changed to 85 % within 14 days, and on 21 November 20 November is filled in from a history of six late Work Items
+</code></pre>
+
+<pre><code>20 November still recorded 8 of 11 at 70 % within 10 days
+</code></pre>
+
+<pre><code>Filling in history never rewrites a recorded day
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs</p>
+
+<p>Filling_in_a_day_that_was_recorded_leaves_it_as_it_was_recorded</p>
+
+<pre><code>a fill that rewrote only the 60 or 90 day rows of a recorded day
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>A Team with SLE 85 % within 14 days; 20 November filled in from a history with nothing closed; the chart asks for the trailing 90 days
+</code></pre>
+
+<pre><code>20 November filled in with 0 closed, 0 within, SLE 85 % within 14 days
+</code></pre>
+
+<pre><code>A filled-in day with nothing closed is kept with its count
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs</p>
+
+<p>A_filled_in_day_with_nothing_closed_is_kept_with_a_count_of_zero_on_every_horizon</p>
+
+<pre><code>a missing 30 day row, since only 90 days is read here; the two-copies row reads all three horizons
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>A Team with SLE 70 % within 10 days; today 20 November is filled in from six late Work Items, then refreshed the same day
+</code></pre>
+
+<pre><code>20 November recorded 8 of 11 at 70 % within 10 days
+</code></pre>
+
+<pre><code>Today refreshed after a fill-in counts as recorded
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs</p>
+
+<p>Today_filled_in_and_then_refreshed_is_a_recorded_day</p>
+
+<pre><code>a refresh that overwrote today only when its counts differed
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>A Team with no SLE set; on 21 November 20 November is filled in from five Cycle Times
+</code></pre>
+
+<pre><code>no day is answered and no current SLE is named
+</code></pre>
+
+<pre><code>Filling in history without an SLE writes nothing
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs</p>
+
+<p>Without_an_SLE_filling_in_a_past_day_writes_nothing</p>
+
+<pre><code>a fill that wrote a row with a last known SLE, since no SLE was ever set here
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>Two copies of the application fill in 20 November for the same Team at the same time from different histories
+</code></pre>
+
+<pre><code>the second save is not an error; one row per horizon 30, 60 and 90; the first copy&#x27;s 3 of 5 within at 85 % within 14 days
+</code></pre>
+
+<pre><code>Two app copies never stack two points on one day
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs</p>
+
+<p>Two_copies_of_the_application_filling_in_the_same_day_leave_one_day_with_the_first_copys_counts</p>
+
+<pre><code>a save that dropped the second copy&#x27;s whole pass instead of only the colliding day, since only one day is filled here
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>The chart is answered with no SLE set
+</code></pre>
+
+<pre><code>the chart says No SLE set and draws no chart
+</code></pre>
+
+<pre><code>The reader is told no SLE is set instead of seeing a line
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx</p>
+
+<p>says that no SLE is set instead of drawing a line</p>
+
+<pre><code>the message shown inside an otherwise empty chart frame with axes
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P14</p>
+
+<pre><code>The chart is answered with an SLE set and no recorded day in the range
+</code></pre>
+
+<pre><code>the Percentiles Over Time sentence, Nothing to show for the selected range. Days appear here as Lighthouse records them., and no chart
+</code></pre>
+
+<pre><code>A range with nothing recorded says so in the same words as Percentiles Over Time
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx</p>
+
+<p>shows the Percentiles Over Time sentence when nothing was recorded in the range</p>
+
+<pre><code>the sentence also shown while the answer is loading; the loading row pins status loading instead
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>The chart&#x27;s answer is on its way, then fails
+</code></pre>
+
+<pre><code>status loading while waiting; status error with the could-not-load message after the failure
+</code></pre>
+
+<pre><code>A slow or failed load never looks like no data
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx</p>
+
+<p>reads loading while its answer is on the way, and could-not-load with its message when the answer fails</p>
+
+<pre><code>an older answer still drawn undimmed beside the error message
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>The chart shows the trailing 30 days; the reader switches to 60 days while that answer is still on its way, then it arrives
+</code></pre>
+
+<pre><code>first an ask for 30 days with 30 days pressed and no usage report; after the switch an ask for 60 days, status loading, one report WithinSleHorizonSwitched with nothing else; then the 60 day answer drawn and status ready
+</code></pre>
+
+<pre><code>The toggle shows the chosen horizon and never the old one as current; each switch is counted with no details
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx</p>
+
+<p>asks for the trailing 30 days first, then the horizon the reader switches to, never showing the old horizon&#x27;s answer as current, and reports each switch</p>
+
+<pre><code>a switch to 90 days reported twice, since only one switch is made
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>The refresh handlers of a Team and of a Portfolio as the application registers them
+</code></pre>
+
+<pre><code>the Within SLE recorder runs after the metrics update and the other recorders, in the pinned order
+</code></pre>
+
+<pre><code>The day is recorded from fresh metrics, not stale ones
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs</p>
+
+<p>DomainEventHandlerOrderPinTest</p>
+
+<pre><code>none known: the full order list is compared
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>The production assembly&#x27;s FlowMetrics types and files
+</code></pre>
+
+<pre><code>writer, query, family list and family reader in Application, their contracts in Application, the recorder in Policies, the repository in Adapters/Persistence and seen by every repository rule
+</code></pre>
+
+<pre><code>The daily record lives where the rest of the flow metrics live
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs</p>
+
+<p>FlowMetricsModuleLayoutArchUnitTest</p>
+
+<pre><code>an extra unlisted helper type outside the module
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>The migration that adds the daily record table
+</code></pre>
+
+<pre><code>it only adds; no column or table is dropped or renamed
+</code></pre>
+
+<pre><code>An upgrade or a restored backup keeps every existing row
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ExpandOnlyMigrationGuardTest.cs</p>
+
+<p>ExpandOnlyMigrationGuardTest</p>
+
+<pre><code>a migration that adds the table without its unique index; the two-copies row observes the index
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>The chart endpoint is asked for a horizon of 45 days
+</code></pre>
+
+<pre><code>refused with 400 naming the allowed horizons 30, 60 and 90
+</code></pre>
+
+<pre><code>Only the 30, 60 and 90 day horizons are served
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>The refusal is an HTTP status of the controller action; the design declares the application-service port but no wire-contract locator and no action member for within-sle-over-time, so the status cannot be observed without inventing the action signature
+</code></pre>
+
+<p>design</p>
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<p>P6</p>
+
+<pre><code>A Team or Portfolio with SLE 70 % within 10 days and 11 Work Items closed early in November is refreshed on 20 November; the SLE is changed to 85 % within 14 days; it is refreshed on 21 November; the chart asks for the trailing 30 days from 20 to 22 November
+</code></pre>
+
+<pre><code>20 November recorded 8 of 11 at 70 % within 10 days, share 72.7; 21 November recorded 10 of 11 at 85 % within 14 days, share 90.9; no day for 22 November; current SLE 85 % within 14 days
+</code></pre>
+
+<pre><code>Past days keep the share and target they were measured with; only later days use the new SLE
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs</p>
+
+<p>A_recorded_day_keeps_its_share_and_target_after_the_SLE_is_changed_and_only_later_days_use_the_new_SLE</p>
+
+<pre><code>a refresh that also wrote rows for the 60 and 90 day horizons with wrong counts, since only the 30 day horizon is read here
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>A Team with SLE 85 % within 14 days; on 21 November nobody recorded 20 November and it is filled in from Cycle Times of 3, 9, 14, 15 and 30 days
+</code></pre>
+
+<pre><code>20 November filled in, 3 of 5 within, SLE 85 % within 14 days
+</code></pre>
+
+<pre><code>A filled-in past day is measured against today&#x27;s SLE and marked as filled in
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs</p>
+
+<p>A_past_day_nobody_recorded_is_filled_in_against_the_SLE_set_now_and_marked_as_filled_in</p>
+
+<pre><code>a fill that read the trailing window of the wrong day, since the history here answers the same Cycle Times for every window
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<p>P9</p>
+
+<p>P14</p>
+
+<pre><code>Predictability is answered 20 November 72.7 % at 70 %, 21 November 90.9 % at 85 %, 22 November 3 closed too few, 23 November not recorded
+</code></pre>
+
+<pre><code>a share line with 72.7 and 90.9 and no point on 22 or 23 November, never 0 %; a target line stepping from 70 to 85; a note that days with fewer than 5 closed Work Items draw no point; share axis fixed 0 to 100; axes labelled Within SLE (%) and Date; status ready
+</code></pre>
+
+<pre><code>The reader sees the share day by day against that day&#x27;s target, with gaps where there is too little or no data
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx</p>
+
+<p>draws each day&#x27;s share against the target in force that day, with no point for a day too few to judge or never recorded</p>
+
+<pre><code>a filled-in day drawn with the same marker as a recorded day; the open-marker note is not pinned because its copy is not agreed
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

@@ -279,6 +279,400 @@
 "stimulus": "F571",
 "user_result": "F573"
 }
+],
+"S7": [
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F578",
+"test": "Refreshing_again_on_the_same_day_replaces_that_day_with_the_SLE_in_force_at_the_last_refresh",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs"
+},
+"expected": "F576",
+"stimulus": "F575",
+"user_result": "F577"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5"
+],
+"still_passes_if": "F582",
+"test": "Each_day_counts_the_Work_Items_closed_in_its_trailing_window_of_30_60_or_90_days",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs"
+},
+"expected": "F580",
+"stimulus": "F579",
+"user_result": "F581"
+},
+{
+"covers": [
+"P9"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F586",
+"test": "A_day_with_fewer_than_five_closed_Work_Items_is_kept_with_its_count_and_draws_no_point",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs"
+},
+"expected": "F584",
+"stimulus": "F583",
+"user_result": "F585"
+},
+{
+"covers": [
+"P9"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F590",
+"test": "The_share_within_the_SLE_follows_a_direct_count_of_the_Cycle_Times_whatever_their_order",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleInfoAtTheServicePortTest.cs"
+},
+"expected": "F588",
+"stimulus": "F587",
+"user_result": "F589"
+},
+{
+"covers": [
+"P10"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F594",
+"test": "Without_an_SLE_no_day_is_recorded_and_the_chart_is_told_no_SLE_is_set",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs"
+},
+"expected": "F592",
+"stimulus": "F591",
+"user_result": "F593"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5"
+],
+"still_passes_if": "F598",
+"test": "Only_the_days_inside_the_selected_range_are_answered",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs"
+},
+"expected": "F596",
+"stimulus": "F595",
+"user_result": "F597"
+},
+{
+"covers": [
+"P14"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F602",
+"test": "A_range_before_anything_was_recorded_answers_no_day",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs"
+},
+"expected": "F600",
+"stimulus": "F599",
+"user_result": "F601"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F606",
+"test": "Filling_in_a_day_that_was_recorded_leaves_it_as_it_was_recorded",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs"
+},
+"expected": "F604",
+"stimulus": "F603",
+"user_result": "F605"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5"
+],
+"still_passes_if": "F610",
+"test": "A_filled_in_day_with_nothing_closed_is_kept_with_a_count_of_zero_on_every_horizon",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs"
+},
+"expected": "F608",
+"stimulus": "F607",
+"user_result": "F609"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F614",
+"test": "Today_filled_in_and_then_refreshed_is_a_recorded_day",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs"
+},
+"expected": "F612",
+"stimulus": "F611",
+"user_result": "F613"
+},
+{
+"covers": [
+"P10"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F617",
+"test": "Without_an_SLE_filling_in_a_past_day_writes_nothing",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs"
+},
+"expected": "F592",
+"stimulus": "F615",
+"user_result": "F616"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4"
+],
+"still_passes_if": "F621",
+"test": "Two_copies_of_the_application_filling_in_the_same_day_leave_one_day_with_the_first_copys_counts",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs"
+},
+"expected": "F619",
+"stimulus": "F618",
+"user_result": "F620"
+},
+{
+"covers": [
+"P10"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F625",
+"test": "says that no SLE is set instead of drawing a line",
+"test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx"
+},
+"expected": "F623",
+"stimulus": "F622",
+"user_result": "F624"
+},
+{
+"covers": [
+"P14"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F629",
+"test": "shows the Percentiles Over Time sentence when nothing was recorded in the range",
+"test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx"
+},
+"expected": "F627",
+"stimulus": "F626",
+"user_result": "F628"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F633",
+"test": "reads loading while its answer is on the way, and could-not-load with its message when the answer fails",
+"test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx"
+},
+"expected": "F631",
+"stimulus": "F630",
+"user_result": "F632"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F637",
+"test": "asks for the trailing 30 days first, then the horizon the reader switches to, never showing the old horizon's answer as current, and reports each switch",
+"test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx"
+},
+"expected": "F635",
+"stimulus": "F634",
+"user_result": "F636"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T7"
+],
+"still_passes_if": "F641",
+"test": "DomainEventHandlerOrderPinTest",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs"
+},
+"expected": "F639",
+"stimulus": "F638",
+"user_result": "F640"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T6"
+],
+"still_passes_if": "F645",
+"test": "FlowMetricsModuleLayoutArchUnitTest",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs"
+},
+"expected": "F643",
+"stimulus": "F642",
+"user_result": "F644"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T8"
+],
+"still_passes_if": "F649",
+"test": "ExpandOnlyMigrationGuardTest",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ExpandOnlyMigrationGuardTest.cs"
+},
+"expected": "F647",
+"stimulus": "F646",
+"user_result": "F648"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "design",
+"reason": "F653"
+},
+"expected": "F651",
+"stimulus": "F650",
+"user_result": "F652"
+},
+{
+"covers": [
+"P7",
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L5"
+],
+"still_passes_if": "F657",
+"test": "A_recorded_day_keeps_its_share_and_target_after_the_SLE_is_changed_and_only_later_days_use_the_new_SLE",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs"
+},
+"expected": "F655",
+"stimulus": "F654",
+"user_result": "F656"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L5"
+],
+"still_passes_if": "F661",
+"test": "A_past_day_nobody_recorded_is_filled_in_against_the_SLE_set_now_and_marked_as_filled_in",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs"
+},
+"expected": "F659",
+"stimulus": "F658",
+"user_result": "F660"
+},
+{
+"covers": [
+"P6",
+"P9",
+"P14"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F665",
+"test": "draws each day's share against the target in force that day, with no point for a day too few to judge or never recorded",
+"test_path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx"
+},
+"expected": "F663",
+"stimulus": "F662",
+"user_result": "F664"
+}
 ]
 },
 "counters": {
@@ -286,7 +680,7 @@
 "C": 2,
 "D": 25,
 "E": 15,
-"F": 574,
+"F": 668,
 "K": 26,
 "L": 7,
 "N": 4,
@@ -1706,6 +2100,18 @@
 },
 "S7": {
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WithinSle/WithinSleDailyRecordAtTheServicePortTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs",
+"move": "F667",
+"preserved": "F668",
+"verification": [
+"dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj",
+"pnpm --dir Lighthouse.Frontend exec tsc -b",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.WithinSle.WithinSleDailyRecordAtTheServicePortTest",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx"
+]
+},
 "public_oracle": {
 "expected": "F389",
 "falsifier": "F390",
@@ -1775,6 +2181,55 @@
 "obligation": "F441",
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ExpandOnlyMigrationGuardTest.cs"
 }
+],
+"constructors": [
+{
+"name": "WithinSleSnapshot",
+"signature": "Lighthouse.Backend.Models, Models/WithinSleSnapshot.cs: public class WithinSleSnapshot : IEntity { public static readonly IReadOnlyList<int> Horizons = [30, 60, 90]; int Id; int OwnerId; OwnerType OwnerType; DateOnly RecordedAt; int Horizon; int ClosedCount; int WithinCount; int SlePercentile; int SleDays; WithinSleSnapshotOrigin Origin }; LighthouseAppContext.WithinSleSnapshots DbSet with unique index (OwnerId, OwnerType, Horizon, RecordedAt); enum WithinSleSnapshotOrigin { Recorded = 0, FilledIn = 1 } in Models/WithinSleSnapshotOrigin.cs"
+},
+{
+"name": "WithinSleFamilyReader",
+"signature": "Modules/FlowMetrics/Application: public sealed record WithinSleFamilyReader(Func<DateTime, DateTime, IReadOnlyList<int>> ReadClosedCycleTimes, Func<ServiceLevelExpectation?> CurrentSle); WithinSleFamilies static class: WithinSleFamilyReader For(Team, ITeamMetricsService, ILighthouseClock) and For(Portfolio, IPortfolioMetricsService, ILighthouseClock), reading default Cycle Time of closed items in [windowStart, windowEnd] as CycleTime(clock.Zone) above 0, and ServiceLevelExpectation.For(owner) read at call time"
+},
+{
+"name": "IWithinSleSnapshotWriter",
+"signature": "Task RecordToday(int ownerId, OwnerType ownerType, WithinSleFamilyReader family): works out today for every horizon in WithinSleSnapshot.Horizons, overwrites today with Origin Recorded and the SLE now, saves; writes nothing when CurrentSle() is null. void FillDayIfAbsent(int ownerId, OwnerType ownerType, DateOnly day, WithinSleFamilyReader family): stages every horizon of day not yet stored, Origin FilledIn, SLE at fill time; nothing when CurrentSle() is null. Task SaveFilledDay(): persists the staged day through LostRaceTolerantSave, a unique-index loss is dropped without throwing. Window of horizon H for day D: closed from D-(H-1) 00:00 to D end of day. Implemented by public sealed class WithinSleSnapshotWriter(IWithinSleSnapshotRepository snapshots, ILighthouseClock clock)"
+},
+{
+"name": "IWithinSleSnapshotRepository",
+"signature": "Modules/FlowMetrics/Application: public interface IWithinSleSnapshotRepository : IRepository<WithinSleSnapshot> { IReadOnlyList<WithinSleSnapshot> GetSeries(int ownerId, OwnerType ownerType, int horizon, DateOnly? from, DateOnly? to) } ordered by RecordedAt, bounds inclusive; WithinSleSnapshotRepository in Adapters/Persistence on RepositoryBase like ProcessBehaviorSnapshotRepository"
+},
+{
+"name": "IWithinSleOverTimeSeriesQuery",
+"signature": "WithinSleOverTimeDto GetSeries(int ownerId, OwnerType ownerType, int horizon, DateOnly? from, DateOnly? to); public sealed class WithinSleOverTimeSeriesQuery(IWithinSleSnapshotRepository snapshots, IRepository<Team> teams, IRepository<Portfolio> portfolios): current SLE from the owner now (null pair when none), days from the stored rows via WithinSleDayDto.From"
+},
+{
+"name": "WithinSleOverTimeDto",
+"signature": "Models/Metrics: public sealed record WithinSleOverTimeDto(int? CurrentSlePercentile, int? CurrentSleDays, IReadOnlyList<WithinSleDayDto> Days); public sealed record WithinSleDayDto(DateOnly RecordedAt, int Horizon, int ClosedCount, int WithinCount, int SlePercentile, int SleDays, WithinSleSnapshotOrigin Origin, WithinSleVerdict Verdict, double? SharePercent) with static From(WithinSleSnapshot) via WithinSleShare.Counted(within, closed, sle): Measured or TooFew, SharePercent null for TooFew"
+},
+{
+"name": "WithinSleShare.Counted",
+"signature": "Extend Modules/FlowMetrics/Domain/WithinSleShare.cs: public static WithinSleShare Counted(int within, int closed, ServiceLevelExpectation sle): closed below MinimumClosed gives TooFew(closed, sle), else Measured(within, closed, sle)"
+},
+{
+"name": "WithinSleRecordingHandler",
+"signature": "Modules/FlowMetrics/Application/Policies: public sealed class WithinSleRecordingHandler(ITeamMetricsService, IPortfolioMetricsService, IRepository<Team>, IRepository<Portfolio>, IWithinSleSnapshotWriter, ILighthouseClock, ILogger<WithinSleRecordingHandler>) : IDomainEventHandler<TeamDataRefreshed>, IDomainEventHandler<PortfolioFeaturesRefreshed>; unknown owner returns; failure caught and logged under the family WithinSle; registered in Program.cs directly after ProcessBehaviorRecordingHandler for both events"
+},
+{
+"name": "within-sle-over-time-actions",
+"signature": "TeamMetricsController and PortfolioMetricsController gain [HttpGet(\"within-sle-over-time\")] public ActionResult<WithinSleOverTimeDto> GetWithinSleOverTime(int teamId|portfolioId, [FromQuery] int horizon = 30, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null): 400 with \"Horizon must be one of 30, 60 or 90 days.\" when horizon is not in WithinSleSnapshot.Horizons, 400 StartDateMustBeBeforeEndDateErrorMessage for an inverted window, 404 unknown owner, else Ok(query.GetSeries(id, OwnerType.Team|Portfolio, horizon, AsRecordedDay(startDate), AsRecordedDay(endDate))). Wire: GET api/latest/teams/{teamId}/metrics/within-sle-over-time?horizon=45 -> 400, same under portfolios/{portfolioId}. IWithinSleOverTimeSeriesQuery injected by constructor (S107 suppression as on the existing constructors); FlowMetricsModule adds AddScoped IWithinSleSnapshotRepository, IWithinSleSnapshotWriter, IWithinSleOverTimeSeriesQuery"
+},
+{
+"name": "getWithinSleOverTime",
+"signature": "Lighthouse.Frontend/src/models/Metrics/WithinSleOverTime.ts: WithinSleHorizon = 30 | 60 | 90, IWithinSleDay { recordedAt: string; horizon; closedCount; withinCount; slePercentile; sleDays; origin: Recorded | FilledIn; verdict: Measured | TooFew; sharePercent: number | null }, IWithinSleOverTime { currentSlePercentile: number | null; currentSleDays: number | null; days }. IMetricsService and BaseMetricsService getWithinSleOverTime(id: number, horizon: WithinSleHorizon, startDate: Date, endDate: Date): Promise<IWithinSleOverTime>, GET {teams|portfolios}/{id}/metrics/within-sle-over-time?horizon&startDate&endDate; shared mocks MockApiServiceProvider and HeldMetricsService gain it"
+},
+{
+"name": "WithinSleOverTimeWidget",
+"signature": "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.tsx default export taking { owner: MetricsOwnerKey; metricsService; startDate; endDate } like PercentilesOverTimeWidget; title Within {SLE} Over Time in WidgetShell; ToggleButtonGroup 30 days / 60 days / 90 days starting at 30, each switch reports WithinSleHorizonSwitched; fetch through useWithinSleOverTime keyed TanStack query; LineChart with share and day target lines, y axis 0..100 labelled Within {SLE} (%), x axis Date; no SLE set message; Percentiles Over Time empty sentence; too-few note naming fewer than 5 closed {Work Items}; widgetKey withinSleOverTime in predictability after percentilesOverTime"
+}
+],
+"decisions": [
+"F666"
 ],
 "impact": [
 {
@@ -1974,10 +2429,6 @@
 {
 "analysis": "contract_tests",
 "reason": "F437"
-},
-{
-"analysis": "prefactoring",
-"reason": "F438"
 }
 ],
 "reuse": [
@@ -2202,7 +2653,9 @@
 "supports": [
 "Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx",
 "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/WithinSleShareTest.cs",
-"Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/WithinSleSnapshotWriterTest.cs"
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/WithinSleSnapshotWriterTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs"
 ],
 "targets": [
 {
@@ -3031,7 +3484,6 @@
 "F435": "single writer",
 "F436": "reads for the series query",
 "F437": "API producer and consumer in one deployable and commit; persisted rows have one writer and one reader in the same assembly, version-crossing is covered by the expand-only migration guard and the round-trip law",
-"F438": "Per touched file: TeamMetricsController.cs, PortfolioMetricsController.cs, FlowMetricsModule.cs, Program.cs, LighthouseAppContext.cs each hold one type -> not-applicable; MetricsService.ts several interfaces plus one class -> not-applicable, reason as in S5; categoryMetadata.ts, widgetNodes.tsx, widgetInfoMetadata.ts supporting types of one module, none touched -> not-applicable; every other file is new -> not-applicable; ADR-270 and ARCHITECTURE.md are prose",
 "F439": "new types sit in their FlowMetrics layer: WithinSleSnapshotWriter, WithinSleOverTimeSeriesQuery implementations; IWithinSleSnapshotWriter, IWithinSleSnapshotRepository, IWithinSleOverTimeSeriesQuery contracts; WithinSleRecordingHandler in Policies; WithinSleSnapshotRepository in Adapters/Persistence and seen by every repository rule",
 "F44": "Lighthouse-Clients CLI and MCP: a follow-up Story once the API is settled; no client version bump here.",
 "F440": "refresh handlers run in the pinned order with the metrics update first",
@@ -3159,14 +3611,108 @@
 "F572": "Sustain at or above the target, Observe up to and including 20 points below, Act beyond; no SLE is Act; too few has no status",
 "F573": "The status the reader sees follows the percentiles rule",
 "F574": "Observe starting at 15 points, or Act at exactly 20 points below",
+"F575": "A Team recorded on 20 November at 70 % within 10 days, the SLE changed to 85 % within 14 days the same day, and refreshed again that day",
+"F576": "20 November recorded 10 of 11 at 85 % within 14 days, share 90.9",
+"F577": "Today shows the SLE in force at the last refresh of the day",
+"F578": "a writer that kept two rows for today and a query that returned only the newer one",
+"F579": "A Team with 11 Work Items closed early in November, one closed 40 days and one 80 days before 20 November, refreshed on 20 November; the chart asks for the trailing 30, 60 and 90 days",
 "F58": "Q11: Lighthouse-Clients follow in a later Story.",
+"F580": "the 30 day horizon counts 11 closed, the 60 day horizon 12, the 90 day horizon 13",
+"F581": "The 30, 60 and 90 day toggle shows the Work Items closed in that trailing window",
+"F582": "a window off by one day at its far end, since no Work Item closes exactly on a window edge",
+"F583": "A Team or Portfolio with SLE 70 % within 10 days and 3 Work Items closed is refreshed on 20 November",
+"F584": "20 November stored with 3 closed, verdict too few, no share, SLE 70 % within 10 days",
+"F585": "A day with fewer than 5 closed Work Items draws no point but keeps its count",
+"F586": "a minimum of 4 instead of 5, since 3 closed is too few under both; the minimum itself is pinned by the share rule row",
+"F587": "Lists of 0 to 40 Cycle Times, exactly 4 and exactly 5, one equal to the SLE days, from fixed seeds",
+"F588": "too few below 5, otherwise the share follows a direct count of Cycle Times at or below the SLE days whatever their order",
+"F589": "The minimum of 5 and the within rule are the same for the chart as for the widget",
+"F590": "a chart writer that bypassed the shared share rule; the chart rows pin 8 of 11 and too few for 3 against that",
+"F591": "A Team or Portfolio with no SLE set and 11 closed Work Items is refreshed on 20 November; the chart asks for 20 November",
+"F592": "no day is answered and no current SLE is named",
+"F593": "With no SLE set nothing is recorded and the chart can say no SLE is set",
+"F594": "a writer that stored a row with no SLE that the query then filtered out",
+"F595": "A Team recorded on 20 and 21 November; the chart asks for 21 November only",
+"F596": "only 21 November is answered",
+"F597": "The chart covers the days inside the selected date range",
+"F598": "a range whose start is exclusive, since start and end are the same day here; the first row pins the inclusive end",
+"F599": "A Team recorded only on 21 November; the chart asks for 10 to 20 November",
 "F6": "When the reader opens the Flow Overview",
 "F60": "The header trend indicator shows no comparison when either the selected or the preceding period has fewer than 5 closed Work Items.",
+"F600": "no day is answered",
+"F601": "Days the stored history does not reach draw no point",
+"F602": "a query that answered absent days with a zero count that the frontend then hid",
+"F603": "A Team recorded on 20 November at 70 % within 10 days, the SLE changed to 85 % within 14 days, and on 21 November 20 November is filled in from a history of six late Work Items",
+"F604": "20 November still recorded 8 of 11 at 70 % within 10 days",
+"F605": "Filling in history never rewrites a recorded day",
+"F606": "a fill that rewrote only the 60 or 90 day rows of a recorded day",
+"F607": "A Team with SLE 85 % within 14 days; 20 November filled in from a history with nothing closed; the chart asks for the trailing 90 days",
+"F608": "20 November filled in with 0 closed, 0 within, SLE 85 % within 14 days",
+"F609": "A filled-in day with nothing closed is kept with its count",
 "F61": "The loading and the could-not-load looks of the widget and the chart (DESIGN, WidgetShell status).",
+"F610": "a missing 30 day row, since only 90 days is read here; the two-copies row reads all three horizons",
+"F611": "A Team with SLE 70 % within 10 days; today 20 November is filled in from six late Work Items, then refreshed the same day",
+"F612": "20 November recorded 8 of 11 at 70 % within 10 days",
+"F613": "Today refreshed after a fill-in counts as recorded",
+"F614": "a refresh that overwrote today only when its counts differed",
+"F615": "A Team with no SLE set; on 21 November 20 November is filled in from five Cycle Times",
+"F616": "Filling in history without an SLE writes nothing",
+"F617": "a fill that wrote a row with a last known SLE, since no SLE was ever set here",
+"F618": "Two copies of the application fill in 20 November for the same Team at the same time from different histories",
+"F619": "the second save is not an error; one row per horizon 30, 60 and 90; the first copy's 3 of 5 within at 85 % within 14 days",
 "F62": "Whether the share is computed in the backend for both surfaces; today it is computed twice in the frontend (ragRulesTimeAndAge.ts).",
+"F620": "Two app copies never stack two points on one day",
+"F621": "a save that dropped the second copy's whole pass instead of only the colliding day, since only one day is filled here",
+"F622": "The chart is answered with no SLE set",
+"F623": "the chart says No SLE set and draws no chart",
+"F624": "The reader is told no SLE is set instead of seeing a line",
+"F625": "the message shown inside an otherwise empty chart frame with axes",
+"F626": "The chart is answered with an SLE set and no recorded day in the range",
+"F627": "the Percentiles Over Time sentence, Nothing to show for the selected range. Days appear here as Lighthouse records them., and no chart",
+"F628": "A range with nothing recorded says so in the same words as Percentiles Over Time",
+"F629": "the sentence also shown while the answer is loading; the loading row pins status loading instead",
 "F63": "Where the widget sits in the Flow Overview order and what it is called; the sketch is reviewed at the start of DELIVER.",
+"F630": "The chart's answer is on its way, then fails",
+"F631": "status loading while waiting; status error with the could-not-load message after the failure",
+"F632": "A slow or failed load never looks like no data",
+"F633": "an older answer still drawn undimmed beside the error message",
+"F634": "The chart shows the trailing 30 days; the reader switches to 60 days while that answer is still on its way, then it arrives",
+"F635": "first an ask for 30 days with 30 days pressed and no usage report; after the switch an ask for 60 days, status loading, one report WithinSleHorizonSwitched with nothing else; then the 60 day answer drawn and status ready",
+"F636": "The toggle shows the chosen horizon and never the old one as current; each switch is counted with no details",
+"F637": "a switch to 90 days reported twice, since only one switch is made",
+"F638": "The refresh handlers of a Team and of a Portfolio as the application registers them",
+"F639": "the Within SLE recorder runs after the metrics update and the other recorders, in the pinned order",
+"F640": "The day is recorded from fresh metrics, not stale ones",
+"F641": "none known: the full order list is compared",
+"F642": "The production assembly's FlowMetrics types and files",
+"F643": "writer, query, family list and family reader in Application, their contracts in Application, the recorder in Policies, the repository in Adapters/Persistence and seen by every repository rule",
+"F644": "The daily record lives where the rest of the flow metrics live",
+"F645": "an extra unlisted helper type outside the module",
+"F646": "The migration that adds the daily record table",
+"F647": "it only adds; no column or table is dropped or renamed",
+"F648": "An upgrade or a restored backup keeps every existing row",
+"F649": "a migration that adds the table without its unique index; the two-copies row observes the index",
 "F65": "The SLE widget on a Team's and a Portfolio's Flow Overview shows the share within the SLE over the selected range, with the count and the target, and is shown without a Premium licence.",
+"F650": "The chart endpoint is asked for a horizon of 45 days",
+"F651": "refused with 400 naming the allowed horizons 30, 60 and 90",
+"F652": "Only the 30, 60 and 90 day horizons are served",
+"F653": "The refusal is an HTTP status of the controller action; the design declares the application-service port but no wire-contract locator and no action member for within-sle-over-time, so the status cannot be observed without inventing the action signature",
+"F654": "A Team or Portfolio with SLE 70 % within 10 days and 11 Work Items closed early in November is refreshed on 20 November; the SLE is changed to 85 % within 14 days; it is refreshed on 21 November; the chart asks for the trailing 30 days from 20 to 22 November",
+"F655": "20 November recorded 8 of 11 at 70 % within 10 days, share 72.7; 21 November recorded 10 of 11 at 85 % within 14 days, share 90.9; no day for 22 November; current SLE 85 % within 14 days",
+"F656": "Past days keep the share and target they were measured with; only later days use the new SLE",
+"F657": "a refresh that also wrote rows for the 60 and 90 day horizons with wrong counts, since only the 30 day horizon is read here",
+"F658": "A Team with SLE 85 % within 14 days; on 21 November nobody recorded 20 November and it is filled in from Cycle Times of 3, 9, 14, 15 and 30 days",
+"F659": "20 November filled in, 3 of 5 within, SLE 85 % within 14 days",
 "F66": "The SLE widget shows its status by the percentiles rule, its header trend against the preceding period, 'no SLE set' with Act, and 'too few to judge' below 5 closed Work Items.",
+"F660": "A filled-in past day is measured against today's SLE and marked as filled in",
+"F661": "a fill that read the trailing window of the wrong day, since the history here answers the same Cycle Times for every window",
+"F662": "Predictability is answered 20 November 72.7 % at 70 %, 21 November 90.9 % at 85 %, 22 November 3 closed too few, 23 November not recorded",
+"F663": "a share line with 72.7 and 90.9 and no point on 22 or 23 November, never 0 %; a target line stepping from 70 to 85; a note that days with fewer than 5 closed Work Items draw no point; share axis fixed 0 to 100; axes labelled Within SLE (%) and Date; status ready",
+"F664": "The reader sees the share day by day against that day's target, with gaps where there is too little or no data",
+"F665": "a filled-in day drawn with the same marker as a recorded day; the open-marker note is not pinned because its copy is not agreed",
+"F666": "S7 member contracts close the design hole the S7 acceptance designer reported. Accepted as assumed: IWithinSleOverTimeSeriesQuery.GetSeries(int ownerId, OwnerType ownerType, int horizon, DateOnly? from, DateOnly? to) returning WithinSleOverTimeDto; WithinSleFamilyReader positional record (ReadClosedCycleTimes, CurrentSle); IWithinSleSnapshotWriter.SaveFilledDay() Task with one FillDayIfAbsent call working out all three horizons; LighthouseAppContext.WithinSleSnapshots; WithinSleRecordingHandler resolvable as IDomainEventHandler of TeamDataRefreshed and PortfolioFeaturesRefreshed; Origin (WithinSleSnapshotOrigin) and Verdict (WithinSleVerdict, reused from S5) are enums read by name; frontend getWithinSleOverTime(id, horizon, startDate, endDate) with camelCase fields, widget titled Within SLE Over Time in a WidgetShell, toggle buttons 30 days, 60 days, 90 days, too-few note containing fewer than 5 closed Work Items. Refinements, none renaming an oracle member: RecordToday returns Task and saves (the writer is the one owner of persistence, so the handler stays at seven collaborators under S107 and holds no repository); the set of horizons has one owner, WithinSleSnapshot.Horizons [30, 60, 90], read by the writer and by the controller guard; a stored row derives its verdict and share through a new count-based factory WithinSleShare.Counted(within, closed, sle) so the minimum of 5 keeps one owner. The horizon refusal is a controller guard observed by a controller unit test that constructs the controller directly (no host): TeamMetricsControllerTest and PortfolioMetricsControllerTest assert BadRequestObjectResult naming 30, 60 and 90 for horizon 45.",
+"F667": "Before any behaviour, in a separate refactor commit (skeleton of the Within SLE daily record, wired to nothing), add the declared public surface of S7 as behaviour-free skeletons: WithinSleSnapshot (complete entity, Horizons) and WithinSleSnapshotOrigin (complete enum) in Models; LighthouseAppContext.WithinSleSnapshots with its unique index; IWithinSleSnapshotRepository and WithinSleSnapshotRepository (GetSeries throws); WithinSleFamilyReader (complete record); WithinSleFamilies (For throws); IWithinSleSnapshotWriter and WithinSleSnapshotWriter (members throw); IWithinSleOverTimeSeriesQuery and WithinSleOverTimeSeriesQuery (GetSeries throws); WithinSleRecordingHandler (HandleAsync throws); WithinSleOverTimeDto (complete) and WithinSleDayDto (From throws); frontend WithinSleOverTime.ts model, getWithinSleOverTime on IMetricsService and BaseMetricsService rejecting, the member on the shared mocks MockApiServiceProvider.ts, HeldMetricsService.ts, useMetricsData.test.ts and BaseMetricsView.test.tsx, and the default export WithinSleOverTimeWidget whose body throws. No migration, no Program.cs or FlowMetricsModule registration, no controller action, no categoryMetadata, widgetNodes or widgetInfoMetadata entry. The crafter adds the migration with the CreateMigration script in the behaviour work. Per touched file: every new file holds one type; MetricsService.ts holds the service interface family -> not-applicable as in S5; LighthouseAppContext.cs holds one type -> not-applicable. Follow-up made easier: the behaviour work fills the members and wires registration, actions, migration and placement.",
+"F668": "Every existing metrics behaviour, the frontend build and every architecture rule except the two this slice reddens on purpose: the surface has no caller, no registration, no route and is not rendered. NoPendingModelChangesTest is red between the skeleton and the migration the crafter adds, and DomainEventHandlerOrderPinTest is red until Program.cs registers the handler; both are S7 behaviour work.",
 "F69": "A reader of a Team's or Portfolio's Flow Overview sees a widget of its own, titled Within SLE, that states the share of the Work Items closed in the selected date range that finished within the SLE as a large number with the count, then the sentence in smaller text, then the target, for example \"72.7 % (8 / 11)\", \"of Work Items closed within 10 days or less\", \"Target 70 %\".",
 "F7": "Then the widget's status is Sustain when the share is at or above the target, Observe when it is below by up to 20 percentage points, and Act when it is more than 20 points below; the status of Cycle Time Percentiles is unchanged.",
 "F70": "Maintainer, sketch review of the SLE widget, 2026-11-27",

@@ -113,6 +113,7 @@ function createMockTeamMetricsService(): ITeamMetricsService {
 			comparison: { direction: "none", metricLabel: "Predictability Score" },
 		}),
 		getWithinSleInfo: vi.fn(),
+		getWithinSleOverTime: vi.fn(),
 		getCycleTimePercentilesInfo: vi.fn().mockResolvedValue({
 			percentiles: [],
 			comparison: {

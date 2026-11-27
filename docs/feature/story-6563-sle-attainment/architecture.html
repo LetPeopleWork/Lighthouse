@@ -2656,6 +2656,10 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/WithinSleSnapshotWriterTest.cs</p>
 
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs</p>
+
 <p>None.</p>
 
 <p>None.</p>
@@ -2685,13 +2689,29 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 
 <h4>Prefactoring</h4>
 
-<p>None.</p>
+<pre><code>Before any behaviour, in a separate refactor commit (skeleton of the Within SLE daily record, wired to nothing), add the declared public surface of S7 as behaviour-free skeletons: WithinSleSnapshot (complete entity, Horizons) and WithinSleSnapshotOrigin (complete enum) in Models; LighthouseAppContext.WithinSleSnapshots with its unique index; IWithinSleSnapshotRepository and WithinSleSnapshotRepository (GetSeries throws); WithinSleFamilyReader (complete record); WithinSleFamilies (For throws); IWithinSleSnapshotWriter and WithinSleSnapshotWriter (members throw); IWithinSleOverTimeSeriesQuery and WithinSleOverTimeSeriesQuery (GetSeries throws); WithinSleRecordingHandler (HandleAsync throws); WithinSleOverTimeDto (complete) and WithinSleDayDto (From throws); frontend WithinSleOverTime.ts model, getWithinSleOverTime on IMetricsService and BaseMetricsService rejecting, the member on the shared mocks MockApiServiceProvider.ts, HeldMetricsService.ts, useMetricsData.test.ts and BaseMetricsView.test.tsx, and the default export WithinSleOverTimeWidget whose body throws. No migration, no Program.cs or FlowMetricsModule registration, no controller action, no categoryMetadata, widgetNodes or widgetInfoMetadata entry. The crafter adds the migration with the CreateMigration script in the behaviour work. Per touched file: every new file holds one type; MetricsService.ts holds the service interface family -&gt; not-applicable as in S5; LighthouseAppContext.cs holds one type -&gt; not-applicable. Follow-up made easier: the behaviour work fills the members and wires registration, actions, migration and placement.
+</code></pre>
+
+<pre><code>Every existing metrics behaviour, the frontend build and every architecture rule except the two this slice reddens on purpose: the surface has no caller, no registration, no route and is not rendered. NoPendingModelChangesTest is red between the skeleton and the migration the crafter adds, and DomainEventHandlerOrderPinTest is red until Program.cs registers the handler; both are S7 behaviour work.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs</p>
+
+<h5>Verification</h5>
+
+<pre><code>dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj
+pnpm --dir Lighthouse.Frontend exec tsc -b
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.WithinSle.WithinSleDailyRecordAtTheServicePortTest
+pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/MetricsView/WithinSleOverTimeWidget.test.tsx
+</code></pre>
 
 <h4>Records</h4>
 
 <h5>Decisions</h5>
 
-<p>None.</p>
+<pre><code>S7 member contracts close the design hole the S7 acceptance designer reported. Accepted as assumed: IWithinSleOverTimeSeriesQuery.GetSeries(int ownerId, OwnerType ownerType, int horizon, DateOnly? from, DateOnly? to) returning WithinSleOverTimeDto; WithinSleFamilyReader positional record (ReadClosedCycleTimes, CurrentSle); IWithinSleSnapshotWriter.SaveFilledDay() Task with one FillDayIfAbsent call working out all three horizons; LighthouseAppContext.WithinSleSnapshots; WithinSleRecordingHandler resolvable as IDomainEventHandler of TeamDataRefreshed and PortfolioFeaturesRefreshed; Origin (WithinSleSnapshotOrigin) and Verdict (WithinSleVerdict, reused from S5) are enums read by name; frontend getWithinSleOverTime(id, horizon, startDate, endDate) with camelCase fields, widget titled Within SLE Over Time in a WidgetShell, toggle buttons 30 days, 60 days, 90 days, too-few note containing fewer than 5 closed Work Items. Refinements, none renaming an oracle member: RecordToday returns Task and saves (the writer is the one owner of persistence, so the handler stays at seven collaborators under S107 and holds no repository); the set of horizons has one owner, WithinSleSnapshot.Horizons [30, 60, 90], read by the writer and by the controller guard; a stored row derives its verdict and share through a new count-based factory WithinSleShare.Counted(within, closed, sle) so the minimum of 5 keeps one owner. The horizon refusal is a controller guard observed by a controller unit test that constructs the controller directly (no host): TeamMetricsControllerTest and PortfolioMetricsControllerTest assert BadRequestObjectResult naming 30, 60 and 90 for horizon 45.
+</code></pre>
 
 <h5>Constraints</h5>
 
@@ -3377,11 +3397,6 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 <pre><code>API producer and consumer in one deployable and commit; persisted rows have one writer and one reader in the same assembly, version-crossing is covered by the expand-only migration guard and the round-trip law
 </code></pre>
 
-<p>prefactoring</p>
-
-<pre><code>Per touched file: TeamMetricsController.cs, PortfolioMetricsController.cs, FlowMetricsModule.cs, Program.cs, LighthouseAppContext.cs each hold one type -&gt; not-applicable; MetricsService.ts several interfaces plus one class -&gt; not-applicable, reason as in S5; categoryMetadata.ts, widgetNodes.tsx, widgetInfoMetadata.ts supporting types of one module, none touched -&gt; not-applicable; every other file is new -&gt; not-applicable; ADR-270 and ARCHITECTURE.md are prose
-</code></pre>
-
 <h5>Boundaries</h5>
 
 <p>None.</p>
@@ -3396,7 +3411,49 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 
 <h5>Constructors</h5>
 
-<p>None.</p>
+<p>WithinSleSnapshot</p>
+
+<p>Lighthouse.Backend.Models, Models/WithinSleSnapshot.cs: public class WithinSleSnapshot : IEntity { public static readonly IReadOnlyList&lt;int&gt; Horizons = [30, 60, 90]; int Id; int OwnerId; OwnerType OwnerType; DateOnly RecordedAt; int Horizon; int ClosedCount; int WithinCount; int SlePercentile; int SleDays; WithinSleSnapshotOrigin Origin }; LighthouseAppContext.WithinSleSnapshots DbSet with unique index (OwnerId, OwnerType, Horizon, RecordedAt); enum WithinSleSnapshotOrigin { Recorded = 0, FilledIn = 1 } in Models/WithinSleSnapshotOrigin.cs</p>
+
+<p>WithinSleFamilyReader</p>
+
+<p>Modules/FlowMetrics/Application: public sealed record WithinSleFamilyReader(Func&lt;DateTime, DateTime, IReadOnlyList&lt;int&gt;&gt; ReadClosedCycleTimes, Func&lt;ServiceLevelExpectation?&gt; CurrentSle); WithinSleFamilies static class: WithinSleFamilyReader For(Team, ITeamMetricsService, ILighthouseClock) and For(Portfolio, IPortfolioMetricsService, ILighthouseClock), reading default Cycle Time of closed items in [windowStart, windowEnd] as CycleTime(clock.Zone) above 0, and ServiceLevelExpectation.For(owner) read at call time</p>
+
+<p>IWithinSleSnapshotWriter</p>
+
+<p>Task RecordToday(int ownerId, OwnerType ownerType, WithinSleFamilyReader family): works out today for every horizon in WithinSleSnapshot.Horizons, overwrites today with Origin Recorded and the SLE now, saves; writes nothing when CurrentSle() is null. void FillDayIfAbsent(int ownerId, OwnerType ownerType, DateOnly day, WithinSleFamilyReader family): stages every horizon of day not yet stored, Origin FilledIn, SLE at fill time; nothing when CurrentSle() is null. Task SaveFilledDay(): persists the staged day through LostRaceTolerantSave, a unique-index loss is dropped without throwing. Window of horizon H for day D: closed from D-(H-1) 00:00 to D end of day. Implemented by public sealed class WithinSleSnapshotWriter(IWithinSleSnapshotRepository snapshots, ILighthouseClock clock)</p>
+
+<p>IWithinSleSnapshotRepository</p>
+
+<p>Modules/FlowMetrics/Application: public interface IWithinSleSnapshotRepository : IRepository&lt;WithinSleSnapshot&gt; { IReadOnlyList&lt;WithinSleSnapshot&gt; GetSeries(int ownerId, OwnerType ownerType, int horizon, DateOnly? from, DateOnly? to) } ordered by RecordedAt, bounds inclusive; WithinSleSnapshotRepository in Adapters/Persistence on RepositoryBase like ProcessBehaviorSnapshotRepository</p>
+
+<p>IWithinSleOverTimeSeriesQuery</p>
+
+<p>WithinSleOverTimeDto GetSeries(int ownerId, OwnerType ownerType, int horizon, DateOnly? from, DateOnly? to); public sealed class WithinSleOverTimeSeriesQuery(IWithinSleSnapshotRepository snapshots, IRepository&lt;Team&gt; teams, IRepository&lt;Portfolio&gt; portfolios): current SLE from the owner now (null pair when none), days from the stored rows via WithinSleDayDto.From</p>
+
+<p>WithinSleOverTimeDto</p>
+
+<p>Models/Metrics: public sealed record WithinSleOverTimeDto(int? CurrentSlePercentile, int? CurrentSleDays, IReadOnlyList&lt;WithinSleDayDto&gt; Days); public sealed record WithinSleDayDto(DateOnly RecordedAt, int Horizon, int ClosedCount, int WithinCount, int SlePercentile, int SleDays, WithinSleSnapshotOrigin Origin, WithinSleVerdict Verdict, double? SharePercent) with static From(WithinSleSnapshot) via WithinSleShare.Counted(within, closed, sle): Measured or TooFew, SharePercent null for TooFew</p>
+
+<p>WithinSleShare.Counted</p>
+
+<p>Extend Modules/FlowMetrics/Domain/WithinSleShare.cs: public static WithinSleShare Counted(int within, int closed, ServiceLevelExpectation sle): closed below MinimumClosed gives TooFew(closed, sle), else Measured(within, closed, sle)</p>
+
+<p>WithinSleRecordingHandler</p>
+
+<p>Modules/FlowMetrics/Application/Policies: public sealed class WithinSleRecordingHandler(ITeamMetricsService, IPortfolioMetricsService, IRepository&lt;Team&gt;, IRepository&lt;Portfolio&gt;, IWithinSleSnapshotWriter, ILighthouseClock, ILogger&lt;WithinSleRecordingHandler&gt;) : IDomainEventHandler&lt;TeamDataRefreshed&gt;, IDomainEventHandler&lt;PortfolioFeaturesRefreshed&gt;; unknown owner returns; failure caught and logged under the family WithinSle; registered in Program.cs directly after ProcessBehaviorRecordingHandler for both events</p>
+
+<p>within-sle-over-time-actions</p>
+
+<p>TeamMetricsController and PortfolioMetricsController gain [HttpGet(&quot;within-sle-over-time&quot;)] public ActionResult&lt;WithinSleOverTimeDto&gt; GetWithinSleOverTime(int teamId|portfolioId, [FromQuery] int horizon = 30, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null): 400 with &quot;Horizon must be one of 30, 60 or 90 days.&quot; when horizon is not in WithinSleSnapshot.Horizons, 400 StartDateMustBeBeforeEndDateErrorMessage for an inverted window, 404 unknown owner, else Ok(query.GetSeries(id, OwnerType.Team|Portfolio, horizon, AsRecordedDay(startDate), AsRecordedDay(endDate))). Wire: GET api/latest/teams/{teamId}/metrics/within-sle-over-time?horizon=45 -&gt; 400, same under portfolios/{portfolioId}. IWithinSleOverTimeSeriesQuery injected by constructor (S107 suppression as on the existing constructors); FlowMetricsModule adds AddScoped IWithinSleSnapshotRepository, IWithinSleSnapshotWriter, IWithinSleOverTimeSeriesQuery</p>
+
+<p>getWithinSleOverTime</p>
+
+<p>Lighthouse.Frontend/src/models/Metrics/WithinSleOverTime.ts: WithinSleHorizon = 30 | 60 | 90, IWithinSleDay { recordedAt: string; horizon; closedCount; withinCount; slePercentile; sleDays; origin: Recorded | FilledIn; verdict: Measured | TooFew; sharePercent: number | null }, IWithinSleOverTime { currentSlePercentile: number | null; currentSleDays: number | null; days }. IMetricsService and BaseMetricsService getWithinSleOverTime(id: number, horizon: WithinSleHorizon, startDate: Date, endDate: Date): Promise&lt;IWithinSleOverTime&gt;, GET {teams|portfolios}/{id}/metrics/within-sle-over-time?horizon&amp;startDate&amp;endDate; shared mocks MockApiServiceProvider and HeldMetricsService gain it</p>
+
+<p>WithinSleOverTimeWidget</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WithinSleOverTimeWidget.tsx default export taking { owner: MetricsOwnerKey; metricsService; startDate; endDate } like PercentilesOverTimeWidget; title Within {SLE} Over Time in WidgetShell; ToggleButtonGroup 30 days / 60 days / 90 days starting at 30, each switch reports WithinSleHorizonSwitched; fetch through useWithinSleOverTime keyed TanStack query; LineChart with share and day target lines, y axis 0..100 labelled Within {SLE} (%), x axis Date; no SLE set message; Percentiles Over Time empty sentence; too-few note naming fewer than 5 closed {Work Items}; widgetKey withinSleOverTime in predictability after percentilesOverTime</p>
 
 <h5>Laws</h5>
 

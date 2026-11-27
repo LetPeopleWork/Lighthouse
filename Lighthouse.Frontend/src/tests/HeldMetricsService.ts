@@ -106,6 +106,7 @@ const sharedMethods = [
 	"getPredictabilityScoreInfo",
 	"getCycleTimePercentilesInfo",
 	"getWithinSleInfo",
+	"getWithinSleOverTime",
 	"getBlockedCountHistory",
 	"getPercentilesOverTime",
 	"getProcessBehaviorOverTime",
@@ -289,6 +290,8 @@ export function usualAnswer(
 				withinCount: 0,
 				comparison: noComparison("Within SLE"),
 			};
+		case "getWithinSleOverTime":
+			return { currentSlePercentile: null, currentSleDays: null, days: [] };
 		case "getFeaturesWorkedOnInfo":
 			return {
 				count: 0,

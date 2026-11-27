@@ -85,6 +85,10 @@ namespace Lighthouse.Backend.Tests.Architecture
             "IPercentilesOverTimeSnapshotRepository",
             "IProcessBehaviorSnapshotRepository",
             "IWithinSleInfoQuery",
+            "IWithinSleSnapshotWriter",
+            "WithinSleFamilyReader",
+            "IWithinSleOverTimeSeriesQuery",
+            "IWithinSleSnapshotRepository",
         ];
 
         // What the other contexts may name, published in the module's Contracts.
@@ -114,6 +118,10 @@ namespace Lighthouse.Backend.Tests.Architecture
             "IPercentilesOverTimeSnapshotRepository.cs",
             "IProcessBehaviorSnapshotRepository.cs",
             "IWithinSleInfoQuery.cs",
+            "IWithinSleSnapshotWriter.cs",
+            "WithinSleFamilyReader.cs",
+            "IWithinSleOverTimeSeriesQuery.cs",
+            "IWithinSleSnapshotRepository.cs",
         ];
 
         // Each implementation file declares exactly one type, named like the file.
@@ -136,6 +144,9 @@ namespace Lighthouse.Backend.Tests.Architecture
             "RetentionEdge",
             "OverTimeFillTarget",
             "WithinSleInfoQuery",
+            "WithinSleFamilies",
+            "WithinSleSnapshotWriter",
+            "WithinSleOverTimeSeriesQuery",
         ];
 
         // The module's reactions to domain events. Each file declares exactly one handler, named like the file.
@@ -144,6 +155,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "BlockedCountSnapshotRecordingHandler",
             "PercentilesOverTimeRecordingHandler",
             "ProcessBehaviorRecordingHandler",
+            "WithinSleRecordingHandler",
             "PortfolioFeaturesRefreshedMetricsInvalidationHandler",
             "BlackoutConfigurationChangedMetricsInvalidationHandler",
             "DemoBlockedHistoryBackfillHandler",
@@ -158,6 +170,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "BlockedCountSnapshotRepository",
             "PercentilesOverTimeSnapshotRepository",
             "ProcessBehaviorSnapshotRepository",
+            "WithinSleSnapshotRepository",
         ];
 
         private static readonly string[] SnapshotRepositoryContracts =
@@ -165,6 +178,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "IBlockedCountSnapshotRepository",
             "IPercentilesOverTimeSnapshotRepository",
             "IProcessBehaviorSnapshotRepository",
+            "IWithinSleSnapshotRepository",
         ];
 
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(Feature).Assembly));

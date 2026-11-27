@@ -92,6 +92,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<ProcessBehaviorSnapshot> ProcessBehaviorSnapshots { get; set; } = null!;
 
+        public DbSet<WithinSleSnapshot> WithinSleSnapshots { get; set; } = null!;
+
         public DbSet<UsageDataConsent> UsageDataConsents { get; set; } = null!;
 
         public DbSet<ConnectionHealthVerdict> ConnectionHealthVerdicts { get; set; } = null!;
@@ -433,6 +435,14 @@ namespace Lighthouse.Backend.Data
                 entity.HasKey(s => s.Id);
 
                 entity.HasIndex(s => new { s.OwnerId, s.OwnerType, s.MetricType, s.RecordedAt })
+                      .IsUnique();
+            });
+
+            modelBuilder.Entity<WithinSleSnapshot>(entity =>
+            {
+                entity.HasKey(s => s.Id);
+
+                entity.HasIndex(s => new { s.OwnerId, s.OwnerType, s.Horizon, s.RecordedAt })
                       .IsUnique();
             });
 
