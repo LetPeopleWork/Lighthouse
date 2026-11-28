@@ -450,10 +450,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P3</p>
 
-<pre><code>The user opens a Team page where three components gate on the user&#x27;s permissions
+<pre><code>The user opens a Team page where a header, a page part kept across pages and two more page parts gate on the user&#x27;s permissions
 </code></pre>
 
-<pre><code>The permissions are asked once, and all three components show the same grants (Team Admin of Team 1)
+<pre><code>The permissions are asked once, and all four parts show the same grants (Team Admin of Team 1)
 </code></pre>
 
 <pre><code>A page load asks for the user&#x27;s permissions once, not once per component, and gating is unchanged
@@ -465,7 +465,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx</p>
 
-<p>asks for the permissions once when three components on a page need them</p>
+<p>asks for the permissions once when the components on a page need them</p>
 
 <pre><code>A cache that shares the answer but asks again on every later mount of the page
 </code></pre>
@@ -506,13 +506,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P3</p>
 
-<pre><code>An administrator removes the user&#x27;s Team Admin right on Team 1 and grants Portfolio Admin on Portfolio 2, then the user moves from the Team page to a Portfolio page
+<pre><code>An administrator removes the user&#x27;s Team Admin right on Team 1 and grants Portfolio Admin on Portfolio 2, then the user moves from the Team page to a Portfolio page; the header and one page part stay mounted, two page parts mount on the new page
 </code></pre>
 
-<pre><code>The new page&#x27;s components are loading until the answer asked after the move arrives, then they and the header that stayed mounted offer Portfolio Admin on Portfolio 2 and no longer Team Admin on Team 1; two asks in total
+<pre><code>Before the new answer lands, the two newly mounted parts are loading while the header and the kept part are not loading and still offer Team Admin on Team 1; once it lands every part offers Portfolio Admin on Portfolio 2 and no longer Team Admin on Team 1; the permissions were asked twice in total
 </code></pre>
 
-<pre><code>Rights changed by someone else show on the next page, without a reload
+<pre><code>Rights changed by someone else show on the next page without a reload, and controls that stay on screen do not vanish while the answer is on its way
 </code></pre>
 
 <h5>Disposition</h5>
@@ -521,12 +521,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx</p>
 
-<p>shows the rights an administrator changed once the user moves to another page</p>
+<p>shows the rights an administrator changed once the user moves to another page, while the components that stay keep their answer</p>
 
-<pre><code>A refresh on move that also asks once more for each newly mounted component on the first render, if the count is taken before it settles
+<pre><code>A refresh on move that also asks once more for each newly mounted component, if that extra ask settles before the count is read
 </code></pre>
 
 <h6>Obligations</h6>
+
 
 
 <h5>Covers</h5>
@@ -536,7 +537,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>The user moves to a Portfolio page while the first page&#x27;s permissions answer is still on its way, and that old answer then arrives
 </code></pre>
 
-<pre><code>The Portfolio page&#x27;s components stay loading after the old answer arrives, and only show the grants of the answer asked after the move
+<pre><code>The header, the kept part and the newly mounted parts all stay loading after the old answer arrives, and only show the grants of the answer asked after the move; two asks in total
 </code></pre>
 
 <pre><code>A page never shows actions from a permissions answer asked on the page the user left
@@ -560,13 +561,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P5</p>
 
-<pre><code>On a page whose answer gives no admin rights, the user&#x27;s own change (a grant or a new Team) completes and the refresh after own changes is called
+<pre><code>On a page whose answer gives no admin rights, the user&#x27;s own change (a grant or a new Team) completes and the refresh after own changes is called while its answer is still on its way
 </code></pre>
 
-<pre><code>The permissions are asked once more and every component on the page offers Team Admin on Team 7, with no page move
+<pre><code>While the refresh runs no part turns loading or could-not-load; once the answer lands every part offers Team Admin on Team 7, with no page move; the permissions were asked once more
 </code></pre>
 
-<pre><code>The user&#x27;s own change of rights shows at once, without a reload or a page move
+<pre><code>The user&#x27;s own change of rights shows at once, without a reload, a page move or controls vanishing meanwhile
 </code></pre>
 
 <h5>Disposition</h5>
@@ -575,9 +576,9 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx</p>
 
-<p>shows the user&#x27;s own change of rights at once, without a page move</p>
+<p>shows the user&#x27;s own change of rights at once, without a page move and without loading</p>
 
-<pre><code>A refresh that marks the answer stale without asking until the next page move would fail; one that refreshes only the calling component would pass only if that component is the one checked
+<pre><code>A refresh that briefly turns parts loading for a render between the two checks
 </code></pre>
 
 <h6>Obligations</h6>
@@ -587,10 +588,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P6</p>
 
-<pre><code>The permissions answer cannot be loaded when the user opens a page with three gating components
+<pre><code>The permissions answer cannot be loaded when the user opens a page with four gating parts
 </code></pre>
 
-<pre><code>Every component reports could-not-load, is not loading and shows today&#x27;s permissive fallback (system admin, may create Team and Portfolio, admin of any unit); asked once, no automatic retries
+<pre><code>Every part reports could-not-load, is not loading and shows today&#x27;s permissive fallback (system admin, may create Team and Portfolio, admin of any unit); asked once, with no automatic retries
 </code></pre>
 
 <pre><code>Permissions that cannot be loaded behave as today, the same for every part of the page
@@ -604,7 +605,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>gives every component the could-not-load state and today&#x27;s fallback when the permissions cannot be loaded</p>
 
-<pre><code>A shared query that retries automatically but finishes its retries before the check would fail on the count; a fallback missing only an unlisted field would pass
+<pre><code>A fallback missing only a right that is not listed in the check
 </code></pre>
 
 <h6>Obligations</h6>
@@ -617,7 +618,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>After a failed load the user presses retry in one component, and the answer now loads
 </code></pre>
 
-<pre><code>Exactly one more ask, and all three components show the loaded grants with could-not-load cleared
+<pre><code>Exactly one more ask, and all parts show the loaded grants with could-not-load cleared
 </code></pre>
 
 <pre><code>One retry asks again once for all parts of the page
@@ -631,7 +632,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>asks once for every component when one of them retries after a failed load</p>
 
-<pre><code>A retry that refetches once but leaves another component&#x27;s could-not-load flag set until its next render would fail; one that refetches twice sequentially would fail on the count
+<pre><code>A retry that refetches twice in sequence, if the second ask is started after the count is read
 </code></pre>
 
 <h6>Obligations</h6>
@@ -659,6 +660,62 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>lets only the permissions hook ask for the user&#x27;s permissions</p>
 
 <pre><code>A component that reads the service through destructuring or a renamed alias, which the scan does not see
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<p>P4</p>
+
+<pre><code>The user moves from a Team page to a Portfolio page and the permissions ask after the move fails; then one newly mounted part retries and the answer loads
+</code></pre>
+
+<pre><code>The header and the kept part keep offering Team Admin on Team 1, not loading and not could-not-load; the two newly mounted parts report could-not-load with today&#x27;s permissive fallback; two asks, no automatic retries; the retry asks exactly once and every part then offers Portfolio Admin on Portfolio 2
+</code></pre>
+
+<pre><code>A failed permissions load after a page move leaves the controls already shown in place, gives new parts today&#x27;s could-not-load behaviour, and one retry fixes all of them
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx</p>
+
+<p>keeps the shown answer for the components that stay when the ask after a page move fails, and one retry asks once</p>
+
+<pre><code>Kept parts that switch to the fallback for one render and back before the check
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The app runs in React strict mode, which renders twice; the user moves from a Team page to a Portfolio page
+</code></pre>
+
+<pre><code>The move asks the permissions exactly once and every part on the new page then offers Portfolio Admin on Portfolio 2
+</code></pre>
+
+<pre><code>One page move asks for the user&#x27;s permissions once, even when the app renders twice
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx</p>
+
+<p>asks once and moves one page when the app runs in strict mode</p>
+
+<pre><code>A page counter that advances twice but whose second invalidation is deduplicated into the first ask; the extra advance is not visible through the permissions
 </code></pre>
 
 <h6>Obligations</h6>

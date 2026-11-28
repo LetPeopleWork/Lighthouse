@@ -337,11 +337,11 @@ A marker placed only on one action instead of the class passes for that class wh
 P3
 
 ```text
-The user opens a Team page where three components gate on the user's permissions
+The user opens a Team page where a header, a page part kept across pages and two more page parts gate on the user's permissions
 ```
 
 ```text
-The permissions are asked once, and all three components show the same grants (Team Admin of Team 1)
+The permissions are asked once, and all four parts show the same grants (Team Admin of Team 1)
 ```
 
 ```text
@@ -354,7 +354,7 @@ Tested
 
 Lighthouse\.Frontend\/src\/hooks\/useRbac\.sharedAnswer\.test\.tsx
 
-asks for the permissions once when three components on a page need them
+asks for the permissions once when the components on a page need them
 
 ```text
 A cache that shares the answer but asks again on every later mount of the page
@@ -401,15 +401,15 @@ P4
 P3
 
 ```text
-An administrator removes the user's Team Admin right on Team 1 and grants Portfolio Admin on Portfolio 2, then the user moves from the Team page to a Portfolio page
+An administrator removes the user's Team Admin right on Team 1 and grants Portfolio Admin on Portfolio 2, then the user moves from the Team page to a Portfolio page; the header and one page part stay mounted, two page parts mount on the new page
 ```
 
 ```text
-The new page's components are loading until the answer asked after the move arrives, then they and the header that stayed mounted offer Portfolio Admin on Portfolio 2 and no longer Team Admin on Team 1; two asks in total
+Before the new answer lands, the two newly mounted parts are loading while the header and the kept part are not loading and still offer Team Admin on Team 1; once it lands every part offers Portfolio Admin on Portfolio 2 and no longer Team Admin on Team 1; the permissions were asked twice in total
 ```
 
 ```text
-Rights changed by someone else show on the next page, without a reload
+Rights changed by someone else show on the next page without a reload, and controls that stay on screen do not vanish while the answer is on its way
 ```
 
 ##### Disposition
@@ -418,13 +418,14 @@ Tested
 
 Lighthouse\.Frontend\/src\/hooks\/useRbac\.sharedAnswer\.test\.tsx
 
-shows the rights an administrator changed once the user moves to another page
+shows the rights an administrator changed once the user moves to another page\, while the components that stay keep their answer
 
 ```text
-A refresh on move that also asks once more for each newly mounted component on the first render, if the count is taken before it settles
+A refresh on move that also asks once more for each newly mounted component, if that extra ask settles before the count is read
 ```
 
 ###### Obligations
+
 
 
 ##### Covers
@@ -436,7 +437,7 @@ The user moves to a Portfolio page while the first page's permissions answer is 
 ```
 
 ```text
-The Portfolio page's components stay loading after the old answer arrives, and only show the grants of the answer asked after the move
+The header, the kept part and the newly mounted parts all stay loading after the old answer arrives, and only show the grants of the answer asked after the move; two asks in total
 ```
 
 ```text
@@ -463,15 +464,15 @@ An implementation that shows the old answer for one render frame and replaces it
 P5
 
 ```text
-On a page whose answer gives no admin rights, the user's own change (a grant or a new Team) completes and the refresh after own changes is called
+On a page whose answer gives no admin rights, the user's own change (a grant or a new Team) completes and the refresh after own changes is called while its answer is still on its way
 ```
 
 ```text
-The permissions are asked once more and every component on the page offers Team Admin on Team 7, with no page move
+While the refresh runs no part turns loading or could-not-load; once the answer lands every part offers Team Admin on Team 7, with no page move; the permissions were asked once more
 ```
 
 ```text
-The user's own change of rights shows at once, without a reload or a page move
+The user's own change of rights shows at once, without a reload, a page move or controls vanishing meanwhile
 ```
 
 ##### Disposition
@@ -480,10 +481,10 @@ Tested
 
 Lighthouse\.Frontend\/src\/hooks\/useRbac\.sharedAnswer\.test\.tsx
 
-shows the user\'s own change of rights at once\, without a page move
+shows the user\'s own change of rights at once\, without a page move and without loading
 
 ```text
-A refresh that marks the answer stale without asking until the next page move would fail; one that refreshes only the calling component would pass only if that component is the one checked
+A refresh that briefly turns parts loading for a render between the two checks
 ```
 
 ###### Obligations
@@ -494,11 +495,11 @@ A refresh that marks the answer stale without asking until the next page move wo
 P6
 
 ```text
-The permissions answer cannot be loaded when the user opens a page with three gating components
+The permissions answer cannot be loaded when the user opens a page with four gating parts
 ```
 
 ```text
-Every component reports could-not-load, is not loading and shows today's permissive fallback (system admin, may create Team and Portfolio, admin of any unit); asked once, no automatic retries
+Every part reports could-not-load, is not loading and shows today's permissive fallback (system admin, may create Team and Portfolio, admin of any unit); asked once, with no automatic retries
 ```
 
 ```text
@@ -514,7 +515,7 @@ Lighthouse\.Frontend\/src\/hooks\/useRbac\.sharedAnswer\.test\.tsx
 gives every component the could\-not\-load state and today\'s fallback when the permissions cannot be loaded
 
 ```text
-A shared query that retries automatically but finishes its retries before the check would fail on the count; a fallback missing only an unlisted field would pass
+A fallback missing only a right that is not listed in the check
 ```
 
 ###### Obligations
@@ -529,7 +530,7 @@ After a failed load the user presses retry in one component, and the answer now 
 ```
 
 ```text
-Exactly one more ask, and all three components show the loaded grants with could-not-load cleared
+Exactly one more ask, and all parts show the loaded grants with could-not-load cleared
 ```
 
 ```text
@@ -545,7 +546,7 @@ Lighthouse\.Frontend\/src\/hooks\/useRbac\.sharedAnswer\.test\.tsx
 asks once for every component when one of them retries after a failed load
 
 ```text
-A retry that refetches once but leaves another component's could-not-load flag set until its next render would fail; one that refetches twice sequentially would fail on the count
+A retry that refetches twice in sequence, if the second ask is started after the count is read
 ```
 
 ###### Obligations
@@ -577,6 +578,70 @@ lets only the permissions hook ask for the user\'s permissions
 
 ```text
 A component that reads the service through destructuring or a renamed alias, which the scan does not see
+```
+
+###### Obligations
+
+
+##### Covers
+
+P6
+
+P4
+
+```text
+The user moves from a Team page to a Portfolio page and the permissions ask after the move fails; then one newly mounted part retries and the answer loads
+```
+
+```text
+The header and the kept part keep offering Team Admin on Team 1, not loading and not could-not-load; the two newly mounted parts report could-not-load with today's permissive fallback; two asks, no automatic retries; the retry asks exactly once and every part then offers Portfolio Admin on Portfolio 2
+```
+
+```text
+A failed permissions load after a page move leaves the controls already shown in place, gives new parts today's could-not-load behaviour, and one retry fixes all of them
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/useRbac\.sharedAnswer\.test\.tsx
+
+keeps the shown answer for the components that stay when the ask after a page move fails\, and one retry asks once
+
+```text
+Kept parts that switch to the fallback for one render and back before the check
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+The app runs in React strict mode, which renders twice; the user moves from a Team page to a Portfolio page
+```
+
+```text
+The move asks the permissions exactly once and every part on the new page then offers Portfolio Admin on Portfolio 2
+```
+
+```text
+One page move asks for the user's permissions once, even when the app renders twice
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/useRbac\.sharedAnswer\.test\.tsx
+
+asks once and moves one page when the app runs in strict mode
+
+```text
+A page counter that advances twice but whose second invalidation is deduplicated into the first ask; the extra advance is not visible through the permissions
 ```
 
 ###### Obligations

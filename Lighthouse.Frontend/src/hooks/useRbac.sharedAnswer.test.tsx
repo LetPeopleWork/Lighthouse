@@ -1,6 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, waitFor } from "@testing-library/react";
-import type { ComponentType, ReactElement, ReactNode } from "react";
+import {
+	type ComponentType,
+	type ReactElement,
+	type ReactNode,
+	StrictMode,
+} from "react";
 import {
 	MemoryRouter,
 	type NavigateFunction,
@@ -101,6 +106,11 @@ interface AnswerOnItsWay {
 	arrives: (summary: UserAuthorizationSummary) => Promise<void>;
 }
 
+interface HowTheAppRuns {
+	withOwnChanges?: boolean;
+	inStrictMode?: boolean;
+}
+
 class PermissionsScenario {
 	readonly seen = new Map<string, RbacState>();
 	private readonly rbacService = createMockRbacService();
@@ -111,6 +121,7 @@ class PermissionsScenario {
 	private navigate: NavigateFunction | undefined;
 	private refresh: RefreshPermissions | undefined;
 	private rerenderWith: ((ui: ReactElement) => void) | undefined;
+	private inStrictMode = false;
 
 	theAnswerIs(summary: UserAuthorizationSummary) {
 		vi.mocked(this.rbacService.getAuthorizationSummary).mockResolvedValue(
@@ -120,6 +131,12 @@ class PermissionsScenario {
 
 	thePermissionsCannotBeLoaded() {
 		vi.mocked(this.rbacService.getAuthorizationSummary).mockRejectedValue(
+			new Error("my-summary unavailable"),
+		);
+	}
+
+	theNextAskFails() {
+		vi.mocked(this.rbacService.getAuthorizationSummary).mockRejectedValueOnce(
 			new Error("my-summary unavailable"),
 		);
 	}
@@ -147,10 +164,11 @@ class PermissionsScenario {
 			.length;
 	}
 
-	theUserOpens(page: string, options: { withOwnChanges?: boolean } = {}) {
-		const useRefreshPermissions = options.withOwnChanges
+	theUserOpens(page: string, how: HowTheAppRuns = {}) {
+		const useRefreshPermissions = how.withOwnChanges
 			? theRefreshAfterOwnChanges()
 			: undefined;
+		this.inStrictMode = how.inStrictMode ?? false;
 		const { rerender } = render(
 			this.theApp(page, useRefreshPermissions, false),
 		);
@@ -167,9 +185,9 @@ class PermissionsScenario {
 		});
 	}
 
-	async theUsersOwnChangeCompletes() {
-		await act(async () => {
-			await this.refresh?.();
+	theUsersOwnChangeCompletes() {
+		act(() => {
+			this.refresh?.();
 		});
 	}
 
@@ -205,7 +223,9 @@ class PermissionsScenario {
 			this.refresh = useRefresh();
 			return null;
 		};
-		return (
+		// The page-kept reader has the same type, key and place on both pages, so React keeps it across the move;
+		// every other page reader has its own key, so it mounts on its page.
+		const app = (
 			<QueryClientProvider client={this.queryClient}>
 				<MemoryRouter initialEntries={[initialPage]}>
 					<ApiServiceContext.Provider value={this.services}>
@@ -220,10 +240,27 @@ class PermissionsScenario {
 									path={TEAM_PAGE}
 									element={
 										<>
-											<PermissionsReader name="team-1" seen={this.seen} />
-											<PermissionsReader name="team-2" seen={this.seen} />
+											<PermissionsReader
+												key="page-kept"
+												name="page-kept"
+												seen={this.seen}
+											/>
+											<PermissionsReader
+												key="team-1"
+												name="team-1"
+												seen={this.seen}
+											/>
+											<PermissionsReader
+												key="team-2"
+												name="team-2"
+												seen={this.seen}
+											/>
 											{withLateComponent ? (
-												<PermissionsReader name="team-late" seen={this.seen} />
+												<PermissionsReader
+													key="team-late"
+													name="team-late"
+													seen={this.seen}
+												/>
 											) : null}
 										</>
 									}
@@ -232,8 +269,21 @@ class PermissionsScenario {
 									path={PORTFOLIO_PAGE}
 									element={
 										<>
-											<PermissionsReader name="portfolio-1" seen={this.seen} />
-											<PermissionsReader name="portfolio-2" seen={this.seen} />
+											<PermissionsReader
+												key="page-kept"
+												name="page-kept"
+												seen={this.seen}
+											/>
+											<PermissionsReader
+												key="portfolio-1"
+												name="portfolio-1"
+												seen={this.seen}
+											/>
+											<PermissionsReader
+												key="portfolio-2"
+												name="portfolio-2"
+												seen={this.seen}
+											/>
 										</>
 									}
 								/>
@@ -243,6 +293,7 @@ class PermissionsScenario {
 				</MemoryRouter>
 			</QueryClientProvider>
 		);
+		return this.inStrictMode ? <StrictMode>{app}</StrictMode> : app;
 	}
 }
 
@@ -258,8 +309,13 @@ const PermissionsReader = ({
 	return null;
 };
 
-const ON_THE_TEAM_PAGE = ["header", "team-1", "team-2"];
-const ON_THE_PORTFOLIO_PAGE = ["portfolio-1", "portfolio-2"];
+const ON_THE_TEAM_PAGE = ["header", "page-kept", "team-1", "team-2"];
+const KEPT_ACROSS_THE_MOVE = ["header", "page-kept"];
+const MOUNTED_ON_THE_PORTFOLIO_PAGE = ["portfolio-1", "portfolio-2"];
+const ON_THE_PORTFOLIO_PAGE = [
+	...KEPT_ACROSS_THE_MOVE,
+	...MOUNTED_ON_THE_PORTFOLIO_PAGE,
+];
 
 const thenAskedTimes = (
 	scenario: PermissionsScenario,
@@ -281,7 +337,7 @@ const thenTheyMayActAsTeamAdminOf = (
 		const state = scenario.seen.get(name);
 		expect(
 			state?.isTeamAdmin(teamId),
-			`WHAT: ${name} does not offer the Team Admin actions on Team ${teamId}. WHY: the user is Team Admin there in the latest answer. HOW: every component reads the same latest answer.`,
+			`WHAT: ${name} does not offer the Team Admin actions on Team ${teamId}. WHY: the user is Team Admin there in the answer this component shows. HOW: every component reads the same shared answer.`,
 		).toBe(true);
 		expect(
 			state?.loadFailed,
@@ -299,11 +355,15 @@ const thenTheyMayActAsPortfolioAdminOnlyOf = (
 		const state = scenario.seen.get(name);
 		expect(
 			state?.isPortfolioAdmin(portfolioId),
-			`WHAT: ${name} does not offer the Portfolio Admin actions on Portfolio ${portfolioId}. WHY: an administrator granted that right before the user moved. HOW: a page move asks the permissions again once.`,
+			`WHAT: ${name} does not offer the Portfolio Admin actions on Portfolio ${portfolioId}. WHY: an administrator granted that right before the user moved. HOW: a page move asks the permissions again once, and every component shows that answer once it lands.`,
 		).toBe(true);
 		expect(
 			state?.isTeamAdmin(1),
-			`WHAT: ${name} still offers the Team Admin actions on Team 1. WHY: an administrator removed that right before the user moved, and an earlier page's answer is never current on a new page. HOW: show the answer asked after the move.`,
+			`WHAT: ${name} still offers the Team Admin actions on Team 1. WHY: an administrator removed that right before the user moved. HOW: show the answer asked after the move once it lands.`,
+		).toBe(false);
+		expect(
+			state?.loadFailed,
+			`${name} reports the permissions as not loaded`,
 		).toBe(false);
 	}
 };
@@ -315,13 +375,60 @@ const thenTheyAreStillLoading = (
 	for (const name of names) {
 		expect(
 			scenario.seen.get(name)?.isLoading,
-			`WHAT: ${name} is not loading while the answer asked on its page is still on its way. WHY: an answer asked on an earlier page must never be shown as current on a new page. HOW: a component is loading until an answer asked on or after the page it mounted on arrives.`,
+			`WHAT: ${name} is not loading while the answer it may show is still on its way. WHY: an answer asked on an earlier page must never be shown as current by a component that mounted later. HOW: a component that mounts on a page is loading until an answer asked on or after its mount page arrives.`,
 		).toBe(true);
 	}
 };
 
+const thenTheyKeepShowingAnAnswer = (
+	scenario: PermissionsScenario,
+	names: string[],
+) => {
+	for (const name of names) {
+		const state = scenario.seen.get(name);
+		expect(
+			state?.isLoading,
+			`WHAT: ${name} turned loading although it already shows an answer. WHY: gated controls of a component that stays mounted must not vanish while the next answer is on its way. HOW: a component stays ready while it has an answer asked on or after its mount page.`,
+		).toBe(false);
+		expect(
+			state?.loadFailed,
+			`WHAT: ${name} reports the permissions as not loaded although it shows an answer. WHY: a component that already shows an answer keeps it when a later ask fails. HOW: only a component with no answer asked on or after its mount page gets the could-not-load state.`,
+		).toBe(false);
+	}
+};
+
+const thenTheyShowTheCouldNotLoadFallback = (
+	scenario: PermissionsScenario,
+	names: string[],
+) => {
+	for (const name of names) {
+		const state = scenario.seen.get(name);
+		expect(state?.isLoading, `${name} is still loading after the failure`).toBe(
+			false,
+		);
+		expect(
+			[
+				state?.loadFailed,
+				state?.isSystemAdmin,
+				state?.canCreateTeam,
+				state?.canCreatePortfolio,
+				state?.isTeamAdmin(99),
+				state?.isPortfolioAdmin(99),
+			],
+			`WHAT: ${name} does not show the could-not-load state with today's permissive fallback. WHY: a failed load behaves as today; the server still refuses what the user may not do. HOW: keep the permissive fallback with loadFailed true for a component that has no answer.`,
+		).toEqual([true, true, true, true, true, true]);
+	}
+};
+
+const thenOneRetryAsksOnce = (asked: number, askedBeforeTheRetry: number) => {
+	expect(
+		asked - askedBeforeTheRetry,
+		"WHAT: one retry asked the permissions more or less than once. WHY: a retry asks again once, for all components. HOW: retry refetches the shared query.",
+	).toBe(1);
+};
+
 describe("Permissions shared by every component on a page", () => {
-	it("asks for the permissions once when three components on a page need them", async () => {
+	it("asks for the permissions once when the components on a page need them", async () => {
 		const scenario = new PermissionsScenario();
 		scenario.theAnswerIs(teamAdminOf(1));
 
@@ -331,7 +438,7 @@ describe("Permissions shared by every component on a page", () => {
 		thenAskedTimes(
 			scenario,
 			1,
-			"three components on one page share one answer instead of asking once each.",
+			"the components on one page share one answer instead of asking once each.",
 		);
 		thenTheyMayActAsTeamAdminOf(scenario, ON_THE_TEAM_PAGE, 1);
 	});
@@ -356,7 +463,7 @@ describe("Permissions shared by every component on a page", () => {
 		thenTheyMayActAsTeamAdminOf(scenario, ["team-late"], 1);
 	});
 
-	it("shows the rights an administrator changed once the user moves to another page", async () => {
+	it("shows the rights an administrator changed once the user moves to another page, while the components that stay keep their answer", async () => {
 		const scenario = new PermissionsScenario();
 		scenario.theAnswerIs(teamAdminOf(1));
 		scenario.theUserOpens(TEAM_PAGE);
@@ -365,18 +472,17 @@ describe("Permissions shared by every component on a page", () => {
 
 		await scenario.theUserMovesTo(PORTFOLIO_PAGE);
 
-		thenTheyAreStillLoading(scenario, ON_THE_PORTFOLIO_PAGE);
+		thenTheyAreStillLoading(scenario, MOUNTED_ON_THE_PORTFOLIO_PAGE);
+		thenTheyKeepShowingAnAnswer(scenario, KEPT_ACROSS_THE_MOVE);
+		thenTheyMayActAsTeamAdminOf(scenario, KEPT_ACROSS_THE_MOVE, 1);
 		await theAnswerAfterTheMove.arrives(portfolioAdminOf(2));
-		await scenario.everyComponentHasItsAnswer(ON_THE_PORTFOLIO_PAGE);
+		await waitFor(() =>
+			thenTheyMayActAsPortfolioAdminOnlyOf(scenario, ON_THE_PORTFOLIO_PAGE, 2),
+		);
 		thenAskedTimes(
 			scenario,
 			2,
 			"a page move asks once for all components, not once per new component.",
-		);
-		thenTheyMayActAsPortfolioAdminOnlyOf(
-			scenario,
-			[...ON_THE_PORTFOLIO_PAGE, "header"],
-			2,
 		);
 	});
 
@@ -397,25 +503,55 @@ describe("Permissions shared by every component on a page", () => {
 			2,
 			"one ask for the first page and one for the page the user moved to.",
 		);
-		thenTheyMayActAsPortfolioAdminOnlyOf(
-			scenario,
-			[...ON_THE_PORTFOLIO_PAGE, "header"],
-			2,
-		);
+		thenTheyMayActAsPortfolioAdminOnlyOf(scenario, ON_THE_PORTFOLIO_PAGE, 2);
 	});
 
-	it("shows the user's own change of rights at once, without a page move", async () => {
+	it("keeps the shown answer for the components that stay when the ask after a page move fails, and one retry asks once", async () => {
+		const scenario = new PermissionsScenario();
+		scenario.theAnswerIs(teamAdminOf(1));
+		scenario.theUserOpens(TEAM_PAGE);
+		await scenario.everyComponentHasItsAnswer(ON_THE_TEAM_PAGE);
+		scenario.theNextAskFails();
+
+		await scenario.theUserMovesTo(PORTFOLIO_PAGE);
+
+		await waitFor(() =>
+			thenTheyShowTheCouldNotLoadFallback(
+				scenario,
+				MOUNTED_ON_THE_PORTFOLIO_PAGE,
+			),
+		);
+		thenTheyKeepShowingAnAnswer(scenario, KEPT_ACROSS_THE_MOVE);
+		thenTheyMayActAsTeamAdminOf(scenario, KEPT_ACROSS_THE_MOVE, 1);
+		thenAskedTimes(
+			scenario,
+			2,
+			"one ask for the first page and one failed ask for the page the user moved to, with no automatic retries.",
+		);
+		const askedBeforeTheRetry = scenario.timesAsked();
+		scenario.theAnswerIs(portfolioAdminOf(2));
+		scenario.oneComponentRetries("portfolio-1");
+		await waitFor(() =>
+			thenTheyMayActAsPortfolioAdminOnlyOf(scenario, ON_THE_PORTFOLIO_PAGE, 2),
+		);
+		thenOneRetryAsksOnce(scenario.timesAsked(), askedBeforeTheRetry);
+	});
+
+	it("shows the user's own change of rights at once, without a page move and without loading", async () => {
 		const scenario = new PermissionsScenario();
 		scenario.theAnswerIs(NO_ADMIN_RIGHTS);
 		scenario.theUserOpens(TEAM_PAGE, { withOwnChanges: true });
 		await scenario.everyComponentHasItsAnswer(ON_THE_TEAM_PAGE);
-		scenario.theAnswerIs(teamAdminOf(7));
+		const theAnswerAfterTheChange = scenario.theNextAnswerIsOnItsWay();
 
-		await scenario.theUsersOwnChangeCompletes();
+		scenario.theUsersOwnChangeCompletes();
 
+		thenTheyKeepShowingAnAnswer(scenario, ON_THE_TEAM_PAGE);
+		await theAnswerAfterTheChange.arrives(teamAdminOf(7));
 		await waitFor(() =>
 			thenTheyMayActAsTeamAdminOf(scenario, ON_THE_TEAM_PAGE, 7),
 		);
+		thenTheyKeepShowingAnAnswer(scenario, ON_THE_TEAM_PAGE);
 		thenAskedTimes(
 			scenario,
 			2,
@@ -429,31 +565,9 @@ describe("Permissions shared by every component on a page", () => {
 
 		scenario.theUserOpens(TEAM_PAGE);
 
-		await waitFor(() => {
-			for (const name of ON_THE_TEAM_PAGE) {
-				expect(
-					scenario.seen.get(name)?.loadFailed,
-					`${name} does not report that the permissions could not be loaded`,
-				).toBe(true);
-			}
-		});
-		for (const name of ON_THE_TEAM_PAGE) {
-			const state = scenario.seen.get(name);
-			expect(
-				state?.isLoading,
-				`${name} is still loading after the failure`,
-			).toBe(false);
-			expect(
-				[
-					state?.isSystemAdmin,
-					state?.canCreateTeam,
-					state?.canCreatePortfolio,
-					state?.isTeamAdmin(99),
-					state?.isPortfolioAdmin(99),
-				],
-				`WHAT: ${name} does not show today's permissive fallback. WHY: a failed load behaves as today; the server still refuses what the user may not do. HOW: keep the permissive fallback with loadFailed true.`,
-			).toEqual([true, true, true, true, true]);
-		}
+		await waitFor(() =>
+			thenTheyShowTheCouldNotLoadFallback(scenario, ON_THE_TEAM_PAGE),
+		);
 		thenAskedTimes(
 			scenario,
 			1,
@@ -476,14 +590,30 @@ describe("Permissions shared by every component on a page", () => {
 		await waitFor(() =>
 			thenTheyMayActAsTeamAdminOf(scenario, ON_THE_TEAM_PAGE, 1),
 		);
-		expect(
-			scenario.timesAsked() - askedBeforeTheRetry,
-			"WHAT: one retry asked the permissions more or less than once. WHY: a retry asks again once, for all components. HOW: retry refetches the shared query.",
-		).toBe(1);
+		thenOneRetryAsksOnce(scenario.timesAsked(), askedBeforeTheRetry);
 		thenAskedTimes(
 			scenario,
 			2,
 			"one ask for the failed load and one for the retry.",
 		);
+	});
+
+	it("asks once and moves one page when the app runs in strict mode", async () => {
+		const scenario = new PermissionsScenario();
+		scenario.theAnswerIs(teamAdminOf(1));
+		scenario.theUserOpens(TEAM_PAGE, { inStrictMode: true });
+		await scenario.everyComponentHasItsAnswer(ON_THE_TEAM_PAGE);
+		const askedBeforeTheMove = scenario.timesAsked();
+		scenario.theAnswerIs(portfolioAdminOf(2));
+
+		await scenario.theUserMovesTo(PORTFOLIO_PAGE);
+
+		await waitFor(() =>
+			thenTheyMayActAsPortfolioAdminOnlyOf(scenario, ON_THE_PORTFOLIO_PAGE, 2),
+		);
+		expect(
+			scenario.timesAsked() - askedBeforeTheMove,
+			"WHAT: one page move in strict mode asked the permissions more or less than once. WHY: rendering twice in strict mode is not a second page move, and a second ask would be a repeated call. HOW: advance the page and the last path together in one state update during render, and ask once per page advance.",
+		).toBe(1);
 	});
 });

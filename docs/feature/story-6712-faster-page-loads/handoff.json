@@ -199,11 +199,11 @@
 "L4/F238"
 ],
 "still_passes_if": "F461",
-"test": "asks for the permissions once when three components on a page need them",
+"test": "asks for the permissions once when the components on a page need them",
 "test_path": "Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx"
 },
-"expected": "F459",
-"stimulus": "F458",
+"expected": "F625",
+"stimulus": "F624",
 "user_result": "F460"
 },
 {
@@ -231,15 +231,16 @@
 "disposition": {
 "kind": "Tested",
 "obligations": [
-"L4/F239"
+"L4/F580",
+"L4/F581"
 ],
-"still_passes_if": "F469",
-"test": "shows the rights an administrator changed once the user moves to another page",
+"still_passes_if": "F629",
+"test": "shows the rights an administrator changed once the user moves to another page, while the components that stay keep their answer",
 "test_path": "Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx"
 },
-"expected": "F467",
-"stimulus": "F466",
-"user_result": "F468"
+"expected": "F627",
+"stimulus": "F626",
+"user_result": "F628"
 },
 {
 "covers": [
@@ -248,13 +249,13 @@
 "disposition": {
 "kind": "Tested",
 "obligations": [
-"L4/F240"
+"L4/F582"
 ],
 "still_passes_if": "F473",
 "test": "never shows the answer of the page the user left on the page they moved to",
 "test_path": "Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx"
 },
-"expected": "F471",
+"expected": "F630",
 "stimulus": "F470",
 "user_result": "F472"
 },
@@ -265,15 +266,15 @@
 "disposition": {
 "kind": "Tested",
 "obligations": [
-"L4/F241"
+"L4/F583"
 ],
-"still_passes_if": "F477",
-"test": "shows the user's own change of rights at once, without a page move",
+"still_passes_if": "F634",
+"test": "shows the user's own change of rights at once, without a page move and without loading",
 "test_path": "Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx"
 },
-"expected": "F475",
-"stimulus": "F474",
-"user_result": "F476"
+"expected": "F632",
+"stimulus": "F631",
+"user_result": "F633"
 },
 {
 "covers": [
@@ -282,14 +283,14 @@
 "disposition": {
 "kind": "Tested",
 "obligations": [
-"L4/F242"
+"L4/F611"
 ],
-"still_passes_if": "F481",
+"still_passes_if": "F637",
 "test": "gives every component the could-not-load state and today's fallback when the permissions cannot be loaded",
 "test_path": "Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx"
 },
-"expected": "F479",
-"stimulus": "F478",
+"expected": "F636",
+"stimulus": "F635",
 "user_result": "F480"
 },
 {
@@ -299,13 +300,13 @@
 "disposition": {
 "kind": "Tested",
 "obligations": [
-"L4/F242"
+"L4/F611"
 ],
-"still_passes_if": "F485",
+"still_passes_if": "F639",
 "test": "asks once for every component when one of them retries after a failed load",
 "test_path": "Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx"
 },
-"expected": "F483",
+"expected": "F638",
 "stimulus": "F482",
 "user_result": "F484"
 },
@@ -325,6 +326,41 @@
 "expected": "F487",
 "stimulus": "F486",
 "user_result": "F488"
+},
+{
+"covers": [
+"P6",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F610"
+],
+"still_passes_if": "F643",
+"test": "keeps the shown answer for the components that stay when the ask after a page move fails, and one retry asks once",
+"test_path": "Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx"
+},
+"expected": "F641",
+"stimulus": "F640",
+"user_result": "F642"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F612"
+],
+"still_passes_if": "F647",
+"test": "asks once and moves one page when the app runs in strict mode",
+"test_path": "Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx"
+},
+"expected": "F645",
+"stimulus": "F644",
+"user_result": "F646"
 }
 ]
 },
@@ -333,7 +369,7 @@
 "C": 3,
 "D": 13,
 "E": 13,
-"F": 623,
+"F": 647,
 "K": 13,
 "L": 7,
 "N": 16,
@@ -2690,8 +2726,6 @@
 "F455": "The answer is not compressed",
 "F456": "An operator can turn compression off with one setting and a restart",
 "F457": "A switch that is ignored when the section is absent passes; the safe-answer rows run with the section absent and pin the default on",
-"F458": "The user opens a Team page where three components gate on the user's permissions",
-"F459": "The permissions are asked once, and all three components show the same grants (Team Admin of Team 1)",
 "F46": "Release notes load when the new-version dialog opens; the pop-up and footer need only the newest version number. If the notes cannot be loaded the dialog shows a message and a Retry button. (Maintainer, 2026-11-28)",
 "F460": "A page load asks for the user's permissions once, not once per component, and gating is unchanged",
 "F461": "A cache that shares the answer but asks again on every later mount of the page",
@@ -2699,28 +2733,14 @@
 "F463": "It is ready at once with the page's grants and nothing is asked again",
 "F464": "Parts that appear later on the same page show their actions without another permissions request",
 "F465": "A component that reads the cached answer but triggers a background ask on mount, counted only after the check",
-"F466": "An administrator removes the user's Team Admin right on Team 1 and grants Portfolio Admin on Portfolio 2, then the user moves from the Team page to a Portfolio page",
-"F467": "The new page's components are loading until the answer asked after the move arrives, then they and the header that stayed mounted offer Portfolio Admin on Portfolio 2 and no longer Team Admin on Team 1; two asks in total",
-"F468": "Rights changed by someone else show on the next page, without a reload",
-"F469": "A refresh on move that also asks once more for each newly mounted component on the first render, if the count is taken before it settles",
 "F47": "The parallel version checks keep today's error rule: any failure shows the footer error. (Maintainer, 2026-11-28)",
 "F470": "The user moves to a Portfolio page while the first page's permissions answer is still on its way, and that old answer then arrives",
-"F471": "The Portfolio page's components stay loading after the old answer arrives, and only show the grants of the answer asked after the move",
 "F472": "A page never shows actions from a permissions answer asked on the page the user left",
 "F473": "An implementation that shows the old answer for one render frame and replaces it before the check",
-"F474": "On a page whose answer gives no admin rights, the user's own change (a grant or a new Team) completes and the refresh after own changes is called",
-"F475": "The permissions are asked once more and every component on the page offers Team Admin on Team 7, with no page move",
-"F476": "The user's own change of rights shows at once, without a reload or a page move",
-"F477": "A refresh that marks the answer stale without asking until the next page move would fail; one that refreshes only the calling component would pass only if that component is the one checked",
-"F478": "The permissions answer cannot be loaded when the user opens a page with three gating components",
-"F479": "Every component reports could-not-load, is not loading and shows today's permissive fallback (system admin, may create Team and Portfolio, admin of any unit); asked once, no automatic retries",
 "F48": "In scope beyond permissions: Teams and Portfolios lists, licence, and Team settings on lists. Out: the other useEffect hooks and the Portfolio chain. (Maintainer, 2026-11-28)",
 "F480": "Permissions that cannot be loaded behave as today, the same for every part of the page",
-"F481": "A shared query that retries automatically but finishes its retries before the check would fail on the count; a fallback missing only an unlisted field would pass",
 "F482": "After a failed load the user presses retry in one component, and the answer now loads",
-"F483": "Exactly one more ask, and all three components show the loaded grants with could-not-load cleared",
 "F484": "One retry asks again once for all parts of the page",
-"F485": "A retry that refetches once but leaves another component's could-not-load flag set until its next render would fail; one that refetches twice sequentially would fail on the count",
 "F486": "The product source, every non-test frontend file including files added later, is scanned for direct calls to the permissions service",
 "F487": "Only the permissions hook calls it",
 "F488": "Every component gates on the one shared permissions answer behind useRbac()",
@@ -2859,8 +2879,32 @@
 "F621": "getTeams, getPortfolios and getLicenseStatus each called once per page however many components read them; after useUnitListsChanged the lists show the change without a route change; the change by someone else shows after the route change; after a page with no list reader, the reader that mounts on the next page asks once and shows the list",
 "F622": "Today: useLicenseRestrictions with staleTime 0 plus SurveyNudge and OverviewDashboard each call the services, so counts exceed one; refetchOnMount false: the reader after a page with no reader stays loading",
 "F623": "page with no list reader between two pages with readers -> the reader that mounts on the third page asks once and shows the list, never loading for ever",
+"F624": "The user opens a Team page where a header, a page part kept across pages and two more page parts gate on the user's permissions",
+"F625": "The permissions are asked once, and all four parts show the same grants (Team Admin of Team 1)",
+"F626": "An administrator removes the user's Team Admin right on Team 1 and grants Portfolio Admin on Portfolio 2, then the user moves from the Team page to a Portfolio page; the header and one page part stay mounted, two page parts mount on the new page",
+"F627": "Before the new answer lands, the two newly mounted parts are loading while the header and the kept part are not loading and still offer Team Admin on Team 1; once it lands every part offers Portfolio Admin on Portfolio 2 and no longer Team Admin on Team 1; the permissions were asked twice in total",
+"F628": "Rights changed by someone else show on the next page without a reload, and controls that stay on screen do not vanish while the answer is on its way",
+"F629": "A refresh on move that also asks once more for each newly mounted component, if that extra ask settles before the count is read",
 "F63": "72 repeated calls gone over 16 pages; RBAC gating unchanged.",
+"F630": "The header, the kept part and the newly mounted parts all stay loading after the old answer arrives, and only show the grants of the answer asked after the move; two asks in total",
+"F631": "On a page whose answer gives no admin rights, the user's own change (a grant or a new Team) completes and the refresh after own changes is called while its answer is still on its way",
+"F632": "While the refresh runs no part turns loading or could-not-load; once the answer lands every part offers Team Admin on Team 7, with no page move; the permissions were asked once more",
+"F633": "The user's own change of rights shows at once, without a reload, a page move or controls vanishing meanwhile",
+"F634": "A refresh that briefly turns parts loading for a render between the two checks",
+"F635": "The permissions answer cannot be loaded when the user opens a page with four gating parts",
+"F636": "Every part reports could-not-load, is not loading and shows today's permissive fallback (system admin, may create Team and Portfolio, admin of any unit); asked once, with no automatic retries",
+"F637": "A fallback missing only a right that is not listed in the check",
+"F638": "Exactly one more ask, and all parts show the loaded grants with could-not-load cleared",
+"F639": "A retry that refetches twice in sequence, if the second ask is started after the count is read",
 "F64": "The Teams and Portfolios lists and the licence status are fetched once and shared; the user's own create, rename or delete shows in the lists at once.",
+"F640": "The user moves from a Team page to a Portfolio page and the permissions ask after the move fails; then one newly mounted part retries and the answer loads",
+"F641": "The header and the kept part keep offering Team Admin on Team 1, not loading and not could-not-load; the two newly mounted parts report could-not-load with today's permissive fallback; two asks, no automatic retries; the retry asks exactly once and every part then offers Portfolio Admin on Portfolio 2",
+"F642": "A failed permissions load after a page move leaves the controls already shown in place, gives new parts today's could-not-load behaviour, and one retry fixes all of them",
+"F643": "Kept parts that switch to the fallback for one render and back before the check",
+"F644": "The app runs in React strict mode, which renders twice; the user moves from a Team page to a Portfolio page",
+"F645": "The move asks the permissions exactly once and every part on the new page then offers Portfolio Admin on Portfolio 2",
+"F646": "One page move asks for the user's permissions once, even when the app renders twice",
+"F647": "A page counter that advances twice but whose second invalidation is deduplicated into the first ask; the extra advance is not visible through the permissions",
 "F65": "Fewer repeated shell calls on every load.",
 "F66": "A Features tab shows the same list as today without loading full Team settings.",
 "F67": "32 KB less per Features tab.",
