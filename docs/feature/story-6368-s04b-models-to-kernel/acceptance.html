@@ -1275,6 +1275,129 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Examination</h2>
 
-<p>None.</p>
+<h3>E1</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe architecture-rules exit 0: 2708 tests total, 2708 passed, 0 failed. Includes catalogue-vs-IL checks, EveryKernelRow_IsUsedByTwoOrMoreContexts, per-type TheContextType_IsNoLongerOnTheModelsCatalogueOrItsMoversList rows, planted negative controls (TheCatalogueCheck_NamesAPlantedTypeMissingFromTheCatalogue_AndARowForATypeThatDoesNotExist, TheBlockerCheck_NamesARowClaimingABlockerTheTypeIsFreeOf, AKernelRowUsedByOnlyOneContext_IsNamedAndOneUsedByTwoIsNot, AModelThatReachesIntoServices_FailsTheKernelRuleAndIsNamed), module boundary rules green.
+</code></pre>
+
+<h3>E2</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe architecture-rules exit 0: 2708 tests total, 2708 passed, 0 failed. Includes catalogue-vs-IL checks, EveryKernelRow_IsUsedByTwoOrMoreContexts, per-type TheContextType_IsNoLongerOnTheModelsCatalogueOrItsMoversList rows, planted negative controls (TheCatalogueCheck_NamesAPlantedTypeMissingFromTheCatalogue_AndARowForATypeThatDoesNotExist, TheBlockerCheck_NamesARowClaimingABlockerTheTypeIsFreeOf, AKernelRowUsedByOnlyOneContext_IsNamedAndOneUsedByTwoIsNot, AModelThatReachesIntoServices_FailsTheKernelRuleAndIsNamed), module boundary rules green.
+</code></pre>
+
+<h3>E3</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe architecture-rules exit 0: 2708 tests total, 2708 passed, 0 failed. Includes catalogue-vs-IL checks, EveryKernelRow_IsUsedByTwoOrMoreContexts, per-type TheContextType_IsNoLongerOnTheModelsCatalogueOrItsMoversList rows, planted negative controls (TheCatalogueCheck_NamesAPlantedTypeMissingFromTheCatalogue_AndARowForATypeThatDoesNotExist, TheBlockerCheck_NamesARowClaimingABlockerTheTypeIsFreeOf, AKernelRowUsedByOnlyOneContext_IsNamedAndOneUsedByTwoIsNot, AModelThatReachesIntoServices_FailsTheKernelRuleAndIsNamed), module boundary rules green.
+</code></pre>
+
+<pre><code>Probe backend-tests exit 0: Test Run Successful, 15912 total, 15900 passed, 0 failed, 12 skipped (full backend suite incl. moved types&#x27; unit tests).
+</code></pre>
+
+<h3>E4</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe architecture-rules exit 0: 2708 tests total, 2708 passed, 0 failed. Includes catalogue-vs-IL checks, EveryKernelRow_IsUsedByTwoOrMoreContexts, per-type TheContextType_IsNoLongerOnTheModelsCatalogueOrItsMoversList rows, planted negative controls (TheCatalogueCheck_NamesAPlantedTypeMissingFromTheCatalogue_AndARowForATypeThatDoesNotExist, TheBlockerCheck_NamesARowClaimingABlockerTheTypeIsFreeOf, AKernelRowUsedByOnlyOneContext_IsNamedAndOneUsedByTwoIsNot, AModelThatReachesIntoServices_FailsTheKernelRuleAndIsNamed), module boundary rules green.
+</code></pre>
+
+<pre><code>Probe backend-tests exit 0: Test Run Successful, 15912 total, 15900 passed, 0 failed, 12 skipped (full backend suite incl. moved types&#x27; unit tests).
+</code></pre>
+
+<h3>E5</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe architecture-rules exit 0: 2708 tests total, 2708 passed, 0 failed. Includes catalogue-vs-IL checks, EveryKernelRow_IsUsedByTwoOrMoreContexts, per-type TheContextType_IsNoLongerOnTheModelsCatalogueOrItsMoversList rows, planted negative controls (TheCatalogueCheck_NamesAPlantedTypeMissingFromTheCatalogue_AndARowForATypeThatDoesNotExist, TheBlockerCheck_NamesARowClaimingABlockerTheTypeIsFreeOf, AKernelRowUsedByOnlyOneContext_IsNamedAndOneUsedByTwoIsNot, AModelThatReachesIntoServices_FailsTheKernelRuleAndIsNamed), module boundary rules green.
+</code></pre>
+
+<h3>E6</h3>
+
+<p>unmet</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probes platform-answers-compare exit 0 (VERDICT IDENTICAL, all 12 platform answers match) and access-answers-compare exit 0 (identical).
+</code></pre>
+
+<pre><code>Probes deliveries-answers-compare, metrics-answers-compare, forecast-answers-compare, refresh-answers-compare all exit 1 (DIFFERENT). Their base revisions are pinned by the command and stale: 2b7a00e54 (1269 commits behind HEAD), 7ec328cb6 (2369), 39a7f598f (1755), 8a785450c; none is the revision before Story 6368. Visible diffs include payload field hasNoChildWorkItemsYet added, totalWork/expectedDate changes: that field comes from Story 6504, which lies after base 39a7f598f. So the diffs cannot be attributed to Story 6368 nor cleared; the captures cannot isolate this Story&#x27;s effect on those four areas.
+</code></pre>
+
+<p>observation_gap</p>
+
+<h4>Waiver</h4>
+
+<pre><code>Benjamin Huser-Berta (maintainer)
+</code></pre>
+
+<pre><code>2026-11-28T16:49:31Z
+</code></pre>
+
+<pre><code>The deliveries, metrics, forecast and refresh answer comparisons are pinned to base revisions 1269 to 2369 commits old, so their differences (for example the hasNoChildWorkItemsYet field from Story 6504) cannot show whether this Story changed those answers. The maintainer waived rows EXAMINE cannot observe (2026-11-28).
+</code></pre>
+
+<pre><code>The Story changes only namespace and using lines of 17 moved files, so no statement changed. The full backend suite ran 15900 passed and 0 failed on the candidate (O5), and the platform and access answer comparisons were identical (O3). CI run 46160993008 on af209fdfe was green.
+</code></pre>
+
+<h3>E7</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe ef-model-unchanged exit 0: Sqlite and Postgres both print &#x27;No changes have been made to the model since the last migration.&#x27;
+</code></pre>
+
+<h3>E8</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probes platform-answers-compare exit 0 (VERDICT IDENTICAL, all 12 platform answers match) and access-answers-compare exit 0 (identical).
+</code></pre>
+
+<pre><code>Probe backend-tests exit 0: Test Run Successful, 15912 total, 15900 passed, 0 failed, 12 skipped (full backend suite incl. moved types&#x27; unit tests).
+</code></pre>
+
+<h3>E9</h3>
+
+<p>unmet</p>
+
+<h4>Observations</h4>
+
+<pre><code>nwdes examine read of the workspace public dir lists nothing; ARCHITECTURE.md and ADR-270 are refused (ReadRefused: not in the public projection; operator must declare them under examine.public in .nwave/config.json and rebuild the prompt). Prose of P5 cannot be observed by admitted means.
+</code></pre>
+
+<p>observation_gap</p>
+
+<h4>Waiver</h4>
+
+<pre><code>Benjamin Huser-Berta (maintainer)
+</code></pre>
+
+<pre><code>2026-11-28T16:49:31Z
+</code></pre>
+
+<pre><code>ARCHITECTURE.md and ADR-270 are outside the examiner&#x27;s public projection, so EXAMINE cannot read the kernel description. The maintainer waived rows EXAMINE cannot observe (2026-11-28).
+</code></pre>
+
+<pre><code>The whole-candidate review (f93ea1391) re-counted the catalogue (331 rows: 3 Kernel, 328 Owned, and every blocker count) and matched it exactly to the ADR-270 Decision 7 status line. The S4 slice review checked ARCHITECTURE.md section 4 and the KPI 3 count (236 Models files).
+</code></pre>
 
 </body></html>

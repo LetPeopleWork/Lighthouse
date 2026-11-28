@@ -580,7 +580,7 @@
 "C": 1,
 "D": 20,
 "E": 9,
-"F": 552,
+"F": 558,
 "K": 10,
 "L": 9,
 "P": 5,
@@ -2928,6 +2928,80 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F553"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F553"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F553",
+"F554"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F553",
+"F554"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F553"
+],
+"verdict": "met"
+},
+"E6": {
+"class": "observation_gap",
+"observations": [
+"F555",
+"F556"
+],
+"verdict": "unmet",
+"waiver": {
+"by": "F547",
+"coverage": "F550",
+"reason": "F549",
+"waived_at": "F548"
+}
+},
+"E7": {
+"observations": [
+"F557"
+],
+"verdict": "met"
+},
+"E8": {
+"observations": [
+"F555",
+"F554"
+],
+"verdict": "met"
+},
+"E9": {
+"class": "observation_gap",
+"observations": [
+"F558"
+],
+"verdict": "unmet",
+"waiver": {
+"by": "F547",
+"coverage": "F552",
+"reason": "F551",
+"waived_at": "F548"
+}
+}
+},
 "expectations": {
 "rows": [
 {
@@ -3407,6 +3481,12 @@
 "F550": "The Story changes only namespace and using lines of 17 moved files, so no statement changed. The full backend suite ran 15900 passed and 0 failed on the candidate (O5), and the platform and access answer comparisons were identical (O3). CI run 46160993008 on af209fdfe was green.",
 "F551": "ARCHITECTURE.md and ADR-270 are outside the examiner's public projection, so EXAMINE cannot read the kernel description. The maintainer waived rows EXAMINE cannot observe (2026-11-28).",
 "F552": "The whole-candidate review (f93ea1391) re-counted the catalogue (331 rows: 3 Kernel, 328 Owned, and every blocker count) and matched it exactly to the ADR-270 Decision 7 status line. The S4 slice review checked ARCHITECTURE.md section 4 and the KPI 3 count (236 Models files).",
+"F553": "Probe architecture-rules exit 0: 2708 tests total, 2708 passed, 0 failed. Includes catalogue-vs-IL checks, EveryKernelRow_IsUsedByTwoOrMoreContexts, per-type TheContextType_IsNoLongerOnTheModelsCatalogueOrItsMoversList rows, planted negative controls (TheCatalogueCheck_NamesAPlantedTypeMissingFromTheCatalogue_AndARowForATypeThatDoesNotExist, TheBlockerCheck_NamesARowClaimingABlockerTheTypeIsFreeOf, AKernelRowUsedByOnlyOneContext_IsNamedAndOneUsedByTwoIsNot, AModelThatReachesIntoServices_FailsTheKernelRuleAndIsNamed), module boundary rules green.",
+"F554": "Probe backend-tests exit 0: Test Run Successful, 15912 total, 15900 passed, 0 failed, 12 skipped (full backend suite incl. moved types' unit tests).",
+"F555": "Probes platform-answers-compare exit 0 (VERDICT IDENTICAL, all 12 platform answers match) and access-answers-compare exit 0 (identical).",
+"F556": "Probes deliveries-answers-compare, metrics-answers-compare, forecast-answers-compare, refresh-answers-compare all exit 1 (DIFFERENT). Their base revisions are pinned by the command and stale: 2b7a00e54 (1269 commits behind HEAD), 7ec328cb6 (2369), 39a7f598f (1755), 8a785450c; none is the revision before Story 6368. Visible diffs include payload field hasNoChildWorkItemsYet added, totalWork/expectedDate changes: that field comes from Story 6504, which lies after base 39a7f598f. So the diffs cannot be attributed to Story 6368 nor cleared; the captures cannot isolate this Story's effect on those four areas.",
+"F557": "Probe ef-model-unchanged exit 0: Sqlite and Postgres both print 'No changes have been made to the model since the last migration.'",
+"F558": "nwdes examine read of the workspace public dir lists nothing; ARCHITECTURE.md and ADR-270 are refused (ReadRefused: not in the public projection; operator must declare them under examine.public in .nwave/config.json and rebuild the prompt). Prose of P5 cannot be observed by admitted means.",
 "F56": "No shared wire, schema or configuration contract changes: System.Text.Json writes no type names, Swashbuckle uses short schema ids, no type-name reflection exists, and no entity moves, so no producer or consumer outside the compiled assembly sees a namespace.",
 "F57": "Every caller of a moved type is inside the one backend deployable and changes in the same commit; no persisted or wire data names a namespace, so the primary oracle and the unchanged suites cover them.",
 "F58": "Unchanged at runtime (controllers, the update queue, the event dispatcher). The oracles' driving port is the compiled Lighthouse.Backend assembly read through IlDependencies and the EF model of LighthouseAppContext, in-process; nearest argv: dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
