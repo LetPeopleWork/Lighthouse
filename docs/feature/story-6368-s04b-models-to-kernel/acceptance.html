@@ -573,40 +573,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>Read the catalogue row of each platform-owned usage-data type
+<pre><code>Read the catalogue of the types still under the shared Models after the usage-data types moved
 </code></pre>
 
-<pre><code>Each row names the lane&#x27;s usage-data namespace as the place the type moves to
+<pre><code>No catalogue row and no movers entry names any of the four usage-data types
 </code></pre>
 
-<pre><code>The catalogue that keeps Models shrinking tells the truth about where these types live
-</code></pre>
-
-<h5>Disposition</h5>
-
-<p>Tested</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest.cs</p>
-
-<p>ThePlatformTypesRow_NamesTheLanesNamespaceOfItsArea</p>
-
-<pre><code>A row that still names the Models or a module namespace while the type is elsewhere
-</code></pre>
-
-<h6>Obligations</h6>
-
-
-<h5>Covers</h5>
-
-<p>P2</p>
-
-<pre><code>List the catalogue&#x27;s free platform-owned types
-</code></pre>
-
-<pre><code>They are exactly the four usage-data types
-</code></pre>
-
-<pre><code>No platform type slips out of the move unnoticed and none is moved unlisted
+<pre><code>The catalogue that keeps Models shrinking lists only what is still in the Models
 </code></pre>
 
 <h5>Disposition</h5>
@@ -615,9 +588,9 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest.cs</p>
 
-<p>ThePlatformTypesTheModelsStillHeld_AreTheFourUsageDataTypes</p>
+<p>ThePlatformType_IsNoLongerOnTheModelsCatalogueOrItsMoversList</p>
 
-<pre><code>A fifth platform type added to the list, or one of the four dropped, without the oracle being updated
+<pre><code>A row or movers entry for a moved type left on the catalogue
 </code></pre>
 
 <h6>Obligations</h6>

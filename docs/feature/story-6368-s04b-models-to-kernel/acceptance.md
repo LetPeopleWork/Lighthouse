@@ -480,46 +480,15 @@ A type left under Models, moved into a module instead of the platform lane, or c
 P2
 
 ```text
-Read the catalogue row of each platform-owned usage-data type
+Read the catalogue of the types still under the shared Models after the usage-data types moved
 ```
 
 ```text
-Each row names the lane's usage-data namespace as the place the type moves to
+No catalogue row and no movers entry names any of the four usage-data types
 ```
 
 ```text
-The catalogue that keeps Models shrinking tells the truth about where these types live
-```
-
-##### Disposition
-
-Tested
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest\.cs
-
-ThePlatformTypesRow\_NamesTheLanesNamespaceOfItsArea
-
-```text
-A row that still names the Models or a module namespace while the type is elsewhere
-```
-
-###### Obligations
-
-
-##### Covers
-
-P2
-
-```text
-List the catalogue's free platform-owned types
-```
-
-```text
-They are exactly the four usage-data types
-```
-
-```text
-No platform type slips out of the move unnoticed and none is moved unlisted
+The catalogue that keeps Models shrinking lists only what is still in the Models
 ```
 
 ##### Disposition
@@ -528,10 +497,10 @@ Tested
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest\.cs
 
-ThePlatformTypesTheModelsStillHeld\_AreTheFourUsageDataTypes
+ThePlatformType\_IsNoLongerOnTheModelsCatalogueOrItsMoversList
 
 ```text
-A fifth platform type added to the list, or one of the four dropped, without the oracle being updated
+A row or movers entry for a moved type left on the catalogue
 ```
 
 ###### Obligations

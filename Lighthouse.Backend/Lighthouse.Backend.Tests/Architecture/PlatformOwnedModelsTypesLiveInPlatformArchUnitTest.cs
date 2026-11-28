@@ -11,9 +11,8 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class PlatformOwnedModelsTypesLiveInPlatformArchUnitTest
     {
-        private const string PlatformOwner = "Platform";
-
-        private const string TheLanesUsageDataNamespace = "Lighthouse.Backend.Platform.UsageData";
+        // A property, not a constant: a rule check reads every string constant of the test assembly as a rule pattern.
+        private static string TheLanesUsageDataNamespace => "Lighthouse.Backend.Platform.UsageData";
 
         private static readonly string[] TheUsageDataTypesThatLeftTheModels =
         [
@@ -25,12 +24,12 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(LighthouseAppContext).Assembly));
 
-        [Test]
-        public void ThePlatformTypesTheModelsStillHeld_AreTheFourUsageDataTypes()
+        [TestCaseSource(nameof(ThePlatformMovers))]
+        public void ThePlatformType_IsNoLongerOnTheModelsCatalogueOrItsMoversList(string name, string expectedNamespace)
         {
-            var catalogued = WhenThePlatformMoversAreReadFromTheCatalogue();
+            var entries = WhenTheCatalogueIsSearchedFor(name);
 
-            ThenTheyAreExactly(TheUsageDataTypesThatLeftTheModels, catalogued.Select(mover => mover.Name));
+            ThenNoEntryNamesIt(name, expectedNamespace, entries);
         }
 
         [TestCaseSource(nameof(ThePlatformMovers))]
@@ -41,34 +40,15 @@ namespace Lighthouse.Backend.Tests.Architecture
             ThenItIsFoundOnlyIn(name, expectedNamespace, places);
         }
 
-        [TestCaseSource(nameof(ThePlatformMovers))]
-        public void ThePlatformTypesRow_NamesTheLanesNamespaceOfItsArea(string name, string expectedNamespace)
-        {
-            var row = WhenTheTypesCatalogueEntryIsRead(name);
-
-            ThenTheEntryNames(name, expectedNamespace, row.NewNamespace);
-        }
-
         private static IEnumerable<TestCaseData> ThePlatformMovers()
             => TheUsageDataTypesThatLeftTheModels.Select(name => new TestCaseData(name, TheLanesUsageDataNamespace).SetArgDisplayNames(name));
 
-        private static List<MovingType> WhenThePlatformMoversAreReadFromTheCatalogue()
-            => [.. KernelCatalogue.Movers.Where(mover => mover.Area == PlatformOwner)];
-
-        private static MovingType WhenTheTypesCatalogueEntryIsRead(string name)
-            => KernelCatalogue.Movers.Single(mover => mover.Name == name);
+        private static List<string> WhenTheCatalogueIsSearchedFor(string name)
+            => [.. KernelCatalogue.Rows.Where(row => row.Type.EndsWith("." + name, StringComparison.Ordinal) || row.Type == name).Select(row => $"row {row.Type}"),
+                .. KernelCatalogue.Movers.Where(mover => mover.Name == name).Select(mover => $"mover {mover.OldFullName}")];
 
         private static List<string> WhenTheTypeIsLookedUpAmongTheTopLevelTypes(ModuleDefinition module, string name)
-            => [.. module.Types.Where(type => type.Name == name).Select(type => type.Namespace).Order(StringComparer.Ordinal)];
-
-        private static void ThenTheyAreExactly(IEnumerable<string> expected, IEnumerable<string> actual)
-        {
-            Assert.That(
-                actual.Order(StringComparer.Ordinal).ToList(),
-                Is.EqualTo(expected.Order(StringComparer.Ordinal).ToList()),
-                "The platform-owned Models types the catalogue lists as free are not the four usage-data types. A platform type was added or dropped: "
-                + "put it on KernelCatalogue.Movers with its owner and the namespace it moves to, and keep this list in step.");
-        }
+            => [.. module.Types.Where(type => type.Name == name && type.DeclaringType is null).Select(type => type.Namespace).Order(StringComparer.Ordinal)];
 
         private static void ThenItIsFoundOnlyIn(string name, string expectedNamespace, List<string> places)
         {
@@ -80,13 +60,13 @@ namespace Lighthouse.Backend.Tests.Architecture
                 + "and leave no copy under the Models or in a module.");
         }
 
-        private static void ThenTheEntryNames(string name, string expectedNamespace, string actualNamespace)
+        private static void ThenNoEntryNamesIt(string name, string expectedNamespace, List<string> entries)
         {
             Assert.That(
-                actualNamespace,
-                Is.EqualTo(expectedNamespace),
-                $"The catalogue row of {name} names {actualNamespace}, but a platform type lives in {expectedNamespace}. "
-                + "Set the namespace it moves to on its KernelCatalogue.Movers entry.");
+                entries,
+                Is.Empty,
+                $"{name} lives in {expectedNamespace}, so it is no longer a Models type, but the catalogue still lists [{string.Join(", ", entries)}]. "
+                + "Delete its row and its movers entry from KernelCatalogue: the catalogue lists only what is still under the Models.");
         }
     }
 }

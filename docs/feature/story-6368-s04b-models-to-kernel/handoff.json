@@ -270,32 +270,15 @@
 "disposition": {
 "kind": "Tested",
 "obligations": [
-"L2"
+"L2/F155"
 ],
-"still_passes_if": "F430",
-"test": "ThePlatformTypesRow_NamesTheLanesNamespaceOfItsArea",
+"still_passes_if": "F442",
+"test": "ThePlatformType_IsNoLongerOnTheModelsCatalogueOrItsMoversList",
 "test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest.cs"
 },
-"expected": "F428",
-"stimulus": "F427",
-"user_result": "F429"
-},
-{
-"covers": [
-"P2"
-],
-"disposition": {
-"kind": "Tested",
-"obligations": [
-"L2"
-],
-"still_passes_if": "F434",
-"test": "ThePlatformTypesTheModelsStillHeld_AreTheFourUsageDataTypes",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest.cs"
-},
-"expected": "F432",
-"stimulus": "F431",
-"user_result": "F433"
+"expected": "F440",
+"stimulus": "F439",
+"user_result": "F441"
 },
 {
 "covers": [
@@ -321,7 +304,7 @@
 "C": 1,
 "D": 19,
 "E": 9,
-"F": 438,
+"F": 442,
 "K": 9,
 "L": 9,
 "P": 5,
@@ -5168,20 +5151,16 @@
 "F424": "Each of the four types is found exactly once, under the platform lane's usage-data namespace, and nowhere under Models or in a module",
 "F425": "The platform lane holds its own usage-data types; nothing is left behind in the shared kernel",
 "F426": "A type left under Models, moved into a module instead of the platform lane, or copied so it exists in both places",
-"F427": "Read the catalogue row of each platform-owned usage-data type",
-"F428": "Each row names the lane's usage-data namespace as the place the type moves to",
-"F429": "The catalogue that keeps Models shrinking tells the truth about where these types live",
 "F43": "Non-test path consumers stay working: Scripts/test-selection/path-classifier.sh (SHARED_REGEX, JIRA_REGEX) and Lighthouse.Frontend/src/services/UsageData/usageDataRouteKeys.test.ts, which reads Models/UsageData/UsageDataRouteKey.cs and UsageDataRoutePatterns.cs by path; those two files stay (PathPinned).",
-"F430": "A row that still names the Models or a module namespace while the type is elsewhere",
-"F431": "List the catalogue's free platform-owned types",
-"F432": "They are exactly the four usage-data types",
-"F433": "No platform type slips out of the move unnoticed and none is moved unlisted",
-"F434": "A fifth platform type added to the list, or one of the four dropped, without the oracle being updated",
 "F435": "Run the existing platform lane membership and boundary architecture tests after the move",
 "F436": "They still pass unchanged: the lane keeps holding its types and no rule was weakened",
 "F437": "Nothing a user or client sees changes; the move is behaviour-free",
 "F438": "A rule edited so it no longer finds the moved types",
+"F439": "Read the catalogue of the types still under the shared Models after the usage-data types moved",
 "F44": "Comments are rare and written for a stranger; no internal id (decision, slice or ADR number) is the only reason in a comment.",
+"F440": "No catalogue row and no movers entry names any of the four usage-data types",
+"F441": "The catalogue that keeps Models shrinking lists only what is still in the Models",
+"F442": "A row or movers entry for a moved type left on the catalogue",
 "F45": "Owns the kernel rules (Models does not depend on Services, Modules, Platform or the update queue) run on real and planted types; it gains the rule that every Kernel row is used by two or more contexts.",
 "F46": "Already carries examined types, offenders and the rule text for kernel-rule failures; the new rule returns the same verdict.",
 "F47": "Owns the both-ways compare of an inline list with a measured set; K1 and the shrink-only movers list use it rather than a second compare.",

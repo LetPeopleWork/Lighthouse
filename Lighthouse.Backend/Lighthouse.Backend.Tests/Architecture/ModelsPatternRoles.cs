@@ -126,7 +126,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["OrganisationSetupType.NewRootNamespace"] = ["OrganisationSetup"],
             ["PlatformLaneMembershipArchUnitTest.ModuleNamespaces"] = ["Access", "FlowMetrics", "Forecasting", "OrganisationSetup", "Reports", "TrackerIntegration", "WorkItems"],
             ["PlatformLaneMembershipArchUnitTest.PlatformLaneNamespaces"] = ["Platform"],
-            ["PlatformOwnedModelsTypesLiveInPlatformArchUnitTest.TheLanesUsageDataNamespace"] = ["Platform"],
             ["PlatformLaneRulesSeeTheMoveArchUnitTest.ThePlatformNamespace"] = ["Platform"],
             ["PromisesModuleBoundariesArchUnitTest.AccessAndLicensing"] = ["Access"],
             ["PromisesModuleBoundariesArchUnitTest.TheNamespacedUpstreamCode"] = ["Access"],
