@@ -67,8 +67,8 @@ The boundary between contexts is:
 - the architecture rules that read the compiled code: the per-module rules, and the architecture rules R-C1 to R-C5.
 
 The split may come later. The maintainer named a possible later move towards separately deployable services as a
-long-term direction. ADR-027 D4 still rejects microservices today, so a split would be the first step of that move
-and would need its own ADR. A split would also let mutation testing run per assembly, which is faster. These are
+long-term direction. ADR-027 D4 still rejects microservices today. Any such move would need its own ADR, and its
+first steps are the ones listed at the end of this ADR, not a split into assemblies. A split would also let mutation testing run per assembly, which is faster. These are
 reasons to keep the door open, not to open it now. It stays closed until the three cycles above are gone (see
 "When to reopen").
 
@@ -157,7 +157,7 @@ compiler can see, but it fails in the test run, not at build. A context's intern
 assembly; a rule, not the compiler, keeps other contexts off them.
 
 The cycle between Flow metrics and Work Items, the older code folders, and the Data to Services edge remain. They
-are already owned by other work (the listed edges of ADR-270, Epic 6474, Epic 6507 and S10). This ADR adds no new
+are already owned by other work (the listed edges of ADR-270, Epic 6474, Epic 6507 and the data-ownership work (S10 in the Epic 6264 catalogue)). This ADR adds no new
 work and no new rule. The context-cycle rule named under P1 is a possible future item, not a part of this decision.
 
 If the project later moves towards separately deployable services, the first steps are not assemblies. They are
