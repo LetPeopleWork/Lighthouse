@@ -60,6 +60,22 @@ namespace Lighthouse.Backend.API
             return Ok(lighthouseReleases);
         }
 
+        [SignedInOnly("The newest public release version, the same for everybody and with nothing about this instance's data.")]
+        [HttpGet("newest")]
+        [ProducesResponseType<string>(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<string>> GetNewestVersion()
+        {
+            var newestVersion = await lighthouseReleaseService.GetNewestReleaseVersion();
+
+            if (string.IsNullOrEmpty(newestVersion))
+            {
+                return NotFound();
+            }
+
+            return Ok(newestVersion);
+        }
+
         [SignedInOnly("Says whether this installation can update itself, which is not private; installing an update is System Admin only.")]
         [HttpGet("updateSupported")]
         public ActionResult<bool> IsUpdateSupported()

@@ -18,7 +18,6 @@ import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useRbac } from "../../../hooks/useRbac";
-import type { ILighthouseRelease } from "../../../models/LighthouseRelease/LighthouseRelease";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import LoadingAnimation from "../../Common/LoadingAnimation/LoadingAnimation";
 import LatestReleaseInformationDialog from "./LatestReleaseInformationDialog";
@@ -32,7 +31,7 @@ const LighthouseVersion: React.FC = () => {
 	const [isUpdateSupported, setIsUpdateSupported] = useState(false);
 	const [updateOwner, setUpdateOwner] = useState<string>("");
 	const [showAboutDialog, setShowAboutDialog] = useState(false);
-	const [newReleases, setNewReleases] = useState<ILighthouseRelease[]>([]);
+	const [newestVersion, setNewestVersion] = useState<string>("");
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [isInstalling, setIsInstalling] = useState(false);
 	const [installError, setInstallError] = useState<string | null>(null);
@@ -88,29 +87,31 @@ const LighthouseVersion: React.FC = () => {
 	useEffect(() => {
 		const fetchData = async () => {
 			try {
-				const versionData = await versionService.getCurrentVersion();
+				const [versionData, distributionInfo, updateAvailable] =
+					await Promise.all([
+						versionService.getCurrentVersion(),
+						versionService.getDistributionInfo(),
+						versionService.isUpdateAvailable(),
+					]);
 				setVersion(versionData);
-
-				const distributionInfo = await versionService.getDistributionInfo();
 				setUpdateOwner(distributionInfo.updateOwner);
-
-				const updateAvailable = await versionService.isUpdateAvailable();
 				setIsUpdateAvailable(updateAvailable);
 
 				if (updateAvailable) {
-					const releaseData = await versionService.getNewReleases();
-					setNewReleases(releaseData);
-
-					if (distributionInfo.updateOwner === "lighthouse-internal") {
-						const updateSupported = await versionService.isUpdateSupported();
-						setIsUpdateSupported(updateSupported);
-					}
+					const [newest, updateSupported] = await Promise.all([
+						versionService.getNewestVersion(),
+						distributionInfo.updateOwner === "lighthouse-internal"
+							? versionService.isUpdateSupported()
+							: Promise.resolve(false),
+					]);
+					setNewestVersion(newest);
+					setIsUpdateSupported(updateSupported);
 
 					// Show notification popup if user hasn't opted out for this version
 					if (
-						releaseData.length > 0 &&
+						newest &&
 						versionData !== "DEV" &&
-						shouldShowNotification(releaseData[0].version)
+						shouldShowNotification(newest)
 					) {
 						setShowUpdateNotification(true);
 					}
@@ -191,11 +192,8 @@ const LighthouseVersion: React.FC = () => {
 	};
 
 	const handleNotificationClose = () => {
-		if (
-			notificationPreference === "dontShowVersion" &&
-			newReleases.length > 0
-		) {
-			hideNotificationForVersion(newReleases[0].version);
+		if (notificationPreference === "dontShowVersion" && newestVersion) {
+			hideNotificationForVersion(newestVersion);
 		} else if (notificationPreference === "dontShowAll") {
 			hideAllNotifications();
 		}
@@ -269,7 +267,7 @@ const LighthouseVersion: React.FC = () => {
 			<LatestReleaseInformationDialog
 				open={isDialogOpen}
 				onClose={handleDialogClose}
-				newReleases={newReleases}
+				newestVersion={newestVersion}
 				isUpdateSupported={isUpdateSupported && isSystemAdmin}
 				isInstalling={isInstalling}
 				installError={installError}
@@ -281,10 +279,10 @@ const LighthouseVersion: React.FC = () => {
 				<DialogTitle>New Version Available!</DialogTitle>
 				<DialogContent>
 					<Typography variant="body1" gutterBottom>
-						{newReleases.length > 0 && (
+						{newestVersion && (
 							<>
 								A new version of Lighthouse is available:{" "}
-								<strong>{newReleases[0].version}</strong>
+								<strong>{newestVersion}</strong>
 							</>
 						)}
 					</Typography>

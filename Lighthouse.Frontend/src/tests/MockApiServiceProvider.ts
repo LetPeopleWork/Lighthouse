@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { type Mocked, vi } from "vitest";
 import type { IApiKeyService } from "../services/Api/ApiKeyService";
 import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
 import type { IBlackoutPeriodService } from "../services/Api/BlackoutPeriodService";
@@ -24,6 +24,7 @@ import type { ISystemInfoService } from "../services/Api/SystemInfoService";
 import type { ITeamService } from "../services/Api/TeamService";
 import type { ITerminologyService } from "../services/Api/TerminologyService";
 import type { IUsageDataService } from "../services/Api/UsageDataService";
+import type { IVersionService } from "../services/Api/VersionService";
 import type { IWorkTrackingSystemService } from "../services/Api/WorkTrackingSystemService";
 import type { IUpdateSubscriptionService } from "../services/UpdateSubscriptionService";
 
@@ -83,8 +84,8 @@ export const createMockApiServiceContext = (
 	};
 };
 
-// The return type is left to inference so that a check can reach every member as a mock; it stays assignable to the service's interface.
-export const createMockVersionService = () => {
+// Typed as Mocked so that a check can reach every member as a mock; an inferred type cannot be named in declaration output.
+export const createMockVersionService = (): Mocked<IVersionService> => {
 	return {
 		getCurrentVersion: vi.fn().mockResolvedValue("v1.0.0"),
 		isUpdateAvailable: vi.fn().mockResolvedValue(false),

@@ -77,6 +77,12 @@ namespace Lighthouse.Backend.Platform.Releases
             return newReleases;
         }
 
+        public async Task<string?> GetNewestReleaseVersion()
+        {
+            var newReleases = await GetNewReleases();
+            return newReleases.FirstOrDefault()?.Version;
+        }
+
         private async Task<string> GetLatestReleaseTag()
         {
             return await gitHubService.GetLatestReleaseVersion();

@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string FixtureHttpNamespace = "Lighthouse.Backend.Modules.AccessHttpFixtures.Http";
 
-        private const int TheMeasuredNumberOfGuardedActions = 255;
+        private const int TheMeasuredNumberOfGuardedActions = 256;
 
         private static readonly string[] TheFourAttributeNames = ["RbacGuardAttribute", "AccessMarkerAttribute", "SignedInOnlyAttribute", "CheckedInHandlerAttribute"];
 

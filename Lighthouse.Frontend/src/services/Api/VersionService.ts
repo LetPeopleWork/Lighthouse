@@ -9,6 +9,7 @@ import { BaseApiService } from "./BaseApiService";
 export interface IVersionService {
 	getCurrentVersion(): Promise<string>;
 	isUpdateAvailable(): Promise<boolean>;
+	getNewestVersion(): Promise<string>;
 	getNewReleases(): Promise<LighthouseRelease[]>;
 	isUpdateSupported(): Promise<boolean>;
 	installUpdate(): Promise<boolean>;
@@ -26,6 +27,13 @@ export class VersionService extends BaseApiService {
 	isUpdateAvailable(): Promise<boolean> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<boolean>("/version/hasupdate");
+			return response.data;
+		});
+	}
+
+	getNewestVersion(): Promise<string> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<string>("/version/newest");
 			return response.data;
 		});
 	}

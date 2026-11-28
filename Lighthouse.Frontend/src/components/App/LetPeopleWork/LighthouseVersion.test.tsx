@@ -1,9 +1,5 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { BrowserRouter as Router } from "react-router";
-import {
-	type ILighthouseRelease,
-	LighthouseRelease,
-} from "../../../models/LighthouseRelease/LighthouseRelease";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IVersionService } from "../../../services/Api/VersionService";
 import {
@@ -15,6 +11,7 @@ import LighthouseVersion from "./LighthouseVersion";
 
 const mockGetCurrentVersion = vi.fn();
 const mockIsUpdateAvailable = vi.fn();
+const mockGetNewestVersion = vi.fn();
 const mockGetNewReleases = vi.fn();
 const mockIsUpdateSupported = vi.fn();
 const mockInstallUpdate = vi.fn();
@@ -23,6 +20,7 @@ const mockGetDistributionInfo = vi.fn();
 const mockVersionService: IVersionService = {
 	getCurrentVersion: mockGetCurrentVersion,
 	isUpdateAvailable: mockIsUpdateAvailable,
+	getNewestVersion: mockGetNewestVersion,
 	getNewReleases: mockGetNewReleases,
 	isUpdateSupported: mockIsUpdateSupported,
 	installUpdate: mockInstallUpdate,
@@ -32,12 +30,12 @@ const mockVersionService: IVersionService = {
 vi.mock("./LatestReleaseInformationDialog", () => ({
 	default: ({
 		open,
-		newReleases,
+		newestVersion,
 		isUpdateSupported,
 	}: {
 		open: boolean;
 		onClose: () => void;
-		newReleases: ILighthouseRelease[];
+		newestVersion: string;
 		isUpdateSupported: boolean;
 		isInstalling: boolean;
 		installError: string | null;
@@ -51,9 +49,7 @@ vi.mock("./LatestReleaseInformationDialog", () => ({
 		return (
 			<div data-testid="ReleaseInfoDialog">
 				<span data-testid="isUpdateSupported">{String(isUpdateSupported)}</span>
-				{newReleases.map((release) => (
-					<span key={release.name}>{release.name}</span>
-				))}
+				<span data-testid="newestVersion">{newestVersion}</span>
 			</div>
 		);
 	},
@@ -79,6 +75,7 @@ describe("LighthouseVersion component", () => {
 	beforeEach(() => {
 		mockGetCurrentVersion.mockResolvedValue("1.33.7");
 		mockIsUpdateAvailable.mockResolvedValue(false);
+		mockGetNewestVersion.mockResolvedValue("1.33.8");
 		mockGetNewReleases.mockResolvedValue([]);
 		mockIsUpdateSupported.mockResolvedValue(false);
 		mockInstallUpdate.mockResolvedValue(false);
@@ -171,19 +168,8 @@ describe("LighthouseVersion component", () => {
 		expect(dialog).toBeInTheDocument();
 	});
 
-	it("renders all releases", async () => {
-		const releases: ILighthouseRelease[] = [
-			new LighthouseRelease(
-				"Release 1",
-				"https://letpeople.work/releases/1",
-				"HIGHLIGHT",
-				"1.33.8",
-				[],
-			),
-		];
-
+	it("hands the newest version to the dialog, which loads the release notes itself", async () => {
 		mockIsUpdateAvailable.mockResolvedValue(true);
-		mockGetNewReleases.mockResolvedValue(releases);
 		mockIsUpdateSupported.mockResolvedValue(true);
 
 		renderWithQueryClient(
@@ -196,14 +182,11 @@ describe("LighthouseVersion component", () => {
 
 		await screen.findByText("1.33.7");
 
-		const button = screen.getByTestId("UpdateIcon");
-		fireEvent.click(button);
+		fireEvent.click(screen.getByTestId("UpdateIcon"));
 
-		const dialog = screen.queryByTestId("ReleaseInfoDialog");
-		expect(dialog).toBeInTheDocument();
-
-		const release = screen.getByText("Release 1");
-		expect(release).toBeInTheDocument();
+		expect(screen.getByTestId("ReleaseInfoDialog")).toBeInTheDocument();
+		expect(screen.getByTestId("newestVersion")).toHaveTextContent("1.33.8");
+		expect(mockGetNewReleases).not.toHaveBeenCalled();
 	});
 
 	it("renders About dialog when info icon is clicked", async () => {
@@ -384,9 +367,6 @@ describe("LighthouseVersion component", () => {
 		async (isSystemAdmin, expected) => {
 			mockIsUpdateAvailable.mockResolvedValue(true);
 			mockIsUpdateSupported.mockResolvedValue(true);
-			mockGetNewReleases.mockResolvedValue([
-				new LighthouseRelease("Release 1", "link", "1.33.8", "highlights", []),
-			]);
 
 			renderAsSystemAdmin(isSystemAdmin);
 

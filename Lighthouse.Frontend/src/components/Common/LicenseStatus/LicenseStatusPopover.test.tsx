@@ -35,6 +35,7 @@ describe("LicenseStatusPopover", () => {
 		mockVersionService = {
 			getCurrentVersion: vi.fn().mockResolvedValue("v1.33.7"),
 			isUpdateAvailable: vi.fn(),
+			getNewestVersion: vi.fn(),
 			getNewReleases: vi.fn(),
 			isUpdateSupported: vi.fn(),
 			installUpdate: vi.fn(),

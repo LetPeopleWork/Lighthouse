@@ -16,16 +16,18 @@ import {
 	Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
+import { useQuery } from "@tanstack/react-query";
 import type React from "react";
+import { useContext } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { ILighthouseRelease } from "../../../models/LighthouseRelease/LighthouseRelease";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import InputGroup from "../../Common/InputGroup/InputGroup";
 
 interface LatestReleaseInformationDialogProps {
 	open: boolean;
 	onClose: () => void;
-	newReleases: ILighthouseRelease[] | null;
+	newestVersion: string;
 	isUpdateSupported: boolean;
 	isInstalling: boolean;
 	installError: string | null;
@@ -38,17 +40,34 @@ const LatestReleaseInformationDialog: React.FC<
 > = ({
 	open,
 	onClose,
-	newReleases,
+	newestVersion,
 	isUpdateSupported,
 	isInstalling,
 	installError,
 	installSuccess,
 	onInstallUpdate,
 }) => {
+	const { versionService } = useContext(ApiServiceContext);
+	const {
+		data: newReleases,
+		isPending,
+		isError,
+		refetch,
+	} = useQuery({
+		queryKey: ["version", "newReleases"],
+		queryFn: () => versionService.getNewReleases(),
+		enabled: open,
+		retry: false,
+	});
+
 	return (
 		<Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
 			<DialogTitle>Update Available</DialogTitle>
 			<DialogContent>
+				<Typography variant="body1" sx={{ mb: 2 }}>
+					Lighthouse {newestVersion} is available.
+				</Typography>
+
 				{isUpdateSupported && (
 					<Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
 						<UpdateIcon color="primary" sx={{ marginRight: 1 }} />
@@ -96,6 +115,27 @@ const LatestReleaseInformationDialog: React.FC<
 						.
 					</Typography>
 				</Box>
+
+				{isPending && (
+					<Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+						<CircularProgress size={20} sx={{ marginRight: 1 }} />
+						<Typography variant="body1">Loading release notes…</Typography>
+					</Box>
+				)}
+
+				{isError && (
+					<Alert
+						severity="warning"
+						sx={{ mb: 2 }}
+						action={
+							<Button color="inherit" size="small" onClick={() => refetch()}>
+								Retry
+							</Button>
+						}
+					>
+						Could not load the release notes.
+					</Alert>
+				)}
 
 				{newReleases?.map((release, index) => (
 					<InputGroup

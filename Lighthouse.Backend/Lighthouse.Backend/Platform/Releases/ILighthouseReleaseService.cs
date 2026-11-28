@@ -9,6 +9,8 @@ namespace Lighthouse.Backend.Platform.Releases
 
         Task<IEnumerable<LighthouseRelease>> GetNewReleases();
 
+        Task<string?> GetNewestReleaseVersion();
+
         Task<bool> UpdateAvailable();
 
         bool IsUpdateSupported();
