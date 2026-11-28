@@ -42,6 +42,276 @@
 "stimulus": "F389",
 "user_result": "F391"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F475",
+"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.The_upgrade_gives_two_levels_named_in_the_organisations_own_words",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs"
+},
+"expected": "F473",
+"stimulus": "F472",
+"user_result": "F474"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F479",
+"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.A_type_a_Team_and_a_Portfolio_of_one_connection_both_read_sits_on_both_levels",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs"
+},
+"expected": "F477",
+"stimulus": "F476",
+"user_result": "F478"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F483",
+"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.The_eight_words_of_Terminology_read_the_same_after_the_upgrade",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs"
+},
+"expected": "F481",
+"stimulus": "F480",
+"user_result": "F482"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F487",
+"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.Renaming_through_Terminology_after_the_upgrade_lands_on_the_level",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs"
+},
+"expected": "F485",
+"stimulus": "F484",
+"user_result": "F486"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4"
+],
+"still_passes_if": "F491",
+"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.A_second_start_leaves_the_levels_and_the_mappings_as_the_first_start_left_them",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs"
+},
+"expected": "F489",
+"stimulus": "F488",
+"user_result": "F490"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F495",
+"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.MappingFromUnitsTest.Each_level_of_a_connection_lists_every_type_its_units_read_once_whatever_the_case",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/MappingFromUnitsTest.cs"
+},
+"expected": "F493",
+"stimulus": "F492",
+"user_result": "F494"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F499",
+"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.MappingFromUnitsTest.Two_Teams_spelling_Bug_and_one_spelling_bug_give_the_level_the_spelling_most_of_them_use",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/MappingFromUnitsTest.cs"
+},
+"expected": "F497",
+"stimulus": "F496",
+"user_result": "F498"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F503",
+"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.MappingFromUnitsTest.A_tie_in_spelling_goes_to_the_Team_with_the_lowest_number",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/MappingFromUnitsTest.cs"
+},
+"expected": "F501",
+"stimulus": "F500",
+"user_result": "F502"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F507",
+"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.MappingFromUnitsTest.Types_are_listed_in_the_order_they_first_appear_by_unit_number",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/MappingFromUnitsTest.cs"
+},
+"expected": "F505",
+"stimulus": "F504",
+"user_result": "F506"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F511",
+"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.MappingFromUnitsTest.A_Jira_connection_with_Teams_and_no_Portfolio_gets_Epic_on_the_Portfolio_level",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/MappingFromUnitsTest.cs"
+},
+"expected": "F509",
+"stimulus": "F508",
+"user_result": "F510"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F515",
+"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.MappingFromUnitsTest.A_Linear_connection_with_a_Portfolio_and_no_Team_lists_nothing_on_the_Team_level",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/MappingFromUnitsTest.cs"
+},
+"expected": "F513",
+"stimulus": "F512",
+"user_result": "F514"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F519",
+"test": "Lighthouse.Backend.Tests.API.Integration.TerminologyControllerAuthorizationTests.UpdateTerminology_AsNonPremiumUser_Returns403",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TerminologyControllerAuthorizationTests.cs"
+},
+"expected": "F517",
+"stimulus": "F516",
+"user_result": "F518"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F523",
+"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.NumbersStayTheSameTest.Every_units_numbers_stay_as_recorded_and_two_recordings_agree",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/NumbersStayTheSameTest.cs"
+},
+"expected": "F521",
+"stimulus": "F520",
+"user_result": "F522"
+},
+{
+"covers": [
+"P2",
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F527",
+"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.A_fresh_install_gets_two_levels_with_the_seeded_words_and_no_connection_mappings",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs"
+},
+"expected": "F525",
+"stimulus": "F524",
+"user_result": "F526"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1",
+"L2"
+],
+"still_passes_if": "F531",
+"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.Each_connection_lists_on_each_level_the_types_its_units_there_read_once_whatever_the_case",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs"
+},
+"expected": "F529",
+"stimulus": "F528",
+"user_result": "F530"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T7"
+],
+"still_passes_if": "F535",
+"test": "OrganisationStructurePlanPurityArchUnitTest",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationStructurePlanPurityArchUnitTest.cs"
+},
+"expected": "F533",
+"stimulus": "F532",
+"user_result": "F534"
+}
 ]
 },
 "counters": {
@@ -49,7 +319,7 @@
 "C": 2,
 "D": 17,
 "E": 6,
-"F": 454,
+"F": 535,
 "K": 6,
 "L": 5,
 "N": 15,
@@ -416,7 +686,7 @@
 },
 {
 "id": "D17",
-"text": "F448"
+"text": "F455"
 }
 ],
 "equality": [
@@ -1594,7 +1864,7 @@
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/UnitsOnLevelsTest.cs",
 "prefactoring": {
 "existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs",
-"move": "F443",
+"move": "F457",
 "preserved": "F407",
 "verification": [
 "dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj",
@@ -1633,11 +1903,15 @@
 },
 {
 "name": "IUnitLifecycle",
-"signature": "public interface IUnitLifecycle { Task<UnitId> CreateTeam(Team team, CancellationToken cancellationToken); Task<UnitId> CreatePortfolio(Portfolio portfolio, CancellationToken cancellationToken); Task<DeletionOutcome> Delete(UnitId unit, CancellationToken cancellationToken); }  (Application/Units; the port the controllers call)"
+"signature": "public interface IUnitLifecycle { Task<UnitSaveOutcome> CreateTeam(Team team, CancellationToken cancellationToken); Task<UnitSaveOutcome> CreatePortfolio(Portfolio portfolio, CancellationToken cancellationToken); Task<DeletionOutcome> Delete(UnitId unit, CancellationToken cancellationToken); }  (Application/Units; the only create port: the controller passes the entity it built through API.Helpers; the service commits the scoped unit of work and publishes UnitCreated after commit)"
 },
 {
 "name": "DeletionOutcome",
 "signature": "public abstract record DeletionOutcome; sealed record Deleted(UnitId Unit, IReadOnlyList<UnitId> UnitsThatReferencedIt) : DeletionOutcome; sealed record UnitNotFound(UnitId Unit) : DeletionOutcome  (Application/Units, one file)"
+},
+{
+"name": "UnitSaveOutcome",
+"signature": "public abstract record UnitSaveOutcome { private UnitSaveOutcome() {} public sealed record UnitSaved(UnitId Unit) : UnitSaveOutcome; }  (Application/Units; slice 04 adds the ItemTypeNotMapped and UnitToSaveNotFound cases)"
 }
 ],
 "decisions": [
@@ -1776,6 +2050,12 @@
 "kind": "public-signature",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs:1",
 "reason": "F405"
+},
+{
+"decision": "Changed",
+"kind": "public-signature",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/UnitSaveOutcome.cs:1",
+"reason": "F459"
 }
 ],
 "not_applicable": [
@@ -1910,6 +2190,12 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs:1",
 "reason": "F411",
 "symbol": "PortfoliosController"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/UnitSaveOutcome.cs:1",
+"reason": "F458",
+"symbol": "UnitSaveOutcome"
 }
 ]
 },
@@ -2000,6 +2286,11 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs",
 "reason": "F405"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/UnitSaveOutcome.cs",
+"reason": "F456"
 }
 ],
 "verification": [
@@ -2012,7 +2303,7 @@
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/UnitReadsItsSubsetTest.cs",
 "prefactoring": {
 "existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs",
-"move": "F444",
+"move": "F465",
 "preserved": "F415",
 "verification": [
 "dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj",
@@ -2023,13 +2314,13 @@
 ]
 },
 "public_oracle": {
-"expected": "F359",
-"falsifier": "F360",
+"expected": "F463",
+"falsifier": "F464",
 "promises": [
 "P5",
 "P1"
 ],
-"stimulus": "F358"
+"stimulus": "F462"
 },
 "records": {
 "architectural_tests": [
@@ -2074,11 +2365,11 @@
 },
 {
 "name": "IUnitSettings",
-"signature": "public interface IUnitSettings { Task<UnitSaveOutcome> SaveTeam(int teamId, Action<Team> applyRequestedSettings, CancellationToken cancellationToken); Task<UnitSaveOutcome> SavePortfolio(int portfolioId, Action<Portfolio> applyRequestedSettings, CancellationToken cancellationToken); Task<UnitSaveOutcome> CreateTeam(Action<Team> applyRequestedSettings, CancellationToken cancellationToken); Task<UnitSaveOutcome> CreatePortfolio(Action<Portfolio> applyRequestedSettings, CancellationToken cancellationToken); Task<RefreshRequest> RequestRefresh(UnitId unit, CancellationToken cancellationToken); }  (Application/Units; takes only Application and Models types: the controller passes the existing API.Helpers DTO-to-entity mapping as the delegate, so no Organisation set-up Application type reaches Lighthouse.Backend.API; the service loads or creates the entity, applies the delegate, resolves the requested item types against the connection mapping, and saves)"
+"signature": "public interface IUnitSettings { Task<UnitSaveOutcome> SaveTeam(int teamId, Action<Team> applyRequestedSettings, CancellationToken cancellationToken); Task<UnitSaveOutcome> SavePortfolio(int portfolioId, Action<Portfolio> applyRequestedSettings, CancellationToken cancellationToken); Task<RefreshRequest> RequestRefresh(UnitId unit, CancellationToken cancellationToken); }  (Application/Units; updates only, creates go through IUnitLifecycle; takes only Application and Models types: the controller passes the existing API.Helpers DTO-to-entity mapping as the delegate; the service loads the entity, applies the delegate, resolves the requested item types against the connection mapping, and saves)"
 },
 {
 "name": "UnitSaveOutcome",
-"signature": "public abstract record UnitSaveOutcome; sealed record UnitSaved(UnitId Unit) : UnitSaveOutcome; sealed record ItemTypeNotMapped(string Type, string LevelName, string ConnectionName) : UnitSaveOutcome; sealed record UnitToSaveNotFound(UnitId Unit) : UnitSaveOutcome  (Application/Units, one file; the controller maps ItemTypeNotMapped to 400 team-item-type-not-on-level / portfolio-item-type-not-on-level)"
+"signature": "UnitSaveOutcome (declared in slice 03) gains: public sealed record ItemTypeNotMapped(string Type, string LevelName, string ConnectionName) : UnitSaveOutcome; public sealed record UnitToSaveNotFound(UnitId Unit) : UnitSaveOutcome  (the controller maps ItemTypeNotMapped to 400 team-item-type-not-on-level / portfolio-item-type-not-on-level, for creates and updates)"
 },
 {
 "name": "RefreshRequest",
@@ -2097,7 +2388,7 @@
 "F301",
 "F361",
 "F362",
-"F416"
+"F466"
 ],
 "impact": [
 {
@@ -2249,6 +2540,12 @@
 "kind": "public-signature",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs:1",
 "reason": "F413"
+},
+{
+"decision": "Changed",
+"kind": "application",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/UnitLifecycleService.cs:1",
+"reason": "F469"
 }
 ],
 "reuse": [
@@ -2363,7 +2660,7 @@
 {
 "decision": "CreateNew",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/UnitSaveOutcome.cs:1",
-"reason": "F417",
+"reason": "F467",
 "symbol": "UnitSaveOutcome"
 },
 {
@@ -2389,6 +2686,12 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs:1",
 "reason": "F418",
 "symbol": "PortfolioController"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/UnitLifecycleService.cs:1",
+"reason": "F468",
+"symbol": "UnitLifecycleService"
 }
 ]
 },
@@ -2477,9 +2780,9 @@
 "reason": "F412"
 },
 {
-"change": "Create",
+"change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/UnitSaveOutcome.cs",
-"reason": "F412"
+"reason": "F460"
 },
 {
 "change": "Create",
@@ -2500,6 +2803,11 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs",
 "reason": "F413"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/UnitLifecycleService.cs",
+"reason": "F461"
 }
 ],
 "verification": [
@@ -2521,13 +2829,13 @@
 ]
 },
 "public_oracle": {
-"expected": "F451",
+"expected": "F471",
 "falsifier": "F452",
 "promises": [
 "P6",
 "P1"
 ],
-"stimulus": "F450"
+"stimulus": "F470"
 },
 "records": {
 "agreement": [
@@ -3220,10 +3528,7 @@
 "F355": "Two levels named Squad/Squads, Work Item/Work Items and Initiative/Initiatives, Feature/Features; per connection with units, level 1 = union of its Teams' types once ignoring case, level 2 = union of its Portfolios' types, Epic on both levels of the connection that reads it twice, create defaults where a level of such a connection has no units; get-all returns the same eight words; update renames the level; slice 01 numbers unchanged",
 "F356": "Runtime writer of WorkItemTypes; sets the subset",
 "F357": "ForConnection creates the create-defaults row when first needed",
-"F358": "Through the Team and Portfolio settings save services and the update service on the migrated upgrade fixture: read units, save a Team with Spike, save a Team with bug, request an update of the marked Jira Team; add a Jira connection after the upgrade and create a Team with User Story on it; load the demo data after the upgrade; restart the migrator after editing a WorkItemTypes column",
-"F359": "Each unit reads its old list in mapping spelling; Spike refused with 400 naming Spike, the Squad level and the connection, nothing saved, also for a System Admin; bug stored as Bug; marked Jira Team refused with 409 unit-needs-item-types and skipped by the schedule, data kept; the new connection gets the create-defaults mapping and the Team with User Story is saved; demo units load with their types; edited unit re-derived; only respelled units' fingerprints change; slice 01 numbers unchanged",
 "F36": "Cross-context access only through Contracts namespaces (S09a rules in Lighthouse.Backend.Tests/Architecture); Forecasting owns LeafCapacity and Organisation set-up never writes its table; Work Items owns FetchFingerprint and its fetch shape.",
-"F360": "A connection with no mapping row refuses User Story with 400, or gets a mapping copied from the saved Team's types",
 "F361": "Maintainer decision, 2026-11-28: the 400 on an unmapped type starts with slice 04 (M1 kept, option a). Between slice 04 and slices 08 and 09 nobody can add a type to a mapping, so a write naming a type its connection does not map to the unit's level (for example Story on a connection that holds only the create defaults) is refused until feature D. Accepted because nothing is released before the whole Epic is done. No switch for adding unmapped types is built.",
 "F362": "DemoDataFactory writes Teams and Portfolios at runtime; it sets each unit's subset through ConnectionMapping.Resolve and the dual-write, so the demo connections get their mapping rows (create defaults when first needed) and the demo types resolve; a demo type outside the defaults is mapped by the migrator only for demo data present at the first upgrade.",
 "F363": "Owner of demo units; its writes go through the same subset path instead of a second writer",
@@ -3281,7 +3586,6 @@
 "F412": "declared public signature of slice 04",
 "F413": "update and manual refresh logic move into UnitSettingsService; maps outcomes to 400 and 409",
 "F415": "Every save, create and manual refresh answer",
-"F416": "Read side and composition for slice 04: the oracle drives IUnitSettings (registered by AddOrganisationSetup) for saves, creates and the manual refresh request; it reads the effective types through today's Team and Portfolio repositories (WorkItemTypes, ItemTypeSubset, NeedsItemTypes), the mappings through IOrganisationStructureQuery.Mappings, and fingerprints through FetchFingerprint.For. The manual refresh is TeamController.UpdateTeamData and PortfolioController's update action (POST /teams/{id} and /portfolios/{id}); UpdateController is not involved. The wire contract test covers the 400 and 409 codes on the host.",
 "F417": "No existing type declares this: declared public signature of slice 04",
 "F418": "Existing owner: update and manual refresh logic move into UnitSettingsService; maps outcomes to 400 and 409",
 "F419": "declared public signature of slice 07",
@@ -3306,27 +3610,103 @@
 "F440": "Signature step, no behaviour, its own commit before the oracle: create Domain/Structure/LevelId.cs, TermPair.cs, OrganisationStructure.cs, Level.cs, RenameOutcome.cs; Domain/Mapping/ConnectionMapping.cs, ResolveOutcome.cs (Domain reaches only its own Domain, Models and the base library); Contracts/LevelView.cs, OrganisationStructureView.cs, StructureRead.cs, ConnectionMappingView.cs, IOrganisationStructureQuery.cs (primitives only); Application/Structure/IOrganisationStructureStore.cs, IConnectionMappingStore.cs, OrganisationStructureQuery.cs, TerminologyWords.cs, OrganisationStructureMigrationPlan.cs, PlannedLevel.cs, PlannedMapping.cs; Adapters/Startup/OrganisationStructureMigrator.cs; Adapters/Persistence/OrganisationStructureStore.cs, ConnectionMappingStore.cs (all under Modules/OrganisationSetup); add AddOrganisationStructure to OrganisationSetupModule.cs registering them (not yet called by Program.cs). Bodies: Seed returns a completed task, Structure returns StructureRead.NotMigrated, Mappings and All return empty lists, the rest throw NotImplementedException. Per touched existing file: OrganisationSetupModule.cs holds one type, nothing moves. Follow-up change: the migrator, the stores and the level-backed terminology",
 "F441": "Domain-owned value type; Contracts carry the stored key and names as primitives",
 "F442": "New Domain value type",
-"F443": "Two commits before the oracle. (1) Behaviour-preserving move: the create logic of TeamsController.CreateTeam and PortfoliosController and the delete logic of TeamController.DeleteTeam and PortfolioController move unchanged into Application/Units/UnitLifecycleService.cs behind IUnitLifecycle.cs, with DeletionOutcome.cs (closed abstract record, nested cases); the controllers call the port and still publish TeamDeleted and PortfolioDeleted through it. (2) Signature step, no behaviour: create Contracts/UnitId.cs, UnitCreated.cs, UnitDeleted.cs, UnitView.cs, IUnitDirectory.cs (Contracts carry the level as the stored key string) and Application/Units/UnitDirectory.cs (UnitsOn returns an empty list); AddOrganisationSetup registers both. Per touched existing file: each controller and OrganisationSetupModule.cs holds one type, nothing moves. Follow-up change: publish UnitCreated and UnitDeleted",
-"F444": "Two commits before the oracle. (1) Behaviour-preserving move: the load, save and refresh steps of TeamController.UpdateTeam and UpdateTeamData, PortfolioController's update and refresh actions, and the create paths of TeamsController and PortfoliosController move unchanged into Application/Units/UnitSettingsService.cs behind IUnitSettings.cs, with UnitSaveOutcome.cs and RefreshRequest.cs (closed abstract records; only UnitSaved, RefreshQueued and the not-found cases produced yet). The DTO-to-entity mapping stays in the controllers and API.Helpers and reaches the service as an Action<Team> or Action<Portfolio>, so OrganisationSetupModuleBoundariesArchUnitTest keeps its allow-list unchanged. (2) Signature step, no behaviour: add ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten to Models/WorkTrackingSystemOptionsOwner.cs (unmapped until the migration), create Application/Structure/PlannedSubset.cs and Domain/UnitTypeLossNotice.cs, add Subsets (empty) to OrganisationStructureMigrationPlan. Per touched existing file: TeamController.cs, PortfolioController.cs, TeamsController.cs, PortfoliosController.cs and WorkTrackingSystemOptionsOwner.cs each hold one type, nothing moves. Follow-up change: resolve the subset and refuse unmapped types",
 "F445": "Two commits before the oracle. (1) Behaviour-preserving move: the load step of TeamController's GET settings moves unchanged into UnitSettingsService.ReadTeamSettings, which returns Application/Units/TeamSettingsView.cs (closed abstract record: Found(Team) or TeamNotFound); the controller keeps mapping to TeamSettingDto through API.Helpers. (2) Signature step, no behaviour: create Modules/Forecasting/Contracts/LeafCapacityView.cs and ILeafCapacityStore.cs, Domain/LeafCapacity.cs (no Contracts type), Adapters/Persistence/LeafCapacityStore.cs (All returns an empty list, ForTeam and Stage throw NotImplementedException), Adapters/Startup/LeafCapacitySeeder.cs (Seed returns a completed task), and AddLeafCapacity in ForecastingModule.cs (not yet called by Program.cs). Per touched existing file: TeamController.cs and ForecastingModule.cs each hold one type, nothing moves. Follow-up change: the controllers stage the capacity and read it from LeafCapacity",
 "F446": "LeafCapacity (Forecasting Domain) holds Feature WIP, automatically adjust Feature WIP, fixed-dates flag, throughput start/end and days, forecast filter rule set; table LeafCapacities keyed by Team id with cascading FK; ILeafCapacityStore in Forecasting Contracts; LeafCapacitySeeder copies today's Team values at start where no row exists or where the Team columns differ (rollback). The Team settings save is composed in the API layer: the controller stages the capacity with ILeafCapacityStore.Stage and calls IUnitSettings.SaveTeam, which dual-writes the old columns and commits both in one unit of work under the Team's concurrency token. Forecast reads (Team.GetThroughputSettings callers, ForecastFilterRuleService, Feature WIP readers) read LeafCapacity.",
 "F447": "Organisation set-up's Application never reaches Forecasting (a context that builds on it); its Domain never reaches its Contracts; Forecasting's Domain never reaches Contracts",
-"F448": "Organisation set-up's Application never reaches a context that builds on it (OrganisationSetupModuleBoundariesArchUnitTest), so the Team settings save does not call Forecasting. The API layer composes the two owners on the request's scoped LighthouseAppContext. Update: TeamController stages the capacity with ILeafCapacityStore.Stage(UnitId, LeafCapacityValues) and then calls IUnitSettings.SaveTeam. Create: TeamsController stages it with ILeafCapacityStore.StageForNewTeam(Team, LeafCapacityValues) on the Team entity the create builds, before its id exists; the store adds a LeafCapacities row whose Team navigation points at that entity, so EF keys the row to the database-generated Team id in the same SaveChanges. One commit, made by IUnitSettings (SaveTeam or CreateTeam), writes both or neither under the Team's concurrency token. A refused save (400, 409, not found, concurrency) never calls SaveChanges, so the staged row is dropped when the request scope disposes the context. Reads: the controller reads the Team through IUnitSettings.ReadTeamSettings and the capacity through ILeafCapacityStore.ForTeam, and maps both to TeamSettingDto through API.Helpers; every Team has a row, from the seeder for existing Teams and from StageForNewTeam for new ones.",
 "F449": "Capacity values without a Team id, so a create can stage them before the id exists",
 "F45": "The port test substrate with a database per scenario.",
-"F450": "Run LeafCapacitySeeder on the upgrade fixture; read and save Team settings the way TeamController does (IUnitSettings.ReadTeamSettings with ILeafCapacityStore.ForTeam, ILeafCapacityStore.Stage then IUnitSettings.SaveTeam); create a Team the way TeamsController does (ILeafCapacityStore.StageForNewTeam with featureWIP 2, then IUnitSettings.CreateTeam) and read its settings back; make a save refused and read again; run a manual When forecast with pinned draws",
-"F451": "One LeafCapacity per existing Team with today's values; settings payload byte-identical before and after; a save changes the record and the old columns together; the created Team reads back featureWIP 2 and the other values it was created with; a refused save leaves neither the record nor the Team changed; forecasts and slice 01 numbers unchanged",
 "F452": "A Team created after the seeder has no LeafCapacities row, so reading its settings throws; or the forecast reads Team.FeatureWIP after a save changed only LeafCapacity",
 "F453": "LeafCapacityView carries the Team id, which a new Team does not have yet",
 "F454": "New Contracts record staged by create and update",
+"F455": "Organisation set-up's Application never reaches a context that builds on it (OrganisationSetupModuleBoundariesArchUnitTest), so the Team settings save does not call Forecasting. The API layer composes the two owners on the request's scoped LighthouseAppContext. There is one create path per unit: the controller builds the entity through its API.Helpers mapping and calls IUnitLifecycle.CreateTeam(Team) or CreatePortfolio(Portfolio), which resolves the item types (from slice 04), commits, and is the single publisher of UnitCreated. Team create: TeamsController builds the Team, stages its capacity with ILeafCapacityStore.StageForNewTeam(Team, LeafCapacityValues), then calls IUnitLifecycle.CreateTeam; the staged LeafCapacities row's Team navigation points at that entity, so EF keys it to the database-generated id in the same SaveChanges. Team update: TeamController stages with ILeafCapacityStore.Stage(UnitId, LeafCapacityValues), then calls IUnitSettings.SaveTeam. Either commit writes both rows or neither under the Team's concurrency token. A refused save or create (400, 409, not found, concurrency) never calls SaveChanges, so the staged row is dropped when the request scope disposes the context. Reads: the controller reads the Team through IUnitSettings.ReadTeamSettings and the capacity through ILeafCapacityStore.ForTeam, and maps both to TeamSettingDto through API.Helpers; every Team has a row, from the seeder for existing Teams and from StageForNewTeam for new ones.",
+"F456": "Outcome of the single create port, extended in slice 04",
+"F457": "Two commits before the oracle. (1) Behaviour-preserving move: the create logic of TeamsController.CreateTeam and PortfoliosController's create and the delete logic of TeamController.DeleteTeam and PortfolioController move unchanged into Application/Units/UnitLifecycleService.cs behind IUnitLifecycle.cs, with UnitSaveOutcome.cs (UnitSaved only) and DeletionOutcome.cs (closed abstract records, nested cases); the controllers keep the DTO-to-entity mapping in API.Helpers, pass the built entity to the port, and still publish TeamDeleted and PortfolioDeleted through it. (2) Signature step, no behaviour: create Contracts/UnitId.cs, UnitCreated.cs, UnitDeleted.cs, UnitView.cs, IUnitDirectory.cs (Contracts carry the level as the stored key string) and Application/Units/UnitDirectory.cs (UnitsOn returns an empty list); AddOrganisationSetup registers both. Per touched existing file: each controller and OrganisationSetupModule.cs holds one type, nothing moves. Follow-up change: publish UnitCreated and UnitDeleted",
+"F458": "No outcome type for a unit create or save exists; today the controllers return ActionResults",
+"F459": "New outcome sum returned by IUnitLifecycle creates",
 "F46": "One Postgres per test run for the migrator's provider check.",
+"F460": "Gains the ItemTypeNotMapped and UnitToSaveNotFound cases",
+"F461": "Creates resolve the item types before commit",
+"F462": "Through IUnitSettings and IUnitLifecycle on the migrated upgrade fixture: read units, save a Team with Spike, save a Team with bug, create a Team with Spike, request a refresh of the marked Jira Team; add a Jira connection after the upgrade and create a Team with User Story on it through IUnitLifecycle.CreateTeam; load the demo data after the upgrade; restart the migrator after editing a WorkItemTypes column",
+"F463": "Each unit reads its old list in mapping spelling; Spike refused on save and on create with ItemTypeNotMapped naming Spike, the Squad level and the connection, nothing saved and no UnitCreated published, also for a System Admin; bug stored as Bug; marked Jira Team gets UnitNeedsItemTypes and is skipped by the schedule, data kept; the new connection gets the create-defaults mapping and the Team with User Story is created; demo units load with their types; edited unit re-derived; only respelled units' fingerprints change; slice 01 numbers unchanged",
+"F464": "A connection with no mapping row refuses User Story, or gets a mapping copied from the saved Team's types; or a create accepts a type its connection does not map",
+"F465": "Two commits before the oracle. (1) Behaviour-preserving move: the load, save and refresh steps of TeamController.UpdateTeam and UpdateTeamData and PortfolioController's update and refresh actions move unchanged into Application/Units/UnitSettingsService.cs behind IUnitSettings.cs, with RefreshRequest.cs (closed abstract record; only RefreshQueued and the not-found case produced yet). Creates already go through IUnitLifecycle (slice 03) and are not moved again. The DTO-to-entity mapping stays in the controllers and API.Helpers and reaches the service as an Action<Team> or Action<Portfolio>, so OrganisationSetupModuleBoundariesArchUnitTest keeps its allow-list unchanged. (2) Signature step, no behaviour: add ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten to Models/WorkTrackingSystemOptionsOwner.cs (unmapped until the migration), add the ItemTypeNotMapped and UnitToSaveNotFound cases to Application/Units/UnitSaveOutcome.cs, create Application/Structure/PlannedSubset.cs and Domain/UnitTypeLossNotice.cs, add Subsets (empty) to OrganisationStructureMigrationPlan. Per touched existing file: TeamController.cs, PortfolioController.cs, TeamsController.cs, PortfoliosController.cs and WorkTrackingSystemOptionsOwner.cs each hold one type, nothing moves. Follow-up change: resolve the subset in saves and creates and refuse unmapped types",
+"F466": "Read side and composition for slice 04: the oracle drives IUnitSettings (registered by AddOrganisationSetup) for saves and the manual refresh request, and IUnitLifecycle.CreateTeam and CreatePortfolio for creates (the single create path; slice 04 adds no create method). UnitLifecycleService resolves a create's item types with the same IConnectionMappingStore.ForConnection and ConnectionMapping.Resolve that UnitSettingsService uses for a save, before it commits and publishes UnitCreated; an unmapped type returns UnitSaveOutcome.ItemTypeNotMapped and nothing is saved or published. The oracle reads the effective types through today's Team and Portfolio repositories (WorkItemTypes, ItemTypeSubset, NeedsItemTypes), the mappings through IOrganisationStructureQuery.Mappings, and fingerprints through FetchFingerprint.For. The manual refresh is TeamController.UpdateTeamData and PortfolioController's refresh action (POST /teams/{id} and /portfolios/{id}); UpdateController is not involved. The wire contract test covers the 400 and 409 codes on the host.",
+"F467": "Created by slice 03 as the outcome of the single create port; slice 04 adds its refusal cases, so no second outcome type appears",
+"F468": "Created by slice 03 as the single create path; slice 04 adds the subset resolution there instead of a second create",
+"F469": "Create resolves item types and refuses unmapped ones",
 "F47": "Dual-written with the effective list",
+"F470": "Run LeafCapacitySeeder on the upgrade fixture; read and save Team settings the way TeamController does (IUnitSettings.ReadTeamSettings with ILeafCapacityStore.ForTeam; ILeafCapacityStore.Stage then IUnitSettings.SaveTeam); create a Team the way TeamsController does (build the Team entity, ILeafCapacityStore.StageForNewTeam on it with featureWIP 2, then IUnitLifecycle.CreateTeam with that entity) and read its settings back; make a save refused and read again; run a manual When forecast with pinned draws",
+"F471": "One LeafCapacity per existing Team with today's values; settings payload byte-identical before and after; a save changes the record and the old columns together; the created Team reads back featureWIP 2 and the other values it was created with, and UnitCreated is published once; a refused save leaves neither the record nor the Team changed; forecasts and slice 01 numbers unchanged",
+"F472": "An installation whose Terminology calls Teams Squads and Portfolios Initiatives is upgraded and started, on SQLite and on Postgres",
+"F473": "Exactly two levels: level 1 Squad/Squads with Work Item/Work Items, level 2 Initiative/Initiatives with Feature/Features",
+"F474": "The organisation's own words name its two levels after the upgrade",
+"F475": "The levels were built from the seeded words while the Terminology rows kept the custom ones; tightened by the custom-words fixture, which seeded words cannot satisfy",
+"F476": "After the upgrade, the connections' types on both levels are read",
+"F477": "Jira reports Epic on both levels (its Team and its Portfolio both read it); Azure DevOps reports none",
+"F478": "A type a Team and a Portfolio of one connection both read stays on both levels and blocks nothing",
+"F479": "The Feature level winning would drop Epic from the Jira Team level and fail both this and the per-connection test",
 "F48": "Fingerprint now renders the effective list in mapping spelling; respelled units refetch once",
+"F480": "The eight Terminology words are read before the upgrade, the application starts, and they are read again",
+"F481": "The same eight words as before: Squad, Squads, Initiative, Initiatives, Work Item, Work Items, Feature, Features",
+"F482": "Every screen and API that shows these words shows the same words after the upgrade",
+"F483": "Words served from the old Terminology rows instead of the levels; the rename test catches that, as a rename must land on the level",
+"F484": "After the upgrade, Terminology is updated: team Crew, teams Crews, feature Outcome, features Outcomes",
+"F485": "Level 1 is named Crew/Crews, level 2 keeps Initiative/Initiatives and its items become Outcome/Outcomes; Terminology answers the new eight words",
+"F486": "Renaming through Terminology renames the level",
+"F487": "A rename written to the Terminology rows only would leave the level names unchanged and fail",
+"F488": "An upgraded installation is started a second time",
+"F489": "The levels and every connection's mapping read exactly as after the first start",
 "F49": "Same eight keys and words, now served from the levels",
+"F490": "Restarting the application never changes the levels or the item types a connection offers",
+"F491": "A second start that rewrites the same values; accepted, since what is read is identical",
+"F492": "The upgrade plans 200 generated installations of 1-3 connections with Teams and Portfolios reading types from a pool of six in any case, plus one installation with a type on both levels, bug and Bug on two Teams, a connection with no Portfolio and a Linear Team with no types",
+"F493": "Per connection with units, each level lists the union of its units' types once each ignoring case, a type both levels read on both, and today's defaults on a level with no units (nothing on Linear)",
+"F494": "No unit loses or gains a type when its connection gets its item types per level",
+"F495": "Wrong spelling or order of the listed types; pinned by the finite planner cases instead",
+"F496": "Jira Teams 1, 2 and 3 spell bug, Bug and Bug",
+"F497": "The Team level lists Bug once",
+"F498": "A type is offered in the spelling most units use",
+"F499": "Taking the lowest-numbered unit's spelling would give bug and fail; any rule that picks the majority passes",
 "F5": "Each connection maps item types onto the levels: per connection, level 1 lists every type its Teams read and level 2 every type its Portfolios read, once each ignoring case; a type read on both levels of one connection sits on both, without blocking anything; a connection with no units on a level gets today's create defaults for it (User Story, Bug on level 1; Epic on level 2).",
 "F50": "Frontend useTerminology reads the same keys",
+"F500": "Team 1 spells bug and Team 2 spells Bug on one connection",
+"F501": "The Team level lists bug",
+"F502": "A tie in spelling is settled the same way every time",
+"F503": "Taking the spelling of the unit listed first: the test lists Team 2 first, so that fails",
+"F504": "Team 3 reads Bug, User Story and Team 7 reads User Story, Task on one connection",
+"F505": "The Team level lists Bug, User Story, Task in that order",
+"F506": "Item types are offered in a stable order",
+"F507": "Alphabetical order would give Bug, Task, User Story and fail",
+"F508": "A Jira connection has a Team and no Portfolio",
+"F509": "Its Portfolio level lists Epic",
 "F51": "Field names unchanged; needsItemTypes added (additive); 400 on unmapped type is the one breaking change, carried to Lighthouse-Clients in feature D slice 14",
+"F510": "A level without units gets today's create default",
+"F511": "No mapping row at all for the empty level would read as empty and fail",
+"F512": "A Linear connection has a Portfolio and no Team",
+"F513": "Its Team level lists nothing",
+"F514": "A tracker without item types gets no invented types",
+"F515": "Absent and empty both pass; the design treats a level without a row as absent",
+"F516": "A user without Premium, or who is not a System Admin, updates Terminology",
+"F517": "The update is refused as today (403 without Premium; the update carries the System Admin guard)",
+"F518": "Renaming levels through Terminology keeps today's Premium and System Admin guard",
+"F519": "The controller is unchanged in this slice; the System Admin guard is pinned by TerminologyControllerTest.UpdateTerminology_HasSystemAdminRbacGuardAttribute",
 "F52": "Re-subscribes to UnitDeleted",
+"F520": "Every unit's numbers of the demo data and the upgrade fixture are recorded on the slice's code",
+"F521": "Equal to the numbers recorded before the restructuring",
+"F522": "Nobody's numbers change",
+"F523": "The recorder does not run the start-up step; numbers read from the units are unchanged as long as units are untouched, which holds in this slice",
+"F524": "A fresh install with seeded Terminology and no connection is started",
+"F525": "Two levels with the seeded words Team/Teams, Work Item/Work Items, Portfolio/Portfolios, Feature/Features, and no connection mapping",
+"F526": "A new installation starts with the same two levels and today's words",
+"F527": "Mappings invented for connections that do not exist would fail; levels built only when Teams exist fail the level assertion",
+"F528": "The upgrade fixture (Jira, Azure DevOps, Linear, ServiceNow and CSV Teams, Jira and Azure DevOps Portfolios) is upgraded and started",
+"F529": "Jira: Team level User Story, Bug, Epic and Portfolio level Epic, Change; Azure DevOps: User Story, Bug once (Bug and bug) and Epic; CSV: User Story, Bug and the default Epic; Linear: nothing on either level; ServiceNow Team level: Incident, Problem",
+"F530": "Each connection offers on each level exactly the item types its units there read, once each",
+"F531": "A level listing the right types in another spelling or order; accepted, since spelling and order are pinned by the planner cases",
+"F532": "The architecture rules are checked over the planner the upgrade uses",
+"F533": "The planner depends on no database, clock or input/output type",
+"F534": "The upgrade's mapping decision is the same every time it is planned, whatever the database or the hour",
+"F535": "A planner reading the database through an interface the rule does not list; the rule must name every EF, clock and I/O type it forbids",
 "F54": "IOrganisationStructureStore and IConnectionMappingStore (EF, Organisation set-up)",
 "F55": "ILeafCapacityStore (Forecasting Contracts, EF adapter in Forecasting)",
 "F56": "IDomainEventDispatcher",

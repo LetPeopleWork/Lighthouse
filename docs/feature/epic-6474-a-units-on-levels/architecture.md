@@ -107,7 +107,7 @@ Test composition: every new service is registered by a module extension that Pro
 #### D17
 
 ```text
-Organisation set-up's Application never reaches a context that builds on it (OrganisationSetupModuleBoundariesArchUnitTest), so the Team settings save does not call Forecasting. The API layer composes the two owners on the request's scoped LighthouseAppContext. Update: TeamController stages the capacity with ILeafCapacityStore.Stage(UnitId, LeafCapacityValues) and then calls IUnitSettings.SaveTeam. Create: TeamsController stages it with ILeafCapacityStore.StageForNewTeam(Team, LeafCapacityValues) on the Team entity the create builds, before its id exists; the store adds a LeafCapacities row whose Team navigation points at that entity, so EF keys the row to the database-generated Team id in the same SaveChanges. One commit, made by IUnitSettings (SaveTeam or CreateTeam), writes both or neither under the Team's concurrency token. A refused save (400, 409, not found, concurrency) never calls SaveChanges, so the staged row is dropped when the request scope disposes the context. Reads: the controller reads the Team through IUnitSettings.ReadTeamSettings and the capacity through ILeafCapacityStore.ForTeam, and maps both to TeamSettingDto through API.Helpers; every Team has a row, from the seeder for existing Teams and from StageForNewTeam for new ones.
+Organisation set-up's Application never reaches a context that builds on it (OrganisationSetupModuleBoundariesArchUnitTest), so the Team settings save does not call Forecasting. The API layer composes the two owners on the request's scoped LighthouseAppContext. There is one create path per unit: the controller builds the entity through its API.Helpers mapping and calls IUnitLifecycle.CreateTeam(Team) or CreatePortfolio(Portfolio), which resolves the item types (from slice 04), commits, and is the single publisher of UnitCreated. Team create: TeamsController builds the Team, stages its capacity with ILeafCapacityStore.StageForNewTeam(Team, LeafCapacityValues), then calls IUnitLifecycle.CreateTeam; the staged LeafCapacities row's Team navigation points at that entity, so EF keys it to the database-generated id in the same SaveChanges. Team update: TeamController stages with ILeafCapacityStore.Stage(UnitId, LeafCapacityValues), then calls IUnitSettings.SaveTeam. Either commit writes both rows or neither under the Team's concurrency token. A refused save or create (400, 409, not found, concurrency) never calls SaveChanges, so the staged row is dropped when the request scope disposes the context. Reads: the controller reads the Team through IUnitSettings.ReadTeamSettings and the capacity through ILeafCapacityStore.ForTeam, and maps both to TeamSettingDto through API.Helpers; every Team has a row, from the seeder for existing Teams and from StageForNewTeam for new ones.
 ```
 
 ### Constraints
@@ -2920,6 +2920,14 @@ Extend
 create logic moves into UnitLifecycleService
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/UnitSaveOutcome\.cs
+
+Create
+
+```text
+Outcome of the single create port, extended in slice 04
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/UnitsOnLevelsTest\.cs
 
 #### Verification
@@ -2961,7 +2969,7 @@ P1
 #### Prefactoring
 
 ```text
-Two commits before the oracle. (1) Behaviour-preserving move: the create logic of TeamsController.CreateTeam and PortfoliosController and the delete logic of TeamController.DeleteTeam and PortfolioController move unchanged into Application/Units/UnitLifecycleService.cs behind IUnitLifecycle.cs, with DeletionOutcome.cs (closed abstract record, nested cases); the controllers call the port and still publish TeamDeleted and PortfolioDeleted through it. (2) Signature step, no behaviour: create Contracts/UnitId.cs, UnitCreated.cs, UnitDeleted.cs, UnitView.cs, IUnitDirectory.cs (Contracts carry the level as the stored key string) and Application/Units/UnitDirectory.cs (UnitsOn returns an empty list); AddOrganisationSetup registers both. Per touched existing file: each controller and OrganisationSetupModule.cs holds one type, nothing moves. Follow-up change: publish UnitCreated and UnitDeleted
+Two commits before the oracle. (1) Behaviour-preserving move: the create logic of TeamsController.CreateTeam and PortfoliosController's create and the delete logic of TeamController.DeleteTeam and PortfolioController move unchanged into Application/Units/UnitLifecycleService.cs behind IUnitLifecycle.cs, with UnitSaveOutcome.cs (UnitSaved only) and DeletionOutcome.cs (closed abstract records, nested cases); the controllers keep the DTO-to-entity mapping in API.Helpers, pass the built entity to the port, and still publish TeamDeleted and PortfolioDeleted through it. (2) Signature step, no behaviour: create Contracts/UnitId.cs, UnitCreated.cs, UnitDeleted.cs, UnitView.cs, IUnitDirectory.cs (Contracts carry the level as the stored key string) and Application/Units/UnitDirectory.cs (UnitsOn returns an empty list); AddOrganisationSetup registers both. Per touched existing file: each controller and OrganisationSetupModule.cs holds one type, nothing moves. Follow-up change: publish UnitCreated and UnitDeleted
 ```
 
 ```text
@@ -3208,6 +3216,16 @@ Extend
 Existing owner: create logic moves into UnitLifecycleService
 ```
 
+UnitSaveOutcome
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/UnitSaveOutcome\.cs\:1
+
+CreateNew
+
+```text
+No outcome type for a unit create or save exists; today the controllers return ActionResults
+```
+
 ##### Impact
 
 event\-contract
@@ -3430,6 +3448,16 @@ Changed
 create logic moves into UnitLifecycleService
 ```
 
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/UnitSaveOutcome\.cs\:1
+
+Changed
+
+```text
+New outcome sum returned by IUnitLifecycle creates
+```
+
 ##### Agreement
 
 None.
@@ -3474,11 +3502,15 @@ public interface IUnitDirectory \{ Task\<IReadOnlyList\<UnitView\>\> UnitsOn\(st
 
 IUnitLifecycle
 
-public interface IUnitLifecycle \{ Task\<UnitId\> CreateTeam\(Team team\, CancellationToken cancellationToken\)\; Task\<UnitId\> CreatePortfolio\(Portfolio portfolio\, CancellationToken cancellationToken\)\; Task\<DeletionOutcome\> Delete\(UnitId unit\, CancellationToken cancellationToken\)\; \}  \(Application\/Units\; the port the controllers call\)
+public interface IUnitLifecycle \{ Task\<UnitSaveOutcome\> CreateTeam\(Team team\, CancellationToken cancellationToken\)\; Task\<UnitSaveOutcome\> CreatePortfolio\(Portfolio portfolio\, CancellationToken cancellationToken\)\; Task\<DeletionOutcome\> Delete\(UnitId unit\, CancellationToken cancellationToken\)\; \}  \(Application\/Units\; the only create port\: the controller passes the entity it built through API\.Helpers\; the service commits the scoped unit of work and publishes UnitCreated after commit\)
 
 DeletionOutcome
 
 public abstract record DeletionOutcome\; sealed record Deleted\(UnitId Unit\, IReadOnlyList\<UnitId\> UnitsThatReferencedIt\) \: DeletionOutcome\; sealed record UnitNotFound\(UnitId Unit\) \: DeletionOutcome  \(Application\/Units\, one file\)
+
+UnitSaveOutcome
+
+public abstract record UnitSaveOutcome \{ private UnitSaveOutcome\(\) \{\} public sealed record UnitSaved\(UnitId Unit\) \: UnitSaveOutcome\; \}  \(Application\/Units\; slice 04 adds the ItemTypeNotMapped and UnitToSaveNotFound cases\)
 
 ##### Laws
 
@@ -3644,10 +3676,10 @@ declared public signature of slice 04
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/UnitSaveOutcome\.cs
 
-Create
+Extend
 
 ```text
-declared public signature of slice 04
+Gains the ItemTypeNotMapped and UnitToSaveNotFound cases
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/RefreshRequest\.cs
@@ -3682,6 +3714,14 @@ Extend
 update and manual refresh logic move into UnitSettingsService; maps outcomes to 400 and 409
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/UnitLifecycleService\.cs
+
+Extend
+
+```text
+Creates resolve the item types before commit
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/UnitReadsItsSubsetTest\.cs
 
 #### Verification
@@ -3703,15 +3743,15 @@ None.
 #### Public oracle
 
 ```text
-Through the Team and Portfolio settings save services and the update service on the migrated upgrade fixture: read units, save a Team with Spike, save a Team with bug, request an update of the marked Jira Team; add a Jira connection after the upgrade and create a Team with User Story on it; load the demo data after the upgrade; restart the migrator after editing a WorkItemTypes column
+Through IUnitSettings and IUnitLifecycle on the migrated upgrade fixture: read units, save a Team with Spike, save a Team with bug, create a Team with Spike, request a refresh of the marked Jira Team; add a Jira connection after the upgrade and create a Team with User Story on it through IUnitLifecycle.CreateTeam; load the demo data after the upgrade; restart the migrator after editing a WorkItemTypes column
 ```
 
 ```text
-Each unit reads its old list in mapping spelling; Spike refused with 400 naming Spike, the Squad level and the connection, nothing saved, also for a System Admin; bug stored as Bug; marked Jira Team refused with 409 unit-needs-item-types and skipped by the schedule, data kept; the new connection gets the create-defaults mapping and the Team with User Story is saved; demo units load with their types; edited unit re-derived; only respelled units' fingerprints change; slice 01 numbers unchanged
+Each unit reads its old list in mapping spelling; Spike refused on save and on create with ItemTypeNotMapped naming Spike, the Squad level and the connection, nothing saved and no UnitCreated published, also for a System Admin; bug stored as Bug; marked Jira Team gets UnitNeedsItemTypes and is skipped by the schedule, data kept; the new connection gets the create-defaults mapping and the Team with User Story is created; demo units load with their types; edited unit re-derived; only respelled units' fingerprints change; slice 01 numbers unchanged
 ```
 
 ```text
-A connection with no mapping row refuses User Story with 400, or gets a mapping copied from the saved Team's types
+A connection with no mapping row refuses User Story, or gets a mapping copied from the saved Team's types; or a create accepts a type its connection does not map
 ```
 
 ##### Promises
@@ -3723,7 +3763,7 @@ P1
 #### Prefactoring
 
 ```text
-Two commits before the oracle. (1) Behaviour-preserving move: the load, save and refresh steps of TeamController.UpdateTeam and UpdateTeamData, PortfolioController's update and refresh actions, and the create paths of TeamsController and PortfoliosController move unchanged into Application/Units/UnitSettingsService.cs behind IUnitSettings.cs, with UnitSaveOutcome.cs and RefreshRequest.cs (closed abstract records; only UnitSaved, RefreshQueued and the not-found cases produced yet). The DTO-to-entity mapping stays in the controllers and API.Helpers and reaches the service as an Action<Team> or Action<Portfolio>, so OrganisationSetupModuleBoundariesArchUnitTest keeps its allow-list unchanged. (2) Signature step, no behaviour: add ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten to Models/WorkTrackingSystemOptionsOwner.cs (unmapped until the migration), create Application/Structure/PlannedSubset.cs and Domain/UnitTypeLossNotice.cs, add Subsets (empty) to OrganisationStructureMigrationPlan. Per touched existing file: TeamController.cs, PortfolioController.cs, TeamsController.cs, PortfoliosController.cs and WorkTrackingSystemOptionsOwner.cs each hold one type, nothing moves. Follow-up change: resolve the subset and refuse unmapped types
+Two commits before the oracle. (1) Behaviour-preserving move: the load, save and refresh steps of TeamController.UpdateTeam and UpdateTeamData and PortfolioController's update and refresh actions move unchanged into Application/Units/UnitSettingsService.cs behind IUnitSettings.cs, with RefreshRequest.cs (closed abstract record; only RefreshQueued and the not-found case produced yet). Creates already go through IUnitLifecycle (slice 03) and are not moved again. The DTO-to-entity mapping stays in the controllers and API.Helpers and reaches the service as an Action<Team> or Action<Portfolio>, so OrganisationSetupModuleBoundariesArchUnitTest keeps its allow-list unchanged. (2) Signature step, no behaviour: add ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten to Models/WorkTrackingSystemOptionsOwner.cs (unmapped until the migration), add the ItemTypeNotMapped and UnitToSaveNotFound cases to Application/Units/UnitSaveOutcome.cs, create Application/Structure/PlannedSubset.cs and Domain/UnitTypeLossNotice.cs, add Subsets (empty) to OrganisationStructureMigrationPlan. Per touched existing file: TeamController.cs, PortfolioController.cs, TeamsController.cs, PortfoliosController.cs and WorkTrackingSystemOptionsOwner.cs each hold one type, nothing moves. Follow-up change: resolve the subset in saves and creates and refuse unmapped types
 ```
 
 ```text
@@ -3759,7 +3799,7 @@ DemoDataFactory writes Teams and Portfolios at runtime; it sets each unit's subs
 ```
 
 ```text
-Read side and composition for slice 04: the oracle drives IUnitSettings (registered by AddOrganisationSetup) for saves, creates and the manual refresh request; it reads the effective types through today's Team and Portfolio repositories (WorkItemTypes, ItemTypeSubset, NeedsItemTypes), the mappings through IOrganisationStructureQuery.Mappings, and fingerprints through FetchFingerprint.For. The manual refresh is TeamController.UpdateTeamData and PortfolioController's update action (POST /teams/{id} and /portfolios/{id}); UpdateController is not involved. The wire contract test covers the 400 and 409 codes on the host.
+Read side and composition for slice 04: the oracle drives IUnitSettings (registered by AddOrganisationSetup) for saves and the manual refresh request, and IUnitLifecycle.CreateTeam and CreatePortfolio for creates (the single create path; slice 04 adds no create method). UnitLifecycleService resolves a create's item types with the same IConnectionMappingStore.ForConnection and ConnectionMapping.Resolve that UnitSettingsService uses for a save, before it commits and publishes UnitCreated; an unmapped type returns UnitSaveOutcome.ItemTypeNotMapped and nothing is saved or published. The oracle reads the effective types through today's Team and Portfolio repositories (WorkItemTypes, ItemTypeSubset, NeedsItemTypes), the mappings through IOrganisationStructureQuery.Mappings, and fingerprints through FetchFingerprint.For. The manual refresh is TeamController.UpdateTeamData and PortfolioController's refresh action (POST /teams/{id} and /portfolios/{id}); UpdateController is not involved. The wire contract test covers the 400 and 409 codes on the host.
 ```
 
 ##### Constraints
@@ -3955,7 +3995,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Applicatio
 CreateNew
 
 ```text
-No existing type declares this: declared public signature of slice 04
+Created by slice 03 as the outcome of the single create port; slice 04 adds its refusal cases, so no second outcome type appears
 ```
 
 RefreshRequest
@@ -3996,6 +4036,16 @@ Extend
 
 ```text
 Existing owner: update and manual refresh logic move into UnitSettingsService; maps outcomes to 400 and 409
+```
+
+UnitLifecycleService
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/UnitLifecycleService\.cs\:1
+
+CreateNew
+
+```text
+Created by slice 03 as the single create path; slice 04 adds the subset resolution there instead of a second create
 ```
 
 ##### Impact
@@ -4250,6 +4300,16 @@ Changed
 update and manual refresh logic move into UnitSettingsService; maps outcomes to 400 and 409
 ```
 
+application
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/UnitLifecycleService\.cs\:1
+
+Changed
+
+```text
+Create resolves item types and refuses unmapped ones
+```
+
 ##### Agreement
 
 None.
@@ -4328,11 +4388,11 @@ gains\: public List\<string\> ItemTypeSubset \{ get\; set\; \} \= \[\]\; public 
 
 IUnitSettings
 
-public interface IUnitSettings \{ Task\<UnitSaveOutcome\> SaveTeam\(int teamId\, Action\<Team\> applyRequestedSettings\, CancellationToken cancellationToken\)\; Task\<UnitSaveOutcome\> SavePortfolio\(int portfolioId\, Action\<Portfolio\> applyRequestedSettings\, CancellationToken cancellationToken\)\; Task\<UnitSaveOutcome\> CreateTeam\(Action\<Team\> applyRequestedSettings\, CancellationToken cancellationToken\)\; Task\<UnitSaveOutcome\> CreatePortfolio\(Action\<Portfolio\> applyRequestedSettings\, CancellationToken cancellationToken\)\; Task\<RefreshRequest\> RequestRefresh\(UnitId unit\, CancellationToken cancellationToken\)\; \}  \(Application\/Units\; takes only Application and Models types\: the controller passes the existing API\.Helpers DTO\-to\-entity mapping as the delegate\, so no Organisation set\-up Application type reaches Lighthouse\.Backend\.API\; the service loads or creates the entity\, applies the delegate\, resolves the requested item types against the connection mapping\, and saves\)
+public interface IUnitSettings \{ Task\<UnitSaveOutcome\> SaveTeam\(int teamId\, Action\<Team\> applyRequestedSettings\, CancellationToken cancellationToken\)\; Task\<UnitSaveOutcome\> SavePortfolio\(int portfolioId\, Action\<Portfolio\> applyRequestedSettings\, CancellationToken cancellationToken\)\; Task\<RefreshRequest\> RequestRefresh\(UnitId unit\, CancellationToken cancellationToken\)\; \}  \(Application\/Units\; updates only\, creates go through IUnitLifecycle\; takes only Application and Models types\: the controller passes the existing API\.Helpers DTO\-to\-entity mapping as the delegate\; the service loads the entity\, applies the delegate\, resolves the requested item types against the connection mapping\, and saves\)
 
 UnitSaveOutcome
 
-public abstract record UnitSaveOutcome\; sealed record UnitSaved\(UnitId Unit\) \: UnitSaveOutcome\; sealed record ItemTypeNotMapped\(string Type\, string LevelName\, string ConnectionName\) \: UnitSaveOutcome\; sealed record UnitToSaveNotFound\(UnitId Unit\) \: UnitSaveOutcome  \(Application\/Units\, one file\; the controller maps ItemTypeNotMapped to 400 team\-item\-type\-not\-on\-level \/ portfolio\-item\-type\-not\-on\-level\)
+UnitSaveOutcome \(declared in slice 03\) gains\: public sealed record ItemTypeNotMapped\(string Type\, string LevelName\, string ConnectionName\) \: UnitSaveOutcome\; public sealed record UnitToSaveNotFound\(UnitId Unit\) \: UnitSaveOutcome  \(the controller maps ItemTypeNotMapped to 400 team\-item\-type\-not\-on\-level \/ portfolio\-item\-type\-not\-on\-level\, for creates and updates\)
 
 RefreshRequest
 
@@ -4528,11 +4588,11 @@ None.
 #### Public oracle
 
 ```text
-Run LeafCapacitySeeder on the upgrade fixture; read and save Team settings the way TeamController does (IUnitSettings.ReadTeamSettings with ILeafCapacityStore.ForTeam, ILeafCapacityStore.Stage then IUnitSettings.SaveTeam); create a Team the way TeamsController does (ILeafCapacityStore.StageForNewTeam with featureWIP 2, then IUnitSettings.CreateTeam) and read its settings back; make a save refused and read again; run a manual When forecast with pinned draws
+Run LeafCapacitySeeder on the upgrade fixture; read and save Team settings the way TeamController does (IUnitSettings.ReadTeamSettings with ILeafCapacityStore.ForTeam; ILeafCapacityStore.Stage then IUnitSettings.SaveTeam); create a Team the way TeamsController does (build the Team entity, ILeafCapacityStore.StageForNewTeam on it with featureWIP 2, then IUnitLifecycle.CreateTeam with that entity) and read its settings back; make a save refused and read again; run a manual When forecast with pinned draws
 ```
 
 ```text
-One LeafCapacity per existing Team with today's values; settings payload byte-identical before and after; a save changes the record and the old columns together; the created Team reads back featureWIP 2 and the other values it was created with; a refused save leaves neither the record nor the Team changed; forecasts and slice 01 numbers unchanged
+One LeafCapacity per existing Team with today's values; settings payload byte-identical before and after; a save changes the record and the old columns together; the created Team reads back featureWIP 2 and the other values it was created with, and UnitCreated is published once; a refused save leaves neither the record nor the Team changed; forecasts and slice 01 numbers unchanged
 ```
 
 ```text

@@ -236,6 +236,445 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>acceptance designer of slices S2 to S5, and the architecture and contract test locators declared in the design</p>
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>An installation whose Terminology calls Teams Squads and Portfolios Initiatives is upgraded and started, on SQLite and on Postgres
+</code></pre>
+
+<pre><code>Exactly two levels: level 1 Squad/Squads with Work Item/Work Items, level 2 Initiative/Initiatives with Feature/Features
+</code></pre>
+
+<pre><code>The organisation&#x27;s own words name its two levels after the upgrade
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.The_upgrade_gives_two_levels_named_in_the_organisations_own_words</p>
+
+<pre><code>The levels were built from the seeded words while the Terminology rows kept the custom ones; tightened by the custom-words fixture, which seeded words cannot satisfy
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>After the upgrade, the connections&#x27; types on both levels are read
+</code></pre>
+
+<pre><code>Jira reports Epic on both levels (its Team and its Portfolio both read it); Azure DevOps reports none
+</code></pre>
+
+<pre><code>A type a Team and a Portfolio of one connection both read stays on both levels and blocks nothing
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.A_type_a_Team_and_a_Portfolio_of_one_connection_both_read_sits_on_both_levels</p>
+
+<pre><code>The Feature level winning would drop Epic from the Jira Team level and fail both this and the per-connection test
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The eight Terminology words are read before the upgrade, the application starts, and they are read again
+</code></pre>
+
+<pre><code>The same eight words as before: Squad, Squads, Initiative, Initiatives, Work Item, Work Items, Feature, Features
+</code></pre>
+
+<pre><code>Every screen and API that shows these words shows the same words after the upgrade
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.The_eight_words_of_Terminology_read_the_same_after_the_upgrade</p>
+
+<pre><code>Words served from the old Terminology rows instead of the levels; the rename test catches that, as a rename must land on the level
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>After the upgrade, Terminology is updated: team Crew, teams Crews, feature Outcome, features Outcomes
+</code></pre>
+
+<pre><code>Level 1 is named Crew/Crews, level 2 keeps Initiative/Initiatives and its items become Outcome/Outcomes; Terminology answers the new eight words
+</code></pre>
+
+<pre><code>Renaming through Terminology renames the level
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.Renaming_through_Terminology_after_the_upgrade_lands_on_the_level</p>
+
+<pre><code>A rename written to the Terminology rows only would leave the level names unchanged and fail
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>An upgraded installation is started a second time
+</code></pre>
+
+<pre><code>The levels and every connection&#x27;s mapping read exactly as after the first start
+</code></pre>
+
+<pre><code>Restarting the application never changes the levels or the item types a connection offers
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.A_second_start_leaves_the_levels_and_the_mappings_as_the_first_start_left_them</p>
+
+<pre><code>A second start that rewrites the same values; accepted, since what is read is identical
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The upgrade plans 200 generated installations of 1-3 connections with Teams and Portfolios reading types from a pool of six in any case, plus one installation with a type on both levels, bug and Bug on two Teams, a connection with no Portfolio and a Linear Team with no types
+</code></pre>
+
+<pre><code>Per connection with units, each level lists the union of its units&#x27; types once each ignoring case, a type both levels read on both, and today&#x27;s defaults on a level with no units (nothing on Linear)
+</code></pre>
+
+<pre><code>No unit loses or gains a type when its connection gets its item types per level
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/MappingFromUnitsTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Acceptance.OneStructure.MappingFromUnitsTest.Each_level_of_a_connection_lists_every_type_its_units_read_once_whatever_the_case</p>
+
+<pre><code>Wrong spelling or order of the listed types; pinned by the finite planner cases instead
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Jira Teams 1, 2 and 3 spell bug, Bug and Bug
+</code></pre>
+
+<pre><code>The Team level lists Bug once
+</code></pre>
+
+<pre><code>A type is offered in the spelling most units use
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/MappingFromUnitsTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Acceptance.OneStructure.MappingFromUnitsTest.Two_Teams_spelling_Bug_and_one_spelling_bug_give_the_level_the_spelling_most_of_them_use</p>
+
+<pre><code>Taking the lowest-numbered unit&#x27;s spelling would give bug and fail; any rule that picks the majority passes
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Team 1 spells bug and Team 2 spells Bug on one connection
+</code></pre>
+
+<pre><code>The Team level lists bug
+</code></pre>
+
+<pre><code>A tie in spelling is settled the same way every time
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/MappingFromUnitsTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Acceptance.OneStructure.MappingFromUnitsTest.A_tie_in_spelling_goes_to_the_Team_with_the_lowest_number</p>
+
+<pre><code>Taking the spelling of the unit listed first: the test lists Team 2 first, so that fails
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Team 3 reads Bug, User Story and Team 7 reads User Story, Task on one connection
+</code></pre>
+
+<pre><code>The Team level lists Bug, User Story, Task in that order
+</code></pre>
+
+<pre><code>Item types are offered in a stable order
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/MappingFromUnitsTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Acceptance.OneStructure.MappingFromUnitsTest.Types_are_listed_in_the_order_they_first_appear_by_unit_number</p>
+
+<pre><code>Alphabetical order would give Bug, Task, User Story and fail
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>A Jira connection has a Team and no Portfolio
+</code></pre>
+
+<pre><code>Its Portfolio level lists Epic
+</code></pre>
+
+<pre><code>A level without units gets today&#x27;s create default
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/MappingFromUnitsTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Acceptance.OneStructure.MappingFromUnitsTest.A_Jira_connection_with_Teams_and_no_Portfolio_gets_Epic_on_the_Portfolio_level</p>
+
+<pre><code>No mapping row at all for the empty level would read as empty and fail
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>A Linear connection has a Portfolio and no Team
+</code></pre>
+
+<pre><code>Its Team level lists nothing
+</code></pre>
+
+<pre><code>A tracker without item types gets no invented types
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/MappingFromUnitsTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Acceptance.OneStructure.MappingFromUnitsTest.A_Linear_connection_with_a_Portfolio_and_no_Team_lists_nothing_on_the_Team_level</p>
+
+<pre><code>Absent and empty both pass; the design treats a level without a row as absent
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A user without Premium, or who is not a System Admin, updates Terminology
+</code></pre>
+
+<pre><code>The update is refused as today (403 without Premium; the update carries the System Admin guard)
+</code></pre>
+
+<pre><code>Renaming levels through Terminology keeps today&#x27;s Premium and System Admin guard
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TerminologyControllerAuthorizationTests.cs</p>
+
+<p>Lighthouse.Backend.Tests.API.Integration.TerminologyControllerAuthorizationTests.UpdateTerminology_AsNonPremiumUser_Returns403</p>
+
+<pre><code>The controller is unchanged in this slice; the System Admin guard is pinned by TerminologyControllerTest.UpdateTerminology_HasSystemAdminRbacGuardAttribute
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Every unit&#x27;s numbers of the demo data and the upgrade fixture are recorded on the slice&#x27;s code
+</code></pre>
+
+<pre><code>Equal to the numbers recorded before the restructuring
+</code></pre>
+
+<pre><code>Nobody&#x27;s numbers change
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/NumbersStayTheSameTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Acceptance.OneStructure.NumbersStayTheSameTest.Every_units_numbers_stay_as_recorded_and_two_recordings_agree</p>
+
+<pre><code>The recorder does not run the start-up step; numbers read from the units are unchanged as long as units are untouched, which holds in this slice
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<p>P3</p>
+
+<pre><code>A fresh install with seeded Terminology and no connection is started
+</code></pre>
+
+<pre><code>Two levels with the seeded words Team/Teams, Work Item/Work Items, Portfolio/Portfolios, Feature/Features, and no connection mapping
+</code></pre>
+
+<pre><code>A new installation starts with the same two levels and today&#x27;s words
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.A_fresh_install_gets_two_levels_with_the_seeded_words_and_no_connection_mappings</p>
+
+<pre><code>Mappings invented for connections that do not exist would fail; levels built only when Teams exist fail the level assertion
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The upgrade fixture (Jira, Azure DevOps, Linear, ServiceNow and CSV Teams, Jira and Azure DevOps Portfolios) is upgraded and started
+</code></pre>
+
+<pre><code>Jira: Team level User Story, Bug, Epic and Portfolio level Epic, Change; Azure DevOps: User Story, Bug once (Bug and bug) and Epic; CSV: User Story, Bug and the default Epic; Linear: nothing on either level; ServiceNow Team level: Incident, Problem
+</code></pre>
+
+<pre><code>Each connection offers on each level exactly the item types its units there read, once each
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs</p>
+
+<p>Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.Each_connection_lists_on_each_level_the_types_its_units_there_read_once_whatever_the_case</p>
+
+<pre><code>A level listing the right types in another spelling or order; accepted, since spelling and order are pinned by the planner cases
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The architecture rules are checked over the planner the upgrade uses
+</code></pre>
+
+<pre><code>The planner depends on no database, clock or input/output type
+</code></pre>
+
+<pre><code>The upgrade&#x27;s mapping decision is the same every time it is planned, whatever the database or the hour
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationStructurePlanPurityArchUnitTest.cs</p>
+
+<p>OrganisationStructurePlanPurityArchUnitTest</p>
+
+<pre><code>A planner reading the database through an interface the rule does not list; the rule must name every EF, clock and I/O type it forbids
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
