@@ -1,0 +1,31 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Platform/Host/BreachSafeResponseCompressionProvider.cs",
+      "**/Platform/Host/NeverCompressResponseAttribute.cs",
+      "**/Configuration/ResponseCompressionConfiguration.cs",
+      "**/Platform/Releases/LighthouseReleaseService.cs",
+      "**/API/VersionController.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~BreachSafeResponseCompressionProviderTest|FullyQualifiedName~VersionControllerTest|FullyQualifiedName~LighthouseReleaseServiceTest|FullyQualifiedName~LighthouseReleaseServiceNewestVersionTest|FullyQualifiedName~SecretBearingAnswersAreNeverCompressedTest)&FullyQualifiedName!~IntegrationTest&FullyQualifiedName!~API.Integration",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

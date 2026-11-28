@@ -105,6 +105,36 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task GetNewestVersion_ReleaseKnown_ReturnsTheVersion()
+        {
+            lighthouseReleaseServiceMock.Setup(x => x.GetNewestReleaseVersion()).ReturnsAsync("v2026.11.28");
+
+            var subject = new VersionController(lighthouseReleaseServiceMock.Object);
+
+            var response = await subject.GetNewestVersion();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                Assert.That(((OkObjectResult)response.Result!).Value, Is.EqualTo("v2026.11.28"));
+            }
+        }
+
+        [Test]
+        [TestCase(null)]
+        [TestCase("")]
+        public async Task GetNewestVersion_NoReleaseKnown_ReturnsNotFound(string? newest)
+        {
+            lighthouseReleaseServiceMock.Setup(x => x.GetNewestReleaseVersion()).ReturnsAsync(newest);
+
+            var subject = new VersionController(lighthouseReleaseServiceMock.Object);
+
+            var response = await subject.GetNewestVersion();
+
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
         [TestCase(true)]
         [TestCase(false)]
         public void IsUpdateSupported_ReturnsCorrectValue(bool isSupported)
