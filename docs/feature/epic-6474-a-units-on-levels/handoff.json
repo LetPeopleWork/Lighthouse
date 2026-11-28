@@ -1,10 +1,55 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F384",
+"test": "NumbersStayTheSameTest.Every_units_numbers_stay_as_recorded_and_two_recordings_agree(DemoData)",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/NumbersStayTheSameTest.cs"
+},
+"expected": "F382",
+"stimulus": "F381",
+"user_result": "F383"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F388",
+"test": "NumbersStayTheSameTest.Every_units_numbers_stay_as_recorded_and_two_recordings_agree(UpgradeFixture)",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/NumbersStayTheSameTest.cs"
+},
+"expected": "F386",
+"stimulus": "F385",
+"user_result": "F387"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "acceptance designer of slices S2 to S5, and the architecture and contract test locators declared in the design",
+"reason": "F392"
+},
+"expected": "F390",
+"stimulus": "F389",
+"user_result": "F391"
+}
+]
+},
 "counters": {
 "B": 5,
 "C": 2,
 "D": 13,
 "E": 6,
-"F": 380,
+"F": 392,
 "K": 6,
 "L": 5,
 "N": 15,
@@ -2443,7 +2488,19 @@
 "F379": "Each Team's Feature WIP, automatic WIP adjustment, throughput window (days or fixed dates) and forecast filter rules keep today's values, the Team settings payloads are unchanged, and manual and automatic forecasts give the same answers as before.",
 "F38": "Comments carry no internal ids; no nWave scenario tags in code; each slice owns its own oracle files and never edits an earlier slice's oracle or support files.",
 "F380": "Oracle cannot see the ownership by Forecasting or the one-record-per-unit keying from the user's view; it sees values and forecasts only, and may not cover fixed-date windows or filter rules.",
+"F381": "Load the demo data, and separately an installation shaped like real upgrades (Jira, Azure DevOps, Linear, ServiceNow and CSV Teams, a Jira Portfolio reading Epic and Change on the same connection as a Team reading Epic, an Azure DevOps Portfolio reading Epic, a Team spelling its type bug, a Linear Team with no types, Teams called Squads and Portfolios called Initiatives); refresh every Team and Portfolio from its tracker, forecast every Portfolio with pinned random draws, and read every unit's numbers twice on fresh databases",
+"F382": "For every Team and Portfolio, the item counts by type, the throughput over the last 90 days, the total Work Item Age and its percentiles, and every Feature's When forecast at 50, 70, 85 and 95 percent equal the numbers recorded in the expectation file beside the test, and the two recordings agree with each other",
+"F383": "Nobody's numbers change: a later change that moves any number fails and names the unit by kind, id and name, the number, what it was and what it is now",
+"F384": "A change that alters only the spelling of a stored item type a unit reads while every count, throughput, age and forecast stays equal, or a change to a number this recording does not read (cycle time percentiles, How Many forecasts, start forecasts, a Team's own When forecast)",
+"F385": "Same recording over the upgrade fixture: one Team stops reading Bug",
+"F386": "The recording fails naming Team 1 Payments, its Bug count (was 5, now not shown) and its throughput over 90 days (was 6, now 3), plus the Work Item Age and the Portfolio forecasts that moved with it",
+"F387": "A deliberate change that moves a number is caught and named with its unit and number",
+"F388": "A Team that stops reading a type none of its tracker records carry, which changes no number a user reads",
+"F389": "The upgrade laws of the restructuring itself: level lists as the union of their units' types, spelling and create defaults, a unit's subset within its level, the one-commit startup migrator, create-on-first-need mappings, the boundary and expand-only architecture checks, and the dual-written type list read by the previous release",
 "F39": "Already the shared base of Team and Portfolio; gains ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten instead of a parallel Unit entity.",
+"F390": "Each is observed by the oracle of the slice that builds it, and this recording stays green after each of those slices",
+"F391": "Not shown by this slice: it adds only the check that numbers stay the same, and changes no production code",
+"F392": "Slice 01 has no production target; the planner, the connection mapping, the migrator and the dual-write these laws govern do not exist until slices 02 to 07, and the architecture and contract tests are declared at their own locators",
 "F4": "An installation has exactly two levels: level 1 where the work is done (Teams, Work Items) and level 2 that groups the level below (Portfolios, Features). Their unit and item names (singular and plural) come from today's Terminology, custom or seeded, and every screen and API that shows those eight Terminology entries shows the same words as before; renaming through Terminology lands on the level.",
 "F40": "Sole owner of Terminology reads and writes; it serves the eight level entries from the levels, so no second terminology reader exists.",
 "F41": "Startup steps already run as ordered seeders; the migrator and the LeafCapacity copy are two more.",

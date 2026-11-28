@@ -2,7 +2,97 @@
 
 ## Slices
 
+### S1
+
+##### Covers
+
+P1
+
+```text
+Load the demo data, and separately an installation shaped like real upgrades (Jira, Azure DevOps, Linear, ServiceNow and CSV Teams, a Jira Portfolio reading Epic and Change on the same connection as a Team reading Epic, an Azure DevOps Portfolio reading Epic, a Team spelling its type bug, a Linear Team with no types, Teams called Squads and Portfolios called Initiatives); refresh every Team and Portfolio from its tracker, forecast every Portfolio with pinned random draws, and read every unit's numbers twice on fresh databases
+```
+
+```text
+For every Team and Portfolio, the item counts by type, the throughput over the last 90 days, the total Work Item Age and its percentiles, and every Feature's When forecast at 50, 70, 85 and 95 percent equal the numbers recorded in the expectation file beside the test, and the two recordings agree with each other
+```
+
+```text
+Nobody's numbers change: a later change that moves any number fails and names the unit by kind, id and name, the number, what it was and what it is now
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/NumbersStayTheSameTest\.cs
+
+NumbersStayTheSameTest\.Every\_units\_numbers\_stay\_as\_recorded\_and\_two\_recordings\_agree\(DemoData\)
+
+```text
+A change that alters only the spelling of a stored item type a unit reads while every count, throughput, age and forecast stays equal, or a change to a number this recording does not read (cycle time percentiles, How Many forecasts, start forecasts, a Team's own When forecast)
+```
+
+###### Obligations
+
 None.
+
+##### Covers
+
+P1
+
+```text
+Same recording over the upgrade fixture: one Team stops reading Bug
+```
+
+```text
+The recording fails naming Team 1 Payments, its Bug count (was 5, now not shown) and its throughput over 90 days (was 6, now 3), plus the Work Item Age and the Portfolio forecasts that moved with it
+```
+
+```text
+A deliberate change that moves a number is caught and named with its unit and number
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/NumbersStayTheSameTest\.cs
+
+NumbersStayTheSameTest\.Every\_units\_numbers\_stay\_as\_recorded\_and\_two\_recordings\_agree\(UpgradeFixture\)
+
+```text
+A Team that stops reading a type none of its tracker records carry, which changes no number a user reads
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+The upgrade laws of the restructuring itself: level lists as the union of their units' types, spelling and create defaults, a unit's subset within its level, the one-commit startup migrator, create-on-first-need mappings, the boundary and expand-only architecture checks, and the dual-written type list read by the previous release
+```
+
+```text
+Each is observed by the oracle of the slice that builds it, and this recording stays green after each of those slices
+```
+
+```text
+Not shown by this slice: it adds only the check that numbers stay the same, and changes no production code
+```
+
+##### Disposition
+
+NotTested
+
+```text
+Slice 01 has no production target; the planner, the connection mapping, the migrator and the dual-write these laws govern do not exist until slices 02 to 07, and the architecture and contract tests are declared at their own locators
+```
+
+acceptance designer of slices S2 to S5\, and the architecture and contract test locators declared in the design
 
 ## Expectations
 
