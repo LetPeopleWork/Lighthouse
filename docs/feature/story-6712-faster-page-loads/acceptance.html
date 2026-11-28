@@ -396,6 +396,253 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The user opens a Team page where three components gate on the user&#x27;s permissions
+</code></pre>
+
+<pre><code>The permissions are asked once, and all three components show the same grants (Team Admin of Team 1)
+</code></pre>
+
+<pre><code>A page load asks for the user&#x27;s permissions once, not once per component, and gating is unchanged
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx</p>
+
+<p>asks for the permissions once when three components on a page need them</p>
+
+<pre><code>A cache that shares the answer but asks again on every later mount of the page
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>A further component that gates on permissions appears on a page that already has its answer
+</code></pre>
+
+<pre><code>It is ready at once with the page&#x27;s grants and nothing is asked again
+</code></pre>
+
+<pre><code>Parts that appear later on the same page show their actions without another permissions request
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx</p>
+
+<p>gives a component that appears later on the same page the answer already there, without asking again</p>
+
+<pre><code>A component that reads the cached answer but triggers a background ask on mount, counted only after the check
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<p>P3</p>
+
+<pre><code>An administrator removes the user&#x27;s Team Admin right on Team 1 and grants Portfolio Admin on Portfolio 2, then the user moves from the Team page to a Portfolio page
+</code></pre>
+
+<pre><code>The new page&#x27;s components are loading until the answer asked after the move arrives, then they and the header that stayed mounted offer Portfolio Admin on Portfolio 2 and no longer Team Admin on Team 1; two asks in total
+</code></pre>
+
+<pre><code>Rights changed by someone else show on the next page, without a reload
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx</p>
+
+<p>shows the rights an administrator changed once the user moves to another page</p>
+
+<pre><code>A refresh on move that also asks once more for each newly mounted component on the first render, if the count is taken before it settles
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>The user moves to a Portfolio page while the first page&#x27;s permissions answer is still on its way, and that old answer then arrives
+</code></pre>
+
+<pre><code>The Portfolio page&#x27;s components stay loading after the old answer arrives, and only show the grants of the answer asked after the move
+</code></pre>
+
+<pre><code>A page never shows actions from a permissions answer asked on the page the user left
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx</p>
+
+<p>never shows the answer of the page the user left on the page they moved to</p>
+
+<pre><code>An implementation that shows the old answer for one render frame and replaces it before the check
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>On a page whose answer gives no admin rights, the user&#x27;s own change (a grant or a new Team) completes and the refresh after own changes is called
+</code></pre>
+
+<pre><code>The permissions are asked once more and every component on the page offers Team Admin on Team 7, with no page move
+</code></pre>
+
+<pre><code>The user&#x27;s own change of rights shows at once, without a reload or a page move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx</p>
+
+<p>shows the user&#x27;s own change of rights at once, without a page move</p>
+
+<pre><code>A refresh that marks the answer stale without asking until the next page move would fail; one that refreshes only the calling component would pass only if that component is the one checked
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>The permissions answer cannot be loaded when the user opens a page with three gating components
+</code></pre>
+
+<pre><code>Every component reports could-not-load, is not loading and shows today&#x27;s permissive fallback (system admin, may create Team and Portfolio, admin of any unit); asked once, no automatic retries
+</code></pre>
+
+<pre><code>Permissions that cannot be loaded behave as today, the same for every part of the page
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx</p>
+
+<p>gives every component the could-not-load state and today&#x27;s fallback when the permissions cannot be loaded</p>
+
+<pre><code>A shared query that retries automatically but finishes its retries before the check would fail on the count; a fallback missing only an unlisted field would pass
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>After a failed load the user presses retry in one component, and the answer now loads
+</code></pre>
+
+<pre><code>Exactly one more ask, and all three components show the loaded grants with could-not-load cleared
+</code></pre>
+
+<pre><code>One retry asks again once for all parts of the page
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx</p>
+
+<p>asks once for every component when one of them retries after a failed load</p>
+
+<pre><code>A retry that refetches once but leaves another component&#x27;s could-not-load flag set until its next render would fail; one that refetches twice sequentially would fail on the count
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The product source, every non-test frontend file including files added later, is scanned for direct calls to the permissions service
+</code></pre>
+
+<pre><code>Only the permissions hook calls it
+</code></pre>
+
+<pre><code>Every component gates on the one shared permissions answer behind useRbac()
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/sharedReadOwners.test.ts</p>
+
+<p>lets only the permissions hook ask for the user&#x27;s permissions</p>
+
+<pre><code>A component that reads the service through destructuring or a renamed alias, which the scan does not see
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The product source, every non-test frontend file including files added later, is scanned for direct calls to the Teams and Portfolios list services
+</code></pre>
+
+<pre><code>Only the unit lists hook calls them
+</code></pre>
+
+<pre><code>Every page reads one shared Teams list and one shared Portfolios list
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/sharedReadOwners.test.ts</p>
+
+<p>lets only the unit lists hook ask for the Teams and the Portfolios</p>
+
+<pre><code>A caller through destructuring or an alias, which the scan does not see
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

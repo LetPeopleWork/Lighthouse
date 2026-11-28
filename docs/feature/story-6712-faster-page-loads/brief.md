@@ -471,7 +471,13 @@ The biggest gain: 4–10 s per slow page.
 
 ##### Rework
 
-None.
+```text
+The answers that are never compressed are chosen by an endpoint marker, NeverCompressResponseAttribute on LogsController, EmbedHandshakeController and UpdateNotificationHub, instead of a list of path literals in BreachSafeResponseCompressionProvider.
+```
+
+```text
+The maintainer asked, 2026-11-28: could we NOT use literal paths and have something smarter instead? A renamed controller route silently drops its exclusion from a hand-typed path list.
+```
 
 ### S2
 

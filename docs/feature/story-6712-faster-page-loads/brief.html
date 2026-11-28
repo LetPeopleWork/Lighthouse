@@ -485,7 +485,9 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h5>Rework</h5>
 
-<p>None.</p>
+<p>The answers that are never compressed are chosen by an endpoint marker, NeverCompressResponseAttribute on LogsController, EmbedHandshakeController and UpdateNotificationHub, instead of a list of path literals in BreachSafeResponseCompressionProvider.</p>
+
+<p>The maintainer asked, 2026-11-28: could we NOT use literal paths and have something smarter instead? A renamed controller route silently drops its exclusion from a hand-typed path list.</p>
 
 <h3>S2</h3>
 

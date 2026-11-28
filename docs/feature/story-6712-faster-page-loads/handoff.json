@@ -159,6 +159,162 @@
 "stimulus": "F454",
 "user_result": "F456"
 }
+],
+"S2": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F238"
+],
+"still_passes_if": "F461",
+"test": "asks for the permissions once when three components on a page need them",
+"test_path": "Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx"
+},
+"expected": "F459",
+"stimulus": "F458",
+"user_result": "F460"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4"
+],
+"still_passes_if": "F465",
+"test": "gives a component that appears later on the same page the answer already there, without asking again",
+"test_path": "Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx"
+},
+"expected": "F463",
+"stimulus": "F462",
+"user_result": "F464"
+},
+{
+"covers": [
+"P4",
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F239"
+],
+"still_passes_if": "F469",
+"test": "shows the rights an administrator changed once the user moves to another page",
+"test_path": "Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx"
+},
+"expected": "F467",
+"stimulus": "F466",
+"user_result": "F468"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F240"
+],
+"still_passes_if": "F473",
+"test": "never shows the answer of the page the user left on the page they moved to",
+"test_path": "Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx"
+},
+"expected": "F471",
+"stimulus": "F470",
+"user_result": "F472"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F241"
+],
+"still_passes_if": "F477",
+"test": "shows the user's own change of rights at once, without a page move",
+"test_path": "Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx"
+},
+"expected": "F475",
+"stimulus": "F474",
+"user_result": "F476"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F242"
+],
+"still_passes_if": "F481",
+"test": "gives every component the could-not-load state and today's fallback when the permissions cannot be loaded",
+"test_path": "Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx"
+},
+"expected": "F479",
+"stimulus": "F478",
+"user_result": "F480"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F242"
+],
+"still_passes_if": "F485",
+"test": "asks once for every component when one of them retries after a failed load",
+"test_path": "Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx"
+},
+"expected": "F483",
+"stimulus": "F482",
+"user_result": "F484"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F489",
+"test": "lets only the permissions hook ask for the user's permissions",
+"test_path": "Lighthouse.Frontend/src/hooks/sharedReadOwners.test.ts"
+},
+"expected": "F487",
+"stimulus": "F486",
+"user_result": "F488"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F493",
+"test": "lets only the unit lists hook ask for the Teams and the Portfolios",
+"test_path": "Lighthouse.Frontend/src/hooks/sharedReadOwners.test.ts"
+},
+"expected": "F491",
+"stimulus": "F490",
+"user_result": "F492"
+}
 ]
 },
 "counters": {
@@ -166,13 +322,13 @@
 "C": 3,
 "D": 13,
 "E": 13,
-"F": 457,
+"F": 549,
 "K": 13,
 "L": 7,
 "N": 4,
 "P": 12,
 "S": 5,
-"T": 4,
+"T": 6,
 "Y": 6
 },
 "design": {
@@ -256,7 +412,7 @@
 "slices": [
 "S1"
 ],
-"text": "F352"
+"text": "F496"
 },
 {
 "id": "D4",
@@ -453,7 +609,7 @@
 "kind": "Stressor",
 "owner": "BreachSafeResponseCompressionProvider",
 "preserved": "F102",
-"residue": "F105",
+"residue": "F497",
 "source": "F101"
 },
 {
@@ -482,9 +638,9 @@
 "id": "Y4",
 "kind": "Bypass",
 "owner": "useRbac",
-"preserved": "F117",
-"residue": "F120",
-"source": "F116"
+"preserved": "F499",
+"residue": "F500",
+"source": "F498"
 },
 {
 "allowed": "F123",
@@ -497,14 +653,14 @@
 "source": "F121"
 },
 {
-"allowed": "F361",
+"allowed": "F503",
 "forbidden": "F362",
 "id": "Y6",
 "kind": "Stressor",
 "owner": "BreachSafeResponseCompressionProvider",
-"preserved": "F360",
-"residue": "F363",
-"source": "F359"
+"preserved": "F502",
+"residue": "F504",
+"source": "F501"
 }
 ],
 "states": [
@@ -574,10 +730,16 @@
 "id": "T1",
 "obligation": "F174",
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs"
+},
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~SecretBearingAnswersAreNeverCompressedTest",
+"id": "T6",
+"obligation": "F549",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SecretBearingAnswersAreNeverCompressedTest.cs"
 }
 ],
 "boundaries": {
-"dependency_direction": "F145",
+"dependency_direction": "F534",
 "driven_ports": [
 "F144"
 ],
@@ -605,14 +767,14 @@
 },
 {
 "admitted_input": "F166",
-"bypass": "F399",
-"constructor": "BreachSafeResponseCompressionProvider.ShouldCompressResponse",
+"bypass": "F546",
+"constructor": "NeverCompressResponseAttribute on the class; BreachSafeResponseCompressionProvider.ShouldCompressResponse reads it from the endpoint metadata",
 "consumer": "ResponseCompressionMiddleware",
 "harm": "F397",
 "id": "C3",
 "owner": "BreachSafeResponseCompressionProvider",
-"proposition": "F396",
-"public_observation": "F398"
+"proposition": "F544",
+"public_observation": "F545"
 }
 ],
 "closure": [
@@ -643,6 +805,13 @@
 "design": "Pass",
 "runtime": "DesignedNotBuilt",
 "subject": "F169"
+},
+{
+"axis": "PublicReachability",
+"basis": "F548",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F547"
 }
 ],
 "contract_tests": [
@@ -657,6 +826,9 @@
 "producer": "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
 }
 ],
+"decisions": [
+"F517"
+],
 "impact": [
 {
 "decision": "Changed",
@@ -667,14 +839,14 @@
 {
 "decision": "Changed",
 "kind": "class",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/Host/BreachSafeResponseCompressionProvider.cs:1",
-"reason": "F135"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/Host/BreachSafeResponseCompressionProvider.cs:15",
+"reason": "F525"
 },
 {
 "decision": "Changed",
 "kind": "class",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateNotificationHub.cs:1",
-"reason": "F136"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateNotificationHub.cs:10",
+"reason": "F526"
 },
 {
 "decision": "UnchangedCompatible",
@@ -701,22 +873,46 @@
 "reason": "F379"
 },
 {
-"decision": "UnchangedCompatible",
+"decision": "Changed",
 "kind": "controller",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/API/LogsController.cs:85",
-"reason": "F380"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/LogsController.cs:22",
+"reason": "F527"
 },
 {
-"decision": "UnchangedCompatible",
+"decision": "Changed",
 "kind": "controller",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/API/EmbedHandshakeController.cs:24",
-"reason": "F381"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/EmbedHandshakeController.cs:15",
+"reason": "F528"
 },
 {
 "decision": "UnchangedCompatible",
 "kind": "helm-chart",
 "locator": "chart/values.yaml:21",
 "reason": "F382"
+},
+{
+"decision": "Changed",
+"kind": "class",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/Host/NeverCompressResponseAttribute.cs:1",
+"reason": "F529"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs:300",
+"reason": "F530"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/BreachSafeResponseCompressionProviderTest.cs:22",
+"reason": "F531"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/ResponseCompressionWireContractTest.cs:142",
+"reason": "F532"
 }
 ],
 "laws": [
@@ -741,35 +937,31 @@
 "kind": "Invariant",
 "layer": "Adapter",
 "owner": "BreachSafeResponseCompressionProvider",
-"statement": "F385",
+"statement": "F535",
 "treatment": {
 "cases": [
-"F156",
-"F157",
-"F158",
+"F536",
+"F537",
+"F538",
+"F539",
 "F159",
 "F160",
 "F161",
 "F386",
-"F387",
-"F388",
-"F389",
-"F390",
-"F391",
-"F392",
-"F393",
-"F163",
+"F540",
+"F541",
+"F542",
 "F394"
 ],
 "kind": "Finite",
-"reason": "F395"
+"reason": "F543"
 }
 }
 ],
 "not_applicable": [
 {
 "analysis": "prefactoring",
-"reason": "F384"
+"reason": "F533"
 }
 ],
 "observations": [
@@ -793,15 +985,15 @@
 "symbol": "staticFileOptions"
 },
 {
-"decision": "CreateNew",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/Host/BreachSafeResponseCompressionProvider.cs:1",
-"reason": "F131",
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/Host/BreachSafeResponseCompressionProvider.cs:13",
+"reason": "F518",
 "symbol": "BreachSafeResponseCompressionProvider"
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateNotificationHub.cs:1",
-"reason": "F132",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateNotificationHub.cs:11",
+"reason": "F519",
 "symbol": "UpdateNotificationHub"
 },
 {
@@ -823,16 +1015,16 @@
 "symbol": "ResponseCompressionConfiguration"
 },
 {
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/API/LogsController.cs:85",
-"reason": "F372",
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/LogsController.cs:26",
+"reason": "F520",
 "symbol": "LogsController"
 },
 {
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/API/EmbedHandshakeController.cs:24",
-"reason": "F373",
-"symbol": "Poll"
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/EmbedHandshakeController.cs:19",
+"reason": "F521",
+"symbol": "EmbedHandshakeController"
 },
 {
 "decision": "Extend",
@@ -845,6 +1037,24 @@
 "locator": "docs/Installation/configuration.md:446",
 "reason": "F375",
 "symbol": "Telemetry"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/Host/NeverCompressResponseAttribute.cs:1",
+"reason": "F522",
+"symbol": "NeverCompressResponseAttribute"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:201",
+"reason": "F523",
+"symbol": "UseRouting"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs:300",
+"reason": "F524",
+"symbol": "PlatformLaneMembership"
 }
 ]
 },
@@ -857,12 +1067,14 @@
 "path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
 },
 {
-"change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/Host/BreachSafeResponseCompressionProvider.cs"
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/Host/BreachSafeResponseCompressionProvider.cs",
+"reason": "F512"
 },
 {
 "change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateNotificationHub.cs"
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateNotificationHub.cs",
+"reason": "F513"
 },
 {
 "change": "Create",
@@ -878,11 +1090,32 @@
 "change": "Extend",
 "path": ".github/workflows/ci_docker.yml",
 "reason": "F366"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/Host/NeverCompressResponseAttribute.cs",
+"reason": "F514"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/LogsController.cs",
+"reason": "F515"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/EmbedHandshakeController.cs",
+"reason": "F515"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs",
+"reason": "F516"
 }
 ],
 "verification": [
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~ResponseCompressionWireContractTest|FullyQualifiedName~BreachSafeResponseCompressionProviderTest",
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~TestHostUseGuardTest|FullyQualifiedName~SpaFallbackRoutingTests"
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~TestHostUseGuardTest|FullyQualifiedName~SpaFallbackRoutingTests",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~SecretBearingAnswersAreNeverCompressedTest|FullyQualifiedName~PlatformLane"
 ]
 },
 "S2": {
@@ -903,7 +1136,7 @@
 {
 "command": "pnpm --dir Lighthouse.Frontend exec vitest run src/hooks/sharedReadOwners.test.ts",
 "id": "T3",
-"obligation": "F253",
+"obligation": "F505",
 "oracle": "Lighthouse.Frontend/src/hooks/sharedReadOwners.test.ts"
 }
 ],
@@ -1208,6 +1441,14 @@
 "stimulus": "F305"
 },
 "records": {
+"architectural_tests": [
+{
+"command": "pnpm --dir Lighthouse.Frontend exec vitest run src/hooks/sharedListOwners.test.ts",
+"id": "T5",
+"obligation": "F511",
+"oracle": "Lighthouse.Frontend/src/hooks/sharedListOwners.test.ts"
+}
+],
 "boundaries": {
 "dependency_direction": "F336",
 "driven_ports": [
@@ -1255,6 +1496,9 @@
 "runtime": "DesignedNotBuilt",
 "subject": "F346"
 }
+],
+"decisions": [
+"F506"
 ],
 "impact": [
 {
@@ -1322,6 +1566,18 @@
 "kind": "page",
 "locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:166",
 "reason": "F329"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:486",
+"reason": "F508"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/pages/Settings/ApiKeys/ApiKeysSettings.tsx:425",
+"reason": "F509"
 }
 ],
 "laws": [
@@ -1348,10 +1604,6 @@
 ],
 "not_applicable": [
 {
-"analysis": "architectural_tests",
-"reason": "F330"
-},
-{
 "analysis": "agreement",
 "reason": "F331"
 },
@@ -1361,7 +1613,7 @@
 },
 {
 "analysis": "prefactoring",
-"reason": "F333"
+"reason": "F510"
 }
 ],
 "observations": [
@@ -1443,6 +1695,12 @@
 "locator": "Lighthouse.Frontend/src/components/SurveyNudge/SurveyNudge.tsx:49",
 "reason": "F318",
 "symbol": "getLicenseStatus"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:486",
+"reason": "F507",
+"symbol": "getAllTeams"
 }
 ]
 },
@@ -1490,7 +1748,8 @@
 }
 ],
 "verification": [
-"pnpm --dir Lighthouse.Frontend exec vitest run src/hooks/useUnitLists.test.tsx src/hooks/useLicenseRestrictions.test.ts"
+"pnpm --dir Lighthouse.Frontend exec vitest run src/hooks/useUnitLists.test.tsx src/hooks/useLicenseRestrictions.test.ts",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/hooks/sharedListOwners.test.ts"
 ]
 },
 "S4": {
@@ -2026,7 +2285,6 @@
 "F102": "POST answers stay uncompressed",
 "F103": "That GET answer is compressed",
 "F104": "Silent claim that every compressed answer is BREACH-safe",
-"F105": "Endpoint authors must answer secrets on unsafe methods or extend BreachSafeResponseCompressionProvider; recorded in the ADR consequences",
 "F106": "Assumption negated: the client decodes what it asked for (a proxy strips or rewrites Accept-Encoding)",
 "F107": "Identity answer when Accept-Encoding is absent",
 "F108": "No compression behind such a proxy",
@@ -2037,23 +2295,16 @@
 "F113": "Permissions stay as of the last ask if it is not mounted",
 "F114": "A page component shows an earlier-page answer as ready",
 "F115": "Readiness is decided per component from askedOnPage, so a missing trigger shows loading, never stale-as-current; App.tsx mounts it once inside the Router",
-"F116": "A component calls rbacService.getAuthorizationSummary or teamService.getTeams directly",
-"F117": "useRbac and useUnitLists remain the owners",
 "F118": "none",
 "F119": "A second reader with its own freshness",
 "F12": "The change completes",
-"F120": "Architectural test on the frontend source scans every non-test file for direct callers",
 "F121": "Second stressor set (walkthrough, not execution): server CPU spike under many cold loads; an answer that arrives after the user moved twice; a browser tab restored from bfcache; a licence import while on a page",
 "F123": "Slower first byte under load",
 "F124": "A wrong or stale permission shown as ready",
 "F129": "Shared-framework ResponseCompression middleware is inserted right after UseForwardedHeaders; it does negotiation, Vary and skips already-encoded answers; no compression owner exists today",
 "F13": "The actions that follow from it (for example the admin actions on the new Team) show at once, without a reload",
 "F130": "Keeps the no-cache rule for index.html and sw.js on both paths unchanged",
-"F131": "No class decides which answers may be compressed; the default provider decides by MIME only",
-"F132": "Owns its route as a named constant so MapHub and the policy agree on one literal",
 "F133": "One host per fixture for the wire rows; AdjustTheHost sets a temporary web root as SpaFallbackWebApplicationFactory does",
-"F135": "New policy",
-"F136": "Route constant added, behaviour unchanged",
 "F137": "Status, media type and no-store assertions hold with compression; test client sends no Accept-Encoding",
 "F138": "Starts compressing safe-method answers when asked",
 "F139": "Browsers and the WebKit webview send Accept-Encoding and decode transparently",
@@ -2061,7 +2312,6 @@
 "F140": "Node fetch decodes br and gzip transparently; without Accept-Encoding they get identity",
 "F143": "HTTP GET of a built frontend file or an API route on the Lighthouse host (Kestrel pipeline in Program.cs)",
 "F144": "wwwroot static files",
-"F145": "Program.cs (composition root) registers BreachSafeResponseCompressionProvider; the provider depends only on ASP.NET Core abstractions and the UpdateNotificationHub route constant",
 "F146": "Client sends no Accept-Encoding or an unsupported one",
 "F147": "Identity answer, same bytes as today",
 "F148": "Content-Encoding and Vary headers plus decoded body of an answer",
@@ -2072,14 +2322,10 @@
 "F152": "gzip",
 "F153": "identity",
 "F154": "The domain is a closed finite set of cases, so native example rows cover every member",
-"F156": "GET json br -> compressed",
-"F157": "HEAD js gzip -> compressed",
-"F158": "POST json br -> not",
 "F159": "PUT json br -> not",
 "F16": "A page that gates on permissions is shown",
 "F160": "DELETE json br -> not",
 "F161": "GET image/png br -> not",
-"F163": "GET json no Accept-Encoding -> not",
 "F164": "No answer to an unsafe-method request is compressed",
 "F165": "BREACH recovery of the API key echoed in a compressed POST answer",
 "F166": "Any HTTP request reaching Kestrel",
@@ -2179,7 +2425,6 @@
 "F250": "useQuery with the existing rbacService answer",
 "F251": "All 20 consumers reach it through useRbac(); PageMoveRefresh mounted in App.tsx",
 "F252": "No liveness claim: arrival of the answer depends on the HTTP answer, outside the design; safety is the claim",
-"F253": "Only useRbac.ts calls getAuthorizationSummary and only useUnitLists.ts calls getTeams/getPortfolios in non-test frontend source, including files added later",
 "F254": "Render LighthouseVersion with a version service whose calls are held: current, distribution and hasupdate pending; then resolve with an update; open the dialog; make getNewReleases pending, then resolve; separately make it reject and press Retry; separately reject one footer check",
 "F255": "current, distribution and hasupdate all started before any resolves; getNewReleases not called on load; the pop-up shows the newest version from getNewestVersion; the open dialog shows the version and a progress indicator, then the notes; on rejection the version, Could not load the release notes. and a Retry button that calls getNewReleases again; any rejected footer check shows the footer error",
 "F256": "Today’s footer awaits each check before starting the next and calls getNewReleases on load",
@@ -2265,10 +2510,8 @@
 "F328": "Calls useUnitListsChanged after create and update",
 "F329": "Calls useUnitListsChanged after a settings save",
 "F33": "One shared, keyed cache for the user's permissions behind useRbac(), with the freshness of P4 and P5.",
-"F330": "The direct-caller law for getTeams/getPortfolios is covered by the S2 architectural test sharedReadOwners.test.ts",
 "F331": "No wire change; hooks are in-deployable",
 "F332": "One deployable, one commit, no wire change",
-"F333": "useLicenseRestrictions.ts holds functions and hooks of one concept (licence gating), not several types; OverviewDashboard, ApiKeysSettings, EditPortfolio, EditTeam, TeamDetail, PortfolioDetail, SurveyNudge each hold one component; ApiKeysSettings.tsx holds two components (lines 152 and 386) but the change only swaps two reads and leaves its layout move to a later item. Nothing moves.",
 "F334": "useTeamsQuery, usePortfoliosQuery and useLicenseStatusQuery rendered by shell and page components",
 "F335": "teamService.getTeams, portfolioService.getPortfolios, licensingService.getLicenseStatus",
 "F336": "Components -> useUnitLists / useLicenseRestrictions -> usePageFreshQuery -> QueryClient -> services",
@@ -2289,19 +2532,14 @@
 "F35": "Features tabs that no longer load full Team settings to render a list.",
 "F350": "No liveness claim: answer arrival depends on HTTP",
 "F351": "Open question 1 resolved (compression of the built frontend): compress at serve time with ASP.NET Core ResponseCompression (shared framework, no new package), Brotli and Gzip providers both at CompressionLevel.Optimal, never SmallestSize (Brotli quality 11 is about 140 times slower: 3510 ms against 25 ms on the 2.43 MB largest JavaScript file, x86_64). No size threshold: a threshold can only act where Content-Length is known, which is the static files, where compression pays most. app.UseResponseCompression placed after UseForwardedHeaders and before UseDefaultFiles/UseStaticFiles so static files, the SPA fallback page and API answers pass through one mechanism. UseStaticFiles(staticFileOptions) and the UseSpa DefaultPageStaticFileOptions stay unchanged, so index.html and sw.js keep no-cache, no-store, must-revalidate on both paths. Measured on the current bundle (3361 KB of JavaScript): Optimal gives 3.22x gzip and 3.23x Brotli; Fastest gives only 2.32x gzip, which misses the about-a-third outcome. Server CPU is about 35 ms per cold load of the bundle in one encoding (measured in DEVOPS, x86_64). Rejected: MapStaticAssets (needs the static web assets manifest built after pnpm build fills wwwroot, replaces the StaticFileOptions path that the no-cache rule lives on, and is empty in dev); a Vite precompression plugin plus a custom precompressed-file provider (new dependency and hand-written content negotiation to save about 35 ms CPU per cold load).",
-"F352": "Open question 2 resolved (BREACH): an answer is compressed only when ResponseCompression:Enabled is true, the request method is GET or HEAD, the response MIME type is in ResponseCompressionDefaults.MimeTypes, the client sent Accept-Encoding with br or gzip, and the path is not an excluded route. Excluded routes, matched on path segments, case-insensitive, by prefix: the SignalR hub api/updateNotificationHub (and everything under it, such as negotiate); the logs controller api/{v1|latest}/logs (tail, download, problems, level), because its answers hold log text an attacker can reach (logged paths, failed sign-ins, tracker queries) next to exception text from third-party libraries that this design cannot show is free of secrets, and an administrator can raise the log level at run time; and the embed handshake api/{v1|latest}/embed/handshake, the one GET whose body carries a secret (the single-use embed session token). The handshake body reflects no attacker text and its nonce is spent on first read, so it is not exploitable today; it is excluded so the rule stays simple: no compressed answer carries a secret, and the answer is a few hundred bytes. Every other GET carries no secret: connection options blank secret values (WorkTrackingSystemConnectionOptionDto sets Value empty when IsSecret), GET api-keys never returns the plaintext (ApiKeyController.GetApiKeys), the OAuth callback answers a redirect with a connection id, session and embed cookies travel in headers, which ResponseCompression never compresses; the plain-text API key of ApiKeyCreationResult answers a POST. The embed cookie is SameSite=None, so cross-site GETs carry it; no GET in embed scope other than the excluded handshake returns a token. EnableForHttps is true because the rule, not the scheme, is the mitigation, so TLS at a proxy does not change the answer. Owner in code: BreachSafeResponseCompressionProvider in Platform/Host, a subclass of ResponseCompressionProvider overriding ShouldCompressResponse; the hub route is one named constant on UpdateNotificationHub read by both MapHub and the policy; the logs and handshake prefixes are named constants in the provider. No PathBase is used, so the segments are matched on Request.Path. Platform facts (DEVOPS): the Docker image serves HTTPS 443 with nothing in front; the Helm chart's plain Ingress (ingress-nginx, Traefik) does not compress by default and passes an already encoded answer through; a proxy that strips Accept-Encoding gets identity answers; the Standalone webview loads its UI from the app bundle and only its loopback API answers are compressed, about 1 ms each; one behaviour everywhere.",
 "F353": "S1 switch: ResponseCompressionConfiguration in Configuration/ResponseCompressionConfiguration.cs (SectionName ResponseCompression, Enabled default true), read once at start-up in Program.cs the way RateLimitingConfiguration is (GetSection(SectionName).Get, else a new instance), registered as a singleton and given to BreachSafeResponseCompressionProvider, which answers no for every request when Enabled is false, so the switch is one row of the policy table and the pipeline shape is the same either way. Environment variable ResponseCompression__Enabled=false or --ResponseCompression:Enabled=false; a restart is needed; no Helm chart value. docs/Installation/configuration.md gets one section in the format of the Telemetry block: Lighthouse compresses its own answers, a reverse proxy needs no compression of its own, and how to turn it off.",
 "F354": "S1 accepted behaviours: an identity answer to a request without Accept-Encoding carries no Vary header (never wrong; at worst a shared cache serves identity to a client that could take br); StaticFiles gives one strong ETag for every encoding (harmless with Vary, no CDN in the repository); application/problem+json and image/svg+xml stay uncompressed because they are not on the default MIME list. Usage data: N/A, because nothing here is a user action; the outcome (bytes and calls per page) is measured by the spike's probes, so no UsageDataEventName entry. Observability: the Content-Encoding and Vary response headers show it is on; no metric or alert, because no service-level promise changes.",
 "F355": "S1 test layers: unit rows in the default fast suite (no host) pin the rule as a table over DefaultHttpContext in BreachSafeResponseCompressionProviderTest; one named wire contract (ResponseCompressionWireContractTest on WireContractTest) pins pipeline order and headers through a real host; the Docker smoke step in .github/workflows/ci_docker.yml, after Check the container runs on .NET 11, covers real TLS and the real bundle: curl -k a built asset with Accept-Encoding br and fail unless content-encoding is br, and curl /api/latest/systeminfo without Accept-Encoding and fail if content-encoding is present. No other workflow change: E2E already runs Chromium, which sends Accept-Encoding, against the server. Host verification probe after S1 (the host runs it against a running instance LH): take the first /assets/*.js named in GET /; GET it with Accept-Encoding br (expect content-encoding br and vary Accept-Encoding) and without the header (no content-encoding); GET /api/latest/version/current with gzip, br (br); GET / with br (br, and Cache-Control no-cache, no-store, must-revalidate kept); POST api/updateNotificationHub/negotiate (no content-encoding).",
 "F356": "Checked in DEVOPS: Docker serves HTTPS with nothing in front; the Helm Ingress (ingress-nginx, Traefik) does not compress by default and passes encoded answers through; a stripping proxy gets identity; Standalone compresses only loopback API answers. No residue",
 "F357": "Compression CPU about 35 ms per cold bundle at Optimal, assets reused from browser cache; late answer cancelled by invalidation; bfcache restore keeps the last page answers and the next move asks again; licence import sets the cache at once through useStoreImportedLicense",
 "F358": "An operator on a small host turns compression off with ResponseCompression__Enabled=false and a restart",
-"F359": "Assumption negated: no compressible GET body holds a secret (a log line holds a token from library exception text, or a future GET returns a token)",
 "F36": "An update check without release notes on page load; release notes loaded when the new-version dialog opens, with a loading and a failure look.",
-"F360": "Log routes and the embed handshake are never compressed; POST answers stay uncompressed",
-"F361": "Log downloads go uncompressed",
 "F362": "A compressed body that mixes a secret with attacker-reachable text",
-"F363": "A new GET that returns a secret must answer a POST or be added to the excluded routes of BreachSafeResponseCompressionProvider; stated in ADR-004",
 "F364": "Start-up switch ResponseCompression:Enabled, default true",
 "F365": "Prose target, verified by review and EXAMINE, no test pins its wording: Lighthouse compresses its own answers, no proxy compression needed, how to turn it off",
 "F366": "Docker smoke step: an asset answers br over real TLS; systeminfo without Accept-Encoding has no Content-Encoding",
@@ -2311,8 +2549,6 @@
 "F37": "The version footer's independent checks run in parallel, with today's error rule.",
 "F370": "Pattern reused for the switch: SectionName constant, Enabled default true, read at start-up in Program.cs; its section is rate limiting, so it does not own compression",
 "F371": "No configuration section owns compression; one value object holds the switch and is read once",
-"F372": "Unchanged; its routes api/{v1|latest}/logs are an excluded prefix of the policy",
-"F373": "Unchanged; the only GET whose body carries a token, so api/{v1|latest}/embed/handshake is an excluded prefix",
 "F374": "The existing Docker smoke job already runs the container over HTTPS 443; one step after it checks Content-Encoding",
 "F375": "The configuration page is where operators read switches; the new section follows the Telemetry block format",
 "F376": "Reads ResponseCompressionConfiguration at start-up, adds AddResponseCompression with Brotli and Gzip at Optimal and the policy registration, UseResponseCompression before UseDefaultFiles; MapHub reads the hub route constant",
@@ -2320,27 +2556,12 @@
 "F378": "One smoke step added after the runtime check",
 "F379": "One section on compression and its switch",
 "F38": "Moving the other data hooks that fetch through useEffect (about 37 files) to TanStack Query.",
-"F380": "Its answers stay identity, as today",
-"F381": "Its answer stays identity, as today",
 "F382": "No chart value for the switch; the Ingress passes encoded answers through",
 "F383": "ingress-nginx and Traefik do not compress by default and pass an encoded answer through; a proxy that strips Accept-Encoding gets identity",
-"F384": "Program.cs holds one type (Program); UpdateNotificationHub.cs holds one type; BreachSafeResponseCompressionProvider.cs and ResponseCompressionConfiguration.cs are new; ci_docker.yml and configuration.md hold no types. No file holds several types, nothing moves.",
-"F385": "An answer is compressed iff the switch is on, method is GET or HEAD, MIME is compressible, Accept-Encoding offers br or gzip and no excluded route prefix (hub, logs, embed handshake) matches the path segments, case-insensitive",
 "F386": "GET application/problem+json br -> not",
-"F387": "GET api/updateNotificationHub br -> not",
-"F388": "GET API/UPDATENOTIFICATIONHUB br -> not",
-"F389": "POST api/updateNotificationHub/negotiate br -> not",
 "F39": "Making the Portfolio page's four-step load chain parallel (about 0.5 s on slow 4G); a possible later item.",
-"F390": "GET api/latest/logs br -> not",
-"F391": "GET api/v1/Logs/download br -> not",
-"F392": "GET api/latest/embed/handshake/n1 br -> not",
-"F393": "GET api/latest/logsx br -> compressed (segment match, not substring)",
 "F394": "GET json br with ResponseCompression:Enabled false -> not",
-"F395": "The policy inputs form a closed finite table of method, MIME class, encoding offer, route class and switch, so native example rows cover every class",
-"F396": "No compressed answer carries a secret: log text and the embed handshake token are never compressed",
 "F397": "BREACH recovery of a token from a compressed body that also holds attacker-reachable text",
-"F398": "Content-Encoding absent on api/{v1|latest}/logs and api/{v1|latest}/embed/handshake answers",
-"F399": "A future GET answer carrying a secret on a route not in the excluded prefixes",
 "F4": "API answers that the design judges safe to compress reach a browser that accepts compression compressed, so large answers (metrics, feature lists, settings) take fewer bytes on the line. Which answers are safe is a DESIGN and DEVOPS decision.",
 "F40": "Fewer metrics calls (one composite read per page) and any API-shape change; ADR-288 keeps REST.",
 "F400": "With a browser that accepts compression, a cold load of the spike's pages transfers the frontend JavaScript at about a third of today's bytes (about 1 MB instead of 3.4 MB).",
@@ -2406,16 +2627,108 @@
 "F455": "The answer is not compressed",
 "F456": "An operator can turn compression off with one setting and a restart",
 "F457": "A switch that is ignored when the section is absent passes; the safe-answer rows run with the section absent and pin the default on",
+"F458": "The user opens a Team page where three components gate on the user's permissions",
+"F459": "The permissions are asked once, and all three components show the same grants (Team Admin of Team 1)",
 "F46": "Release notes load when the new-version dialog opens; the pop-up and footer need only the newest version number. If the notes cannot be loaded the dialog shows a message and a Retry button. (Maintainer, 2026-11-28)",
+"F460": "A page load asks for the user's permissions once, not once per component, and gating is unchanged",
+"F461": "A cache that shares the answer but asks again on every later mount of the page",
+"F462": "A further component that gates on permissions appears on a page that already has its answer",
+"F463": "It is ready at once with the page's grants and nothing is asked again",
+"F464": "Parts that appear later on the same page show their actions without another permissions request",
+"F465": "A component that reads the cached answer but triggers a background ask on mount, counted only after the check",
+"F466": "An administrator removes the user's Team Admin right on Team 1 and grants Portfolio Admin on Portfolio 2, then the user moves from the Team page to a Portfolio page",
+"F467": "The new page's components are loading until the answer asked after the move arrives, then they and the header that stayed mounted offer Portfolio Admin on Portfolio 2 and no longer Team Admin on Team 1; two asks in total",
+"F468": "Rights changed by someone else show on the next page, without a reload",
+"F469": "A refresh on move that also asks once more for each newly mounted component on the first render, if the count is taken before it settles",
 "F47": "The parallel version checks keep today's error rule: any failure shows the footer error. (Maintainer, 2026-11-28)",
+"F470": "The user moves to a Portfolio page while the first page's permissions answer is still on its way, and that old answer then arrives",
+"F471": "The Portfolio page's components stay loading after the old answer arrives, and only show the grants of the answer asked after the move",
+"F472": "A page never shows actions from a permissions answer asked on the page the user left",
+"F473": "An implementation that shows the old answer for one render frame and replaces it before the check",
+"F474": "On a page whose answer gives no admin rights, the user's own change (a grant or a new Team) completes and the refresh after own changes is called",
+"F475": "The permissions are asked once more and every component on the page offers Team Admin on Team 7, with no page move",
+"F476": "The user's own change of rights shows at once, without a reload or a page move",
+"F477": "A refresh that marks the answer stale without asking until the next page move would fail; one that refreshes only the calling component would pass only if that component is the one checked",
+"F478": "The permissions answer cannot be loaded when the user opens a page with three gating components",
+"F479": "Every component reports could-not-load, is not loading and shows today's permissive fallback (system admin, may create Team and Portfolio, admin of any unit); asked once, no automatic retries",
 "F48": "In scope beyond permissions: Teams and Portfolios lists, licence, and Team settings on lists. Out: the other useEffect hooks and the Portfolio chain. (Maintainer, 2026-11-28)",
+"F480": "Permissions that cannot be loaded behave as today, the same for every part of the page",
+"F481": "A shared query that retries automatically but finishes its retries before the check would fail on the count; a fallback missing only an unlisted field would pass",
+"F482": "After a failed load the user presses retry in one component, and the answer now loads",
+"F483": "Exactly one more ask, and all three components show the loaded grants with could-not-load cleared",
+"F484": "One retry asks again once for all parts of the page",
+"F485": "A retry that refetches once but leaves another component's could-not-load flag set until its next render would fail; one that refetches twice sequentially would fail on the count",
+"F486": "The product source, every non-test frontend file including files added later, is scanned for direct calls to the permissions service",
+"F487": "Only the permissions hook calls it",
+"F488": "Every component gates on the one shared permissions answer behind useRbac()",
+"F489": "A component that reads the service through destructuring or a renamed alias, which the scan does not see",
 "F49": "The Story says the build already makes .gz files; no compression step was found in vite.config.ts or the pipeline. DESIGN decides how the files get compressed (at build or at serve time) and how they are served (MapStaticAssets, or a provider beside UseStaticFiles), keeping index.html uncacheable (Bug #5732).",
+"F490": "The product source, every non-test frontend file including files added later, is scanned for direct calls to the Teams and Portfolios list services",
+"F491": "Only the unit lists hook calls them",
+"F492": "Every page reads one shared Teams list and one shared Portfolios list",
+"F493": "A caller through destructuring or an alias, which the scan does not see",
+"F494": "The answers that are never compressed are chosen by an endpoint marker, NeverCompressResponseAttribute on LogsController, EmbedHandshakeController and UpdateNotificationHub, instead of a list of path literals in BreachSafeResponseCompressionProvider.",
+"F495": "The maintainer asked, 2026-11-28: could we NOT use literal paths and have something smarter instead? A renamed controller route silently drops its exclusion from a hand-typed path list.",
+"F496": "Open question 2 resolved (BREACH): an answer is compressed only when ResponseCompression:Enabled is true, the request method is GET or HEAD, the response MIME type is in ResponseCompressionDefaults.MimeTypes, the client sent Accept-Encoding with br or gzip, and the endpoint that answers carries no NeverCompressResponseAttribute in its metadata. Marked, on the class, so every action and route of it is covered whatever its route is called: the SignalR hub UpdateNotificationHub (negotiate and transports); LogsController (tail, download, problems, level), because its answers hold log text an attacker can reach (logged paths, failed sign-ins, tracker queries) next to exception text from third-party libraries that this design cannot show is free of secrets, and an administrator can raise the log level at run time; and EmbedHandshakeController, whose one GET is the one GET whose body carries a secret (the single-use embed session token). The handshake body reflects no attacker text and its nonce is spent on first read, so it is not exploitable today; it is marked so the rule stays simple: no compressed answer carries a secret, and the answer is a few hundred bytes. Every other GET carries no secret: connection options blank secret values (WorkTrackingSystemConnectionOptionDto sets Value empty when IsSecret), GET api-keys never returns the plaintext (ApiKeyController.GetApiKeys), the OAuth callback answers a redirect with a connection id, session and embed cookies travel in headers, which ResponseCompression never compresses; the plain-text API key of ApiKeyCreationResult answers a POST. The embed cookie is SameSite=None, so cross-site GETs carry it; no GET in embed scope other than the marked handshake returns a token. EnableForHttps is true because the rule, not the scheme, is the mitigation, so TLS at a proxy does not change the answer. Owner in code: BreachSafeResponseCompressionProvider in Platform/Host, a subclass of ResponseCompressionProvider overriding ShouldCompressResponse; the marker is NeverCompressResponseAttribute in Platform/Host. Static files and the SPA fallback answer without a marked endpoint, so they stay compressible. Platform facts (DEVOPS): the Docker image serves HTTPS 443 with nothing in front; the Helm chart plain Ingress (ingress-nginx, Traefik) does not compress by default and passes an already encoded answer through; a proxy that strips Accept-Encoding gets identity answers; the Standalone webview loads its UI from the app bundle and only its loopback API answers are compressed, about 1 ms each; one behaviour everywhere.",
+"F497": "Endpoint authors must answer secrets on unsafe methods or mark the controller or hub with NeverCompressResponseAttribute; recorded in the ADR consequences",
+"F498": "A component calls rbacService.getAuthorizationSummary, teamService.getTeams, portfolioService.getPortfolios or licensingService.getLicenseStatus directly",
+"F499": "useRbac, useUnitLists and useLicenseRestrictions remain the owners",
 "F5": "Every component that gates on the user's permissions reads them from one shared answer: a page load or a move to another page asks GET my-summary once, not once per component (72 calls over the spike's 16 pages today), measured with measure-calls.mjs before and after. All gating still comes from useRbac().",
 "F50": "Which API answers are safe to compress over HTTPS (BREACH: an answer that mixes a secret with text an attacker controls), and whether reverse proxies, the Docker image and Standalone change the answer (DESIGN with DEVOPS).",
+"F500": "Architectural tests on the frontend source scan every non-test file for direct callers: permissions in S2 (sharedReadOwners.test.ts), Teams, Portfolios and licence in S3 (sharedListOwners.test.ts)",
+"F501": "Assumption negated: no compressible GET body holds a secret (a log line holds a token from library exception text, or a future GET returns a token), and the marker stays on the classes that need it",
+"F502": "LogsController, EmbedHandshakeController and UpdateNotificationHub answers are never compressed, whatever their routes are called; POST answers stay uncompressed",
+"F503": "Log downloads go uncompressed; an error page re-executed by the exception handler loses the endpoint and may be compressed, and it carries no log text or token",
+"F504": "A new GET that returns a secret must answer a POST or carry NeverCompressResponseAttribute; the S1 architectural test fails when one of the three marked classes loses the marker; stated in ADR-004",
+"F505": "Only useRbac.ts calls getAuthorizationSummary in non-test frontend source, including files added later; the Teams, Portfolios and licence owners are an S3 law",
+"F506": "S3 callback readers: EditPortfolio (line 64) and PortfolioDetail (line 486, getAllTeams passed to the settings editor) need the Teams list as a function returning a promise, not as hook data. useUnitLists.ts therefore also exports useTeamsLoader, which returns a function that asks the QueryClient for the shared Teams query (fetchQuery with the same key and options as useTeamsQuery), so a fresh shared answer is reused and the request is shared; no component calls teamService.getTeams itself.",
+"F507": "The existing callback prop stays; only its body moves to the shared Teams loader",
+"F508": "getAllTeams reads the shared Teams list through useTeamsLoader instead of teamService.getTeams",
+"F509": "The second component reads the Teams and Portfolios from the shared hooks too",
 "F51": "What a Features tab reads instead of full Team settings.",
+"F510": "useLicenseRestrictions.ts holds functions and hooks of one concept (licence gating), not several types; OverviewDashboard, EditPortfolio, EditTeam, TeamDetail, PortfolioDetail and SurveyNudge each hold one component; ApiKeysSettings.tsx holds two components (lines 152 and 386), and the change only swaps the Teams and Portfolios reads in each (lines 162 and 425), so its layout move is left to a later improvement item. Nothing moves.",
+"F511": "Only useUnitLists.ts calls getTeams and getPortfolios, and only useLicenseRestrictions.ts calls getLicenseStatus, in non-test frontend source, including files added later",
+"F512": "Path list replaced by the endpoint marker check",
+"F513": "Carries NeverCompressResponseAttribute; Route stays only for MapHub",
+"F514": "The marker",
+"F515": "Carries NeverCompressResponseAttribute on the class",
+"F516": "The Platform.Host stays list names NeverCompressResponseAttribute beside BreachSafeResponseCompressionProvider",
+"F517": "S1 exclusion carrier: NeverCompressResponseAttribute, a sealed marker attribute with no data in Platform/Host/NeverCompressResponseAttribute.cs, AttributeUsage Class only, not inherited, not repeatable. It is placed on LogsController, EmbedHandshakeController and UpdateNotificationHub. ASP.NET Core copies controller class attributes into the endpoint metadata of every action, and MapHub copies hub class attributes into the metadata of the negotiate and the transport endpoints (the same path that makes the hub Authorize attribute take effect), so Program.cs and MapHub stay as they are and UpdateNotificationHub.Route stays only for MapHub. BreachSafeResponseCompressionProvider keeps the switch, the GET/HEAD rule and the base MIME and Accept-Encoding check and replaces its path list with: context.GetEndpoint()?.Metadata.GetMetadata of NeverCompressResponseAttribute is null. ResponseCompressionMiddleware asks ShouldCompressResponse when the response starts, after UseRouting has set the endpoint on the same HttpContext, so the endpoint is known although UseResponseCompression sits before UseRouting; static files answer before routing and have no endpoint. Chosen over WithMetadata on MapHub so that one marking style covers controllers and the hub and the architectural test can check types. The rule table builds its contexts with DefaultHttpContext.SetEndpoint and an Endpoint whose metadata does or does not hold the marker.",
+"F518": "Stays the one owner of which answers may be compressed; only the exclusion input changes from paths to the endpoint marker",
+"F519": "Carries the marker on the class; MapHub copies class attributes to all hub endpoints; Route stays for MapHub",
 "F52": "Suggestion, not in scope: a later item for the Portfolio page's four-step load chain, and for moving the remaining useEffect data hooks to the shared query cache.",
+"F520": "Carries the marker on the class, covering tail, download, problems and level whatever the route is called",
+"F521": "Carries the marker on the class; its one GET is the only GET whose body carries a token",
+"F522": "No attribute or endpoint metadata in the backend says an answer must not be compressed; endpoint metadata is the framework carrier the provider can read at response start",
+"F523": "UseRouting sets the endpoint and its metadata on the HttpContext before the response starts; the provider reads that metadata, no route table of its own",
+"F524": "Owns the list of types that stay in Platform.Host",
+"F525": "ExcludedRoutes and IsExcludedRoute removed; exclusion read from the endpoint marker",
+"F526": "Marker added beside Authorize; Route constant now read only by MapHub; behaviour unchanged",
+"F527": "Marker on the class; routes and answers unchanged, still identity",
+"F528": "Marker on the class; route and answer unchanged, still identity",
+"F529": "New marker attribute",
 "F53": "On a slow connection, the user opens Lighthouse for the first time (cold load): the compressed frontend arrives, the shell asks for permissions, Teams, Portfolios and licence once, and the update check sends no release notes.",
+"F530": "Names the new Platform.Host type so the lane membership test stays green",
+"F531": "Rule-table rows set endpoint metadata instead of paths; owned by the S1 acceptance designer",
+"F532": "Wire rows unchanged; the hub negotiate row stays uncompressed by method and marker",
+"F533": "Program.cs holds one type (Program); UpdateNotificationHub.cs, BreachSafeResponseCompressionProvider.cs, EmbedHandshakeController.cs and ResponseCompressionConfiguration.cs hold one type each; LogsController.cs holds one top-level type with a nested LogLevelDto that belongs to it; NeverCompressResponseAttribute.cs is new; PlatformLaneMembership.cs holds one type; ci_docker.yml and configuration.md hold no types. No file holds several top-level types, nothing moves.",
+"F534": "Program.cs (composition root) registers BreachSafeResponseCompressionProvider; the provider depends only on ASP.NET Core abstractions and NeverCompressResponseAttribute; LogsController, EmbedHandshakeController and UpdateNotificationHub depend on the attribute in Platform/Host, never on the provider",
+"F535": "An answer is compressed iff the switch is on, the method is GET or HEAD, the MIME type is compressible, Accept-Encoding offers br or gzip, and the endpoint that answers carries no NeverCompressResponseAttribute (no endpoint, as for a static file, counts as unmarked)",
+"F536": "GET json br, no endpoint -> compressed",
+"F537": "HEAD js gzip, no endpoint -> compressed",
+"F538": "GET json br, endpoint without the marker -> compressed",
+"F539": "POST json br, endpoint without the marker -> not",
 "F54": "emotion: not supplied",
+"F540": "GET text/plain br, endpoint with the marker -> not",
+"F541": "GET json br, endpoint with the marker among other metadata -> not",
+"F542": "GET json, no Accept-Encoding -> not",
+"F543": "The policy inputs form a closed finite table of method, MIME class, encoding offer, marker present or absent and switch, so native example rows cover every class",
+"F544": "No compressed answer carries a secret: every answer of an endpoint marked with NeverCompressResponseAttribute (LogsController, EmbedHandshakeController, UpdateNotificationHub) is never compressed, whatever its route is called",
+"F545": "Content-Encoding absent on every logs, embed handshake and update hub answer",
+"F546": "A future GET answer carrying a secret on a class without the marker; the marker removed from a class (caught by the S1 architectural test); an error page re-executed without the endpoint (carries no secret)",
+"F547": "marker exclusion",
+"F548": "Controller class attributes reach every action endpoint and hub class attributes reach the negotiate and transport endpoints; ShouldCompressResponse sees the endpoint at response start with UseResponseCompression before UseRouting; a marked GET answered identity and an unmarked GET answered br on the .NET 11 runtime (design probe, receipt kept outside the design)",
+"F549": "The classes whose answers can carry a secret or log text, LogsController, EmbedHandshakeController and UpdateNotificationHub, carry NeverCompressResponseAttribute on the class, so the exclusion cannot vanish without a red test; the rule table only sees synthetic metadata and cannot catch a removed marker",
 "F55": "The user clicks to a Team or Portfolio page (in-app): the page's compressed JavaScript and answers arrive; the shared permissions and lists are reused or asked again once.",
 "F56": "The user creates a Team: its admin actions and its place in the lists show at once.",
 "F57": "An update is available: the pop-up shows the newest version; the user opens the dialog, sees a loading look, then the release notes.",
@@ -2661,6 +2974,10 @@
 "P2"
 ],
 "work": {
+"rework": {
+"delta": "F494",
+"reason": "F495"
+},
 "size": "M",
 "value": "F61"
 }

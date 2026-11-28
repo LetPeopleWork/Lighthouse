@@ -24,7 +24,7 @@ Governed slices: S1
 #### D3
 
 ```text
-Open question 2 resolved (BREACH): an answer is compressed only when ResponseCompression:Enabled is true, the request method is GET or HEAD, the response MIME type is in ResponseCompressionDefaults.MimeTypes, the client sent Accept-Encoding with br or gzip, and the path is not an excluded route. Excluded routes, matched on path segments, case-insensitive, by prefix: the SignalR hub api/updateNotificationHub (and everything under it, such as negotiate); the logs controller api/{v1|latest}/logs (tail, download, problems, level), because its answers hold log text an attacker can reach (logged paths, failed sign-ins, tracker queries) next to exception text from third-party libraries that this design cannot show is free of secrets, and an administrator can raise the log level at run time; and the embed handshake api/{v1|latest}/embed/handshake, the one GET whose body carries a secret (the single-use embed session token). The handshake body reflects no attacker text and its nonce is spent on first read, so it is not exploitable today; it is excluded so the rule stays simple: no compressed answer carries a secret, and the answer is a few hundred bytes. Every other GET carries no secret: connection options blank secret values (WorkTrackingSystemConnectionOptionDto sets Value empty when IsSecret), GET api-keys never returns the plaintext (ApiKeyController.GetApiKeys), the OAuth callback answers a redirect with a connection id, session and embed cookies travel in headers, which ResponseCompression never compresses; the plain-text API key of ApiKeyCreationResult answers a POST. The embed cookie is SameSite=None, so cross-site GETs carry it; no GET in embed scope other than the excluded handshake returns a token. EnableForHttps is true because the rule, not the scheme, is the mitigation, so TLS at a proxy does not change the answer. Owner in code: BreachSafeResponseCompressionProvider in Platform/Host, a subclass of ResponseCompressionProvider overriding ShouldCompressResponse; the hub route is one named constant on UpdateNotificationHub read by both MapHub and the policy; the logs and handshake prefixes are named constants in the provider. No PathBase is used, so the segments are matched on Request.Path. Platform facts (DEVOPS): the Docker image serves HTTPS 443 with nothing in front; the Helm chart's plain Ingress (ingress-nginx, Traefik) does not compress by default and passes an already encoded answer through; a proxy that strips Accept-Encoding gets identity answers; the Standalone webview loads its UI from the app bundle and only its loopback API answers are compressed, about 1 ms each; one behaviour everywhere.
+Open question 2 resolved (BREACH): an answer is compressed only when ResponseCompression:Enabled is true, the request method is GET or HEAD, the response MIME type is in ResponseCompressionDefaults.MimeTypes, the client sent Accept-Encoding with br or gzip, and the endpoint that answers carries no NeverCompressResponseAttribute in its metadata. Marked, on the class, so every action and route of it is covered whatever its route is called: the SignalR hub UpdateNotificationHub (negotiate and transports); LogsController (tail, download, problems, level), because its answers hold log text an attacker can reach (logged paths, failed sign-ins, tracker queries) next to exception text from third-party libraries that this design cannot show is free of secrets, and an administrator can raise the log level at run time; and EmbedHandshakeController, whose one GET is the one GET whose body carries a secret (the single-use embed session token). The handshake body reflects no attacker text and its nonce is spent on first read, so it is not exploitable today; it is marked so the rule stays simple: no compressed answer carries a secret, and the answer is a few hundred bytes. Every other GET carries no secret: connection options blank secret values (WorkTrackingSystemConnectionOptionDto sets Value empty when IsSecret), GET api-keys never returns the plaintext (ApiKeyController.GetApiKeys), the OAuth callback answers a redirect with a connection id, session and embed cookies travel in headers, which ResponseCompression never compresses; the plain-text API key of ApiKeyCreationResult answers a POST. The embed cookie is SameSite=None, so cross-site GETs carry it; no GET in embed scope other than the marked handshake returns a token. EnableForHttps is true because the rule, not the scheme, is the mitigation, so TLS at a proxy does not change the answer. Owner in code: BreachSafeResponseCompressionProvider in Platform/Host, a subclass of ResponseCompressionProvider overriding ShouldCompressResponse; the marker is NeverCompressResponseAttribute in Platform/Host. Static files and the SPA fallback answer without a marked endpoint, so they stay compressible. Platform facts (DEVOPS): the Docker image serves HTTPS 443 with nothing in front; the Helm chart plain Ingress (ingress-nginx, Traefik) does not compress by default and passes an already encoded answer through; a proxy that strips Accept-Encoding gets identity answers; the Standalone webview loads its UI from the app bundle and only its loopback API answers are compressed, about 1 ms each; one behaviour everywhere.
 ```
 Governed slices: S1
 
@@ -465,7 +465,7 @@ Silent claim that every compressed answer is BREACH-safe
 ```
 
 ```text
-Endpoint authors must answer secrets on unsafe methods or extend BreachSafeResponseCompressionProvider; recorded in the ADR consequences
+Endpoint authors must answer secrets on unsafe methods or mark the controller or hub with NeverCompressResponseAttribute; recorded in the ADR consequences
 ```
 
 BreachSafeResponseCompressionProvider
@@ -527,11 +527,11 @@ PageMoveRefresh
 Bypass
 
 ```text
-A component calls rbacService.getAuthorizationSummary or teamService.getTeams directly
+A component calls rbacService.getAuthorizationSummary, teamService.getTeams, portfolioService.getPortfolios or licensingService.getLicenseStatus directly
 ```
 
 ```text
-useRbac and useUnitLists remain the owners
+useRbac, useUnitLists and useLicenseRestrictions remain the owners
 ```
 
 ```text
@@ -543,7 +543,7 @@ A second reader with its own freshness
 ```
 
 ```text
-Architectural test on the frontend source scans every non-test file for direct callers
+Architectural tests on the frontend source scan every non-test file for direct callers: permissions in S2 (sharedReadOwners.test.ts), Teams, Portfolios and licence in S3 (sharedListOwners.test.ts)
 ```
 
 useRbac
@@ -579,15 +579,15 @@ ResponseCompressionConfiguration
 Stressor
 
 ```text
-Assumption negated: no compressible GET body holds a secret (a log line holds a token from library exception text, or a future GET returns a token)
+Assumption negated: no compressible GET body holds a secret (a log line holds a token from library exception text, or a future GET returns a token), and the marker stays on the classes that need it
 ```
 
 ```text
-Log routes and the embed handshake are never compressed; POST answers stay uncompressed
+LogsController, EmbedHandshakeController and UpdateNotificationHub answers are never compressed, whatever their routes are called; POST answers stay uncompressed
 ```
 
 ```text
-Log downloads go uncompressed
+Log downloads go uncompressed; an error page re-executed by the exception handler loses the endpoint and may be compressed, and it carries no log text or token
 ```
 
 ```text
@@ -595,7 +595,7 @@ A compressed body that mixes a secret with attacker-reachable text
 ```
 
 ```text
-A new GET that returns a secret must answer a POST or be added to the excluded routes of BreachSafeResponseCompressionProvider; stated in ADR-004
+A new GET that returns a secret must answer a POST or carry NeverCompressResponseAttribute; the S1 architectural test fails when one of the three marked classes loses the marker; stated in ADR-004
 ```
 
 BreachSafeResponseCompressionProvider
@@ -622,15 +622,19 @@ None.
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Platform\/Host\/BreachSafeResponseCompressionProvider\.cs
 
-Create
+Extend
 
-None.
+```text
+Path list replaced by the endpoint marker check
+```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Platform\/UpdateQueue\/UpdateNotificationHub\.cs
 
 Extend
 
-None.
+```text
+Carries NeverCompressResponseAttribute; Route stays only for MapHub
+```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Configuration\/ResponseCompressionConfiguration\.cs
 
@@ -656,6 +660,38 @@ Extend
 Docker smoke step: an asset answers br over real TLS; systeminfo without Accept-Encoding has no Content-Encoding
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\/Platform\/Host\/NeverCompressResponseAttribute\.cs
+
+Create
+
+```text
+The marker
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/LogsController\.cs
+
+Extend
+
+```text
+Carries NeverCompressResponseAttribute on the class
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/EmbedHandshakeController\.cs
+
+Extend
+
+```text
+Carries NeverCompressResponseAttribute on the class
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneMembership\.cs
+
+Extend
+
+```text
+The Platform.Host stays list names NeverCompressResponseAttribute beside BreachSafeResponseCompressionProvider
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/ResponseCompressionWireContractTest\.cs
 
 #### Verification
@@ -663,6 +699,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/ResponseCompressionW
 ```text
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~ResponseCompressionWireContractTest|FullyQualifiedName~BreachSafeResponseCompressionProviderTest
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~TestHostUseGuardTest|FullyQualifiedName~SpaFallbackRoutingTests
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~SecretBearingAnswersAreNeverCompressedTest|FullyQualifiedName~PlatformLane
 ```
 
 #### Supports
@@ -701,7 +738,9 @@ None.
 
 ##### Decisions
 
-None.
+```text
+S1 exclusion carrier: NeverCompressResponseAttribute, a sealed marker attribute with no data in Platform/Host/NeverCompressResponseAttribute.cs, AttributeUsage Class only, not inherited, not repeatable. It is placed on LogsController, EmbedHandshakeController and UpdateNotificationHub. ASP.NET Core copies controller class attributes into the endpoint metadata of every action, and MapHub copies hub class attributes into the metadata of the negotiate and the transport endpoints (the same path that makes the hub Authorize attribute take effect), so Program.cs and MapHub stay as they are and UpdateNotificationHub.Route stays only for MapHub. BreachSafeResponseCompressionProvider keeps the switch, the GET/HEAD rule and the base MIME and Accept-Encoding check and replaces its path list with: context.GetEndpoint()?.Metadata.GetMetadata of NeverCompressResponseAttribute is null. ResponseCompressionMiddleware asks ShouldCompressResponse when the response starts, after UseRouting has set the endpoint on the same HttpContext, so the endpoint is known although UseResponseCompression sits before UseRouting; static files answer before routing and have no endpoint. Chosen over WithMetadata on MapHub so that one marking style covers controllers and the hub and the architectural test can check types. The rule table builds its contexts with DefaultHttpContext.SetEndpoint and an Endpoint whose metadata does or does not hold the marker.
+```
 
 ##### Constraints
 
@@ -731,22 +770,22 @@ Keeps the no-cache rule for index.html and sw.js on both paths unchanged
 
 BreachSafeResponseCompressionProvider
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Platform\/Host\/BreachSafeResponseCompressionProvider\.cs\:1
-
-CreateNew
-
-```text
-No class decides which answers may be compressed; the default provider decides by MIME only
-```
-
-UpdateNotificationHub
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Platform\/UpdateQueue\/UpdateNotificationHub\.cs\:1
+Lighthouse\.Backend\/Lighthouse\.Backend\/Platform\/Host\/BreachSafeResponseCompressionProvider\.cs\:13
 
 Extend
 
 ```text
-Owns its route as a named constant so MapHub and the policy agree on one literal
+Stays the one owner of which answers may be compressed; only the exclusion input changes from paths to the endpoint marker
+```
+
+UpdateNotificationHub
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Platform\/UpdateQueue\/UpdateNotificationHub\.cs\:11
+
+Extend
+
+```text
+Carries the marker on the class; MapHub copies class attributes to all hub endpoints; Route stays for MapHub
 ```
 
 WireContractTest
@@ -781,22 +820,22 @@ No configuration section owns compression; one value object holds the switch and
 
 LogsController
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/API\/LogsController\.cs\:85
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/LogsController\.cs\:26
 
-Reuse
+Extend
 
 ```text
-Unchanged; its routes api/{v1|latest}/logs are an excluded prefix of the policy
+Carries the marker on the class, covering tail, download, problems and level whatever the route is called
 ```
 
-Poll
+EmbedHandshakeController
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/API\/EmbedHandshakeController\.cs\:24
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/EmbedHandshakeController\.cs\:19
 
-Reuse
+Extend
 
 ```text
-Unchanged; the only GET whose body carries a token, so api/{v1|latest}/embed/handshake is an excluded prefix
+Carries the marker on the class; its one GET is the only GET whose body carries a token
 ```
 
 Check the container runs on \.NET 11
@@ -819,6 +858,36 @@ Extend
 The configuration page is where operators read switches; the new section follows the Telemetry block format
 ```
 
+NeverCompressResponseAttribute
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Platform\/Host\/NeverCompressResponseAttribute\.cs\:1
+
+CreateNew
+
+```text
+No attribute or endpoint metadata in the backend says an answer must not be compressed; endpoint metadata is the framework carrier the provider can read at response start
+```
+
+UseRouting
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Program\.cs\:201
+
+Reuse
+
+```text
+UseRouting sets the endpoint and its metadata on the HttpContext before the response starts; the provider reads that metadata, no route table of its own
+```
+
+PlatformLaneMembership
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneMembership\.cs\:300
+
+Extend
+
+```text
+Owns the list of types that stay in Platform.Host
+```
+
 ##### Impact
 
 composition\-root
@@ -833,22 +902,22 @@ Reads ResponseCompressionConfiguration at start-up, adds AddResponseCompression 
 
 class
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Platform\/Host\/BreachSafeResponseCompressionProvider\.cs\:1
+Lighthouse\.Backend\/Lighthouse\.Backend\/Platform\/Host\/BreachSafeResponseCompressionProvider\.cs\:15
 
 Changed
 
 ```text
-New policy
+ExcludedRoutes and IsExcludedRoute removed; exclusion read from the endpoint marker
 ```
 
 class
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Platform\/UpdateQueue\/UpdateNotificationHub\.cs\:1
+Lighthouse\.Backend\/Lighthouse\.Backend\/Platform\/UpdateQueue\/UpdateNotificationHub\.cs\:10
 
 Changed
 
 ```text
-Route constant added, behaviour unchanged
+Marker added beside Authorize; Route constant now read only by MapHub; behaviour unchanged
 ```
 
 test
@@ -893,22 +962,22 @@ One section on compression and its switch
 
 controller
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/API\/LogsController\.cs\:85
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/LogsController\.cs\:22
 
-UnchangedCompatible
+Changed
 
 ```text
-Its answers stay identity, as today
+Marker on the class; routes and answers unchanged, still identity
 ```
 
 controller
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/API\/EmbedHandshakeController\.cs\:24
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/EmbedHandshakeController\.cs\:15
 
-UnchangedCompatible
+Changed
 
 ```text
-Its answer stays identity, as today
+Marker on the class; route and answer unchanged, still identity
 ```
 
 helm\-chart
@@ -919,6 +988,46 @@ UnchangedCompatible
 
 ```text
 No chart value for the switch; the Ingress passes encoded answers through
+```
+
+class
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Platform\/Host\/NeverCompressResponseAttribute\.cs\:1
+
+Changed
+
+```text
+New marker attribute
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneMembership\.cs\:300
+
+Changed
+
+```text
+Names the new Platform.Host type so the lane membership test stays green
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Platform\/Host\/BreachSafeResponseCompressionProviderTest\.cs\:22
+
+Changed
+
+```text
+Rule-table rows set endpoint metadata instead of paths; owned by the S1 acceptance designer
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/ResponseCompressionWireContractTest\.cs\:142
+
+UnchangedCompatible
+
+```text
+Wire rows unchanged; the hub negotiate row stays uncompressed by method and marker
 ```
 
 ##### Agreement
@@ -976,7 +1085,7 @@ ingress-nginx and Traefik do not compress by default and pass an encoded answer 
 prefactoring
 
 ```text
-Program.cs holds one type (Program); UpdateNotificationHub.cs holds one type; BreachSafeResponseCompressionProvider.cs and ResponseCompressionConfiguration.cs are new; ci_docker.yml and configuration.md hold no types. No file holds several types, nothing moves.
+Program.cs holds one type (Program); UpdateNotificationHub.cs, BreachSafeResponseCompressionProvider.cs, EmbedHandshakeController.cs and ResponseCompressionConfiguration.cs hold one type each; LogsController.cs holds one top-level type with a nested LogLevelDto that belongs to it; NeverCompressResponseAttribute.cs is new; PlatformLaneMembership.cs holds one type; ci_docker.yml and configuration.md hold no types. No file holds several top-level types, nothing moves.
 ```
 
 ##### Boundaries
@@ -992,7 +1101,7 @@ wwwroot static files
 ```
 
 ```text
-Program.cs (composition root) registers BreachSafeResponseCompressionProvider; the provider depends only on ASP.NET Core abstractions and the UpdateNotificationHub route constant
+Program.cs (composition root) registers BreachSafeResponseCompressionProvider; the provider depends only on ASP.NET Core abstractions and NeverCompressResponseAttribute; LogsController, EmbedHandshakeController and UpdateNotificationHub depend on the attribute in Platform/Host, never on the provider
 ```
 
 ###### Failures
@@ -1072,7 +1181,7 @@ None.
 ###### L2
 
 ```text
-An answer is compressed iff the switch is on, method is GET or HEAD, MIME is compressible, Accept-Encoding offers br or gzip and no excluded route prefix (hub, logs, embed handshake) matches the path segments, case-insensitive
+An answer is compressed iff the switch is on, the method is GET or HEAD, the MIME type is compressible, Accept-Encoding offers br or gzip, and the endpoint that answers carries no NeverCompressResponseAttribute (no endpoint, as for a static file, counts as unmarked)
 ```
 
 Invariant
@@ -1088,15 +1197,19 @@ Finite
 ###### Cases
 
 ```text
-GET json br -> compressed
+GET json br, no endpoint -> compressed
 ```
 
 ```text
-HEAD js gzip -> compressed
+HEAD js gzip, no endpoint -> compressed
 ```
 
 ```text
-POST json br -> not
+GET json br, endpoint without the marker -> compressed
+```
+
+```text
+POST json br, endpoint without the marker -> not
 ```
 
 ```text
@@ -1116,35 +1229,15 @@ GET application/problem+json br -> not
 ```
 
 ```text
-GET api/updateNotificationHub br -> not
+GET text/plain br, endpoint with the marker -> not
 ```
 
 ```text
-GET API/UPDATENOTIFICATIONHUB br -> not
+GET json br, endpoint with the marker among other metadata -> not
 ```
 
 ```text
-POST api/updateNotificationHub/negotiate br -> not
-```
-
-```text
-GET api/latest/logs br -> not
-```
-
-```text
-GET api/v1/Logs/download br -> not
-```
-
-```text
-GET api/latest/embed/handshake/n1 br -> not
-```
-
-```text
-GET api/latest/logsx br -> compressed (segment match, not substring)
-```
-
-```text
-GET json no Accept-Encoding -> not
+GET json, no Accept-Encoding -> not
 ```
 
 ```text
@@ -1152,7 +1245,7 @@ GET json br with ResponseCompression:Enabled false -> not
 ```
 
 ```text
-The policy inputs form a closed finite table of method, MIME class, encoding offer, route class and switch, so native example rows cover every class
+The policy inputs form a closed finite table of method, MIME class, encoding offer, marker present or absent and switch, so native example rows cover every class
 ```
 
 ###### Evidence
@@ -1196,7 +1289,7 @@ A future GET answer carrying a secret; middleware placed before UseResponseCompr
 ###### C3
 
 ```text
-No compressed answer carries a secret: log text and the embed handshake token are never compressed
+No compressed answer carries a secret: every answer of an endpoint marked with NeverCompressResponseAttribute (LogsController, EmbedHandshakeController, UpdateNotificationHub) is never compressed, whatever its route is called
 ```
 
 ```text
@@ -1209,16 +1302,16 @@ BreachSafeResponseCompressionProvider
 Any HTTP request reaching Kestrel
 ```
 
-BreachSafeResponseCompressionProvider\.ShouldCompressResponse
+NeverCompressResponseAttribute on the class\; BreachSafeResponseCompressionProvider\.ShouldCompressResponse reads it from the endpoint metadata
 
 ResponseCompressionMiddleware
 
 ```text
-Content-Encoding absent on api/{v1|latest}/logs and api/{v1|latest}/embed/handshake answers
+Content-Encoding absent on every logs, embed handshake and update hub answer
 ```
 
 ```text
-A future GET answer carrying a secret on a route not in the excluded prefixes
+A future GET answer carrying a secret on a class without the marker; the marker removed from a class (caught by the S1 architectural test); an error page re-executed without the endpoint (carries no secret)
 ```
 
 ##### States
@@ -1303,6 +1396,24 @@ No liveness claim: a single synchronous request-response transformation, no wait
 
 None.
 
+```text
+marker exclusion
+```
+
+PublicReachability
+
+Pass
+
+DesignedNotBuilt
+
+```text
+Controller class attributes reach every action endpoint and hub class attributes reach the negotiate and transport endpoints; ShouldCompressResponse sees the endpoint at response start with UseResponseCompression before UseRouting; a marked GET answered identity and an unmarked GET answered br on the .NET 11 runtime (design probe, receipt kept outside the design)
+```
+
+###### Evidence
+
+None.
+
 ##### Risks
 
 None.
@@ -1319,6 +1430,18 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TestHostUseGuardT
 
 ```text
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~TestHostUseGuardTest
+```
+
+###### T6
+
+```text
+The classes whose answers can carry a secret or log text, LogsController, EmbedHandshakeController and UpdateNotificationHub, carry NeverCompressResponseAttribute on the class, so the exclusion cannot vanish without a red test; the rule table only sees synthetic metadata and cannot catch a removed marker
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/SecretBearingAnswersAreNeverCompressedTest\.cs
+
+```text
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~SecretBearingAnswersAreNeverCompressedTest
 ```
 
 ##### Contract tests
@@ -1936,7 +2059,7 @@ None.
 ###### T3
 
 ```text
-Only useRbac.ts calls getAuthorizationSummary and only useUnitLists.ts calls getTeams/getPortfolios in non-test frontend source, including files added later
+Only useRbac.ts calls getAuthorizationSummary in non-test frontend source, including files added later; the Teams, Portfolios and licence owners are an S3 law
 ```
 
 Lighthouse\.Frontend\/src\/hooks\/sharedReadOwners\.test\.ts
@@ -2021,6 +2144,7 @@ Lighthouse\.Frontend\/src\/hooks\/useUnitLists\.test\.tsx
 
 ```text
 pnpm --dir Lighthouse.Frontend exec vitest run src/hooks/useUnitLists.test.tsx src/hooks/useLicenseRestrictions.test.ts
+pnpm --dir Lighthouse.Frontend exec vitest run src/hooks/sharedListOwners.test.ts
 ```
 
 #### Supports
@@ -2059,7 +2183,9 @@ None.
 
 ##### Decisions
 
-None.
+```text
+S3 callback readers: EditPortfolio (line 64) and PortfolioDetail (line 486, getAllTeams passed to the settings editor) need the Teams list as a function returning a promise, not as hook data. useUnitLists.ts therefore also exports useTeamsLoader, which returns a function that asks the QueryClient for the shared Teams query (fetchQuery with the same key and options as useTeamsQuery), so a fresh shared answer is reused and the request is shared; no component calls teamService.getTeams itself.
+```
 
 ##### Constraints
 
@@ -2187,6 +2313,16 @@ Extend
 Reads the licence from useLicenseStatusQuery instead of a second fetch
 ```
 
+getAllTeams
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/PortfolioDetail\.tsx\:486
+
+Extend
+
+```text
+The existing callback prop stays; only its body moves to the shared Teams loader
+```
+
 ##### Impact
 
 hook
@@ -2299,17 +2435,31 @@ Changed
 Calls useUnitListsChanged after a settings save
 ```
 
+component
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/PortfolioDetail\.tsx\:486
+
+Changed
+
+```text
+getAllTeams reads the shared Teams list through useTeamsLoader instead of teamService.getTeams
+```
+
+component
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/ApiKeys\/ApiKeysSettings\.tsx\:425
+
+Changed
+
+```text
+The second component reads the Teams and Portfolios from the shared hooks too
+```
+
 ##### Agreement
 
 None.
 
 ##### Not applicable
-
-architectural_tests
-
-```text
-The direct-caller law for getTeams/getPortfolios is covered by the S2 architectural test sharedReadOwners.test.ts
-```
 
 agreement
 
@@ -2326,7 +2476,7 @@ One deployable, one commit, no wire change
 prefactoring
 
 ```text
-useLicenseRestrictions.ts holds functions and hooks of one concept (licence gating), not several types; OverviewDashboard, ApiKeysSettings, EditPortfolio, EditTeam, TeamDetail, PortfolioDetail, SurveyNudge each hold one component; ApiKeysSettings.tsx holds two components (lines 152 and 386) but the change only swaps two reads and leaves its layout move to a later item. Nothing moves.
+useLicenseRestrictions.ts holds functions and hooks of one concept (licence gating), not several types; OverviewDashboard, EditPortfolio, EditTeam, TeamDetail, PortfolioDetail and SurveyNudge each hold one component; ApiKeysSettings.tsx holds two components (lines 152 and 386), and the change only swaps the Teams and Portfolios reads in each (lines 162 and 425), so its layout move is left to a later improvement item. Nothing moves.
 ```
 
 ##### Boundaries
@@ -2519,7 +2669,17 @@ None.
 
 ##### Architectural tests
 
-None.
+###### T5
+
+```text
+Only useUnitLists.ts calls getTeams and getPortfolios, and only useLicenseRestrictions.ts calls getLicenseStatus, in non-test frontend source, including files added later
+```
+
+Lighthouse\.Frontend\/src\/hooks\/sharedListOwners\.test\.ts
+
+```text
+pnpm --dir Lighthouse.Frontend exec vitest run src/hooks/sharedListOwners.test.ts
+```
 
 ##### Contract tests
 
