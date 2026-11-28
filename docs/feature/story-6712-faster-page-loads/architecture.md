@@ -59,7 +59,7 @@ Governed slices: S5
 #### D8
 
 ```text
-Formal verification: claim-to-checker. Shared-read freshness (S2, S3: one request per page, no earlier-page answer for a new component, cancelled earlier-page requests, own change asked at once) has several actors (components, navigation, network, user) on one cache, so it is modelled in Quint (shared_page_reads.qnt), checked with quint run and quint verify (Apalache, bounded). No model for compression and the BREACH rule: a pure decision over one request with no shared state or multi-step protocol; its finite table is checked by unit rows and the wire contract. No model for the Features tab read: removal of an unread fetch, no state window. No model for the parallel version checks: a single Promise.all with one shared error flag, no shared mutable state between actors; finite example rows cover any-failure. Liveness: no liveness claim, because eventual arrival of a page’s answer depends on the HTTP answer arriving, which this design does not control; safety is the claim. No TLA+ or Agda needed.
+Formal verification: claim-to-checker. Shared-read freshness (S2, S3: one request per page, no earlier-page answer for a newly mounted component, no loading flicker for a component that stays mounted, cancelled earlier-page requests, own change asked at once) has several actors (components, navigation, network, user) on one cache, so it is modelled in Quint (shared_page_reads.qnt), checked with quint run and quint verify (Apalache, bounded). No model for compression and the BREACH rule: a pure decision over one request with no shared state or multi-step protocol; its finite table is checked by unit rows and the wire contract. No model for the Features tab read: removal of an unread fetch, no state window. No model for the parallel version checks: a single Promise.all with one shared error flag, no shared mutable state between actors; finite example rows cover any-failure. Liveness: no liveness claim, because eventual arrival of a page’s answer depends on the HTTP answer arriving, which this design does not control; safety is the claim. No TLA+ or Agda needed.
 ```
 
 #### D9
@@ -71,7 +71,7 @@ Tests: Lighthouse test-writing skill wins over nWave test rules (nine-run timing
 #### D10
 
 ```text
-Page-move freshness (S2, S3): one owner, usePageFreshQuery in src/hooks/usePageFreshQuery.ts, wraps useQuery with staleTime Infinity, retry false and refetchOnMount false; its queryFn stores the answer together with the page it was asked on (carrier PageFreshAnswer of T: answer and askedOnPage). PageMoveRefresh in src/components/App/PageMoveRefresh/PageMoveRefresh.tsx, mounted inside the Router in App.tsx, holds the page counter (per-process state, a React context), advances it when location.pathname changes and invalidates the shared page reads once (invalidateQueries cancels a request still in flight from the previous page). A component records the page it mounted on; it is loading until an answer asked on or after that page arrives, failed when the shared query failed, ready otherwise. Components mounted later on the same page reuse the cached answer and ask nothing. Model shared_page_reads.qnt checks this protocol.
+Page-move freshness (S2, S3): one owner, usePageFreshQuery in src/hooks/usePageFreshQuery.ts, wraps useQuery with staleTime Infinity, retry false and refetchOnMount false; its queryFn stores the answer together with the page it was asked on (carrier PageFreshAnswer of T: answer and askedOnPage). PageMoveRefresh in src/components/App/PageMoveRefresh/PageMoveRefresh.tsx, mounted inside the Router in App.tsx, holds the page counter (per-process state, a React context). It advances the counter during render when location.pathname changes, so a component that first renders under the new path already reads the new page, and in an effect it invalidates the shared page reads once (invalidateQueries cancels a request still in flight from the previous page). Each component records its mount page once, in a state initializer, on its first render. React keeps a component of the same type in the same place mounted across a route change; such a component keeps its earlier mount page. Readiness per component: ready when the cached answer was asked on or after its mount page; failed when the latest ask failed (the permissive fallback with loadFailed true, the same for every component, as today); loading otherwise. Readiness is never decided by the page the user is on now. Consequences: a component that shows an answer and stays mounted keeps showing it, not loading, while the page-move ask or an own-change ask runs, and switches when the new answer lands (stale-while-revalidate; today such a component kept its answer and never asked again). A component that mounts on the new page is loading until the answer asked on that page arrives, as today a newly mounted component was loading until its own fetch answered: giving it the previous page's answer would show a right that may have been removed as current, and would show gated controls earlier than today. A component with no answer yet is loading. Components mounted later on the same page reuse the cached answer and ask nothing. Model shared_page_reads.qnt checks this protocol.
 ```
 Governed slices: S2, S3
 
@@ -225,7 +225,7 @@ None.
 Admitted
 
 ```text
-Shared read is loading, ready (asked on or after the component's mount page) or failed (permissive fallback for permissions)
+Shared read per component is loading (no answer asked on or after its mount page), ready (the latest answer asked on or after its mount page; a component that stays mounted across a page move keeps it while the move's ask runs) or failed (latest ask failed: permissive fallback for permissions)
 ```
 
 usePageFreshQuery
@@ -233,7 +233,7 @@ usePageFreshQuery
 Excluded
 
 ```text
-A component mounted on the current page reports ready with an answer asked on an earlier page
+A component that mounts on the current page reports ready with an answer asked on an earlier page; or a component that shows an answer and stays mounted turns loading while the shared read still holds an answer
 ```
 
 usePageFreshQuery
@@ -254,12 +254,24 @@ docs\/feature\/story\-6712\-faster\-page\-loads\/design\/shared\_page\_reads\.qn
 
 ##### Properties
 
-pageComponentsSeeOnlyThisPage
+newComponentsSeeOnlyThisPage
 
 Invariant
 
 ```text
-A component of the current page never treats an answer asked on an earlier page as current
+A component that mounts on the current page never treats an answer asked on an earlier page as current
+```
+
+usePageFreshQuery
+
+Lighthouse\.Frontend\/src\/hooks\/usePageFreshQuery\.ts
+
+stayingComponentsKeepTheirAnswer
+
+Invariant
+
+```text
+A component that showed an answer and stays mounted keeps showing one while the shared read holds an answer: no loading on a page move or an own change
 ```
 
 usePageFreshQuery
@@ -346,6 +358,18 @@ Lighthouse\.Frontend\/src\/App\.tsx
 model-only: TanStack in-flight fetch
 ```
 
+State
+
+wasReady
+
+usePageFreshQuery
+
+Lighthouse\.Frontend\/src\/hooks\/usePageFreshQuery\.ts
+
+```text
+model-only ghost: readiness in the previous state, for the no-flicker check
+```
+
 Action
 
 movesToAnotherPage
@@ -396,9 +420,13 @@ TanStack invalidateQueries cancels a request in flight and starts one refetch fo
 Bounded to 3 page moves, 3 observers, 2 retries and 2 own changes per page; network answers or fails per request
 ```
 
+```text
+On a route change React keeps any page component of the same type in the same place mounted; such a component keeps its mount page
+```
+
 ##### Mutants
 
-###### N1
+###### N5
 
 ```text
 Readiness ignores the page the answer was asked on
@@ -406,9 +434,9 @@ Readiness ignores the page the answer was asked on
 
 ###### Kills
 
-pageComponentsSeeOnlyThisPage
+newComponentsSeeOnlyThisPage
 
-###### N2
+###### N6
 
 ```text
 A mounting component asks again when nothing is in flight (staleTime 0 behaviour)
@@ -418,7 +446,7 @@ A mounting component asks again when nothing is in flight (staleTime 0 behaviour
 
 oneRequestPerPage
 
-###### N3
+###### N7
 
 ```text
 A page move keeps a request still in flight from the previous page
@@ -428,7 +456,7 @@ A page move keeps a request still in flight from the previous page
 
 noEarlierPageRequestInFlight
 
-###### N4
+###### N8
 
 ```text
 An own change completes without asking again
@@ -437,6 +465,16 @@ An own change completes without asking again
 ###### Kills
 
 ownChangeIsAsked
+
+###### N9
+
+```text
+Readiness by the page the user is on now instead of the mount page
+```
+
+###### Kills
+
+stayingComponentsKeepTheirAnswer
 
 ### Closure
 
@@ -513,11 +551,11 @@ Permissions stay as of the last ask if it is not mounted
 ```
 
 ```text
-A page component shows an earlier-page answer as ready
+A component that mounts on a page shows an earlier-page answer as ready; a staying component turns loading while an answer is cached
 ```
 
 ```text
-Readiness is decided per component from askedOnPage, so a missing trigger shows loading, never stale-as-current; App.tsx mounts it once inside the Router
+Readiness is decided per component from askedOnPage against its mount page, so a missing trigger leaves newly mounted components loading, never stale-as-current, and staying components keep their last answer as today; App.tsx mounts it once inside the Router
 ```
 
 PageMoveRefresh
@@ -1553,15 +1591,15 @@ None.
 #### Public oracle
 
 ```text
-Render three components that call useRbac() under one QueryClient, PageMoveRefresh and a MemoryRouter; change the route; change the mocked summary between moves; call useRefreshPermissions; make the summary reject then call retry
+Render components that call useRbac() under one QueryClient, PageMoveRefresh and a MemoryRouter: a header outside the routes, and on each page components whose element type or key differs between the pages (so they mount on the new page) plus one page component of the same type in the same place on both pages (so React keeps it); change the route; change the mocked summary between moves; call useRefreshPermissions; make the summary reject then call retry
 ```
 
 ```text
-getAuthorizationSummary called once for the three components on a page and once per route change; after a move the new page components are loading until the answer asked after the move, then show the new grants; after useRefreshPermissions the new summary shows without a route change; on rejection every component has loadFailed true with the permissive fallback, and one retry calls the service once
+getAuthorizationSummary called once for the components on a page and once per route change; after a move the components that mount on the new page are loading until the answer asked after the move, while the header and the kept component show their previous answer, not loading, and every component shows the new grants once it lands; a late answer of the left page is never shown; after useRefreshPermissions the new summary shows without a route change and without loading; on rejection every component has loadFailed true with the permissive fallback, and one retry calls the service once
 ```
 
 ```text
-Today’s useRbac: three calls for three components, and no refresh for components that stay mounted
+Today's useRbac: three calls for three components, and no refresh for components that stay mounted; readiness by the page the user is on: the header and the kept component turn loading after every move
 ```
 
 ##### Promises
@@ -1891,7 +1929,7 @@ None.
 ###### L4
 
 ```text
-Projection of model invariants on the hook: one call per page plus one per retry and own change; a component mounted after a move is never ready with the answer asked before it
+Projection of model invariants on the hook: one call per page plus one per retry and own change; a component that mounts after a move is never ready with the answer asked before it; a component that stays mounted across a move or an own change keeps its answer, never loading, until the new one lands
 ```
 
 Invariant
@@ -1911,19 +1949,23 @@ three components one page -> one call
 ```
 
 ```text
-move -> one call, new components loading until answer
+move to a page whose components mount -> one call; they are loading until the answer asked after the move, then show the new grants
 ```
 
 ```text
-late answer of previous page after move -> not shown
+move where the header and a page component stay mounted -> one call; they keep the previous answer, not loading, then show the new grants when it lands
 ```
 
 ```text
-own grant -> one call, new summary shown
+late answer of previous page after move -> never shown; components with no answer yet stay loading
 ```
 
 ```text
-failure -> all loadFailed, retry -> one call
+own grant -> one call; components keep their answer, not loading, then show the new summary
+```
+
+```text
+failure -> all loadFailed with the permissive fallback, retry -> one call
 ```
 
 ```text
@@ -1936,18 +1978,28 @@ docs\/feature\/story\-6712\-faster\-page\-loads\/design\/shared\_page\_reads\.qn
 
 ##### Refuted
 
-None.
+```text
+A component is ready only when the cached answer was asked on or after the page the user is on now
+```
+
+```text
+A component that React keeps mounted across a route change turns loading on every page move, so gated controls (SettingsMenu admin items, Edit report, Delete) vanish until the answer lands: a visible change the product authority forbids. The carrier distinction is the mount page, not the current page
+```
+
+```text
+Mutant N5 of shared_page_reads.qnt: header ready with the page-0 answer, move to page 1, header not ready while the page-0 answer is cached; stayingComponentsKeepTheirAnswer violated
+```
 
 ##### Claims
 
 ###### C2
 
 ```text
-A page component never treats a permissions answer asked on an earlier page as current
+A component that mounts on a page never treats a permissions answer asked on an earlier page as current, and a component that stays mounted shows the latest answer without turning loading
 ```
 
 ```text
-A lost right shows an action as available
+A lost right shows an action as available; or gated controls vanish on every page move, a visible change
 ```
 
 usePageFreshQuery
@@ -1961,7 +2013,7 @@ usePageFreshQuery queryFn wrapping the answer in PageFreshAnswer with askedOnPag
 useRbac
 
 ```text
-isLoading true until the post-move answer
+isLoading true for a newly mounted component until the post-move answer; isLoading false with the previous answer for a staying component until the post-move answer lands, then the new answer
 ```
 
 ```text
@@ -1989,7 +2041,7 @@ Pass
 DesignedNotBuilt
 
 ```text
-Quint model invariants pageComponentsSeeOnlyThisPage, oneRequestPerPage, noEarlierPageRequestInFlight, ownChangeIsAsked: quint run 20000 samples 15 steps no violation; quint verify Apalache 8 steps NoError; each invariant killed by its mutant
+Quint model invariants newComponentsSeeOnlyThisPage, stayingComponentsKeepTheirAnswer, oneRequestPerPage, noEarlierPageRequestInFlight, ownChangeIsAsked: quint run 20000 samples 15 steps no violation; quint verify Apalache 8 steps NoError; each invariant killed by its own mutant and by no other
 ```
 
 ###### Evidence

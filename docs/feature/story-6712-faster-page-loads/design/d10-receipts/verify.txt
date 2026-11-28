@@ -1,0 +1,4 @@
+The outcome is: NoError                                           I@09:46:31.999
+[ok] No violation found (13054ms).
+You may increase --max-steps.
+Use --verbosity to produce more (or less) output.
