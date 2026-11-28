@@ -160,6 +160,181 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>Every type left in the Models folder is listed on the kernel catalogue as either Kernel or owned by a named context with a stated blocker and the Story that frees it; no type is missing and no row names a type that is gone.
+</code></pre>
+
+<pre><code>A passing rule run does not show the catalogue matches the compiled Models types, nor that each blocker is true; it sees only what the rules enumerate.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<pre><code>architecture-rules
+</code></pre>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>A catalogue row claiming a type is blocked, or is Kernel, is true when checked against the compiled code and the EF model (the named dependency or mapping really exists).
+</code></pre>
+
+<pre><code>Rules pass or fail on stated claims; they do not show a true blocker was not silently dropped or a Kernel type is really one of the three allowed base types.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<pre><code>architecture-rules
+</code></pre>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>Types nothing blocks are no longer in Models: Platform types sit under Platform/&lt;Area&gt;, context types under Modules/&lt;Owner&gt;/Domain or Application, and their unit tests sit beside them.
+</code></pre>
+
+<pre><code>Green rules do not show every unblocked type actually moved or that its tests moved and still run.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<pre><code>architecture-rules; backend-tests
+</code></pre>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>The full backend test suite and every module&#x27;s boundary and placement rules stay green after the moves.
+</code></pre>
+
+<pre><code>A narrowed or summarised run can hide a skipped or excluded test class; only the named run counts.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<pre><code>architecture-rules; backend-tests
+</code></pre>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>Adding an uncatalogued type to Models, or making a catalogue claim false, makes the architecture rules fail with a message naming the type and the fix; the moved types are accepted only at their new namespace, with no old-path allowance.
+</code></pre>
+
+<pre><code>The oracle may only check the passing state; a rule that never fails is not seen without a deliberate violation.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<pre><code>architecture-rules
+</code></pre>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>Every API answer a user or client reads (platform, access and licensing, deliveries, metrics, forecast, refresh) is identical to the revision before the Story, with no status change.
+</code></pre>
+
+<pre><code>Tests of the moved types do not compare real wire answers across revisions; compared answers cover only the probed endpoints and demo data.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<pre><code>platform-answers-compare, access-answers-compare, deliveries-answers-compare, metrics-answers-compare, forecast-answers-compare, refresh-answers-compare, each with base origin/main at start
+</code></pre>
+
+<h4>E7</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>The database model is unchanged for both providers: no pending model change and no new migration against the last one.
+</code></pre>
+
+<pre><code>Moving types can change a mapped name or namespace-derived value; unit tests do not ask EF.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<pre><code>ef-model-unchanged
+</code></pre>
+
+<h4>E8</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>No usage-data event, route or DTO payload is added, removed or renamed by the Story; the event names and values match the revision before.
+</code></pre>
+
+<pre><code>Answer compares do not list the usage-data event catalogue or route table; a renamed namespace could alter a serialised name unseen.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<pre><code>platform-answers-compare, backend-tests
+</code></pre>
+
+<h4>E9</h4>
+
+<h5>Promises</h5>
+
+<p>P5</p>
+
+<pre><code>ARCHITECTURE.md section 4 and ADR-270 Decision 7 describe the kernel as it now stands and point to the catalogue for every other Models type; a reader finds no statement that contradicts the catalogue.
+</code></pre>
+
+<pre><code>No automated check reads the prose; a green build says nothing about whether the documents match what shipped.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<pre><code>reading the two documents with examine read
+</code></pre>
+
+<h3>Waivers</h3>
+
 <p>None.</p>
 
 <h2>Charter</h2>

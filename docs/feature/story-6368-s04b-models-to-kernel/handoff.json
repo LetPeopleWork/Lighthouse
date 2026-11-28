@@ -3,7 +3,8 @@
 "B": 4,
 "C": 1,
 "D": 19,
-"F": 276,
+"E": 9,
+"F": 300,
 "K": 9,
 "L": 9,
 "P": 5,
@@ -1687,6 +1688,91 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"lacuna": "F278",
+"needs": "F279",
+"promises": [
+"P1"
+],
+"text": "F277"
+},
+{
+"id": "E2",
+"lacuna": "F281",
+"needs": "F279",
+"promises": [
+"P1"
+],
+"text": "F280"
+},
+{
+"id": "E3",
+"lacuna": "F283",
+"needs": "F284",
+"promises": [
+"P2"
+],
+"text": "F282"
+},
+{
+"id": "E4",
+"lacuna": "F286",
+"needs": "F284",
+"promises": [
+"P2"
+],
+"text": "F285"
+},
+{
+"id": "E5",
+"lacuna": "F288",
+"needs": "F279",
+"promises": [
+"P3"
+],
+"text": "F287"
+},
+{
+"id": "E6",
+"lacuna": "F290",
+"needs": "F291",
+"promises": [
+"P4"
+],
+"text": "F289"
+},
+{
+"id": "E7",
+"lacuna": "F293",
+"needs": "F294",
+"promises": [
+"P4"
+],
+"text": "F292"
+},
+{
+"id": "E8",
+"lacuna": "F296",
+"needs": "F297",
+"promises": [
+"P4"
+],
+"text": "F295"
+},
+{
+"id": "E9",
+"lacuna": "F299",
+"needs": "F300",
+"promises": [
+"P5"
+],
+"text": "F298"
+}
+]
+},
 "facts": {
 "F1": "Story 6368 S04b: reduce Models to the shared kernel and add a kernel-size rule. Every type under Lighthouse.Backend.Models is either the shared kernel ADR-270 Decision 7 allows (IDomainEvent, IEntity, IConcurrencyTokenEntity) or owned by a named context with a blocker measured from the compiled code and the Story that frees it; the free ones move to their owner (Platform/<Area> or Modules/<Owner>/{Domain,Application}); a rule keeps that catalogue true and shrinking. Behaviour-free. Design: docs/feature/story-6368-s04b-models-to-kernel/feature-delta.md (its slice S4, the event move, is already done by Story 6382 and is dropped; its S5 is this feature's S4).",
 "F10": "Every Models type has a known owner and a true reason to stay.",
@@ -1885,10 +1971,34 @@
 "F274": "The domain is the finite set of Models types and their IL edges.",
 "F275": "Rules name moved types by namespace only and a new Models type off the catalogue fails naming itself (K3, K1 planted).",
 "F276": "Kernel rows are shared by two or more contexts and Models depends on nothing above it (K4, K5), each with a planted offender.",
+"F277": "Every type left in the Models folder is listed on the kernel catalogue as either Kernel or owned by a named context with a stated blocker and the Story that frees it; no type is missing and no row names a type that is gone.",
+"F278": "A passing rule run does not show the catalogue matches the compiled Models types, nor that each blocker is true; it sees only what the rules enumerate.",
+"F279": "architecture-rules",
 "F28": "Behaviour-free proof reuses existing probes: architecture rules (all), ef-model-unchanged, the unchanged backend suites on both revisions, and test-selection-show for the moved OAuth file; no new compare command.",
+"F280": "A catalogue row claiming a type is blocked, or is Kernel, is true when checked against the compiled code and the EF model (the named dependency or mapping really exists).",
+"F281": "Rules pass or fail on stated claims; they do not show a true blocker was not silently dropped or a Kernel type is really one of the three allowed base types.",
+"F282": "Types nothing blocks are no longer in Models: Platform types sit under Platform/<Area>, context types under Modules/<Owner>/Domain or Application, and their unit tests sit beside them.",
+"F283": "Green rules do not show every unblocked type actually moved or that its tests moved and still run.",
+"F284": "architecture-rules; backend-tests",
+"F285": "The full backend test suite and every module's boundary and placement rules stay green after the moves.",
+"F286": "A narrowed or summarised run can hide a skipped or excluded test class; only the named run counts.",
+"F287": "Adding an uncatalogued type to Models, or making a catalogue claim false, makes the architecture rules fail with a message naming the type and the fix; the moved types are accepted only at their new namespace, with no old-path allowance.",
+"F288": "The oracle may only check the passing state; a rule that never fails is not seen without a deliberate violation.",
+"F289": "Every API answer a user or client reads (platform, access and licensing, deliveries, metrics, forecast, refresh) is identical to the revision before the Story, with no status change.",
 "F29": "Mutation bar on moved files: Stryker.NET runs last on frozen code over the moved production files; the bar is no new survivor or no-coverage mutant against the same files on the pre-move revision. Enums and constant classes yield no meaningful mutants, stated as not applicable.",
+"F290": "Tests of the moved types do not compare real wire answers across revisions; compared answers cover only the probed endpoints and demo data.",
+"F291": "platform-answers-compare, access-answers-compare, deliveries-answers-compare, metrics-answers-compare, forecast-answers-compare, refresh-answers-compare, each with base origin/main at start",
+"F292": "The database model is unchanged for both providers: no pending model change and no new migration against the last one.",
+"F293": "Moving types can change a mapped name or namespace-derived value; unit tests do not ask EF.",
+"F294": "ef-model-unchanged",
+"F295": "No usage-data event, route or DTO payload is added, removed or renamed by the Story; the event names and values match the revision before.",
+"F296": "Answer compares do not list the usage-data event catalogue or route table; a renamed namespace could alter a serialised name unseen.",
+"F297": "platform-answers-compare, backend-tests",
+"F298": "ARCHITECTURE.md section 4 and ADR-270 Decision 7 describe the kernel as it now stands and point to the catalogue for every other Models type; a reader finds no statement that contradicts the catalogue.",
+"F299": "No automated check reads the prose; a green build says nothing about whether the documents match what shipped.",
 "F3": "Every type in Lighthouse.Backend.Models is on one catalogue, closed both ways: it stands as Kernel (one of the three base types ADR-270 Decision 7 allows) or as owned by a named context with a blocker that is true when measured from the compiled code and the EF model, and the Story that frees it.",
 "F30": "No formal model, exhaustive checks instead: every claim is a relation over a closed finite set (the Models types of one compiled assembly times the catalogue times measured IL and EF properties) with no shared mutable state, multi-step protocol, concurrency, retry, crash window or progress claim. Claim-to-checker: K1 to K5 and the move law are checked by native NUnit tests that evaluate the real assembly exhaustively (the executable projection is the check itself, in the default suite); no Quint, TLA+/TLC or Agda model, so no checker probe, install or waiver is needed. Property-based testing is not applicable: the domain is closed and enumerated in full.",
+"F300": "reading the two documents with examine read",
 "F31": "Algebra lives only on the test side: runtime layers (domain, application, adapters, infrastructure) keep their states, operations and observations unchanged. The test-side carriers are KernelCatalogue rows (records owned by KernelCatalogue in Tests/Architecture), KernelRuleVerdict for rule outcomes (owned by KernelRules), NamespaceMoveLaw's PatternBreak for move-law breaks, and NUnit failure messages as the error surface; there is no per-process state. Operations: measure a type's blockers from IL and EF model, compare catalogue and IL both ways, evaluate a pattern map over a move.",
 "F32": "Keep the object-oriented paradigm: the repository is object-oriented (CLAUDE.md); the catalogue is a first-class collection of row records with the decision on each row (is its claim true), measured through IlDependencies; no new production type is created.",
 "F33": "Rigor per slice as proposed: S1 thorough (opus for acceptance designer and crafter, sonnet for reviewers) because the measured blockers and the move law are where earlier reviews found misses; S2, S3 and S4 standard (sonnet, reviewers haiku). Pass model explicitly on every dispatch.",
