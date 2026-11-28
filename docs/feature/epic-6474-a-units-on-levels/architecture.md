@@ -107,7 +107,7 @@ Test composition: every new service is registered by a module extension that Pro
 #### D17
 
 ```text
-Organisation set-up's Application never reaches a context that builds on it (OrganisationSetupModuleBoundariesArchUnitTest), so the Team settings save does not call Forecasting. The API layer composes the two owners: TeamsController and TeamController stage the capacity with ILeafCapacityStore.Stage and then call IUnitSettings.SaveTeam, whose commit of the shared scoped LighthouseAppContext writes both under the Team's concurrency token; a refused save (400, 409, concurrency) commits neither. Reads likewise: the controller reads the Team through IUnitSettings.ReadTeamSettings and the capacity through ILeafCapacityStore.ForTeam, and maps both to TeamSettingDto through API.Helpers.
+Organisation set-up's Application never reaches a context that builds on it (OrganisationSetupModuleBoundariesArchUnitTest), so the Team settings save does not call Forecasting. The API layer composes the two owners on the request's scoped LighthouseAppContext. Update: TeamController stages the capacity with ILeafCapacityStore.Stage(UnitId, LeafCapacityValues) and then calls IUnitSettings.SaveTeam. Create: TeamsController stages it with ILeafCapacityStore.StageForNewTeam(Team, LeafCapacityValues) on the Team entity the create builds, before its id exists; the store adds a LeafCapacities row whose Team navigation points at that entity, so EF keys the row to the database-generated Team id in the same SaveChanges. One commit, made by IUnitSettings (SaveTeam or CreateTeam), writes both or neither under the Team's concurrency token. A refused save (400, 409, not found, concurrency) never calls SaveChanges, so the staged row is dropped when the request scope disposes the context. Reads: the controller reads the Team through IUnitSettings.ReadTeamSettings and the capacity through ILeafCapacityStore.ForTeam, and maps both to TeamSettingDto through API.Helpers; every Team has a row, from the seeder for existing Teams and from StageForNewTeam for new ones.
 ```
 
 ### Constraints
@@ -4500,6 +4500,14 @@ Create
 Application-owned settings view the controller maps to TeamSettingDto
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Forecasting\/Contracts\/LeafCapacityValues\.cs
+
+Create
+
+```text
+Capacity values without a Team id, so a create can stage them before the id exists
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/LeafCapacityInForecastingTest\.cs
 
 #### Verification
@@ -4520,15 +4528,15 @@ None.
 #### Public oracle
 
 ```text
-Run LeafCapacitySeeder on the upgrade fixture, read and save Team settings through the Team settings service, run a manual When forecast with pinned draws
+Run LeafCapacitySeeder on the upgrade fixture; read and save Team settings the way TeamController does (IUnitSettings.ReadTeamSettings with ILeafCapacityStore.ForTeam, ILeafCapacityStore.Stage then IUnitSettings.SaveTeam); create a Team the way TeamsController does (ILeafCapacityStore.StageForNewTeam with featureWIP 2, then IUnitSettings.CreateTeam) and read its settings back; make a save refused and read again; run a manual When forecast with pinned draws
 ```
 
 ```text
-One LeafCapacity per Team with today's values; settings payload byte-identical before and after; a save changes the record and the old columns together; forecasts and slice 01 numbers unchanged
+One LeafCapacity per existing Team with today's values; settings payload byte-identical before and after; a save changes the record and the old columns together; the created Team reads back featureWIP 2 and the other values it was created with; a refused save leaves neither the record nor the Team changed; forecasts and slice 01 numbers unchanged
 ```
 
 ```text
-Forecast reading Team.FeatureWIP after a save changed only LeafCapacity
+A Team created after the seeder has no LeafCapacities row, so reading its settings throws; or the forecast reads Team.FeatureWIP after a save changed only LeafCapacity
 ```
 
 ##### Promises
@@ -4735,6 +4743,16 @@ CreateNew
 No Application-owned view of a Team's settings exists; TeamSettingDto lives in API.DTO, which Organisation set-up Application must not reach
 ```
 
+LeafCapacityValues
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Forecasting\/Contracts\/LeafCapacityValues\.cs\:1
+
+CreateNew
+
+```text
+LeafCapacityView carries the Team id, which a new Team does not have yet
+```
+
 ##### Impact
 
 wire
@@ -4907,6 +4925,16 @@ Changed
 New return type of ReadTeamSettings
 ```
 
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Forecasting\/Contracts\/LeafCapacityValues\.cs\:1
+
+Changed
+
+```text
+New Contracts record staged by create and update
+```
+
 ##### Agreement
 
 Teams capacity columns
@@ -4957,11 +4985,11 @@ public sealed record LeafCapacityView\(UnitId Team\, int FeatureWip\, bool Autom
 
 ILeafCapacityStore
 
-public interface ILeafCapacityStore \{ Task\<IReadOnlyList\<LeafCapacityView\>\> All\(CancellationToken cancellationToken\)\; Task\<LeafCapacityView\> ForTeam\(UnitId team\, CancellationToken cancellationToken\)\; Task Stage\(LeafCapacityView capacity\, CancellationToken cancellationToken\)\; \}  \(Forecasting\/Contracts\; Stage adds to the scoped unit of work that the unit save commits\; ForTeam throws for a Team without a row\, which seeding excludes\)
+public interface ILeafCapacityStore \{ Task\<IReadOnlyList\<LeafCapacityView\>\> All\(CancellationToken cancellationToken\)\; Task\<LeafCapacityView\> ForTeam\(UnitId team\, CancellationToken cancellationToken\)\; Task Stage\(UnitId team\, LeafCapacityValues capacity\, CancellationToken cancellationToken\)\; Task StageForNewTeam\(Team team\, LeafCapacityValues capacity\, CancellationToken cancellationToken\)\; \}  \(Forecasting\/Contracts\; both Stage operations only add to the scoped unit of work\; the unit save commits it\; StageForNewTeam keys the row through the Team navigation so EF assigns the Team id in the same SaveChanges\)
 
 LeafCapacity
 
-public sealed class LeafCapacity \{ static LeafCapacity Create\(int teamId\, int featureWip\, bool automaticallyAdjustFeatureWip\, bool useFixedDatesForThroughput\, int throughputHistoryDays\, DateTime\? throughputHistoryStartDate\, DateTime\? throughputHistoryEndDate\, string\? forecastFilterRuleSetJson\)\; ThroughputSettings ThroughputSettings\(DateOnly today\)\; \}  \(Forecasting\/Domain\; no Contracts type\; the store maps it to LeafCapacityView\)
+public sealed class LeafCapacity \{ static LeafCapacity Create\(int teamId\, int featureWip\, bool automaticallyAdjustFeatureWip\, bool useFixedDatesForThroughput\, int throughputHistoryDays\, DateTime\? throughputHistoryStartDate\, DateTime\? throughputHistoryEndDate\, string\? forecastFilterRuleSetJson\)\; static LeafCapacity CreateForNewTeam\(Team team\, int featureWip\, bool automaticallyAdjustFeatureWip\, bool useFixedDatesForThroughput\, int throughputHistoryDays\, DateTime\? throughputHistoryStartDate\, DateTime\? throughputHistoryEndDate\, string\? forecastFilterRuleSetJson\)\; ThroughputSettings ThroughputSettings\(DateOnly today\)\; \}  \(Forecasting\/Domain EF entity keyed by TeamId with a Team navigation\; takes no Contracts type\: the store maps LeafCapacityValues to these primitives\)
 
 LeafCapacitySeeder
 
@@ -4974,6 +5002,10 @@ public static IServiceCollection AddLeafCapacity\(this IServiceCollection servic
 IUnitSettings\.ReadTeamSettings
 
 Task\<TeamSettingsView\> ReadTeamSettings\(int teamId\, CancellationToken cancellationToken\) added to IUnitSettings\; public abstract record TeamSettingsView \{ private TeamSettingsView\(\) \{\} public sealed record Found\(Team Team\) \: TeamSettingsView\; public sealed record TeamNotFound\(int TeamId\) \: TeamSettingsView\; \} in Application\/Units\; it holds no Forecasting type\; the controller adds ILeafCapacityStore\.ForTeam and maps both to TeamSettingDto through API\.Helpers
+
+LeafCapacityValues
+
+public sealed record LeafCapacityValues\(int FeatureWip\, bool AutomaticallyAdjustFeatureWip\, bool UseFixedDatesForThroughput\, int ThroughputHistoryDays\, DateTime\? ThroughputHistoryStartDate\, DateTime\? ThroughputHistoryEndDate\, string\? ForecastFilterRuleSetJson\)  \(Forecasting\/Contracts\; the capacity without a Team id\)
 
 ##### Laws
 

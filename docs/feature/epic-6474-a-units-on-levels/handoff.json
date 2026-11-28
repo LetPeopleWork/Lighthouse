@@ -49,7 +49,7 @@
 "C": 2,
 "D": 17,
 "E": 6,
-"F": 447,
+"F": 454,
 "K": 6,
 "L": 5,
 "N": 15,
@@ -416,7 +416,7 @@
 },
 {
 "id": "D17",
-"text": "F438"
+"text": "F448"
 }
 ],
 "equality": [
@@ -2521,13 +2521,13 @@
 ]
 },
 "public_oracle": {
-"expected": "F224",
-"falsifier": "F225",
+"expected": "F451",
+"falsifier": "F452",
 "promises": [
 "P6",
 "P1"
 ],
-"stimulus": "F223"
+"stimulus": "F450"
 },
 "records": {
 "agreement": [
@@ -2561,11 +2561,11 @@
 },
 {
 "name": "ILeafCapacityStore",
-"signature": "public interface ILeafCapacityStore { Task<IReadOnlyList<LeafCapacityView>> All(CancellationToken cancellationToken); Task<LeafCapacityView> ForTeam(UnitId team, CancellationToken cancellationToken); Task Stage(LeafCapacityView capacity, CancellationToken cancellationToken); }  (Forecasting/Contracts; Stage adds to the scoped unit of work that the unit save commits; ForTeam throws for a Team without a row, which seeding excludes)"
+"signature": "public interface ILeafCapacityStore { Task<IReadOnlyList<LeafCapacityView>> All(CancellationToken cancellationToken); Task<LeafCapacityView> ForTeam(UnitId team, CancellationToken cancellationToken); Task Stage(UnitId team, LeafCapacityValues capacity, CancellationToken cancellationToken); Task StageForNewTeam(Team team, LeafCapacityValues capacity, CancellationToken cancellationToken); }  (Forecasting/Contracts; both Stage operations only add to the scoped unit of work; the unit save commits it; StageForNewTeam keys the row through the Team navigation so EF assigns the Team id in the same SaveChanges)"
 },
 {
 "name": "LeafCapacity",
-"signature": "public sealed class LeafCapacity { static LeafCapacity Create(int teamId, int featureWip, bool automaticallyAdjustFeatureWip, bool useFixedDatesForThroughput, int throughputHistoryDays, DateTime? throughputHistoryStartDate, DateTime? throughputHistoryEndDate, string? forecastFilterRuleSetJson); ThroughputSettings ThroughputSettings(DateOnly today); }  (Forecasting/Domain; no Contracts type; the store maps it to LeafCapacityView)"
+"signature": "public sealed class LeafCapacity { static LeafCapacity Create(int teamId, int featureWip, bool automaticallyAdjustFeatureWip, bool useFixedDatesForThroughput, int throughputHistoryDays, DateTime? throughputHistoryStartDate, DateTime? throughputHistoryEndDate, string? forecastFilterRuleSetJson); static LeafCapacity CreateForNewTeam(Team team, int featureWip, bool automaticallyAdjustFeatureWip, bool useFixedDatesForThroughput, int throughputHistoryDays, DateTime? throughputHistoryStartDate, DateTime? throughputHistoryEndDate, string? forecastFilterRuleSetJson); ThroughputSettings ThroughputSettings(DateOnly today); }  (Forecasting/Domain EF entity keyed by TeamId with a Team navigation; takes no Contracts type: the store maps LeafCapacityValues to these primitives)"
 },
 {
 "name": "LeafCapacitySeeder",
@@ -2578,6 +2578,10 @@
 {
 "name": "IUnitSettings.ReadTeamSettings",
 "signature": "Task<TeamSettingsView> ReadTeamSettings(int teamId, CancellationToken cancellationToken) added to IUnitSettings; public abstract record TeamSettingsView { private TeamSettingsView() {} public sealed record Found(Team Team) : TeamSettingsView; public sealed record TeamNotFound(int TeamId) : TeamSettingsView; } in Application/Units; it holds no Forecasting type; the controller adds ILeafCapacityStore.ForTeam and maps both to TeamSettingDto through API.Helpers"
+},
+{
+"name": "LeafCapacityValues",
+"signature": "public sealed record LeafCapacityValues(int FeatureWip, bool AutomaticallyAdjustFeatureWip, bool UseFixedDatesForThroughput, int ThroughputHistoryDays, DateTime? ThroughputHistoryStartDate, DateTime? ThroughputHistoryEndDate, string? ForecastFilterRuleSetJson)  (Forecasting/Contracts; the capacity without a Team id)"
 }
 ],
 "contract_tests": [
@@ -2698,6 +2702,12 @@
 "kind": "public-signature",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/TeamSettingsView.cs:1",
 "reason": "F433"
+},
+{
+"decision": "Changed",
+"kind": "public-signature",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/LeafCapacityValues.cs:1",
+"reason": "F454"
 }
 ],
 "reuse": [
@@ -2796,6 +2806,12 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/TeamSettingsView.cs:1",
 "reason": "F432",
 "symbol": "TeamSettingsView"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/LeafCapacityValues.cs:1",
+"reason": "F453",
+"symbol": "LeafCapacityValues"
 }
 ]
 },
@@ -2867,6 +2883,11 @@
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/TeamSettingsView.cs",
 "reason": "F430"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/LeafCapacityValues.cs",
+"reason": "F449"
 }
 ],
 "verification": [
@@ -3069,9 +3090,6 @@
 "F220": "Extended composition-root for slice S3; consumers listed in the slice's agreements change in the same commit",
 "F221": "Extended test for slice S3; consumers listed in the slice's agreements change in the same commit",
 "F222": "Publishers and handlers live in one deployable and change in the same commit; events are in-process and never persisted",
-"F223": "Run LeafCapacitySeeder on the upgrade fixture, read and save Team settings through the Team settings service, run a manual When forecast with pinned draws",
-"F224": "One LeafCapacity per Team with today's values; settings payload byte-identical before and after; a save changes the record and the old columns together; forecasts and slice 01 numbers unchanged",
-"F225": "Forecast reading Team.FeatureWIP after a save changed only LeafCapacity",
 "F227": "Team settings payload and forecasts",
 "F229": "Throughput window moves to LeafCapacity, which owns the decision; Team keeps the columns read-only for rollback",
 "F230": "Owner of forecast filter rules; reads them from LeafCapacity",
@@ -3283,7 +3301,6 @@
 "F435": "Organisation set-up Application types never reach Lighthouse.Backend.API; the allow-list only shrinks",
 "F436": "Kept ADR-273 decisions 1-3: a unit is identified by its level and its number on that level; level 1 continues Team numbers, level 2 Portfolio numbers; the five stored discriminators (OwnerType, PermissionScopeType, ReportOwnerKind, RefreshType, UpdateType) are read as the level key and never rewritten. Placement follows the two module rules: Organisation set-up's Domain reaches only its own Domain, Models and the base library, and a Contracts type reaches only the kernel, the base library, Microsoft.Extensions and other Contracts. So the Domain owns LevelId and TermPair (Domain/Structure), and the published Contracts carry the level as the stored key string: UnitId(string Level, int Number) with UnitId.ForTeam and UnitId.ForPortfolio, the views with primitive fields. The Application query maps Domain to Contracts. Rejected: putting LevelId and UnitId in the Models kernel (the kernel only holds types two or more contexts own together, and S04b just shrank it); Contracts carrying Domain types (forbidden for Contracts by ContextContractsArchUnitTest).",
 "F437": "LevelId is the stored level key, not a database number: public readonly record struct LevelId(string Key) in Modules/OrganisationSetup/Domain/Structure, with LevelId.Team (\"Team\") and LevelId.Portfolio (\"Portfolio\"), the values the five stored discriminators hold (ADR-273 decision 2). It is stable and distinct from the ordinal; a level added later (#6455) gets a new key. Contracts carry the same key as a string; a unit test pins that LevelId.Team.Key equals UnitId.ForTeam(1).Level, so the literal cannot drift between the two. Outcome sums are closed abstract records with nested sealed cases and a private constructor (as ForecastRunOutcome does); aggregate and planner constructors are internal, built through their static factories.",
-"F438": "Organisation set-up's Application never reaches a context that builds on it (OrganisationSetupModuleBoundariesArchUnitTest), so the Team settings save does not call Forecasting. The API layer composes the two owners: TeamsController and TeamController stage the capacity with ILeafCapacityStore.Stage and then call IUnitSettings.SaveTeam, whose commit of the shared scoped LighthouseAppContext writes both under the Team's concurrency token; a refused save (400, 409, concurrency) commits neither. Reads likewise: the controller reads the Team through IUnitSettings.ReadTeamSettings and the capacity through ILeafCapacityStore.ForTeam, and maps both to TeamSettingDto through API.Helpers.",
 "F439": "Domain value type: the Domain may not reach Contracts",
 "F44": "ConnectionFieldDefaults owns per-connection field defaults, not item types per level; a type list per connection and level has no owner today (each unit holds its own free text).",
 "F440": "Signature step, no behaviour, its own commit before the oracle: create Domain/Structure/LevelId.cs, TermPair.cs, OrganisationStructure.cs, Level.cs, RenameOutcome.cs; Domain/Mapping/ConnectionMapping.cs, ResolveOutcome.cs (Domain reaches only its own Domain, Models and the base library); Contracts/LevelView.cs, OrganisationStructureView.cs, StructureRead.cs, ConnectionMappingView.cs, IOrganisationStructureQuery.cs (primitives only); Application/Structure/IOrganisationStructureStore.cs, IConnectionMappingStore.cs, OrganisationStructureQuery.cs, TerminologyWords.cs, OrganisationStructureMigrationPlan.cs, PlannedLevel.cs, PlannedMapping.cs; Adapters/Startup/OrganisationStructureMigrator.cs; Adapters/Persistence/OrganisationStructureStore.cs, ConnectionMappingStore.cs (all under Modules/OrganisationSetup); add AddOrganisationStructure to OrganisationSetupModule.cs registering them (not yet called by Program.cs). Bodies: Seed returns a completed task, Structure returns StructureRead.NotMigrated, Mappings and All return empty lists, the rest throw NotImplementedException. Per touched existing file: OrganisationSetupModule.cs holds one type, nothing moves. Follow-up change: the migrator, the stores and the level-backed terminology",
@@ -3294,7 +3311,14 @@
 "F445": "Two commits before the oracle. (1) Behaviour-preserving move: the load step of TeamController's GET settings moves unchanged into UnitSettingsService.ReadTeamSettings, which returns Application/Units/TeamSettingsView.cs (closed abstract record: Found(Team) or TeamNotFound); the controller keeps mapping to TeamSettingDto through API.Helpers. (2) Signature step, no behaviour: create Modules/Forecasting/Contracts/LeafCapacityView.cs and ILeafCapacityStore.cs, Domain/LeafCapacity.cs (no Contracts type), Adapters/Persistence/LeafCapacityStore.cs (All returns an empty list, ForTeam and Stage throw NotImplementedException), Adapters/Startup/LeafCapacitySeeder.cs (Seed returns a completed task), and AddLeafCapacity in ForecastingModule.cs (not yet called by Program.cs). Per touched existing file: TeamController.cs and ForecastingModule.cs each hold one type, nothing moves. Follow-up change: the controllers stage the capacity and read it from LeafCapacity",
 "F446": "LeafCapacity (Forecasting Domain) holds Feature WIP, automatically adjust Feature WIP, fixed-dates flag, throughput start/end and days, forecast filter rule set; table LeafCapacities keyed by Team id with cascading FK; ILeafCapacityStore in Forecasting Contracts; LeafCapacitySeeder copies today's Team values at start where no row exists or where the Team columns differ (rollback). The Team settings save is composed in the API layer: the controller stages the capacity with ILeafCapacityStore.Stage and calls IUnitSettings.SaveTeam, which dual-writes the old columns and commits both in one unit of work under the Team's concurrency token. Forecast reads (Team.GetThroughputSettings callers, ForecastFilterRuleService, Feature WIP readers) read LeafCapacity.",
 "F447": "Organisation set-up's Application never reaches Forecasting (a context that builds on it); its Domain never reaches its Contracts; Forecasting's Domain never reaches Contracts",
+"F448": "Organisation set-up's Application never reaches a context that builds on it (OrganisationSetupModuleBoundariesArchUnitTest), so the Team settings save does not call Forecasting. The API layer composes the two owners on the request's scoped LighthouseAppContext. Update: TeamController stages the capacity with ILeafCapacityStore.Stage(UnitId, LeafCapacityValues) and then calls IUnitSettings.SaveTeam. Create: TeamsController stages it with ILeafCapacityStore.StageForNewTeam(Team, LeafCapacityValues) on the Team entity the create builds, before its id exists; the store adds a LeafCapacities row whose Team navigation points at that entity, so EF keys the row to the database-generated Team id in the same SaveChanges. One commit, made by IUnitSettings (SaveTeam or CreateTeam), writes both or neither under the Team's concurrency token. A refused save (400, 409, not found, concurrency) never calls SaveChanges, so the staged row is dropped when the request scope disposes the context. Reads: the controller reads the Team through IUnitSettings.ReadTeamSettings and the capacity through ILeafCapacityStore.ForTeam, and maps both to TeamSettingDto through API.Helpers; every Team has a row, from the seeder for existing Teams and from StageForNewTeam for new ones.",
+"F449": "Capacity values without a Team id, so a create can stage them before the id exists",
 "F45": "The port test substrate with a database per scenario.",
+"F450": "Run LeafCapacitySeeder on the upgrade fixture; read and save Team settings the way TeamController does (IUnitSettings.ReadTeamSettings with ILeafCapacityStore.ForTeam, ILeafCapacityStore.Stage then IUnitSettings.SaveTeam); create a Team the way TeamsController does (ILeafCapacityStore.StageForNewTeam with featureWIP 2, then IUnitSettings.CreateTeam) and read its settings back; make a save refused and read again; run a manual When forecast with pinned draws",
+"F451": "One LeafCapacity per existing Team with today's values; settings payload byte-identical before and after; a save changes the record and the old columns together; the created Team reads back featureWIP 2 and the other values it was created with; a refused save leaves neither the record nor the Team changed; forecasts and slice 01 numbers unchanged",
+"F452": "A Team created after the seeder has no LeafCapacities row, so reading its settings throws; or the forecast reads Team.FeatureWIP after a save changed only LeafCapacity",
+"F453": "LeafCapacityView carries the Team id, which a new Team does not have yet",
+"F454": "New Contracts record staged by create and update",
 "F46": "One Postgres per test run for the migrator's provider check.",
 "F47": "Dual-written with the effective list",
 "F48": "Fingerprint now renders the effective list in mapping spelling; respelled units refetch once",
