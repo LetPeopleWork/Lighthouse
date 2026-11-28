@@ -1186,11 +1186,11 @@ Returns none for a development build
 P10
 
 ```text
-Ask the newest-version route as a signed-in user when two newer releases exist and when none is newer, and as a signed-out caller, through both route versions
+Ask the newest-version route as a signed-in user when two newer releases exist and when none is newer, and as a signed-out caller on a host that requires sign-in, through both route versions
 ```
 
 ```text
-A signed-in user gets the newest version number from the first newer release; with no newer release the answer is 404; a signed-out caller is refused exactly as the update check refuses them and is told no version
+A signed-in user gets the newest version number from the first newer release; with no newer release the answer is 404; a signed-out caller is refused with 401 or 403 and told no version
 ```
 
 ```text
@@ -1206,7 +1206,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/NewestVersionWireCon
 A\_signed\_in\_user\_is\_told\_the\_newest\_version\_when\_two\_newer\_releases\_exist
 
 ```text
-A route that answers a different number than the first newer release fails; one that refuses signed-out callers through some other action than the update check's own rule would still pass, which is allowed
+A route that answers a different number than the first newer release fails; a route refused to signed-out callers by the host-wide sign-in rule rather than its own attribute would still pass, and the attribute scan covers that
 ```
 
 ###### Obligations

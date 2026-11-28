@@ -1191,10 +1191,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P10</p>
 
-<pre><code>Ask the newest-version route as a signed-in user when two newer releases exist and when none is newer, and as a signed-out caller, through both route versions
+<pre><code>Ask the newest-version route as a signed-in user when two newer releases exist and when none is newer, and as a signed-out caller on a host that requires sign-in, through both route versions
 </code></pre>
 
-<pre><code>A signed-in user gets the newest version number from the first newer release; with no newer release the answer is 404; a signed-out caller is refused exactly as the update check refuses them and is told no version
+<pre><code>A signed-in user gets the newest version number from the first newer release; with no newer release the answer is 404; a signed-out caller is refused with 401 or 403 and told no version
 </code></pre>
 
 <pre><code>The update pop-up learns the newest version without release notes, and only for signed-in users
@@ -1208,7 +1208,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>A_signed_in_user_is_told_the_newest_version_when_two_newer_releases_exist</p>
 
-<pre><code>A route that answers a different number than the first newer release fails; one that refuses signed-out callers through some other action than the update check&#x27;s own rule would still pass, which is allowed
+<pre><code>A route that answers a different number than the first newer release fails; a route refused to signed-out callers by the host-wide sign-in rule rather than its own attribute would still pass, and the attribute scan covers that
 </code></pre>
 
 <h6>Obligations</h6>
