@@ -1,0 +1,2347 @@
+{
+"counters": {
+"B": 4,
+"C": 2,
+"D": 13,
+"F": 331,
+"K": 6,
+"L": 4,
+"N": 6,
+"P": 6,
+"S": 5,
+"T": 7,
+"Y": 7
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"agreement": [
+{
+"contract": "Teams/Portfolios WorkItemTypes column",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs:5",
+"party": "Producer",
+"reason": "F47"
+},
+{
+"contract": "Teams/Portfolios WorkItemTypes column",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/FetchFingerprint.cs:79",
+"party": "Consumer",
+"reason": "F48"
+},
+{
+"contract": "GET/PUT /terminology payload",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TerminologyController.cs:1",
+"party": "Producer",
+"reason": "F49"
+},
+{
+"contract": "GET/PUT /terminology payload",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Frontend/src",
+"party": "Consumer",
+"reason": "F50"
+},
+{
+"contract": "/teams and /portfolios settings payloads",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/TeamSettingDto.cs:1",
+"party": "Producer",
+"reason": "F51"
+},
+{
+"contract": "TeamDeleted/PortfolioDeleted events",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandler.cs:8",
+"party": "Consumer",
+"reason": "F52"
+},
+{
+"contract": "TeamDeleted/PortfolioDeleted events",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandler.cs:7",
+"party": "Consumer",
+"reason": "F52"
+},
+{
+"contract": "TeamDeleted/PortfolioDeleted events",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandler.cs:7",
+"party": "Consumer",
+"reason": "F52"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ContextContractsArchUnitTest",
+"id": "T1",
+"obligation": "F175",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsArchUnitTest.cs"
+},
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DomainEventsLiveWithTheirPublisherArchUnitTest",
+"id": "T2",
+"obligation": "F176",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventsLiveWithTheirPublisherArchUnitTest.cs"
+},
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ContextOwnedModelsTypesLiveInTheirModuleArchUnitTest",
+"id": "T3",
+"obligation": "F177",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextOwnedModelsTypesLiveInTheirModuleArchUnitTest.cs"
+},
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ExpandOnlyMigrationGuardTest",
+"id": "T4",
+"obligation": "F178",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ExpandOnlyMigrationGuardTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F58",
+"driven_ports": [
+"F54",
+"F55",
+"F56",
+"F57"
+],
+"driving_port": "F53"
+},
+"claims": [
+{
+"admitted_input": "F105",
+"bypass": "F107",
+"constructor": "ConnectionMapping.Resolve",
+"consumer": "Team/Portfolio settings save, WorkItemService fetch shape",
+"harm": "F104",
+"id": "C1",
+"owner": "ConnectionMapping",
+"proposition": "F103",
+"public_observation": "F106"
+},
+{
+"admitted_input": "F110",
+"bypass": "F112",
+"constructor": "UnitId",
+"consumer": "UnitCreated/UnitDeleted handlers, LeafCapacity store",
+"harm": "F109",
+"id": "C2",
+"owner": "UnitId",
+"proposition": "F108",
+"public_observation": "F111"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F135",
+"design": "Pass",
+"evidence": [
+"docs/feature/epic-6474-one-structure/design/models/organisation_structure_migrator.qnt"
+],
+"runtime": "DesignedNotBuilt",
+"subject": "F134"
+},
+{
+"axis": "Inhabitation",
+"basis": "F137",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F136"
+},
+{
+"axis": "PublicReachability",
+"basis": "F138",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F136"
+},
+{
+"axis": "Liveness",
+"basis": "F139",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F134"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F33"
+},
+{
+"id": "K2",
+"text": "F34"
+},
+{
+"id": "K3",
+"text": "F35"
+},
+{
+"id": "K4",
+"text": "F36"
+},
+{
+"id": "K5",
+"text": "F37"
+},
+{
+"id": "K6",
+"text": "F38"
+}
+],
+"constructors": [
+{
+"name": "UnitId",
+"signature": "UnitId(LevelId level, int number)"
+},
+{
+"name": "ConnectionMapping.Resolve",
+"signature": "ResolveOutcome Resolve(LevelId level, IEnumerable<string> requested) -> MappedSubset | TypeNotMapped"
+},
+{
+"name": "OrganisationStructureMigrationPlan.From",
+"signature": "static OrganisationStructureMigrationPlan From(IReadOnlyList<Team>, IReadOnlyList<Portfolio>, TerminologyWords)"
+}
+],
+"contract_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.UnitReadsItsSubset",
+"consumer": "WorkItemService fetch of the previous release (af209fdfe)",
+"contract": "Teams.WorkItemTypes / Portfolios.WorkItemTypes column",
+"id": "T5",
+"obligation": "F179",
+"observation": "F180",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/UnitReadsItsSubsetTest.cs",
+"producer": "Team settings save (this release)"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F20"
+},
+{
+"id": "D2",
+"text": "F21"
+},
+{
+"id": "D3",
+"text": "F22"
+},
+{
+"id": "D4",
+"text": "F23"
+},
+{
+"id": "D5",
+"text": "F24"
+},
+{
+"id": "D6",
+"text": "F25"
+},
+{
+"id": "D7",
+"text": "F26"
+},
+{
+"id": "D8",
+"text": "F27"
+},
+{
+"id": "D9",
+"text": "F28"
+},
+{
+"id": "D10",
+"text": "F29"
+},
+{
+"id": "D11",
+"text": "F30"
+},
+{
+"id": "D12",
+"text": "F31"
+},
+{
+"id": "D13",
+"text": "F32"
+}
+],
+"equality": [
+{
+"definition": "F67",
+"under": "item type"
+},
+{
+"definition": "F68",
+"under": "unit numbers"
+}
+],
+"laws": [
+{
+"evidence": [
+"docs/feature/epic-6474-one-structure/design/models/organisation_structure_migrator.qnt"
+],
+"id": "L1",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "OrganisationStructureMigrationPlan",
+"statement": "F69",
+"treatment": {
+"falsifier": "F77",
+"generator": {
+"domain": "F70",
+"must_include": [
+"F71",
+"F72",
+"F73",
+"F74"
+],
+"seed_policy": "NUnit Random with a fixed logged seed per run; failing seed printed",
+"shrinking": "F75",
+"size_bound": "30 units"
+},
+"independent_observation": "F76",
+"kind": "Broad"
+}
+},
+{
+"id": "L2",
+"kind": "Algebraic",
+"layer": "Domain",
+"owner": "OrganisationStructureMigrationPlan",
+"statement": "F78",
+"treatment": {
+"cases": [
+"F79",
+"F80",
+"F81",
+"F82"
+],
+"kind": "Finite",
+"reason": "F83"
+}
+},
+{
+"evidence": [
+"docs/feature/epic-6474-one-structure/design/models/organisation_structure_migrator.qnt"
+],
+"id": "L3",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "ConnectionMapping",
+"statement": "F84",
+"treatment": {
+"falsifier": "F90",
+"generator": {
+"domain": "F85",
+"must_include": [
+"F86",
+"F87"
+],
+"seed_policy": "fixed logged seed",
+"shrinking": "F88",
+"size_bound": "6 types per level"
+},
+"independent_observation": "F89",
+"kind": "Broad"
+}
+},
+{
+"evidence": [
+"docs/feature/epic-6474-one-structure/design/models/organisation_structure_migrator.qnt"
+],
+"id": "L4",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "OrganisationStructureMigrator",
+"statement": "F91",
+"treatment": {
+"cases": [
+"F92",
+"F93",
+"F94",
+"F95"
+],
+"kind": "Finite",
+"reason": "F96"
+}
+}
+],
+"models": [
+{
+"assumptions": [
+"F126",
+"F127"
+],
+"atoms": [
+{
+"atomicity": "F125",
+"kind": "Action",
+"name": "commitFirstUpgrade",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Startup/OrganisationStructureMigrator.cs",
+"symbol": "OrganisationStructureMigrator.SeedAsync"
+},
+{
+"atomicity": "F125",
+"kind": "Action",
+"name": "rederive",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Startup/OrganisationStructureMigrator.cs",
+"symbol": "OrganisationStructureMigrator.SeedAsync"
+},
+{
+"kind": "State",
+"name": "asWritten",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+"symbol": "WorkItemTypesAsWritten"
+},
+{
+"kind": "State",
+"name": "mapping",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Mapping/ConnectionMapping.cs",
+"symbol": "ConnectionLevelMapping.ItemTypes"
+},
+{
+"kind": "Action",
+"name": "removeThenReAdd",
+"site": "feature D slice 08 (not built in feature A)",
+"symbol": "model-only"
+}
+],
+"language": "Quint",
+"mutants": [
+{
+"description": "F128",
+"id": "N1",
+"kills": [
+"SingleStructure"
+]
+},
+{
+"description": "F129",
+"id": "N2",
+"kills": [
+"MappingNeverGrowsFromUnits"
+]
+},
+{
+"description": "F130",
+"id": "N3",
+"kills": [
+"SubsetWithinMapping"
+]
+},
+{
+"description": "F131",
+"id": "N4",
+"kills": [
+"MarkMatchesEmptiness"
+]
+},
+{
+"description": "F132",
+"id": "N5",
+"kills": [
+"UpgradeKeepsEveryType"
+]
+},
+{
+"description": "F133",
+"id": "N6",
+"kills": [
+"ReAddTicksNoUnit"
+]
+}
+],
+"path": "docs/feature/epic-6474-one-structure/design/models/organisation_structure_migrator.qnt",
+"properties": [
+{
+"kind": "Invariant",
+"name": "SingleStructure",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Startup/OrganisationStructureMigrator.cs",
+"statement": "F119",
+"symbol": "OrganisationStructureMigrator.SeedAsync"
+},
+{
+"kind": "Invariant",
+"name": "SubsetWithinMapping",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Startup/OrganisationStructureMigrator.cs",
+"statement": "F120",
+"symbol": "ConnectionMapping.Resolve"
+},
+{
+"kind": "Invariant",
+"name": "MappingNeverGrowsFromUnits",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Startup/OrganisationStructureMigrator.cs",
+"statement": "F121",
+"symbol": "OrganisationStructureMigrator"
+},
+{
+"kind": "Invariant",
+"name": "MarkMatchesEmptiness",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Startup/OrganisationStructureMigrator.cs",
+"statement": "F122",
+"symbol": "NeedsItemTypes"
+},
+{
+"kind": "Invariant",
+"name": "UpgradeKeepsEveryType",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Startup/OrganisationStructureMigrator.cs",
+"statement": "F123",
+"symbol": "OrganisationStructureMigrationPlan.From"
+},
+{
+"kind": "Invariant",
+"name": "ReAddTicksNoUnit",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Startup/OrganisationStructureMigrator.cs",
+"statement": "F124",
+"symbol": "WorkItemTypesAsWritten"
+}
+]
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F60",
+"description": "F59",
+"result_type": "UnitNumbers"
+},
+{
+"cannot_distinguish": "F62",
+"description": "F61",
+"result_type": "IReadOnlyList<string>"
+},
+{
+"cannot_distinguish": "F64",
+"description": "F63",
+"result_type": "IReadOnlyList<string>"
+},
+{
+"cannot_distinguish": "F66",
+"description": "F65",
+"result_type": "TerminologyEntry list"
+}
+],
+"refuted": [
+{
+"cause": "F98",
+"counterexample": "F99",
+"statement": "F97"
+},
+{
+"cause": "F101",
+"counterexample": "F102",
+"statement": "F100"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs:5",
+"reason": "F39",
+"symbol": "WorkTrackingSystemOptionsOwner"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/TerminologyService.cs:1",
+"reason": "F40",
+"symbol": "TerminologyService"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/Seeding/ISeeder.cs:1",
+"reason": "F41",
+"symbol": "ISeeder"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1467",
+"reason": "F42",
+"symbol": "IDomainEventDispatcher"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnerTerms.cs:1",
+"reason": "F43",
+"symbol": "OrganisationStructure"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ConnectionFieldDefaults.cs:1",
+"reason": "F44",
+"symbol": "ConnectionMapping"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ServicePortHarness.cs:21",
+"reason": "F45",
+"symbol": "ServicePortHarness"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/SharedPostgresContainer.cs:1",
+"reason": "F46",
+"symbol": "SharedPostgresContainer"
+}
+],
+"risks": [
+{
+"allowed": "F142",
+"forbidden": "F143",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "WorkItems",
+"preserved": "F141",
+"residue": "F144",
+"source": "F140"
+},
+{
+"allowed": "F147",
+"forbidden": "F148",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "OrganisationSetup",
+"preserved": "F146",
+"residue": "F149",
+"source": "F145"
+},
+{
+"allowed": "F152",
+"forbidden": "F153",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "OrganisationSetup",
+"preserved": "F151",
+"residue": "F154",
+"source": "F150"
+},
+{
+"allowed": "F157",
+"forbidden": "F158",
+"id": "Y4",
+"kind": "SinglePointOfFailure",
+"owner": "OrganisationSetup",
+"preserved": "F156",
+"residue": "F159",
+"source": "F155"
+},
+{
+"allowed": "F162",
+"forbidden": "F163",
+"id": "Y5",
+"kind": "Bypass",
+"owner": "OrganisationSetup",
+"preserved": "F161",
+"residue": "F164",
+"source": "F160"
+},
+{
+"allowed": "F167",
+"forbidden": "F168",
+"id": "Y6",
+"kind": "Stressor",
+"owner": "OrganisationSetup",
+"preserved": "F166",
+"residue": "F169",
+"source": "F165"
+},
+{
+"allowed": "F172",
+"forbidden": "F173",
+"id": "Y7",
+"kind": "Stressor",
+"owner": "Forecasting",
+"preserved": "F171",
+"residue": "F174",
+"source": "F170"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "OrganisationSetup",
+"state": "F113"
+},
+{
+"kind": "Admitted",
+"owner": "OrganisationSetup",
+"state": "F114"
+},
+{
+"kind": "Admitted",
+"owner": "WorkItems",
+"state": "F115"
+},
+{
+"kind": "Excluded",
+"owner": "OrganisationSetup",
+"state": "F116"
+},
+{
+"kind": "Excluded",
+"owner": "OrganisationSetup",
+"state": "F117"
+},
+{
+"kind": "Unknown",
+"owner": "OrganisationSetup",
+"state": "F118"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/NumbersStayTheSameTest.cs",
+"public_oracle": {
+"expected": "F182",
+"falsifier": "F183",
+"promises": [
+"P1"
+],
+"stimulus": "F181"
+},
+"records": {
+"constraints": [
+"F185"
+],
+"decisions": [
+"F184"
+],
+"not_applicable": [
+{
+"analysis": "reuse",
+"reason": "F186"
+},
+{
+"analysis": "impact",
+"reason": "F187"
+},
+{
+"analysis": "agreement",
+"reason": "F188"
+},
+{
+"analysis": "prefactoring",
+"reason": "F189"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F190"
+},
+{
+"analysis": "contract_tests",
+"reason": "F191"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/UpgradeFixture.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/UnitNumbersRecorder.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/unit-numbers.expected.json"
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.NumbersStayTheSame"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TerminologyControllerTest.cs",
+"move": "F260",
+"preserved": "F261",
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TerminologyControllerTest"
+]
+},
+"public_oracle": {
+"expected": "F258",
+"falsifier": "F259",
+"promises": [
+"P2",
+"P3",
+"P1"
+],
+"stimulus": "F257"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationStructurePlanPurityArchUnitTest",
+"id": "T7",
+"obligation": "F295",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationStructurePlanPurityArchUnitTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F290",
+"driven_ports": [
+"F289"
+],
+"driving_port": "F288",
+"failures": [
+{
+"condition": "F291",
+"id": "B1",
+"observation": "F292",
+"outcome": "Refusal"
+},
+{
+"condition": "F293",
+"id": "B2",
+"observation": "F294",
+"outcome": "Retry"
+}
+]
+},
+"decisions": [
+"F262"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/TerminologyService.cs:1",
+"reason": "F275"
+},
+{
+"decision": "Changed",
+"kind": "composition-root",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1335",
+"reason": "F276"
+},
+{
+"decision": "Changed",
+"kind": "persistence",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs:1",
+"reason": "F277"
+},
+{
+"decision": "Changed",
+"kind": "test-fixture",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs:1",
+"reason": "F278"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "wire",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TerminologyController.cs:1",
+"reason": "F279"
+},
+{
+"decision": "Changed",
+"kind": "domain",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Structure/OrganisationStructure.cs:1",
+"reason": "F280"
+},
+{
+"decision": "Changed",
+"kind": "domain",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Structure/Level.cs:1",
+"reason": "F281"
+},
+{
+"decision": "Changed",
+"kind": "contract",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/LevelId.cs:1",
+"reason": "F282"
+},
+{
+"decision": "Changed",
+"kind": "domain",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Mapping/ConnectionMapping.cs:1",
+"reason": "F281"
+},
+{
+"decision": "Changed",
+"kind": "domain",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Mapping/ResolveOutcome.cs:1",
+"reason": "F281"
+},
+{
+"decision": "Changed",
+"kind": "application",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Structure/OrganisationStructureMigrationPlan.cs:1",
+"reason": "F283"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Startup/OrganisationStructureMigrator.cs:1",
+"reason": "F284"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Persistence/OrganisationStructureStore.cs:1",
+"reason": "F284"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Persistence/ConnectionMappingStore.cs:1",
+"reason": "F284"
+},
+{
+"decision": "Changed",
+"kind": "migration",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Migrations:1",
+"reason": "F285"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationStructurePlanPurityArchUnitTest.cs:1",
+"reason": "F286"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F287"
+}
+],
+"reuse": [
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Structure/OrganisationStructure.cs:1",
+"reason": "F263",
+"symbol": "OrganisationStructure"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Structure/Level.cs:1",
+"reason": "F264",
+"symbol": "Level"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/LevelId.cs:1",
+"reason": "F265",
+"symbol": "LevelId"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Mapping/ConnectionMapping.cs:1",
+"reason": "F266",
+"symbol": "ConnectionMapping"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Mapping/ResolveOutcome.cs:1",
+"reason": "F267",
+"symbol": "ResolveOutcome"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Structure/OrganisationStructureMigrationPlan.cs:1",
+"reason": "F268",
+"symbol": "OrganisationStructureMigrationPlan"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Startup/OrganisationStructureMigrator.cs:1",
+"reason": "F269",
+"symbol": "OrganisationStructureMigrator"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Persistence/OrganisationStructureStore.cs:1",
+"reason": "F270",
+"symbol": "OrganisationStructureStore"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Persistence/ConnectionMappingStore.cs:1",
+"reason": "F271",
+"symbol": "ConnectionMappingStore"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs:1",
+"reason": "F272",
+"symbol": "LighthouseAppContext"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Migrations:1",
+"reason": "F239",
+"symbol": "Migrations"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs:1",
+"reason": "F273",
+"symbol": "HistoricalSchemaPatch"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationStructurePlanPurityArchUnitTest.cs:1",
+"reason": "F274",
+"symbol": "OrganisationStructurePlanPurityArchUnitTest"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/MappingFromUnitsTest.cs"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Structure/OrganisationStructure.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Structure/Level.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/LevelId.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Mapping/ConnectionMapping.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Mapping/ResolveOutcome.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Structure/OrganisationStructureMigrationPlan.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Startup/OrganisationStructureMigrator.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Persistence/OrganisationStructureStore.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Persistence/ConnectionMappingStore.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/TerminologyService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Migrations"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationStructurePlanPurityArchUnitTest.cs",
+"reason": "F256"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.TwoLevelsFromTerminology",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.MappingFromUnits",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.NumbersStayTheSame"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/UnitsOnLevelsTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandlerTest.cs",
+"move": "F195",
+"preserved": "F196",
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamDeletedRefreshLogCleanupHandlerTest"
+]
+},
+"public_oracle": {
+"expected": "F193",
+"falsifier": "F194",
+"promises": [
+"P4",
+"P1"
+],
+"stimulus": "F192"
+},
+"records": {
+"decisions": [
+"F197"
+],
+"impact": [
+{
+"decision": "Migrated",
+"kind": "event-contract",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/TeamDeleted.cs:5",
+"reason": "F212"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "wire",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs:119",
+"reason": "F213"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs:1",
+"reason": "F214"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "usage-data",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:18",
+"reason": "F215"
+},
+{
+"decision": "Changed",
+"kind": "contract",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/UnitId.cs:1",
+"reason": "F216"
+},
+{
+"decision": "Changed",
+"kind": "contract",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/UnitCreated.cs:1",
+"reason": "F216"
+},
+{
+"decision": "Changed",
+"kind": "contract",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/UnitDeleted.cs:1",
+"reason": "F216"
+},
+{
+"decision": "Changed",
+"kind": "contract",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/IUnitDirectory.cs:1",
+"reason": "F216"
+},
+{
+"decision": "Changed",
+"kind": "application",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/UnitDirectory.cs:1",
+"reason": "F217"
+},
+{
+"decision": "Changed",
+"kind": "wire",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs:1",
+"reason": "F218"
+},
+{
+"decision": "Changed",
+"kind": "application",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandler.cs:1",
+"reason": "F219"
+},
+{
+"decision": "Changed",
+"kind": "application",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandler.cs:1",
+"reason": "F219"
+},
+{
+"decision": "Changed",
+"kind": "application",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandler.cs:1",
+"reason": "F219"
+},
+{
+"decision": "Changed",
+"kind": "composition-root",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1",
+"reason": "F220"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EventTypesTheCompositionRootNames.cs:1",
+"reason": "F221"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F222"
+}
+],
+"reuse": [
+{
+"decision": "Replace",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/TeamDeleted.cs:5",
+"reason": "F198",
+"symbol": "TeamDeleted"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/PortfolioDeleted.cs:5",
+"reason": "F199",
+"symbol": "PortfolioDeleted"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/UnitId.cs:1",
+"reason": "F200",
+"symbol": "UnitId"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/UnitCreated.cs:1",
+"reason": "F201",
+"symbol": "UnitCreated"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/UnitDeleted.cs:1",
+"reason": "F202",
+"symbol": "UnitDeleted"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/IUnitDirectory.cs:1",
+"reason": "F203",
+"symbol": "IUnitDirectory"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/UnitDirectory.cs:1",
+"reason": "F204",
+"symbol": "UnitDirectory"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs:1",
+"reason": "F205",
+"symbol": "TeamController"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs:1",
+"reason": "F206",
+"symbol": "PortfolioController"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandler.cs:1",
+"reason": "F207",
+"symbol": "TeamDeletedRefreshLogCleanupHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandler.cs:1",
+"reason": "F208",
+"symbol": "TeamDeletedForecastRetriggerHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandler.cs:1",
+"reason": "F209",
+"symbol": "PortfolioDeletedOrphanedFeatureCleanupHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs:1",
+"reason": "F210",
+"symbol": "DomainEventHandlerOrderPinTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EventTypesTheCompositionRootNames.cs:1",
+"reason": "F211",
+"symbol": "EventTypesTheCompositionRootNames"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/UnitId.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/UnitCreated.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/UnitDeleted.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/IUnitDirectory.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/UnitDirectory.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandler.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandler.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandler.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EventTypesTheCompositionRootNames.cs"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.UnitsOnLevels",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DomainEventHandlerOrderPinTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.NumbersStayTheSame"
+]
+},
+"S4": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/UnitReadsItsSubsetTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Domain/FetchFingerprintPinnedDigestTest.cs",
+"move": "F299",
+"preserved": "F300",
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~FetchFingerprintPinnedDigestTest"
+]
+},
+"public_oracle": {
+"expected": "F297",
+"falsifier": "F298",
+"promises": [
+"P5",
+"P1"
+],
+"stimulus": "F296"
+},
+"records": {
+"boundaries": {
+"dependency_direction": "F327",
+"driven_ports": [
+"F289"
+],
+"driving_port": "F326",
+"failures": [
+{
+"condition": "F328",
+"id": "B3",
+"observation": "F329",
+"outcome": "Refusal"
+},
+{
+"condition": "F330",
+"id": "B4",
+"observation": "F331",
+"outcome": "Refusal"
+}
+]
+},
+"decisions": [
+"F301"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "wire",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemOptionsOwnerDtoBase.cs:6",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "wire",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/UpdateController.cs:17",
+"reason": "F314"
+},
+{
+"decision": "Changed",
+"kind": "domain",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/FetchFingerprint.cs:79",
+"reason": "F315"
+},
+{
+"decision": "Changed",
+"kind": "persistence",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs:5",
+"reason": "F316"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "frontend",
+"locator": "Lighthouse.Frontend/src",
+"reason": "F317"
+},
+{
+"decision": "Changed",
+"kind": "persistence",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Team.cs:1",
+"reason": "F318"
+},
+{
+"decision": "Changed",
+"kind": "persistence",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs:1",
+"reason": "F318"
+},
+{
+"decision": "Changed",
+"kind": "application",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Structure/OrganisationStructureMigrationPlan.cs:1",
+"reason": "F319"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Startup/OrganisationStructureMigrator.cs:1",
+"reason": "F320"
+},
+{
+"decision": "Changed",
+"kind": "wire",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs:1",
+"reason": "F321"
+},
+{
+"decision": "Changed",
+"kind": "wire",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs:1",
+"reason": "F321"
+},
+{
+"decision": "Changed",
+"kind": "wire",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/WorkTrackingSystemOptionsOwnerExtensions.cs:1",
+"reason": "F321"
+},
+{
+"decision": "Changed",
+"kind": "application",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:1",
+"reason": "F322"
+},
+{
+"decision": "Changed",
+"kind": "migration",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Migrations:1",
+"reason": "F323"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs:1",
+"reason": "F324"
+},
+{
+"decision": "Changed",
+"kind": "domain",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/UnitTypeLossNotice.cs:1",
+"reason": "F325"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/FetchFingerprint.cs:79",
+"reason": "F302",
+"symbol": "For"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:1",
+"reason": "F303",
+"symbol": "WorkItemService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Team.cs:1",
+"reason": "F304",
+"symbol": "Team"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs:1",
+"reason": "F305",
+"symbol": "Portfolio"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Structure/OrganisationStructureMigrationPlan.cs:1",
+"reason": "F268",
+"symbol": "OrganisationStructureMigrationPlan"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Startup/OrganisationStructureMigrator.cs:1",
+"reason": "F269",
+"symbol": "OrganisationStructureMigrator"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs:1",
+"reason": "F306",
+"symbol": "TeamsController"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs:1",
+"reason": "F307",
+"symbol": "PortfoliosController"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/UpdateController.cs:1",
+"reason": "F308",
+"symbol": "UpdateController"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemOptionsOwnerDtoBase.cs:1",
+"reason": "F309",
+"symbol": "WorkTrackingSystemOptionsOwnerDtoBase"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/WorkTrackingSystemOptionsOwnerExtensions.cs:1",
+"reason": "F310",
+"symbol": "WorkTrackingSystemOptionsOwnerExtensions"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Migrations:1",
+"reason": "F239",
+"symbol": "Migrations"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs:1",
+"reason": "F311",
+"symbol": "HistoricalSchemaPatch"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/UnitTypeLossNotice.cs:1",
+"reason": "F312",
+"symbol": "UnitTypeLossNotice"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/UnmappedItemTypeWireContractTest.cs"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Team.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Structure/OrganisationStructureMigrationPlan.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Adapters/Startup/OrganisationStructureMigrator.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/UpdateController.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemOptionsOwnerDtoBase.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/WorkTrackingSystemOptionsOwnerExtensions.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/FetchFingerprint.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Migrations"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/UnitTypeLossNotice.cs"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.UnitReadsItsSubset",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~UnmappedItemTypeWireContractTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.NumbersStayTheSame"
+]
+},
+"S5": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/LeafCapacityInForecastingTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs",
+"move": "F226",
+"preserved": "F227",
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamsControllerTest"
+]
+},
+"public_oracle": {
+"expected": "F224",
+"falsifier": "F225",
+"promises": [
+"P6",
+"P1"
+],
+"stimulus": "F223"
+},
+"records": {
+"agreement": [
+{
+"contract": "Teams capacity columns",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Team.cs:11",
+"party": "Producer",
+"reason": "F252"
+},
+{
+"contract": "Teams capacity columns",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastService.cs:1",
+"party": "Consumer",
+"reason": "F253"
+}
+],
+"contract_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.LeafCapacityInForecasting",
+"consumer": "Team mapping of the previous release",
+"contract": "Teams capacity columns",
+"id": "T6",
+"obligation": "F254",
+"observation": "F255",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/LeafCapacityInForecastingTest.cs",
+"producer": "Team settings save (this release)"
+}
+],
+"decisions": [
+"F228"
+],
+"impact": [
+{
+"decision": "UnchangedCompatible",
+"kind": "wire",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/TeamSettingDto.cs:1",
+"reason": "F241"
+},
+{
+"decision": "Changed",
+"kind": "persistence",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs:1",
+"reason": "F242"
+},
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastService.cs:1",
+"reason": "F243"
+},
+{
+"decision": "Changed",
+"kind": "domain",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/LeafCapacity.cs:1",
+"reason": "F244"
+},
+{
+"decision": "Changed",
+"kind": "contract",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ILeafCapacityStore.cs:1",
+"reason": "F245"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Persistence/LeafCapacityStore.cs:1",
+"reason": "F246"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Startup/LeafCapacitySeeder.cs:1",
+"reason": "F246"
+},
+{
+"decision": "Changed",
+"kind": "application",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastFilterRuleService.cs:1",
+"reason": "F247"
+},
+{
+"decision": "Changed",
+"kind": "wire",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/TeamExtensions.cs:1",
+"reason": "F248"
+},
+{
+"decision": "Changed",
+"kind": "wire",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs:1",
+"reason": "F248"
+},
+{
+"decision": "Changed",
+"kind": "composition-root",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1",
+"reason": "F249"
+},
+{
+"decision": "Changed",
+"kind": "migration",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Migrations:1",
+"reason": "F250"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs:1",
+"reason": "F251"
+}
+],
+"reuse": [
+{
+"decision": "Replace",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Team.cs:55",
+"reason": "F229",
+"symbol": "GetThroughputSettings"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastFilterRuleService.cs:1",
+"reason": "F230",
+"symbol": "ForecastFilterRuleService"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/LeafCapacity.cs:1",
+"reason": "F231",
+"symbol": "LeafCapacity"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ILeafCapacityStore.cs:1",
+"reason": "F232",
+"symbol": "ILeafCapacityStore"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Persistence/LeafCapacityStore.cs:1",
+"reason": "F233",
+"symbol": "LeafCapacityStore"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Startup/LeafCapacitySeeder.cs:1",
+"reason": "F234",
+"symbol": "LeafCapacitySeeder"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastService.cs:1",
+"reason": "F235",
+"symbol": "ForecastService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/TeamExtensions.cs:1",
+"reason": "F236",
+"symbol": "TeamExtensions"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs:1",
+"reason": "F237",
+"symbol": "TeamsController"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs:1",
+"reason": "F238",
+"symbol": "LighthouseAppContext"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Migrations:1",
+"reason": "F239",
+"symbol": "Migrations"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs:1",
+"reason": "F240",
+"symbol": "HistoricalSchemaPatch"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/LeafCapacity.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/ILeafCapacityStore.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Persistence/LeafCapacityStore.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Startup/LeafCapacitySeeder.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastFilterRuleService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/TeamExtensions.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Migrations"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.LeafCapacityInForecasting",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.NumbersStayTheSame"
+]
+}
+}
+},
+"facts": {
+"F1": "Epic 6474 One structure, feature A of four: Teams and Portfolios become units on two seeded levels (slices 01, 02, 03, 04, 07 of docs/feature/epic-6474-one-structure), with nobody's numbers changing. Product authority: docs/feature/epic-6474-one-structure/feature-delta.md (DISCUSS, DESIGN, DEVOPS and the maintainer decisions of 2026-11-06, 2026-11-27 and 2026-11-28, which win over the slice files), the slice files and design/upstream-changes.md.",
+"F10": "Slice 01 (Story 6483): a characterisation check records every unit's numbers for the demo data and an upgrade fixture (Jira, Azure DevOps, Linear, ServiceNow and CSV Teams, a Portfolio reading Epic and Change, custom Terminology Squad and Initiative, a Jira Team and an Azure DevOps Portfolio both reading Epic, a Team reading bug while others read Bug, a Linear Team with no types), agrees with itself on unchanged code and fails naming the unit and the number when a Team stops reading a type. Test only, no production change.",
+"F100": "Each type sits on one level per connection",
+"F101": "A tracker uses one type on two levels told apart by the query (2026-11-27)",
+"F102": "Jira Team reads Epic and a Jira Portfolio reads Epic: one of them would lose Epic and its numbers",
+"F103": "A unit's stored subset never holds a type its connection does not map to its level",
+"F104": "A tracker query for a type the admin removed or never mapped",
+"F105": "Type names from /teams or /portfolios writes and from the migrator",
+"F106": "400 team-item-type-not-on-level naming type, level and connection; workItemTypes on reads",
+"F107": "Direct DB writes and the previous release after a rollback: covered by the start re-derivation; reflection and EF raw SQL not used. C# checker strength: construction centralised in Resolve, predicate not proved",
+"F108": "UnitId is never a bare int outside an adapter that knows the level",
+"F109": "Team 3 and Portfolio 3 confused in a handler",
+"F11": "The promise that nobody's numbers change becomes a check every later slice runs.",
+"F110": "Route ids and stored discriminator pairs",
+"F111": "Deleting Team 3 leaves Portfolio 3's members, reports and snapshots",
+"F112": "Existing int-keyed side tables read by adapters; C# types block typed paths only",
+"F113": "A type on both levels of one connection",
+"F114": "An empty level list and an empty unit subset (Linear, ServiceNow)",
+"F115": "A Jira, Azure DevOps or CSV unit with no types, marked NeedsItemTypes, data kept, not refreshed",
+"F116": "A unit subset holding a type its connection does not map to its level",
+"F117": "Two structure rows, or a level count other than two in feature A",
+"F118": "Units whose connection was deleted outside Lighthouse (orphan connection id): migrator plans them on an empty mapping and marks them; to confirm on the upgrade fixture",
+"F119": "Two racing instances never both migrate",
+"F12": "Slice 02 (Story 6484): after the upgrade (expand-only migration) an installation has two levels named from its Terminology, each connection maps its units' types per level once ignoring case (a type both levels read sits on both), a fresh install or a connection with no units on a level gets today's create defaults, GET /terminology/all returns the same eight entries served from the levels, PUT /terminology writes them to the levels under today's Premium and System Admin guard, and slice 01's check stays green.",
+"F120": "A unit reads only what its connection maps to its level",
+"F121": "After the first upgrade the migrator never changes a mapping",
+"F122": "A unit is marked as needing item types exactly when it reads none",
+"F123": "At the first upgrade every unit keeps every type it read ignoring case",
+"F124": "A type removed from a level and re-added there is ticked again for no unit on that level",
+"F125": "one EF transaction",
+"F126": "One connection, one Team and one Portfolio, four spellings with one case pair",
+"F127": "Connector kind not modelled: every empty unit is marked; Linear and ServiceNow exemption tested by examples",
+"F128": "Commit inserts the structure row without the fixed-key check",
+"F129": "Re-derivation adds the previous release's types to the mapping",
+"F13": "Names and item types get one source before any screen shows a level.",
+"F130": "Re-derivation copies the old list without intersecting the mapping",
+"F131": "Re-derivation leaves the needs-item-types mark unchanged",
+"F132": "Planner lets the Feature level win a contested type",
+"F133": "Re-derivation compares WorkItemTypes with the subset",
+"F134": "Startup migrator",
+"F135": "Quint run and Apalache verify of six invariants, each killed by its mutant",
+"F136": "Unit subset",
+"F137": "Upgrade fixture Team reading bug yields a MappedSubset Bug; Linear Team yields empty",
+"F138": "Team settings save service -> ConnectionMapping.Resolve -> Team.ItemTypeSubset -> WorkItemService fetch and /teams workItemTypes",
+"F139": "No liveness claim: one synchronous startup step that commits or stops the start; no waiting, retry or fairness",
+"F14": "Slice 03 (Story 6485): every Team is a unit on level 1 and every Portfolio a unit on level 2 with unchanged ids and routes; creating one creates its unit and deleting one removes it, with UnitCreated and UnitDeleted published by Organisation set-up and today's deletion clean-up running as their handlers; slice 01's check stays green.",
+"F140": "Assumption: every connector matches types ignoring case (negated: a connector matching case-sensitively)",
+"F141": "Items read per unit",
+"F142": "One refetch of a respelled unit",
+"F143": "A respelled unit reading fewer items",
+"F144": "Slice 01's check names any unit whose counts move; connectors verified OrdinalIgnoreCase, JQL and WIQL ignore case",
+"F145": "Assumption: one instance starts at a time (negated: two instances on one Postgres)",
+"F146": "One structure, one mapping per connection",
+"F147": "The loser re-reads",
+"F148": "Two structures or two mappings",
+"F149": "Fixed key; modelled",
+"F15": "Teams and Portfolios become one kind of unit on a level before a third level arrives.",
+"F150": "Assumption: no rollback (negated: previous release edits WorkItemTypes)",
+"F151": "What each unit reads",
+"F152": "Re-derivation at next start; dropped types recorded in UnitTypeLossNotices",
+"F153": "Mapping growing or a silent loss",
+"F154": "WorkItemTypesAsWritten comparison; modelled",
+"F155": "Startup migrator self-check",
+"F156": "Database untouched",
+"F157": "The start stops with a fatal message",
+"F158": "Serving wrong numbers",
+"F159": "Operator stays on the previous release; signal described in DEVOPS operator signals",
+"F16": "Slice 04 (Story 6486): each unit's fetch reads its subset of the types its connection maps to its level, equal to its old list ignoring case (only respelled units refetch once); /teams and /portfolios still return it as workItemTypes in the mapping's spelling; a write naming an unmapped type gets 400 naming type, level and connection and saves nothing; a Jira, Azure DevOps or CSV unit with no types carries needsItemTypes, is not refreshed by schedule or Update (409 unit-needs-item-types) and keeps its data; slice 01's check stays green.",
+"F160": "Outside writers to Teams/Portfolios tables (import, manual SQL)",
+"F161": "Subset within mapping on read",
+"F162": "Re-derivation at next start",
+"F163": "A tracker query for an unmapped type",
+"F164": "Effective types always intersect the mapping at read time",
+"F165": "Second set, walkthrough: the demo data reset between scenarios re-runs seeders on an existing structure",
+"F166": "Structure and mappings",
+"F167": "No-op",
+"F168": "Duplicate levels",
+"F169": "Seeder runs only when no structure row exists; walkthrough, not executed",
+"F17": "Item types belong to the connection's levels and a unit only narrows them.",
+"F170": "Second set, walkthrough: a Team settings save racing a LeafCapacity copy at start",
+"F171": "Feature WIP and throughput window",
+"F172": "Copy skips rows that exist",
+"F173": "A save overwritten by the copy",
+"F174": "Seeders run before the host serves requests; walkthrough, not executed",
+"F175": "Organisation set-up types are reached from other modules only through Modules/OrganisationSetup/Contracts, including the new UnitId, LevelId, UnitCreated, UnitDeleted and ILeafCapacityStore in Forecasting Contracts",
+"F176": "Each domain event lives with its publisher: UnitCreated and UnitDeleted in Organisation set-up",
+"F177": "New domain types live in their module's Domain folder, not in Models",
+"F178": "Migrations stay expand-only",
+"F179": "Persisted lists outlive the producer: the previous release reads WorkItemTypes written by this release",
+"F18": "Slice 07 (Story 6489): a Team's Feature WIP, auto-adjust flag, throughput window and forecast filter rules live in a Forecasting record keyed by its unit id, copied by an expand-only migration; Team settings payloads are byte-identical and forecasts unchanged; slice 01's check stays green.",
+"F180": "Migrator scenario reads the dual-written column back through today's Team mapping and gets the effective list",
+"F181": "Run the recorder over the demo data and the upgrade fixture through the service ports",
+"F182": "Every unit's numbers equal the recorded expectation; two runs agree",
+"F183": "Remove Bug from one Team's WorkItemTypes in the fixture: the test fails naming that Team and its Bug count and throughput",
+"F184": "Characterisation harness at the service port: NumbersStayTheSameTest records, per Team and Portfolio, item counts by type (IWorkItemService reads), 90-day throughput and Work Item Age (ITeamMetricsService, IPortfolioMetricsService) and When-forecast percentiles 50/70/85/95 (IForecastService with a pinned IDrawStreamFactory seed) for the demo data and an upgrade fixture, and compares them with a recorded expectation file kept beside the test; a mismatch names the unit kind, id and number. Two runs on unchanged code agree. Test only.",
+"F185": "Upgrade fixture holds: Jira, Azure DevOps, Linear, ServiceNow and CSV Teams; a Portfolio reading Epic and Change; custom Terminology Squad and Initiative; a Jira Team and an Azure DevOps Portfolio both reading Epic; a Team reading bug while others read Bug; a Linear Team with no types. No lost-type report (2026-11-27).",
+"F186": "Test only: no production target; the ports read are reused as they are",
+"F187": "Test only: no production target",
+"F188": "Test only: touches no shared contract",
+"F189": "No production file touched",
+"F19": "The unit holds only structure; level-specific forecasting inputs belong to Forecasting.",
+"F190": "No production dependency changes",
+"F191": "No producer or consumer changes",
+"F192": "Through the Organisation set-up services: list units per level on the upgrade fixture; create a Team and a Portfolio; delete Team 3 while Portfolio 3 exists",
+"F193": "Every Team is on level 1 and every Portfolio on level 2 with unchanged ids; create publishes UnitCreated and the unit appears; deleting Team 3 removes its members, reports, snapshots and refresh log and re-triggers forecasts of the Portfolios that referenced it, and leaves Portfolio 3 intact; slice 01 numbers unchanged",
+"F194": "UnitDeleted carrying a bare id: Portfolio 3's refresh log is cleaned when Team 3 is deleted",
+"F195": "Per file: TeamController.cs, PortfolioController.cs, the three handler files, TeamDeleted.cs and PortfolioDeleted.cs each hold one type (not-applicable, nothing moves); Program.cs is the composition root (not-applicable). Follow-up change: publish UnitDeleted",
+"F196": "Deletion clean-up",
+"F197": "Unit lifecycle: TeamController and PortfolioController create and delete through Organisation set-up services that publish UnitCreated(UnitId) and UnitDeleted(UnitId, UnitsThatReferencedIt) after commit; TeamDeleted and PortfolioDeleted are removed from the publishers and their three handlers re-subscribe to UnitDeleted in today's order. A unit directory query (IUnitDirectory in Organisation set-up Contracts) lists units per level with UnitId; ids and routes unchanged.",
+"F198": "UnitDeleted carries the same facts keyed by UnitId; one deletion event per unit instead of one per kind",
+"F199": "Same as TeamDeleted",
+"F2": "Every Team and Portfolio sits as a unit on one of two levels whose names come from the organisation's own Terminology and whose item types each connection maps, while every unit reads exactly the items and shows exactly the numbers it did before the upgrade.",
+"F20": "Paradigm object_oriented (CLAUDE.md, ports and adapters). Organisation set-up owns structure, levels, connection mappings and units inside Modules/OrganisationSetup (created by S03i); no new module.",
+"F200": "No existing type owns UnitId's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F201": "No existing type owns UnitCreated's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F202": "No existing type owns UnitDeleted's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F203": "No existing type owns IUnitDirectory's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F204": "No existing type owns UnitDirectory's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F205": "TeamController already owns this responsibility in slice S3; extended in place, no parallel owner",
+"F206": "PortfolioController already owns this responsibility in slice S3; extended in place, no parallel owner",
+"F207": "TeamDeletedRefreshLogCleanupHandler already owns this responsibility in slice S3; extended in place, no parallel owner",
+"F208": "TeamDeletedForecastRetriggerHandler already owns this responsibility in slice S3; extended in place, no parallel owner",
+"F209": "PortfolioDeletedOrphanedFeatureCleanupHandler already owns this responsibility in slice S3; extended in place, no parallel owner",
+"F21": "Kept ADR-273 decisions 1-3: UnitId is a value object (LevelId, number); level 1 continues Team numbers, level 2 Portfolio numbers; the five stored discriminators (OwnerType, PermissionScopeType, ReportOwnerKind, RefreshType, UpdateType) are read as the level key and never rewritten. Moved: UnitId and LevelId live in Modules/OrganisationSetup/Contracts (the contracts-only cross-context rule of S09a), not in the Models kernel, because their single owner is Organisation set-up.",
+"F210": "DomainEventHandlerOrderPinTest already owns this responsibility in slice S3; extended in place, no parallel owner",
+"F211": "EventTypesTheCompositionRootNames already owns this responsibility in slice S3; extended in place, no parallel owner",
+"F212": "Publishers and three handlers move to UnitDeleted in the same commit",
+"F213": "Routes and payloads unchanged; publish call changes",
+"F214": "Pins the handler order for UnitDeleted",
+"F215": "TeamDeleted and PortfolioDeleted usage events keep their numbers and names",
+"F216": "New contract for slice S3; consumers listed in the slice's agreements change in the same commit",
+"F217": "New application for slice S3; consumers listed in the slice's agreements change in the same commit",
+"F218": "Extended wire for slice S3; consumers listed in the slice's agreements change in the same commit",
+"F219": "Extended application for slice S3; consumers listed in the slice's agreements change in the same commit",
+"F22": "OrganisationStructure (aggregate root, Modules/OrganisationSetup/Domain/Structure) holds exactly two Level entities: stable LevelId, ordinal (1 = where the work is done), unit name and item name, each singular and plural. It owns the rename rule and the exactly-two-levels rule for feature A. Replaced: no item types on a level (vision 2026-11-06) and no on/off switch or IsSwitchedOff column (2026-11-27: slice 15 removes level 2 instead, decided in feature C).",
+"F220": "Extended composition-root for slice S3; consumers listed in the slice's agreements change in the same commit",
+"F221": "Extended test for slice S3; consumers listed in the slice's agreements change in the same commit",
+"F222": "Publishers and handlers live in one deployable and change in the same commit; events are in-process and never persisted",
+"F223": "Run LeafCapacitySeeder on the upgrade fixture, read and save Team settings through the Team settings service, run a manual When forecast with pinned draws",
+"F224": "One LeafCapacity per Team with today's values; settings payload byte-identical before and after; a save changes the record and the old columns together; forecasts and slice 01 numbers unchanged",
+"F225": "Forecast reading Team.FeatureWIP after a save changed only LeafCapacity",
+"F226": "Per file: Team.cs holds one type; TeamExtensions.cs one static mapper; ForecastFilterRuleService.cs and ForecastService.cs one type each; TeamsController.cs one type (not-applicable, nothing moves). Follow-up change: read capacity from LeafCapacity",
+"F227": "Team settings payload and forecasts",
+"F228": "LeafCapacity (Forecasting Domain) holds Feature WIP, automatically adjust Feature WIP, fixed-dates flag, throughput start/end and days, forecast filter rule set; table LeafCapacities keyed by Team id with cascading FK; ILeafCapacityStore in Forecasting Contracts; LeafCapacitySeeder copies today's Team values at start where no row exists or where the Team columns differ (rollback); the Team settings save writes the record through the Forecasting contract and dual-writes the old columns in one unit of work under the Team's concurrency token. Forecast reads (Team.GetThroughputSettings callers, ForecastFilterRuleService, Feature WIP readers) read LeafCapacity.",
+"F229": "Throughput window moves to LeafCapacity, which owns the decision; Team keeps the columns read-only for rollback",
+"F23": "ConnectionMapping (aggregate root per connection, Modules/OrganisationSetup/Domain/Mapping) lists per LevelId the item types of that connection, once per level ignoring case, in its own spelling. A type may sit on both levels of one connection (2026-11-27; MD6/VR3 dropped, no level wins); the overlap is recorded for the upgrade notice of feature C and blocks nothing. ConnectionMapping.Resolve(levelId, requested) is the single decider of a unit's subset: returns MappedSubset (mapping spelling, order of the mapping) or TypeNotMapped(type, level, connection).",
+"F230": "Owner of forecast filter rules; reads them from LeafCapacity",
+"F231": "No existing type owns LeafCapacity's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F232": "No existing type owns ILeafCapacityStore's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F233": "No existing type owns LeafCapacityStore's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F234": "No existing type owns LeafCapacitySeeder's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F235": "ForecastService already owns this responsibility in slice S5; extended in place, no parallel owner",
+"F236": "TeamExtensions already owns this responsibility in slice S5; extended in place, no parallel owner",
+"F237": "TeamsController already owns this responsibility in slice S5; extended in place, no parallel owner",
+"F238": "LighthouseAppContext already owns this responsibility in slice S5; extended in place, no parallel owner",
+"F239": "No existing type owns Migrations's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F24": "Persistence (ADR-275, revised): Team and Portfolio keep their tables, ids and sequences; WorkTrackingSystemOptionsOwner keeps its name (the rename to Unit is moved out: no promised observation reads it). New additive tables OrganisationStructures (fixed key 1, concurrency token), Levels, ConnectionMappings, ConnectionLevelMappings (connection id, level id, item types stored as units store lists); new columns ItemTypeSubset, NeedsItemTypes, WorkItemTypesAsWritten on Teams and Portfolios (slice 04); new table LeafCapacities keyed by Team id with cascading FK (slice 07). Generated by Lighthouse.Backend/Create-Migration.ps1 for SQLite and Postgres; HistoricalSchemaPatch learns every new table and column.",
+"F240": "HistoricalSchemaPatch already owns this responsibility in slice S5; extended in place, no parallel owner",
+"F241": "Payload byte-identical",
+"F242": "New LeafCapacities table",
+"F243": "Reads capacity from LeafCapacity",
+"F244": "New domain for slice S5; consumers listed in the slice's agreements change in the same commit",
+"F245": "New contract for slice S5; consumers listed in the slice's agreements change in the same commit",
+"F246": "New adapter for slice S5; consumers listed in the slice's agreements change in the same commit",
+"F247": "Extended application for slice S5; consumers listed in the slice's agreements change in the same commit",
+"F248": "Extended wire for slice S5; consumers listed in the slice's agreements change in the same commit",
+"F249": "Extended composition-root for slice S5; consumers listed in the slice's agreements change in the same commit",
+"F25": "Startup migrator (ADR-275 decision 4, kept): OrganisationStructureMigrator, an ISeeder registered after TerminologySeeder in Program.cs, reads Teams, Portfolios and the eight Terminology rows, asks the pure OrganisationStructureMigrationPlan.From (return-only) for levels, mappings and subsets, applies it in one transaction, then checks its own result (each unit's subset within its connection's level list, no unit gained or lost a type ignoring case, unit counts unchanged); a failed check rolls back and stops the start with a structured fatal message. Case is folded in C# with StringComparer.OrdinalIgnoreCase, never in SQL. A second instance loses on the fixed structure key and re-reads. Replaced: the Feature-level-wins rule, the self-check one-level-per-type and the upgrade lost-type record (2026-11-27).",
+"F250": "Additive migration for both providers generated by Create-Migration.ps1 (slice S5)",
+"F251": "Extended test for slice S5; consumers listed in the slice's agreements change in the same commit",
+"F252": "Dual-written with LeafCapacity",
+"F253": "Reads LeafCapacity",
+"F254": "Team capacity columns outlive the producer: the previous release reads FeatureWIP and throughput columns this release dual-writes",
+"F255": "Scenario reads the old columns back after a save and finds the saved values",
+"F256": "Purity law of the planner",
+"F257": "Run OrganisationStructureMigrator.SeedAsync on the upgrade fixture (SQLite and Postgres), then call TerminologyService get-all and update",
+"F258": "Two levels named Squad/Squads, Work Item/Work Items and Initiative/Initiatives, Feature/Features; per connection level 1 = union of its Teams' types once ignoring case, level 2 = union of its Portfolios' types, Epic on both levels of the connection that reads it twice, create defaults where a level has no units; get-all returns the same eight words; update renames the level; slice 01 numbers unchanged",
+"F259": "Planner lets the Feature level win: the Jira Team's Epic is missing from level 1",
+"F26": "Rollback detection (new, corrects ADR-274 rule 13): every save that writes ItemTypeSubset also writes the effective list into WorkItemTypes and the same list into WorkItemTypesAsWritten (a unit marked NeedsItemTypes keeps its last list in both). At each start a unit whose WorkItemTypes differs from WorkItemTypesAsWritten was edited by the previous release and only that unit is re-derived (old list intersected with its connection's level list). Comparing WorkItemTypes with the subset instead was refuted: it re-ticks a removed and re-added type for a marked unit, against M2.",
+"F260": "L1: TerminologyService.cs holds one type; Program.cs and LighthouseAppContext.cs are composition and mapping roots with one type each; HistoricalSchemaPatch.cs one type. not-applicable per file: each touched file holds one type, nothing moves; the follow-up change is the level-backed terminology read",
+"F261": "Terminology answers",
+"F262": "Slice 02 builds OrganisationStructure, Level, LevelId, ConnectionMapping, OrganisationStructureMigrationPlan and OrganisationStructureMigrator, the EF stores and the four tables, and routes the eight Terminology entries through the levels. Units are not touched yet: subsets come in slice 04, so the migrator here plans mappings only and the subset part of the plan is added in slice 04.",
+"F263": "No owner of levels exists (shared reuse row)",
+"F264": "No existing type owns Level's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F265": "No existing type owns LevelId's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F266": "No existing type owns ConnectionMapping's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F267": "No existing type owns ResolveOutcome's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F268": "No existing type owns OrganisationStructureMigrationPlan's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F269": "No existing type owns OrganisationStructureMigrator's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F27": "Domain events (ADR-273 decision 6, kept for feature A): UnitCreated(UnitId) and UnitDeleted(UnitId, UnitsThatReferencedIt) are published after commit by Organisation set-up through the existing IDomainEventDispatcher (ADR-027) and live in Modules/OrganisationSetup/Contracts. TeamDeleted and PortfolioDeleted are replaced: their three handlers (TeamDeletedRefreshLogCleanupHandler, TeamDeletedForecastRetriggerHandler, PortfolioDeletedOrphanedFeatureCleanupHandler) re-subscribe to UnitDeleted in place, filtering on the level they handle, in today's order pinned by DomainEventHandlerOrderPinTest. LevelRenamed and ConnectionItemTypesChanged are named but not built in feature A (no consumer until features C and D).",
+"F270": "No existing type owns OrganisationStructureStore's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F271": "No existing type owns ConnectionMappingStore's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F272": "LighthouseAppContext already owns this responsibility in slice S2; extended in place, no parallel owner",
+"F273": "HistoricalSchemaPatch already owns this responsibility in slice S2; extended in place, no parallel owner",
+"F274": "No existing type owns OrganisationStructurePlanPurityArchUnitTest's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F275": "Eight entries served from and written to the levels; others unchanged",
+"F276": "Migrator registered after TerminologySeeder",
+"F277": "Four new DbSets; additive migration for both providers",
+"F278": "Learns the new tables",
+"F279": "Same routes, guard and payload",
+"F28": "Terminology split (slice 02): the eight entries team, teams, portfolio, portfolios, workItem, workItems, feature, features are read from and written to the two Levels by TerminologyService; the other Terminology rows stay where they are. The old eight rows are kept (expand-only) and dual-written so the previous release shows the same words after a rollback. PUT /terminology keeps today's Premium and System Admin guard (level rename stays Premium: 2026-11-27 reverses M7).",
+"F280": "New aggregate",
+"F281": "New domain for slice S2; consumers listed in the slice's agreements change in the same commit",
+"F282": "New contract for slice S2; consumers listed in the slice's agreements change in the same commit",
+"F283": "New application for slice S2; consumers listed in the slice's agreements change in the same commit",
+"F284": "New adapter for slice S2; consumers listed in the slice's agreements change in the same commit",
+"F285": "Additive migration for both providers generated by Create-Migration.ps1 (slice S2)",
+"F286": "New test for slice S2; consumers listed in the slice's agreements change in the same commit",
+"F287": "Terminology callers live in the same deployable and change in the same commit; the persisted Terminology rows are covered by the shared WorkItemTypes contract pattern and by dual-write scenarios in the oracle",
+"F288": "TerminologyService (get-all, update) and OrganisationStructureMigrator.SeedAsync",
+"F289": "IOrganisationStructureStore and IConnectionMappingStore (EF)",
+"F29": "Cross-layer algebra. Domain: states = OrganisationStructure(two levels), ConnectionMapping(level -> type list), Unit(subset, needs-item-types mark); operations = Plan, Resolve, Rename, CreateUnit, DeleteUnit; observations = level names, mapped types per level, a unit's effective types, refusal reason. Application: outcomes Saved, TypeNotMapped (400), UnitNeedsItemTypes (409), Conflict (409 concurrency, unchanged). Adapter: EF stores, controllers translating outcomes to ProblemDetails codes team-item-type-not-on-level, portfolio-item-type-not-on-level, unit-needs-item-types. Infrastructure: startup migrator commit-or-stop, fixed-key race, rollback re-derivation, process crash before commit.",
+"F290": "TerminologyController -> TerminologyService -> OrganisationStructure; migrator -> OrganisationStructureMigrationPlan (pure) -> stores",
+"F291": "Migrator self-check fails",
+"F292": "Start stops with a structured fatal message naming the failed check; database rolled back",
+"F293": "Another instance committed first",
+"F294": "Loser re-reads the structure and continues",
+"F295": "The migration planner is pure: OrganisationStructureMigrationPlan depends on no EF, clock or I/O type",
+"F296": "Through the Team and Portfolio settings save services and the update service on the migrated upgrade fixture: read units, save a Team with Spike, save a Team with bug, request an update of the marked Jira Team; restart the migrator after editing a WorkItemTypes column",
+"F297": "Each unit reads its old list in mapping spelling; Spike refused with 400 naming Spike, the Squad level and the connection, nothing saved, also for a System Admin; bug stored as Bug; marked Jira Team refused with 409 unit-needs-item-types and skipped by the schedule, data kept; edited unit re-derived; only respelled units' fingerprints change; slice 01 numbers unchanged",
+"F298": "Save accepting Epic on a Team of a connection that maps Epic only to level 2",
+"F299": "Per file: WorkTrackingSystemOptionsOwner.cs, Team.cs, Portfolio.cs, TeamsController.cs, PortfoliosController.cs, UpdateController.cs, WorkItemService.cs, FetchFingerprint.cs, the DTO base and the extensions file each hold one type (not-applicable, nothing moves). Follow-up change: read the effective list",
+"F3": "Nobody's numbers change: for every Team and Portfolio of the demo data and of an upgrade fixture shaped like real installs, item counts by type, 90-day throughput, Work Item Age and every Feature's When-forecast percentiles (50/70/85/95 on pinned draws) are recorded before the restructuring and stay equal after each slice; a deliberate change that moves a number is caught, naming the unit and the number. Units whose type spelling changes to the mapping's spelling keep identical numbers and may refetch once.",
+"F30": "Formal verification: Quint 0.33.1 models the startup migrator protocol (two instances racing, crash before commit, previous-release edit after rollback, admin remove then re-add) in docs/feature/epic-6474-one-structure/design/models/organisation_structure_migrator.qnt; quint run (4000 samples, 10 steps) and quint verify (Apalache, 6 steps) found no violation of its six invariants, and each invariant was broken by its own mutant. Not modelled, checked by property and example tests instead: majority spelling, tie-break and order of the planner (pure function laws), the 400 and 409 decisions (finite outcomes, no shared state), LeafCapacity copy (same commit-or-skip pattern, no new window). TLA+/TLC and Agda not needed: no fairness-dependent claim, no type-level proof. Liveness: no liveness claim, the migrator is one synchronous startup step that commits or stops the start.",
+"F300": "Fetch fingerprints of non-respelled units",
+"F301": "Subset: Team and Portfolio gain ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten; the migrator's plan gains the subsets (old list in mapping spelling) and marks Jira, Azure DevOps and CSV units with no types. The settings save services call ConnectionMapping.Resolve: TypeNotMapped becomes ProblemDetails 400 team-item-type-not-on-level or portfolio-item-type-not-on-level with 'Spike is not on the Team level of <connection name>' (level word from the level's unit name), nothing saved, for every role. WorkItemService and FetchFingerprint read the effective list (subset intersected with the mapping). UpdateController returns 409 unit-needs-item-types for a marked unit, and the schedule skips it; its data stays. Reads return workItemTypes in mapping spelling and needsItemTypes.",
+"F302": "Sole owner of the fetch shape digest; reads the effective list",
+"F303": "Owns the fetch shape; passes the effective list to the connector",
+"F304": "Team already owns this responsibility in slice S4; extended in place, no parallel owner",
+"F305": "Portfolio already owns this responsibility in slice S4; extended in place, no parallel owner",
+"F306": "TeamsController already owns this responsibility in slice S4; extended in place, no parallel owner",
+"F307": "PortfoliosController already owns this responsibility in slice S4; extended in place, no parallel owner",
+"F308": "UpdateController already owns this responsibility in slice S4; extended in place, no parallel owner",
+"F309": "WorkTrackingSystemOptionsOwnerDtoBase already owns this responsibility in slice S4; extended in place, no parallel owner",
+"F31": "Examine proof: each slice's oracle lives in Lighthouse.Backend.Tests/Acceptance/OneStructure/ and is shown by the public command backend-tests with a slice fragment (for example backend-tests Acceptance.OneStructure.NumbersStayTheSame); forecast-answers-compare and metrics-answers-compare between af209fdfe and HEAD show the unchanged numbers on demo data; architecture-rules OrganisationSetup shows the boundary rules.",
+"F310": "WorkTrackingSystemOptionsOwnerExtensions already owns this responsibility in slice S4; extended in place, no parallel owner",
+"F311": "HistoricalSchemaPatch already owns this responsibility in slice S4; extended in place, no parallel owner",
+"F312": "No existing type owns UnitTypeLossNotice's responsibility (searched the module and its Contracts); see the shared reuse rows",
+"F313": "needsItemTypes added; workItemTypes in mapping spelling",
+"F314": "409 unit-needs-item-types",
+"F315": "Effective list in mapping spelling",
+"F316": "Three additive columns",
+"F317": "Forms show the 400 message as today's save error; needsItemTypes unread until feature C",
+"F318": "Extended persistence for slice S4; consumers listed in the slice's agreements change in the same commit",
+"F319": "New application for slice S4; consumers listed in the slice's agreements change in the same commit",
+"F32": "Kept as decided: no usage-data event in feature A (all slices invisible); an item maps to exactly one owning unit of its level (2026-11-24) is not built now; connector port fetching generically per unit stays a candidate for slice 12 (owner maintainer); whether a re-added level 2 gets seeded or last names stays open for slice 15 (owner maintainer).",
+"F320": "New adapter for slice S4; consumers listed in the slice's agreements change in the same commit",
+"F321": "Extended wire for slice S4; consumers listed in the slice's agreements change in the same commit",
+"F322": "Extended application for slice S4; consumers listed in the slice's agreements change in the same commit",
+"F323": "Additive migration for both providers generated by Create-Migration.ps1 (slice S4)",
+"F324": "Extended test for slice S4; consumers listed in the slice's agreements change in the same commit",
+"F325": "New domain for slice S4; consumers listed in the slice's agreements change in the same commit",
+"F326": "Team and Portfolio settings save services behind TeamsController and PortfoliosController, and the update service behind UpdateController",
+"F327": "Controllers -> save services -> ConnectionMapping.Resolve; WorkItemService -> FetchFingerprint; Work Items reads mappings only through Organisation set-up Contracts",
+"F328": "A write names a type not mapped to the unit's level on its connection",
+"F329": "400 team-item-type-not-on-level / portfolio-item-type-not-on-level naming type, level and connection; nothing saved",
+"F33": "Expand-only EF migrations, generated by Lighthouse.Backend/Create-Migration.ps1 for both providers; no column renamed, dropped or rewritten; old WorkItemTypes, Terminology rows and Team capacity columns stay and are dual-written.",
+"F330": "Manual update of a unit marked NeedsItemTypes",
+"F331": "409 unit-needs-item-types; data kept",
+"F34": "No id, route (/teams/{id}, /portfolios/{id}), payload field name or stored discriminator changes; feature A adds only the 400 on an unmapped type, needsItemTypes on /teams and /portfolios reads and the 409 unit-needs-item-types on manual Update.",
+"F35": "Input bounds: an item type is a non-empty trimmed string, compared ignoring case (OrdinalIgnoreCase); a level list and a unit subset may be empty (Linear, ServiceNow, connectors without types); no upper bound on list length or type length exists today and none is added; level names are four non-empty strings as Terminology entries are today, no length bound added.",
+"F36": "Cross-context access only through Contracts namespaces (S09a rules in Lighthouse.Backend.Tests/Architecture); Forecasting owns LeafCapacity and Organisation set-up never writes its table; Work Items owns FetchFingerprint and its fetch shape.",
+"F37": "Backend acceptance scenarios drive the application-service port through ServicePortHarness under Tests/Acceptance/OneStructure/; real storage (SQLite and the SharedPostgres container) only for the migrator scenarios; a host only for the wire contract of the 400 and 409 in Tests/Contracts. Test rules of .claude/skills/test-writing win over nWave's nine-run timing and PBT density. FakeLighthouseClock for time; no live connector categories.",
+"F38": "Comments carry no internal ids; no nWave scenario tags in code; each slice owns its own oracle files and never edits an earlier slice's oracle or support files.",
+"F39": "Already the shared base of Team and Portfolio; gains ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten instead of a parallel Unit entity.",
+"F4": "An installation has exactly two levels: level 1 where the work is done (Teams, Work Items) and level 2 that groups the level below (Portfolios, Features). Their unit and item names (singular and plural) come from today's Terminology, custom or seeded, and every screen and API that shows those eight Terminology entries shows the same words as before; renaming through Terminology lands on the level.",
+"F40": "Sole owner of Terminology reads and writes; it serves the eight level entries from the levels, so no second terminology reader exists.",
+"F41": "Startup steps already run as ordered seeders; the migrator and the LeafCapacity copy are two more.",
+"F42": "After-commit in-process events (ADR-027) already carry TeamDeleted and PortfolioDeleted to their handlers; UnitCreated and UnitDeleted use the same dispatcher.",
+"F43": "No owner of levels exists: OwnerTerms only names Team and Portfolio words; the cross-level rules need one aggregate.",
+"F44": "ConnectionFieldDefaults owns per-connection field defaults, not item types per level; a type list per connection and level has no owner today (each unit holds its own free text).",
+"F45": "The port test substrate with a database per scenario.",
+"F46": "One Postgres per test run for the migrator's provider check.",
+"F47": "Dual-written with the effective list",
+"F48": "Fingerprint now renders the effective list in mapping spelling; respelled units refetch once",
+"F49": "Same eight keys and words, now served from the levels",
+"F5": "Each connection maps item types onto the levels: per connection, level 1 lists every type its Teams read and level 2 every type its Portfolios read, once each ignoring case; a type read on both levels of one connection sits on both, without blocking anything; a connection with no units on a level gets today's create defaults for it (User Story, Bug on level 1; Epic on level 2).",
+"F50": "Frontend useTerminology reads the same keys",
+"F51": "Field names unchanged; needsItemTypes added (additive); 400 on unmapped type is the one breaking change, carried to Lighthouse-Clients in feature D slice 14",
+"F52": "Re-subscribes to UnitDeleted",
+"F53": "Application services of Organisation set-up (TerminologyService, unit create/delete and settings save services behind TeamController, PortfolioController, TeamsController, PortfoliosController, TerminologyController, UpdateController), plus the startup seeder entry SeedAsync",
+"F54": "IOrganisationStructureStore and IConnectionMappingStore (EF, Organisation set-up)",
+"F55": "ILeafCapacityStore (Forecasting Contracts, EF adapter in Forecasting)",
+"F56": "IDomainEventDispatcher",
+"F57": "Tracker connectors (unchanged, receive each unit's effective types)",
+"F58": "Controllers -> application services -> domain (OrganisationStructure, ConnectionMapping, UnitId); adapters implement ports; other contexts reach Organisation set-up only through Modules/OrganisationSetup/Contracts and react to UnitCreated/UnitDeleted.",
+"F59": "Per unit: item counts by type, 90-day throughput, Work Item Age, every Feature's When-forecast percentiles 50/70/85/95 on pinned draws",
+"F6": "Every Team is a unit on level 1 and every Portfolio a unit on level 2, keeping its id, its /teams/{id} or /portfolios/{id} route and its payloads; creating a Team or Portfolio creates its unit, and deleting one removes it with the same clean-up as today (members, reports, snapshots, refresh log).",
+"F60": "Which code path computed the number; respelled type strings when counts agree",
+"F61": "Per connection and level: the mapped item types in mapping spelling",
+"F62": "Order of first appearance beyond the list order",
+"F63": "Per unit: its effective item types, as /teams and /portfolios workItemTypes and as the fetch receives them",
+"F64": "Whether the stored subset or the old column produced it",
+"F65": "The eight Terminology entries from GET /terminology/all",
+"F66": "Whether a word came from a Level or a Terminology row",
+"F67": "Two types are equal when they are equal under StringComparer.OrdinalIgnoreCase; stored in the mapping's spelling",
+"F68": "Equal when every recorded number per unit is equal exactly, unit named by kind and id",
+"F69": "Each level of a connection lists the union of its own units' types on that connection, once each ignoring case; a type both levels read sits on both; no unit gains or loses a type at upgrade",
+"F7": "A unit reads exactly its own subset of the types its connection maps to its level, equal after the upgrade to its old list ignoring case; an empty list keeps today's meaning for connectors that do not use types; a /teams or /portfolios write naming a type the connection does not map to the unit's level is refused with 400 naming the type, the level and the connection (for example: Spike is not on the Team level of letpeoplework.atlassian.net), for everyone, System Admins included, and nothing is saved; a Jira, Azure DevOps or CSV unit left with no types is marked as needing item types and is not refreshed until one is ticked, keeping its data.",
+"F70": "1-3 connections; 0-6 Teams and 0-4 Portfolios each on a connection; each unit 0-5 types drawn from a pool of 6 names with random case variants",
+"F71": "a type read on both levels of one connection",
+"F72": "bug and Bug on two Teams",
+"F73": "a connection with no Portfolio",
+"F74": "a Linear unit with no types",
+"F75": "drop units, then types, keeping the failing seed; no native shrinker, so the test reduces the input list by halving",
+"F76": "A reference fold written in the test: group by OrdinalIgnoreCase over each level's units",
+"F77": "Feature level wins: a Team reading Epic loses it when a Portfolio on the same connection reads Epic",
+"F78": "Case-collapsed spelling is the one most units on that level and connection use, ties to the lowest unit number; order is first appearance by unit number; a connection with no units on a level gets today's create defaults (User Story, Bug; Epic) or nothing on a connector without types",
+"F79": "Bug x2, bug x1 -> Bug",
+"F8": "A Team's forecasting inputs (Feature WIP, automatically adjust Feature WIP, throughput window in days or fixed dates, forecast filter rules) are owned by Forecasting, one record per level-1 unit keyed by unit id, with today's values copied and the Team settings payloads unchanged, so manual and automatic forecasts give the same answers.",
+"F80": "bug on Team 1, Bug on Team 2 -> bug (tie, lowest number)",
+"F81": "no Portfolio on a Jira connection -> level 2 Epic",
+"F82": "no Team on a Linear connection -> empty",
+"F83": "Small closed rule set; the broad union law covers the generated space",
+"F84": "A unit's effective types are its subset intersected with its connection's list for its level, ignoring case; a subset never contains a type its level does not list",
+"F85": "mapping of 0-6 types per level; requested lists 0-6 names with case variants and unmapped names",
+"F86": "a case variant of a mapped type",
+"F87": "a type mapped only on the other level",
+"F88": "halving the requested list",
+"F89": "Reference set intersection with OrdinalIgnoreCase in the test",
+"F9": "Any screen or visible copy (slices 05, 05b, 06, 08, 08b, 09, 11, 15 in features C and D), Feature-level settings (10), one refresh per unit (12, 16), owners keyed by unit (13), clients (14), and any push before the maintainer's release.",
+"F90": "Resolve accepting a type mapped only on the other level",
+"F91": "The startup migrator commits once: two racing instances leave one structure, a crash before commit leaves nothing, and a later start re-derives only units whose WorkItemTypes differs from WorkItemTypesAsWritten, never growing a mapping and never re-ticking a removed and re-added type",
+"F92": "first start on the upgrade fixture",
+"F93": "second start: no change",
+"F94": "previous release edits Team 2's WorkItemTypes, then start",
+"F95": "admin removes Bug from level 1, a Team is marked, Bug re-added, then start",
+"F96": "Projection of the Quint model on the pure re-derivation rule plus one SQLite and one Postgres run of the migrator",
+"F97": "Re-derive a unit at start when its WorkItemTypes differs from its subset",
+"F98": "A unit marked as needing item types keeps its last list in WorkItemTypes, so the comparison sees a difference the previous release never made",
+"F99": "Team ticks Bug only; admin removes Bug (Team marked, column keeps Bug); admin re-adds Bug; start re-derives and ticks Bug again, against M2"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F6"
+},
+{
+"id": "P5",
+"kind": "Outcome",
+"text": "F7"
+},
+{
+"id": "P6",
+"kind": "Outcome",
+"text": "F8"
+}
+],
+"scope_out": [
+"F9"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F10",
+"promises": [
+"P1"
+],
+"work": {
+"size": "M",
+"value": "F11"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F12",
+"promises": [
+"P2",
+"P3",
+"P1"
+],
+"work": {
+"size": "L",
+"value": "F13"
+}
+},
+{
+"depends_on": [
+"S2"
+],
+"id": "S3",
+"observation": "F14",
+"promises": [
+"P4",
+"P1"
+],
+"work": {
+"size": "M",
+"value": "F15"
+}
+},
+{
+"depends_on": [
+"S3"
+],
+"id": "S4",
+"observation": "F16",
+"promises": [
+"P5",
+"P1"
+],
+"work": {
+"size": "L",
+"value": "F17"
+}
+},
+{
+"depends_on": [
+"S3"
+],
+"id": "S5",
+"observation": "F18",
+"promises": [
+"P6",
+"P1"
+],
+"work": {
+"size": "M",
+"value": "F19"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "epic-6474-a-units-on-levels",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "L",
+"value": "F2"
+}
+}

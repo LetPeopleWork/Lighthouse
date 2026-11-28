@@ -2137,3 +2137,42 @@ hidden-level codes of A-D17 are gone.
 09 · 11 · 14. New: 08b (Copy mapping from…). Moved: the first-run "Teams only" from 15 to 11, so 11 follows 15. Still
 open for the start of DELIVER: slice 13's free-tier messages (copy only, already decided in MA5) and the slice files'
 own text, which this block overrides until DELIVER rewrites them.
+
+---
+
+## DESIGN refresh for feature A (2026-11-28, AFK)
+
+Feature A (`epic-6474-a-units-on-levels`, slices 01, 02, 03, 04, 07) is recorded in nwdes against the code at
+`af209fdfe`. The draft ADRs 273 to 276 are revised on this date. Each earlier decision:
+
+| Decision | Status | Where now |
+|---|---|---|
+| `UnitId` = (level, number), discriminators read as the level key (ADR-273 1-3, I1) | Kept | — |
+| `UnitId`, `LevelId` in the shared kernel (ADR-273 7) | Moved | `Modules/OrganisationSetup/Contracts`; S04b keeps the kernel to shared types and S09a's contracts-only rule covers them |
+| `OrganisationStructure` aggregate holding two `Level` entities (Aggregates option B) | Kept | `Modules/OrganisationSetup/Domain/Structure` |
+| Level on/off switch, `IsSwitchedOff`, M13, `LevelSwitchedOff`/`On` | Replaced | Removing level 2 while empty (2026-11-27, slice 15, feature C); no switch column |
+| `ConnectionMapping` per connection (VR2) | Kept | `Modules/OrganisationSetup/Domain/Mapping` |
+| One level per type per connection (VR3, MD6), the Feature level wins (ADR-274 rule 10) | Replaced | A type may sit on both levels, with a warning (2026-11-27); the migrator takes the union per level |
+| Upgrade lost-type record and OUT-1 exception (ii) | Replaced | Gone; `UnitTypeLossNotices` only for a rollback re-derivation (slice 04) |
+| Rollback re-derivation "whose `WorkItemTypes` was changed" (ADR-274 rule 13) | Kept, made precise | New column `WorkItemTypesAsWritten`; the comparison against the subset was refuted (it re-ticks a removed and re-added type for a marked unit) |
+| `WorkTrackingSystemOptionsOwner` renamed `Unit` (ADR-275 1) | Moved | Out of feature A: no observation reads the name; a behaviour-free improvement item if wanted |
+| Two tables behind one unit concept, levels and mappings in new tables, startup migrator with pure planner and self-check (ADR-275 2-6) | Kept | Migrator in `Modules/OrganisationSetup/Adapters/Startup`, planner in `Application/Structure` |
+| Module created by this Epic (MA1) | Moved | S03i created `Modules/OrganisationSetup`; this Epic builds inside it |
+| `UnitCreated`, `UnitDeleted` replace `TeamDeleted`, `PortfolioDeleted`; today's clean-up as handlers (ADR-273 6) | Kept | The three existing handlers re-subscribe in place; order pinned in `DomainEventHandlerOrderPinTest` |
+| Level rename for System Admins on any licence (M7, D16) | Replaced | Stays Premium (2026-11-27); feature A's `PUT /terminology` keeps today's Premium and System Admin guard |
+| `LeafCapacity` extension owned by Forecasting (ADR-273 5, slice 07) | Kept | `Modules/Forecasting/Domain`, table keyed by Team id; the Team settings save writes it through a Forecasting contract and dual-writes the old columns |
+| Slice 04 seams `WorkItemService`, `FetchFingerprint` (amendment after S03b) | Kept | — |
+| Usage-data event | Kept (none) | Feature A is invisible |
+
+**Formal check.** The migrator protocol is modelled in Quint
+(`design/models/organisation_structure_migrator.qnt`): two racing instances, a crash before commit, a previous
+release's edit and an admin's remove-then-re-add. The planner's spelling, tie-break and order rules are property and
+example tests on the pure planner.
+
+**Open questions, with their owner.**
+
+- Whether a re-added level 2 gets the seeded names or its last names (slice 15, feature C). Owner: the maintainer.
+- Whether the connector port fetches "the items for this unit" generically (slice 12 or a follow-up Story). Owner: the
+  maintainer.
+- Units whose connection id points at no connection: the migrator plans them on an empty mapping and marks them; to
+  confirm on a real upgrade fixture in slice 02. Owner: the architect, at slice 02's oracle review.

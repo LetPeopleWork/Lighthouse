@@ -1,6 +1,6 @@
 # ADR-273: Unit identity is (level, number), and the organisation structure is one aggregate
 
-**Status**: Proposed (Epic #6474 DESIGN, 2026-11-02; maintainer decisions MD1, MD5 applied). Promoted to
+**Status**: Proposed (Epic #6474 DESIGN, 2026-11-02; maintainer decisions MD1, MD5 applied). **Revised 2026-11-28** (feature A DESIGN refresh): no on/off switch for a level (the maintainer's 2026-11-27 walk-through replaces it with removing level 2, slice 15), and `UnitId`/`LevelId` live in Organisation set-up's `Contracts`. Promoted to
 `docs/product/architecture/` with slice 03.
 **Context map**: Organisation set-up (ADR-270). Related: ADR-027 (in-process events), ADR-241 (follow the
 connection default), ADR-270 Decisions 3, 7 and 8, ADR-274 (item types).
@@ -17,7 +17,7 @@ table that points at one of them already stores a kind next to the number: `Owne
 `UpdateType` (queue keys). Migrations are expand-only.
 
 Some rules span levels: there are exactly two levels for now, one of them the leaf; only the level above the leaf
-(the Feature level) can be switched off, and only while exactly two levels exist (M13). Item types are not one of
+(the Feature level) can be removed, and only while it holds no units (slice 15, 2026-11-27; this replaces M13's switch). Item types are not one of
 these rules any more: each connection's mapping guards them (ADR-274).
 
 ## Decision
@@ -29,7 +29,7 @@ these rules any more: each connection's mapping guards them (ADR-274).
    `Portfolio` the Feature level, in all five enums. A level above the Feature level (#6455) gets its own key there.
 3. **Levels have a stable `LevelId`, distinct from their ordinal.** Adding a level above changes no existing id.
    Code says "leaf" and "Feature level" (the leaf's direct parent), never "level 2".
-4. **`OrganisationStructure` is one aggregate per installation**, holding the `Level` entities (names, on/off). It guards the cross-level rules above. Item types are not here: each
+4. **`OrganisationStructure` is one aggregate per installation**, holding the `Level` entities (names). It guards the cross-level rules above. Item types are not here: each
    connection maps them onto the levels (ADR-274). `Unit` is its own aggregate and refers to its level by
    `LevelId`; a unit's level never changes.
 5. **What only one level needs lives in an extension keyed by `UnitId`, owned by the context whose data it is**:
@@ -40,9 +40,9 @@ these rules any more: each connection's mapping guards them (ADR-274).
    object present only on the Feature level.
 6. **Domain events** published by Organisation set-up: `UnitCreated(UnitId, LevelId)`,
    `UnitDeleted(UnitId, LevelId, UnitsThatReferencedIt)` (replaces `TeamDeleted` and Portfolio deletion's inline
-   clean-up), `LevelRenamed`, `ConnectionItemTypesChanged`, `LevelSwitchedOff`, `LevelSwitchedOn`. The refresh events
+   clean-up), `LevelRenamed`, `ConnectionItemTypesChanged` and, with slice 15, `LevelRemoved` (and the event of adding a level above, if DEVOPS gives it one). Feature A builds only `UnitCreated` and `UnitDeleted`; the others come with the slices that first publish them. The refresh events
    (`TeamDataRefreshed`, `PortfolioFeaturesRefreshed`, `PortfolioForecastsUpdated`) keep their names in this Epic.
-7. `UnitId` and `LevelId` join the shared kernel's cross-context identifiers (ADR-270 Decision 7).
+7. `UnitId` and `LevelId` are cross-context identifiers (ADR-270 Decision 7) published in `Modules/OrganisationSetup/Contracts`, because their only owner is Organisation set-up and the contracts-only rule (S09a) already lets every context read a `Contracts` namespace. They do not join the `Models` kernel, which S04b reduced to types two or more contexts own together.
 
 ## Consequences
 
@@ -53,8 +53,7 @@ these rules any more: each connection's mapping guards them (ADR-274).
   cheapest expand-only shape; one table with a (level, number) key is a later contract step if ever wanted.
 - A Team or Portfolio settings save writes the `Unit` and one extension owned by another context. The `Unit`'s
   concurrency token guards the whole save; each owner validates and writes its own part, both in one commit.
-- Units on a switched-off level are hidden, not deleted: they keep their data and memberships, stop refreshing,
-  still count towards the free-tier limits, and refresh once when the level is switched on again.
+- Level 2 can only be removed while it holds no units, so no unit is ever hidden (slice 15).
 - Two System Admins editing different levels at once share one token: the later save gets a 409. Rare, accepted.
 
 ## Alternatives considered
@@ -64,8 +63,8 @@ these rules any more: each connection's mapping guards them (ADR-274).
   revisit it if a level-3 key in five enums proves awkward.
 - **One number space by offsetting Portfolio ids.** Rejected: it rewrites ids (not expand-only) and breaks every
   URL, client script, scope and owner row.
-- **Each level its own aggregate.** Rejected: nothing would guard "exactly two levels, one leaf, only the Feature
-  level can be off".
+- **Each level its own aggregate.** Rejected: nothing would guard "exactly two levels, one leaf, only an empty
+  Feature level can be removed".
 - **The structure aggregate also holding the units.** Rejected: every unit settings save would lock the whole
   structure, and units have their own lifecycle and admins.
 - **One `Unit` with nullable leaf and Feature-level parts.** Rejected: level-3 units would carry dead settings and

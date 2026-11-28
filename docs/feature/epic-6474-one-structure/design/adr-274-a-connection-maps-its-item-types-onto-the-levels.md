@@ -3,7 +3,7 @@
 **Status**: Proposed (Epic #6474 DESIGN, 2026-11-02; maintainer decisions MD3, MD4, MD6 applied). **Revised
 2026-11-06** with the maintainer's vision: the types moved from the level to the connection. This replaces the
 earlier "item types belong to the level". **Revised 2026-11-27**: a type may sit on several levels of one connection,
-with a warning (rules 2 and 10, first consequence). Promoted to `docs/product/architecture/` with slice 04.
+with a warning (rules 2 and 10, first consequence). **Revised 2026-11-28** (feature A DESIGN refresh): rule 8 and rule 14 follow the removal of level 2 that replaces the switch, and rule 13 says how a start tells a previous release's edit apart. Promoted to `docs/product/architecture/` with slice 04.
 **Context map**: Organisation set-up (owner), Work Items (reacts), Tracker integration (receives each unit's types
 with the fetch, unchanged). Related: ADR-241, ADR-270 Decisions 2 and 4, ADR-271 Decision 4, ADR-273, 6455 DISCUSS
 D10, D12 and D22–D34, 6474 M1–M4, M6, M11, VR1–VR19.
@@ -55,8 +55,8 @@ a Portfolio counts Epic as its Feature type.
    aggregate": both aggregates are Organisation set-up's, the command is a rare admin action, and the admin confirmed
    exactly those units. `ConnectionItemTypesChanged(ConnectionId, LevelId, Added, Removed, UnitsNarrowed)` follows
    after commit; Work Items enqueues a refresh of the narrowed units.
-8. **A new connection starts from today's create defaults** (leaf: User Story, Bug; Feature level: Epic, unless that
-   level is switched off), or nothing on a connector that does not use types, or a copy of another connection's mapping
+8. **A new connection starts from today's create defaults** (leaf: User Story, Bug; Feature level: Epic, unless level 2
+   has been removed), or nothing on a connector that does not use types, or a copy of another connection's mapping
    ("Copy mapping from…"). A copy is a remove of every type the target loses plus an add of every type it gains: rule 7
    applies in full (one confirmation naming the units that lose a type, narrowing in the same transaction, the
    needs-item-types mark, one `ConnectionItemTypesChanged` per level). **No row for a level means an empty list**, which
@@ -86,12 +86,13 @@ a Portfolio counts Epic as its Feature type.
 13. **After a rollback, the mapping wins and nothing is lost silently.** At each start, a connection without a mapping
     (created by the previous release, or by an import) gets one by rule 10, from its units' types. Then a subset whose
     old `WorkItemTypes` column was changed by the previous release is derived again by rules 4 and 5, against the
-    unit's current connection. A type not mapped there is dropped and recorded in `UnitTypeLossNotices`; the mapping
+    unit's current connection. A change is detected by comparing `WorkItemTypes` with `WorkItemTypesAsWritten`, the
+    list this release last wrote there; comparing it with the subset would re-tick a removed and re-added type for a
+    unit marked as needing item types, which keeps its last list in the old column (M2). A type not mapped there is dropped and recorded in `UnitTypeLossNotices`; the mapping
     does not grow, because only System Admins add types. An empty result on a connector that uses types sets the
     needs-item-types mark.
-14. **"Teams only" hides nothing on the mapping.** The Connection mapping tab shows an off level's row greyed, and its
-    types can still be removed, so an admin can move Epic to the Team level. The confirmation names the hidden units
-    that tick it.
+14. **Removed by the 2026-11-27 walk-through.** Level 2 is removed rather than switched off, and only while it holds
+    no units, so the mapping has no hidden level to show.
 
 ## Consequences
 

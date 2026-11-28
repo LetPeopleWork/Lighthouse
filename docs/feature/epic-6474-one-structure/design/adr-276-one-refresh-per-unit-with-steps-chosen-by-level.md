@@ -5,6 +5,12 @@ Promoted to `docs/product/architecture/` with slice 12.
 **Context map**: Work Items (owner of the refresh), Forecasting (forecast after a Feature-level refresh), Organisation
 set-up (levels, units). Related: ADR-027, ADR-273, ADR-274, ADR-275, maintainer decisions M13, MD5, MD7.
 
+**Note 2026-11-28 (feature A DESIGN refresh; this ADR belongs to slice 12, feature B):** read "its level is switched
+off" as gone: level 2 is removed only while empty (2026-11-27), so `LevelSwitchedOff` is no skip reason. `UnitUpdater`,
+its steps and `UnitRefreshEligibility` go in `Modules/WorkItems` (amendment after S03b). Feature A adds the
+`NeedsItemTypes` skip and the 409 on Update to today's two updaters (slice 04); slice 12 moves it into the eligibility
+rule.
+
 ## Context
 
 `TeamUpdater` and `PortfolioUpdater` are two `UpdateServiceBase<T>` background services, each with its own schedule
