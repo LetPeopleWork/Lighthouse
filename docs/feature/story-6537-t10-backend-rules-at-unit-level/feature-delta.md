@@ -963,3 +963,56 @@ Integration tier's CI time against the 5 % target, and step 6 is where it gets m
 written. Both happen under #6647. No third suite was taken.
 
 **Backlog:** #6647 (backend) and #6648 (frontend), the clean-as-we-go Stories, unparented and tagged Continuous Improvement.
+
+## Wave: DELIVER / [REF] Step 6, done under #6647 (2026-11-28)
+
+**Sets.** Scripts and outputs: `evidence/step6/` (`fetch.py`, `reading.py`, `allow.py`, `reading.txt`, `allowlist.txt`). The CSVs are
+the `test-timings-backend` artifacts of the runs named here; they are not stored in the workspace.
+
+- **Before** (rebuilt as decided on 2026-11-13, the newest five eligible runs up to the first move push): 43391361941 `61cda4e8e`,
+  43389215087 `b8c425ce6`, 43383069573 `ecdb28783`, 43311419564 `8e42328bc`, 43308085806 `9b4c41665`. The two older runs hold 15
+  `Integration` ids the newer three do not; the id method drops them (3,319 or 3,320 ids per run).
+- **After** (maintainer: the five **earliest** eligible runs whose head is after `15d0e986f`): 43636783145 `8bc414e15`, 43693962328
+  `c7fed5bed`, 43696235093 `663426e83` (attempt 2, green), 43708383920 `1064ceab9`, 43830450020 `515f6b6c5`. Left out as force-full
+  (live Jira rows in the CSV): `15d0e986f`, `f541e626c`, `26e5e44a1`, `a1b75c6a8`, `00c2918e7`, `5c45acc9c`, `e8446c181`, `d756f5352`,
+  `7cb6eac2d`, `77f6d84bc`, `6ee8c20e4`, `9390cb583`. Runs with `Verify Backend` skipped have no CSV. Every run read: `Verify Backend`
+  succeeded, no `Failed` row.
+
+**The success reading (scenario 6.1): passed, all three together.**
+
+| Check | Before | After | Result |
+|---|---|---|---|
+| `Integration` tier, median of summed seconds | 1,926.3 s, spread 1.50 (range 760.7 s) | 1,601.5 s, spread 1.45 | −324.9 s, **−16.9 %**, below the before median |
+| The 179 moved ids | median 302.4 s, range 148.5 s over the before runs | gone from `Integration`; 172 new non-`Integration` rows, 3.9 s | fall far above the range |
+| Target `P` = 5.0 % of the before median | 96.3 s | | reached, about 3.4 times |
+| Control: the 3,129 ids present in all ten runs | 1,601.7 s | 1,597.3 s | −0.3 %: the fall is not a faster runner |
+| `c`, set-up per moved row at the lower layer | | about 23 ms (3.9 s / 172) | under the 50 ms the reading asks for |
+
+The id check holds: each of the first four after runs misses exactly 179 before ids, all in the two moved families; the fifth also
+misses 11 rows a later Story moved out of `Services.Implementation.WorkItems`, which the id method removes from both sides. The fall
+(17 %) is above T10's prediction (about 11 %). The tier spread on CI is 1.45 to 1.6 in every set read so far, so the tier median alone
+would sit inside noise (scenario 6.2); the by-id figure and the control are what carry the reading. Pyramid shares, reported and not
+judged: 76.6 to 77.0 % fast, 23.0 to 23.4 % `Integration` (from `check_budget.py`).
+
+**The ceilings (scenarios 6.3, 6.4): the formula lowers nothing, so nothing is written.** Figures from `check_budget.py` on the five
+after CSVs. Mean: `L` 0.616 s, `h` 0.616 / 0.424 = 1.453, so 0.90 s against the provisional 0.81 s. Total: `L` 1,936.9 s, `h`
+1,936.9 / 1,332.8 = 1.453, so 2,815 s against the provisional 2,780 s. Both are above their entry, and `h` is over 1.25, which ADR-237
+never enforces. The fast limit is not touched (T10 rule). The ledgers stay as they are: provisional, from 2 runs.
+
+**Why nothing can be lowered.** The cause is not T10. ADR-237 assumes a runner spread of about 1.13 and refuses to enforce over 1.25,
+but this tier's spread on CI is 1.45 to 1.62 in every set read (before set 1.50, the step 1 ranking 1.62, the after set 1.45). Under
+that rule the mean and total ceilings can never be enforced. That is a follow-up for ADR-237, not a step 6 decision.
+
+**Maintainer ruling (2026-11-28): option 1.** The data commit changes only the allowlist: `Slice07WhereTheLimitsActuallyMovedTest`
+(largest after 6.1 s, × 2.1 = 12.8 s) and `Slice06EveryPercentileTabSpansTheSamePeriodTest` (7.8 s, × 2.1 = 16.3 s) leave it, because
+both are now under the 34 s class budget. `Slice05ReconstructCycleTimeHistoryTest` (23.4 s, × 2.1 = 49.2 s) stays, with its ceiling
+lowered from 214 s to 50 s. Nothing is raised; `check_budget.py --previous-budget` against the old file passes.
+
+**A deviation, recorded.** The data commit is not JSON-only: `test_check_budget_time_budgets.py` pins every shipped allowlist
+ceiling in `SHIPPED_BACKEND_CEILINGS`, so the same three lines change there. The test's other rules are untouched.
+
+**Side finding, not T10's:** `Architecture.TestHostUseGuardTest.Every_concrete_class_in_the_test_assembly_keeps_every_rule` ran over
+the provisional 20 s fast limit in two after runs (20.3 s, 27.2 s). It only warns while the fast limit is provisional.
+
+**T10's measurement is closed.** Open after this: the ADR-237 spread follow-up (to be created on the maintainer's word), and #6647's
+own items, starting with refreshing its table (criterion 6).

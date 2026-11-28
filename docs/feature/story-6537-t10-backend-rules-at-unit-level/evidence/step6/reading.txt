@@ -1,0 +1,39 @@
+run | set | commit | rows | Failed | force-full | Integration n | sum s | mean s | id-method n | id-method s | families n | families s
+43391361941 | before | 61cda4e8e | 13461 | 0 | False | 3320 | 1506.5 | 0.454 | 3320 | 1506.5 | 274 | 320.4
+43389215087 | before | b8c425ce6 | 13461 | 0 | False | 3320 | 1927.6 | 0.581 | 3320 | 1927.6 | 274 | 389.8
+43383069573 | before | ecdb28783 | 13464 | 0 | False | 3320 | 1926.3 | 0.580 | 3320 | 1926.3 | 274 | 414.3
+43311419564 | before | 8e42328bc | 13458 | 0 | False | 3334 | 2267.2 | 0.680 | 3319 | 2261.0 | 274 | 514.5
+43308085806 | before | 9b4c41665 | 13458 | 0 | False | 3334 | 1803.3 | 0.541 | 3319 | 1799.2 | 274 | 384.5
+43636783145 | after | 8bc414e15 | 13453 | 0 | False | 3142 | 1601.5 | 0.510 | 3141 | 1601.4 | 95 | 108.2
+43693962328 | after | c7fed5bed | 13489 | 0 | False | 3142 | 1936.6 | 0.616 | 3141 | 1936.6 | 95 | 124.5
+43696235093 | after | 663426e83 | 13527 | 0 | False | 3142 | 1332.6 | 0.424 | 3141 | 1332.5 | 95 | 89.4
+43708383920 | after | 1064ceab9 | 13538 | 0 | False | 3142 | 1382.0 | 0.440 | 3141 | 1381.9 | 95 | 99.5
+43830450020 | after | 515f6b6c5 | 13675 | 0 | False | 3135 | 1898.5 | 0.606 | 3130 | 1896.1 | 95 | 119.1
+
+tier, raw: before median 1926.3 s (spread 1.50, range 760.7 s), after median 1601.5 s (spread 1.45), fall 324.9 s = 16.9 % of the before tier
+tier, id method (before ids only): before median 1926.3 s (spread 1.50, range 754.5 s), after median 1601.4 s (spread 1.45), fall 324.9 s = 16.9 % of the before tier
+moved families: before median 389.8 s (spread 1.61, range 194.2 s), after median 108.2 s (spread 1.39), fall 281.6 s = 14.6 % of the before tier
+moved families rows: before [274, 274, 274, 274, 274], after [95, 95, 95, 95, 95]
+target P = 5.0 % of before tier median = 96.3 s
+means: before [0.454, 0.581, 0.58, 0.68, 0.541], after [0.51, 0.616, 0.424, 0.44, 0.606]
+after sums [1601.5, 1936.6, 1332.6, 1382.0, 1898.5], counts [3142, 3142, 3142, 3142, 3135]
+non-Integration rows new in 43636783145: 172, 3.9 s
+
+id control, per after run: before ids missing (moved families / other), after ids new, common-id sums
+43636783145: missing 179 (families 179, other 0), new 1 (0.1 s, families 0)
+43693962328: missing 179 (families 179, other 0), new 1 (0.1 s, families 0)
+43696235093: missing 179 (families 179, other 0), new 1 (0.1 s, families 0)
+43708383920: missing 179 (families 179, other 0), new 1 (0.1 s, families 0)
+43830450020: missing 190 (families 179, other 11), new 5 (2.4 s, families 0)
+   other missing: Lighthouse.Backend.Tests.Services.Implementation.WorkItems.DemoDataStateEnteredSeamIntegrationTest.DemoScenarioZero_EveryCompletedItem_HasInterpolated
+   other missing: Lighthouse.Backend.Tests.Services.Implementation.WorkItems.DemoDataStateEnteredSeamIntegrationTest.UpdateWorkItemsForTeam_TeamZenithDemoData_DerivesCu
+   other missing: Lighthouse.Backend.Tests.Services.Implementation.WorkItems.WorkItemServiceCsvStateEnteredSeamIntegrationTest.UpdateWorkItemsForTeam_CsvWithStateEntere
+   other missing: Lighthouse.Backend.Tests.Services.Implementation.WorkItems.WorkItemServiceCsvStateEnteredSeamIntegrationTest.UpdateWorkItemsForTeam_CsvWithStateEntere
+   other missing: Lighthouse.Backend.Tests.Services.Implementation.WorkItems.WorkItemServiceFeatureTransitionIntegrationTest.UpdateFeaturesForPortfolio_FeatureWithState
+   other missing: Lighthouse.Backend.Tests.Services.Implementation.WorkItems.WorkItemServiceFeatureTransitionIntegrationTest.UpdateFeaturesForPortfolio_FirstObservedFea
+   other missing: Lighthouse.Backend.Tests.Services.Implementation.WorkItems.WorkItemServiceFeatureTransitionIntegrationTest.UpdateFeaturesForPortfolio_ReRunForUnchange
+   other missing: Lighthouse.Backend.Tests.Services.Implementation.WorkItems.WorkItemServiceTransitionFallbackIntegrationTest.UpdateWorkItemsForTeam_CsvConnectorWithout
+
+common ids over all ten runs: 3129
+common-id control: before median 1601.7 s, after median 1597.3 s, change -4.4 s (-0.3 %)
+moved ids: 179; their seconds per before run [250.4, 302.4, 320.5, 398.9, 301.1], median 302.4, range 148.5

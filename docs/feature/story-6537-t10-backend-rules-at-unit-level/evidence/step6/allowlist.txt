@@ -1,0 +1,6 @@
+before Slice07WhereTheLimitsActuallyMovedTest: [65.1, 80.9, 81.2, 102.6, 79.1], largest x 2.1 = 215.5 s
+before Slice05ReconstructCycleTimeHistoryTest: [67.4, 76.8, 80.0, 106.6, 82.7], largest x 2.1 = 223.8 s
+before Slice06EveryPercentileTabSpansTheSamePeriodTest: [35.9, 39.2, 46.5, 57.7, 41.4], largest x 2.1 = 121.2 s
+after Slice07WhereTheLimitsActuallyMovedTest: [4.5, 6.1, 4.5, 4.3, 5.1], largest x 2.1 = 12.8 s
+after Slice05ReconstructCycleTimeHistoryTest: [23.4, 22.0, 15.8, 22.6, 21.1], largest x 2.1 = 49.2 s
+after Slice06EveryPercentileTabSpansTheSamePeriodTest: [5.5, 7.8, 5.5, 5.4, 6.3], largest x 2.1 = 16.3 s
