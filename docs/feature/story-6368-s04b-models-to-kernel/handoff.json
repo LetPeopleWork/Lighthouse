@@ -223,6 +223,24 @@
 "expected": "F350",
 "stimulus": "F349",
 "user_result": "F351"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3",
+"L5/F233"
+],
+"still_passes_if": "F356",
+"test": "KernelCatalogueArchUnitTest.TheKernelCheck_NamesARowThatClaimsTheKernelForATypeTheKernelMayNotHold",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs"
+},
+"expected": "F354",
+"stimulus": "F353",
+"user_result": "F355"
 }
 ]
 },
@@ -231,7 +249,7 @@
 "C": 1,
 "D": 19,
 "E": 9,
-"F": 352,
+"F": 356,
 "K": 9,
 "L": 9,
 "P": 5,
@@ -2283,6 +2301,10 @@
 "F350": "No schema, migration, route, DTO, payload or answer differs",
 "F351": "Nothing a user or a client sees changes",
 "F352": "S1 changes no production code; that no schema, migration, route, DTO, payload or usage-data event changes is observed by the unchanged backend suites and the EF model probe on the whole candidate",
+"F353": "Compare the rows that stand as Kernel with the one declared list of types the shared kernel may hold, and check a made-up catalogue that claims the kernel for an ordinary type",
+"F354": "The Kernel rows are exactly the domain-event base type and the two entity markers; a Kernel row for any other type, or a missing one, fails naming the type and the fix",
+"F355": "No type escapes the blocker check by being called kernel, and the kernel cannot grow unseen",
+"F356": "the declared list itself were widened with an ordinary type in the same change, which only review of that list can catch",
 "F36": "S1 starts only after the predecessors are merged: for each of Stories 6365, 6366, 6468, 6657 and 6382, the ADO state is Closed, git log main --grep finds the Story's final commit and git merge-base --is-ancestor holds, and the content check holds (Modules/Refinement, Modules/Reports, Modules/OrganisationSetup present; no Services/{Implementation,Interfaces}/{Refinement,Reports}; Modules/*/Contracts with its contracts-only rule; no loose Services/Implementation/WriteBack*.cs). A failed check stops S1 and is reported with the Story, the check and its output.",
 "F37": "S1 re-measures R1 to R11 from the IL and the EF model (every Models type, entity names in both snapshots, wire reachability, held-by closure, users per context, Contracts placement, the write-back owner, rule-file literals, NamespaceMoveLaw shape, non-test path consumers, S12c and S13 state); every count in the feature-delta is a noisy text measurement and a difference is recorded, not argued.",
 "F38": "Contexts are read from Modules.<X> namespaces only; API, Data, Platform.*, repositories, the composition root and loose Services are not contexts.",

@@ -80,6 +80,12 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string MovesWithItsFile = "it moves with its file, once every type in the file is free";
 
+        /// <summary>
+        /// The only types the shared kernel may hold today: the domain-event base type and the two entity markers. Lighthouse has
+        /// no shared id or shared value object; a type joins this list only when it is one.
+        /// </summary>
+        public static IReadOnlyList<string> TheKernelTypes { get; } = ["Events.IDomainEvent", "IEntity", "IConcurrencyTokenEntity"];
+
         public static IReadOnlyList<CatalogueRow> Rows { get; } =
         [
             CatalogueRow.Kernel("Events.IDomainEvent"),

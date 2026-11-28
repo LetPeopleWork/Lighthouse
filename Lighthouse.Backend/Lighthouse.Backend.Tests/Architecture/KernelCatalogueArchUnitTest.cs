@@ -78,6 +78,24 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
+        public void TheKernelRows_AreExactlyTheTypesTheSharedKernelMayHold()
+        {
+            var rows = KernelCatalogue.Rows;
+
+            ThenTheKernelRowsAreExactly(rows, KernelCatalogue.TheKernelTypes);
+        }
+
+        [Test]
+        public void TheKernelCheck_NamesARowThatClaimsTheKernelForATypeTheKernelMayNotHold()
+        {
+            var rows = MadeUpWorld.CatalogueClaimingTheKernelFor(nameof(ANotStoredRecord));
+
+            var failure = WhenTheKernelRowsAreComparedExpectingAFailure(rows, MadeUpWorld.TheKernelTypes);
+
+            ThenTheFailureNames(failure, nameof(ANotStoredRecord));
+        }
+
+        [Test]
         public void EveryOwnedRow_ClaimsExactlyTheBlockersMeasuredFromTheCompiledCodeAndTheDatabaseModel()
         {
             var measured = GivenTheMeasuredModelsTypes();
@@ -218,7 +236,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 @"^Lighthouse\.Backend\.API\.DTO(\.|$)",
                 @"^Lighthouse\.Backend$|^Lighthouse\.Backend\.(Data|Startup|Services\.Implementation\.Repositories)(\.|$)",
                 EntitiesOfTheDatabaseModel(),
-                ["Events.IDomainEvent", "IEntity", "IConcurrencyTokenEntity"],
+                KernelCatalogue.TheKernelTypes,
                 ModelsMeasurement.FilesOfTheTypesIn(Path.Combine(backend, "Models"), KernelCatalogue.TheModelsRoot),
                 PathConsumersIn(root),
                 KernelCatalogue.OwnersByDesign);
@@ -279,6 +297,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static string WhenTheCatalogueIsComparedExpectingAFailure(IReadOnlyList<CatalogueRow> rows, Dictionary<string, MeasuredType> measured)
             => Assert.Throws<AssertionException>(() => ThenTheCatalogueListsExactlyTheMeasuredTypes(rows, measured)).Message;
+
+        private static string WhenTheKernelRowsAreComparedExpectingAFailure(IReadOnlyList<CatalogueRow> rows, IReadOnlyList<string> kernelTypes)
+            => Assert.Throws<AssertionException>(() => ThenTheKernelRowsAreExactly(rows, kernelTypes)).Message;
 
         private static string WhenTheMoversAreComparedExpectingAFailure(IReadOnlyList<MovingType> movers, Dictionary<string, MeasuredType> measured)
             => Assert.Throws<AssertionException>(() => ThenTheMoversListIsExactlyTheFreeTypes(movers, measured)).Message;
@@ -381,6 +402,15 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "belongs with its owner instead: put it in Modules/<Owner> or Platform/<Area>. If it must stay, add its row as " +
                 $"measured:{Environment.NewLine}{string.Join(Environment.NewLine, missingRows)}");
         }
+
+        private static void ThenTheKernelRowsAreExactly(IReadOnlyList<CatalogueRow> rows, IReadOnlyList<string> kernelTypes)
+            => InlineBaseline.AssertMatches(
+                rows.Where(row => row.Standing == KernelStanding.Kernel).Select(row => row.Type),
+                kernelTypes,
+                "The shared kernel may hold only shared ids, truly shared value objects and the domain-event base type, and a " +
+                "Kernel row skips every blocker check, so a type that is none of these must not stand as Kernel. Give the row " +
+                "its owner and its measured blockers with CatalogueRow.Owned, or, for a type that truly is one of these, add it to " +
+                "KernelCatalogue.TheKernelTypes.");
 
         private static void ThenNoClaimIsFalse(List<string> problems)
             => Assert.That(problems, Is.Empty,
@@ -953,6 +983,10 @@ namespace Lighthouse.Backend.Tests.Architecture.KernelCatalogueFixtures
                 []),
             new PatternRoleMap(new Dictionary<string, PatternDeclaration>(), new Dictionary<(string Field, string Type), string>()));
 
+        public static IReadOnlyList<string> TheKernelTypes { get; } = [];
+
+        public static IReadOnlyList<CatalogueRow> CatalogueClaimingTheKernelFor(string type) => [CatalogueRow.Kernel(type)];
+
         public static IReadOnlyList<CatalogueRow> CatalogueClaiming(string type, KernelBlocker claimed)
             => [CatalogueRow.Owned(type, "Alpha", "made up", claimed)];
 
@@ -970,7 +1004,7 @@ namespace Lighthouse.Backend.Tests.Architecture.KernelCatalogueFixtures
                 $@"^{Regex.Escape(Root)}\.API\.DTO(\.|$)",
                 $@"^{Regex.Escape(Root)}\.Infrastructure(\.|$)",
                 context.Model.GetEntityTypes().Select(entity => ModelsMeasurement.OutermostName(entity.ClrType)).ToHashSet(StringComparer.Ordinal),
-                [],
+                TheKernelTypes,
                 new Dictionary<string, string>(StringComparer.Ordinal),
                 [],
                 new Dictionary<string, string>(StringComparer.Ordinal));

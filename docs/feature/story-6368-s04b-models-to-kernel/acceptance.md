@@ -408,6 +408,38 @@ S1 changes no production code; that no schema, migration, route, DTO, payload or
 
 host verification and EXAMINE
 
+##### Covers
+
+P1
+
+```text
+Compare the rows that stand as Kernel with the one declared list of types the shared kernel may hold, and check a made-up catalogue that claims the kernel for an ordinary type
+```
+
+```text
+The Kernel rows are exactly the domain-event base type and the two entity markers; a Kernel row for any other type, or a missing one, fails naming the type and the fix
+```
+
+```text
+No type escapes the blocker check by being called kernel, and the kernel cannot grow unseen
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelCatalogueArchUnitTest\.cs
+
+KernelCatalogueArchUnitTest\.TheKernelCheck\_NamesARowThatClaimsTheKernelForATypeTheKernelMayNotHold
+
+```text
+the declared list itself were widened with an ordinary type in the same change, which only review of that list can catch
+```
+
+###### Obligations
+
+
+
 ## Expectations
 
 ### Rows
