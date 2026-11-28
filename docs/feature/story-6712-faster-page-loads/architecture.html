@@ -181,7 +181,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h4>D4</h4>
 
-<pre><code>Open question 3 resolved (Features tab reads instead of full Team settings): it reads nothing extra. PortfolioDetail.fetchPortfolio calls teamService.getTeamSettings once per involved Team and stores the result in the involvedTeams state, which no code reads; the Features tab (PortfolioFeatureList) and the Deliveries tab already render from portfolio.involvedTeams, the entity references inside the portfolio answer. So the per-Team settings fetch and the dead state are removed; updateTeamSettingsFromPortfolio keeps its on-demand read before a save. Team pages do not load Team settings for their Features tab. Side effect: the Portfolio load chain loses one step; the rest of that chain stays out of scope.
+<pre><code>Open question 3, revised 2026-11-28 after the maintainer found the first answer false. PortfolioDetail.fetchPortfolio calls teamService.getTeamSettings once per involved Team and stores the result in the involvedTeams state. That state is read: PortfolioDetail passes teams={involvedTeams} to PortfolioFeatureWipQuickSetting, which reads each Team&#x27;s featureWIP for its Not set / N Teams label, tooltip and dialog fields. The portfolio answer carries only Team id and name, so the fetch is the only source of featureWIP there. Decision (maintainer, 2026-11-28): the fetch stays as today and the Features and Deliveries tabs, which render from portfolio.involvedTeams, are unchanged; slice S4 is dropped and promise P9 retired. Removing the fetch would need the portfolio answer to carry featureWIP, a shared contract change left as a possible follow-up. Team pages do not load Team settings for their Features tab. D4 governs no slice.
 </code></pre>
 
 <h4>D5</h4>
@@ -301,6 +301,11 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h4>K13</h4>
 
 <pre><code>In scope beyond permissions: Teams and Portfolios lists, licence, and Team settings on lists. Out: the other useEffect hooks and the Portfolio chain. (Maintainer, 2026-11-28)
+</code></pre>
+
+<h4>K14</h4>
+
+<pre><code>S4 dropped (maintainer, 2026-11-28): the Portfolio page keeps its per-Team settings fetch, because the Feature WIP quick setting reads featureWIP from it. Loading it on dialog open or adding featureWIP to the portfolio answer would change the UI or a shared contract.
 </code></pre>
 
 <h3>Reuse</h3>
@@ -2270,27 +2275,27 @@ pnpm --dir Lighthouse.Frontend exec vitest run src/hooks/sharedListOwners.test.t
 <pre><code>Created by S2 as the single page-move refresh owner; S3 adds the Teams, Portfolios and licence keys to its refresh set, and creates it if S2 has not landed
 </code></pre>
 
-<p>getPortfolios</p>
+<p>usePortfoliosQuery</p>
 
-<p>Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:151</p>
+<p>Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:114</p>
 
 <p>Extend</p>
 
 <pre><code>Reads lists from useUnitLists; delete calls useUnitListsChanged
 </code></pre>
 
-<p>getTeams</p>
+<p>useTeamsQuery</p>
 
-<p>Lighthouse.Frontend/src/pages/Settings/ApiKeys/ApiKeysSettings.tsx:162</p>
+<p>Lighthouse.Frontend/src/pages/Settings/ApiKeys/ApiKeysSettings.tsx:156</p>
 
 <p>Extend</p>
 
 <pre><code>Both read sites use useTeamsQuery and usePortfoliosQuery
 </code></pre>
 
-<p>getTeams</p>
+<p>useUnitListsChanged</p>
 
-<p>Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx:64</p>
+<p>Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx:30</p>
 
 <p>Extend</p>
 
@@ -2324,9 +2329,9 @@ pnpm --dir Lighthouse.Frontend exec vitest run src/hooks/sharedListOwners.test.t
 <pre><code>A rename through settings calls useUnitListsChanged
 </code></pre>
 
-<p>getLicenseStatus</p>
+<p>useLicenseStatusQuery</p>
 
-<p>Lighthouse.Frontend/src/components/SurveyNudge/SurveyNudge.tsx:49</p>
+<p>Lighthouse.Frontend/src/components/SurveyNudge/SurveyNudge.tsx:36</p>
 
 <p>Extend</p>
 
@@ -2863,11 +2868,11 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 
 <p>tests</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/EndpointAuthorizationPolicyTest.cs:1</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs:139</p>
 
 <p>UnchangedCompatible</p>
 
-<pre><code>Covers the new action through its attribute scan
+<pre><code>Scans every production action for a declared access, so GET version/newest is covered; the controller-level EndpointAuthorizationPolicyTest does not check actions
 </code></pre>
 
 <p>tests</p>
@@ -2904,6 +2909,33 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 <p>Changed</p>
 
 <pre><code>Notes loaded on open with loading and failed states
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.test.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Support: footer rows follow the parallel checks and the newest-version call
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusPopover.test.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Support: its version service mock gains getNewestVersion
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessHttpAdaptersLayoutArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Support: its access-adapter layout rows list the new GET version/newest action
 </code></pre>
 
 <h5>Agreement</h5>
@@ -3187,9 +3219,9 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 <pre><code>Every API action carries an authorization attribute, including GET version/newest
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/EndpointAuthorizationPolicyTest.cs</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs</p>
 
-<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~EndpointAuthorizationPolicyTest
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~EveryActionDeclaresItsAccessArchitectureTest
 </code></pre>
 
 <h5>Contract tests</h5>

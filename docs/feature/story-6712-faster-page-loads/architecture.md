@@ -31,7 +31,7 @@ Governed slices: S1
 #### D4
 
 ```text
-Open question 3 resolved (Features tab reads instead of full Team settings): it reads nothing extra. PortfolioDetail.fetchPortfolio calls teamService.getTeamSettings once per involved Team and stores the result in the involvedTeams state, which no code reads; the Features tab (PortfolioFeatureList) and the Deliveries tab already render from portfolio.involvedTeams, the entity references inside the portfolio answer. So the per-Team settings fetch and the dead state are removed; updateTeamSettingsFromPortfolio keeps its on-demand read before a save. Team pages do not load Team settings for their Features tab. Side effect: the Portfolio load chain loses one step; the rest of that chain stays out of scope.
+Open question 3, revised 2026-11-28 after the maintainer found the first answer false. PortfolioDetail.fetchPortfolio calls teamService.getTeamSettings once per involved Team and stores the result in the involvedTeams state. That state is read: PortfolioDetail passes teams={involvedTeams} to PortfolioFeatureWipQuickSetting, which reads each Team's featureWIP for its Not set / N Teams label, tooltip and dialog fields. The portfolio answer carries only Team id and name, so the fetch is the only source of featureWIP there. Decision (maintainer, 2026-11-28): the fetch stays as today and the Features and Deliveries tabs, which render from portfolio.involvedTeams, are unchanged; slice S4 is dropped and promise P9 retired. Removing the fetch would need the portfolio answer to carry featureWIP, a shared contract change left as a possible follow-up. Team pages do not load Team settings for their Features tab. D4 governs no slice.
 ```
 
 #### D5
@@ -173,6 +173,12 @@ The parallel version checks keep today's error rule: any failure shows the foote
 
 ```text
 In scope beyond permissions: Teams and Portfolios lists, licence, and Team settings on lists. Out: the other useEffect hooks and the Portfolio chain. (Maintainer, 2026-11-28)
+```
+
+#### K14
+
+```text
+S4 dropped (maintainer, 2026-11-28): the Portfolio page keeps its per-Team settings fetch, because the Feature WIP quick setting reads featureWIP from it. Loading it on dialog open or adding featureWIP to the portfolio answer would change the UI or a shared contract.
 ```
 
 ### Reuse
@@ -2376,9 +2382,9 @@ CreateNew
 Created by S2 as the single page-move refresh owner; S3 adds the Teams, Portfolios and licence keys to its refresh set, and creates it if S2 has not landed
 ```
 
-getPortfolios
+usePortfoliosQuery
 
-Lighthouse\.Frontend\/src\/pages\/Overview\/OverviewDashboard\.tsx\:151
+Lighthouse\.Frontend\/src\/pages\/Overview\/OverviewDashboard\.tsx\:114
 
 Extend
 
@@ -2386,9 +2392,9 @@ Extend
 Reads lists from useUnitLists; delete calls useUnitListsChanged
 ```
 
-getTeams
+useTeamsQuery
 
-Lighthouse\.Frontend\/src\/pages\/Settings\/ApiKeys\/ApiKeysSettings\.tsx\:162
+Lighthouse\.Frontend\/src\/pages\/Settings\/ApiKeys\/ApiKeysSettings\.tsx\:156
 
 Extend
 
@@ -2396,9 +2402,9 @@ Extend
 Both read sites use useTeamsQuery and usePortfoliosQuery
 ```
 
-getTeams
+useUnitListsChanged
 
-Lighthouse\.Frontend\/src\/pages\/Portfolios\/Edit\/EditPortfolio\.tsx\:64
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Edit\/EditPortfolio\.tsx\:30
 
 Extend
 
@@ -2436,9 +2442,9 @@ Extend
 A rename through settings calls useUnitListsChanged
 ```
 
-getLicenseStatus
+useLicenseStatusQuery
 
-Lighthouse\.Frontend\/src\/components\/SurveyNudge\/SurveyNudge\.tsx\:49
+Lighthouse\.Frontend\/src\/components\/SurveyNudge\/SurveyNudge\.tsx\:36
 
 Extend
 
@@ -3031,12 +3037,12 @@ Version service mock gains getNewestVersion
 
 tests
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/EndpointAuthorizationPolicyTest\.cs\:1
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/EveryActionDeclaresItsAccessArchitectureTest\.cs\:139
 
 UnchangedCompatible
 
 ```text
-Covers the new action through its attribute scan
+Scans every production action for a declared access, so GET version/newest is covered; the controller-level EndpointAuthorizationPolicyTest does not check actions
 ```
 
 tests
@@ -3077,6 +3083,36 @@ Changed
 
 ```text
 Notes loaded on open with loading and failed states
+```
+
+tests
+
+Lighthouse\.Frontend\/src\/components\/App\/LetPeopleWork\/LighthouseVersion\.test\.tsx\:1
+
+Changed
+
+```text
+Support: footer rows follow the parallel checks and the newest-version call
+```
+
+tests
+
+Lighthouse\.Frontend\/src\/components\/Common\/LicenseStatus\/LicenseStatusPopover\.test\.tsx\:1
+
+Changed
+
+```text
+Support: its version service mock gains getNewestVersion
+```
+
+tests
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessHttpAdaptersLayoutArchUnitTest\.cs\:1
+
+Changed
+
+```text
+Support: its access-adapter layout rows list the new GET version/newest action
 ```
 
 ##### Agreement
@@ -3397,10 +3433,10 @@ None.
 Every API action carries an authorization attribute, including GET version/newest
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/EndpointAuthorizationPolicyTest\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/EveryActionDeclaresItsAccessArchitectureTest\.cs
 
 ```text
-dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~EndpointAuthorizationPolicyTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~EveryActionDeclaresItsAccessArchitectureTest
 ```
 
 ##### Contract tests

@@ -711,8 +711,8 @@
 "C": 3,
 "D": 13,
 "E": 13,
-"F": 743,
-"K": 13,
+"F": 748,
+"K": 14,
 "L": 7,
 "N": 16,
 "P": 12,
@@ -782,6 +782,10 @@
 {
 "id": "K13",
 "text": "F48"
+},
+{
+"id": "K14",
+"text": "F692"
 }
 ],
 "decisions": [
@@ -805,7 +809,7 @@
 },
 {
 "id": "D4",
-"text": "F73"
+"text": "F744"
 },
 {
 "id": "D5",
@@ -2118,21 +2122,21 @@
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:151",
+"locator": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:114",
 "reason": "F313",
-"symbol": "getPortfolios"
+"symbol": "usePortfoliosQuery"
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Frontend/src/pages/Settings/ApiKeys/ApiKeysSettings.tsx:162",
+"locator": "Lighthouse.Frontend/src/pages/Settings/ApiKeys/ApiKeysSettings.tsx:156",
 "reason": "F314",
-"symbol": "getTeams"
+"symbol": "useTeamsQuery"
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx:64",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx:30",
 "reason": "F315",
-"symbol": "getTeams"
+"symbol": "useUnitListsChanged"
 },
 {
 "decision": "Extend",
@@ -2154,9 +2158,9 @@
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Frontend/src/components/SurveyNudge/SurveyNudge.tsx:49",
+"locator": "Lighthouse.Frontend/src/components/SurveyNudge/SurveyNudge.tsx:36",
 "reason": "F318",
-"symbol": "getLicenseStatus"
+"symbol": "useLicenseStatusQuery"
 },
 {
 "decision": "Extend",
@@ -2259,10 +2263,10 @@
 ],
 "architectural_tests": [
 {
-"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~EndpointAuthorizationPolicyTest",
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~EveryActionDeclaresItsAccessArchitectureTest",
 "id": "T4",
 "obligation": "F303",
-"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/EndpointAuthorizationPolicyTest.cs"
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs"
 }
 ],
 "boundaries": {
@@ -2344,8 +2348,8 @@
 {
 "decision": "UnchangedCompatible",
 "kind": "tests",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/EndpointAuthorizationPolicyTest.cs:1",
-"reason": "F267"
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs:139",
+"reason": "F745"
 },
 {
 "decision": "UnchangedCompatible",
@@ -2370,6 +2374,24 @@
 "kind": "component",
 "locator": "Lighthouse.Frontend/src/components/App/LetPeopleWork/LatestReleaseInformationDialog.tsx:36",
 "reason": "F271"
+},
+{
+"decision": "Changed",
+"kind": "tests",
+"locator": "Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.test.tsx:1",
+"reason": "F746"
+},
+{
+"decision": "Changed",
+"kind": "tests",
+"locator": "Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusPopover.test.tsx:1",
+"reason": "F747"
+},
+{
+"decision": "Changed",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessHttpAdaptersLayoutArchUnitTest.cs:1",
+"reason": "F748"
 }
 ],
 "laws": [
@@ -2730,7 +2752,6 @@
 "F264": "Adds GET newest with SignedInOnly",
 "F265": "IVersionService gains getNewestVersion",
 "F266": "Version service mock gains getNewestVersion",
-"F267": "Covers the new action through its attribute scan",
 "F268": "Existing rows unchanged",
 "F269": "Adds GetNewestReleaseVersion",
 "F27": "The dialog shows a loading look, then the same release notes as today",
@@ -3166,7 +3187,6 @@
 "F726": "The footer shows its error and no update icon in each case",
 "F727": "If any one version check fails the footer shows its error as today",
 "F728": "A failure of one check is swallowed once checks run together",
-"F73": "Open question 3 resolved (Features tab reads instead of full Team settings): it reads nothing extra. PortfolioDetail.fetchPortfolio calls teamService.getTeamSettings once per involved Team and stores the result in the involvedTeams state, which no code reads; the Features tab (PortfolioFeatureList) and the Deliveries tab already render from portfolio.involvedTeams, the entity references inside the portfolio answer. So the per-Team settings fetch and the dead state are removed; updateTeamSettingsFromPortfolio keeps its on-demand read before a save. Team pages do not load Team settings for their Features tab. Side effect: the Portfolio load chain loses one step; the rest of that chain stays out of scope.",
 "F731": "The new update check is available to signed-in users only",
 "F735": "The update pop-up learns the newest version without release notes, and only for signed-in users",
 "F737": "Scan every API action for a declared access rule, including the newest-version route once it exists",
@@ -3175,6 +3195,11 @@
 "F741": "A signed-in user gets the newest version number from the first newer release; with no newer release the answer is 404; a signed-out caller is refused with 401 or 403 and told no version",
 "F742": "A route that answers a different number than the first newer release fails; a route refused to signed-out callers by the host-wide sign-in rule rather than its own attribute would still pass, and the attribute scan covers that",
 "F743": "Ask the newest-version route as a signed-in user when two newer releases exist and when none is newer, and as a signed-out caller, through both route versions, on a host that requires sign-in and holds a valid premium licence",
+"F744": "Open question 3, revised 2026-11-28 after the maintainer found the first answer false. PortfolioDetail.fetchPortfolio calls teamService.getTeamSettings once per involved Team and stores the result in the involvedTeams state. That state is read: PortfolioDetail passes teams={involvedTeams} to PortfolioFeatureWipQuickSetting, which reads each Team's featureWIP for its Not set / N Teams label, tooltip and dialog fields. The portfolio answer carries only Team id and name, so the fetch is the only source of featureWIP there. Decision (maintainer, 2026-11-28): the fetch stays as today and the Features and Deliveries tabs, which render from portfolio.involvedTeams, are unchanged; slice S4 is dropped and promise P9 retired. Removing the fetch would need the portfolio answer to carry featureWIP, a shared contract change left as a possible follow-up. Team pages do not load Team settings for their Features tab. D4 governs no slice.",
+"F745": "Scans every production action for a declared access, so GET version/newest is covered; the controller-level EndpointAuthorizationPolicyTest does not check actions",
+"F746": "Support: footer rows follow the parallel checks and the newest-version call",
+"F747": "Support: its version service mock gains getNewestVersion",
+"F748": "Support: its access-adapter layout rows list the new GET version/newest action",
 "F75": "S3: useUnitLists.ts owns the Teams and Portfolios keys (reusing the existing teams and portfolios keys of useLicenseRestrictions) with useTeamsQuery, usePortfoliosQuery and useUnitListsChanged; the licence keeps useLicenseStatusQuery (LICENSE_STATUS_KEY, its hourly refetch) and joins the page-move refresh. useLicenseRestrictions, OverviewDashboard, EditPortfolio, ApiKeysSettings and SurveyNudge read these hooks instead of calling the services. useUnitListsChanged is called after own create (EditTeam, EditPortfolio), rename (TeamDetail and PortfolioDetail settings saves, EditTeam/EditPortfolio updates) and delete (OverviewDashboard). useLicenseRestrictions keeps its 403-as-empty rule.",
 "F76": "S5: new route GET version/newest on VersionController (SignedInOnly, same reason as hasupdate) returns the newest release version string from a new LighthouseReleaseService.GetNewestReleaseVersion (the first of GetNewReleases, so the number equals today’s newReleases[0].version), 404 when there is none, as /version/new. GET version/new stays for the dialog. LighthouseVersion runs current, distribution and hasupdate together with Promise.all; when an update exists it runs newest and, for lighthouse-internal, updateSupported together; any rejection sets the footer error as today. Only data dependencies remain, no order between independent checks. LatestReleaseInformationDialog receives the newest version and reads the release notes with useQuery (key version, newReleases; enabled only while open) and has three states: loading (the dialog with the newest version and a CircularProgress where the notes go), loaded (today’s notes), failed (the newest version, the message Could not load the release notes. and a Retry button that refetches). Sketch at the start of DELIVER.",
 "F78": "Tests: Lighthouse test-writing skill wins over nWave test rules (nine-run timing, PBT density). Frontend rules on hooks in .test.ts/.test.tsx with renderWithQueryClient; backend S1 is a wire contract on WireContractTest because only a running host shows Content-Encoding and headers produced by middleware order; the policy rule itself is pinned by unit rows on BreachSafeResponseCompressionProvider over DefaultHttpContext. No nWave tags in test code.",
