@@ -40,7 +40,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         // Reports starts itself up, so its own start-up module registers the repository beside the composition root.
         private const string TheReportsStartUp = @"^Lighthouse\.Backend\.Modules\.Reports\.ReportsModule$";
 
-        private const string ReportModelsPattern = @"^Lighthouse\.Backend\.Models\.Reports($|\..*)";
+        // The Reports records still in the Models move into the module's Domain; the pattern sees them in either place.
+        private const string ReportModelsPattern = @"^Lighthouse\.Backend\.(Models\.Reports|Modules\.Reports\.Domain)($|\..*)";
 
         private const string RepositoryPortPattern = @"^Lighthouse\.Backend\.Services\.Interfaces\.Repositories\.IRepository`1$";
 
