@@ -21,6 +21,10 @@ import { useRefreshFeatureList } from "../../../hooks/useFeatureList";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useRbac } from "../../../hooks/useRbac";
 import { useScopedAccess } from "../../../hooks/useScopedAccess";
+import {
+	useTeamsLoader,
+	useUnitListsChanged,
+} from "../../../hooks/useUnitLists";
 import type {
 	IPortfolio,
 	Portfolio,
@@ -96,6 +100,8 @@ const PortfolioDetail: React.FC = () => {
 		updateSubscriptionService,
 		workTrackingSystemService,
 	} = useContext(ApiServiceContext);
+	const unitListsChanged = useUnitListsChanged();
+	const getAllTeams = useTeamsLoader();
 	const reportUsage = useUsageDataReporter();
 	useFeaturesHeldForUsageData(
 		"Portfolio",
@@ -175,9 +181,10 @@ const PortfolioDetail: React.FC = () => {
 			);
 			updateFn(settings);
 			await portfolioService.updatePortfolio(settings);
+			await unitListsChanged();
 			await fetchPortfolio();
 		},
-		[portfolio, portfolioService, fetchPortfolio],
+		[portfolio, portfolioService, fetchPortfolio, unitListsChanged],
 	);
 
 	const updateTeamSettingsFromPortfolio = useCallback(
@@ -197,13 +204,20 @@ const PortfolioDetail: React.FC = () => {
 			const settings = await teamService.getTeamSettings(teamId);
 			updateFn(settings);
 			await teamService.updateTeam(settings);
+			await unitListsChanged();
 			await fetchPortfolio();
 
 			if (shouldRefreshForecasts) {
 				await portfolioService.refreshForecastsForPortfolio(portfolio.id);
 			}
 		},
-		[portfolio, teamService, portfolioService, fetchPortfolio],
+		[
+			portfolio,
+			teamService,
+			portfolioService,
+			fetchPortfolio,
+			unitListsChanged,
+		],
 	);
 
 	const onRefreshFeatures = async () => {
@@ -483,10 +497,13 @@ const PortfolioDetail: React.FC = () => {
 										getProjectSettings={() =>
 											portfolioService.getPortfolioSettings(portfolio.id)
 										}
-										getAllTeams={() => teamService.getTeams()}
-										saveProjectSettings={(settings) =>
-											portfolioService.updatePortfolio(settings)
-										}
+										getAllTeams={getAllTeams}
+										saveProjectSettings={async (settings) => {
+											const saved =
+												await portfolioService.updatePortfolio(settings);
+											await unitListsChanged();
+											return saved;
+										}}
 										validateProjectSettings={(settings) =>
 											portfolioService.validatePortfolioSettings(settings)
 										}

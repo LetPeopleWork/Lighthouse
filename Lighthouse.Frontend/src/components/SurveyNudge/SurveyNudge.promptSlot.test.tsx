@@ -1,9 +1,10 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ILicenseStatus } from "../../models/ILicenseStatus";
 import type { SystemInfo } from "../../models/SystemInfo/SystemInfo";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import { createMockApiServiceContext } from "../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../tests/renderWithQueryClient";
 import SurveyNudge from "./SurveyNudge";
 
 /**
@@ -56,7 +57,7 @@ const renderNudge = () => {
 		},
 	});
 
-	return render(
+	return renderWithQueryClient(
 		<ApiServiceContext.Provider value={context}>
 			<SurveyNudge now={FIXED_NOW} />
 		</ApiServiceContext.Provider>,
@@ -126,7 +127,7 @@ describe("SurveyNudge and the session's one prompt slot", () => {
 			},
 		});
 
-		render(
+		renderWithQueryClient(
 			<ApiServiceContext.Provider value={context}>
 				<SurveyNudge now={FIXED_NOW} />
 			</ApiServiceContext.Provider>,

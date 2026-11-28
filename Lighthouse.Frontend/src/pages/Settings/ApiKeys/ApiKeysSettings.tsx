@@ -28,6 +28,7 @@ import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useCallback, useContext, useEffect, useId, useState } from "react";
 import { useRbac } from "../../../hooks/useRbac";
+import { usePortfoliosQuery, useTeamsQuery } from "../../../hooks/useUnitLists";
 import type {
 	ApiKeyScopeRole,
 	IApiKeyInfo,
@@ -147,45 +148,37 @@ const CreateApiKeyDialog: React.FC<CreateApiKeyDialogProps> = ({
 	>(null);
 	const [scopeDataLoaded, setScopeDataLoaded] = useState(false);
 
-	const { apiKeyService, teamService, portfolioService } =
-		useContext(ApiServiceContext);
+	const { apiKeyService } = useContext(ApiServiceContext);
 	const rbac = useRbac();
 	const titleId = useId();
 
+	const needsScopeOptions = open && scopeExpanded && !scopeDataLoaded;
+	const teamsRead = useTeamsQuery({ enabled: needsScopeOptions });
+	const portfoliosRead = usePortfoliosQuery({ enabled: needsScopeOptions });
+
 	useEffect(() => {
-		if (!open || !scopeExpanded || scopeDataLoaded) return;
+		if (!needsScopeOptions) return;
+		if (teamsRead.isLoading || portfoliosRead.isLoading) return;
 
-		let cancelled = false;
-		const loadScopeOptions = async () => {
-			try {
-				const [teams, portfolios] = await Promise.all([
-					teamService.getTeams(),
-					portfolioService.getPortfolios(),
-				]);
-				if (cancelled) return;
-				setAvailableTeams(
-					teams.map((team) => ({ id: team.id, name: team.name })),
-				);
-				setAvailablePortfolios(
-					portfolios.map((portfolio) => ({
-						id: portfolio.id,
-						name: portfolio.name,
-					})),
-				);
-				setScopeDataLoaded(true);
-			} catch {
-				if (cancelled) return;
-				setAvailableTeams([]);
-				setAvailablePortfolios([]);
-				setScopeDataLoaded(true);
-			}
-		};
-
-		fireAndForget(loadScopeOptions());
-		return () => {
-			cancelled = true;
-		};
-	}, [open, scopeExpanded, scopeDataLoaded, teamService, portfolioService]);
+		// One list that could not be loaded leaves both option lists empty, as a failed load always did.
+		const teams = teamsRead.answer;
+		const portfolios = portfoliosRead.answer;
+		if (teams && portfolios) {
+			setAvailableTeams(
+				teams.map((team) => ({ id: team.id, name: team.name })),
+			);
+			setAvailablePortfolios(
+				portfolios.map((portfolio) => ({
+					id: portfolio.id,
+					name: portfolio.name,
+				})),
+			);
+		} else {
+			setAvailableTeams([]);
+			setAvailablePortfolios([]);
+		}
+		setScopeDataLoaded(true);
+	}, [needsScopeOptions, teamsRead, portfoliosRead]);
 
 	const hasIncompleteScopeRow = scopeRows.some(
 		(row) => !isScopeRowComplete(row),
@@ -381,9 +374,12 @@ const ApiKeysSettings: React.FC = () => {
 	);
 	const [scopeLookupLoaded, setScopeLookupLoaded] = useState(false);
 
-	const { apiKeyService, authService, teamService, portfolioService } =
-		useContext(ApiServiceContext);
+	const { apiKeyService, authService } = useContext(ApiServiceContext);
 	const rbac = useRbac();
+	const needsScopeLookup =
+		rbac.isRbacEnabled && !scopeLookupLoaded && requiresScopeLookup(keys);
+	const teamsRead = useTeamsQuery({ enabled: needsScopeLookup });
+	const portfoliosRead = usePortfoliosQuery({ enabled: needsScopeLookup });
 
 	const fetchKeys = useCallback(async () => {
 		try {
@@ -416,45 +412,27 @@ const ApiKeysSettings: React.FC = () => {
 	}, [authService, fetchKeys]);
 
 	useEffect(() => {
-		if (!rbac.isRbacEnabled || scopeLookupLoaded) return;
-		if (!requiresScopeLookup(keys)) return;
+		if (!needsScopeLookup) return;
+		if (teamsRead.isLoading || portfoliosRead.isLoading) return;
 
-		let cancelled = false;
-		const loadScopeLookup = async () => {
-			const [teamsResult, portfoliosResult] = await Promise.allSettled([
-				teamService.getTeams(),
-				portfolioService.getPortfolios(),
-			]);
-			if (cancelled) return;
-			if (teamsResult.status === "fulfilled") {
-				setTeamLookup(
-					new Map(teamsResult.value.map((team) => [team.id, team.name])),
-				);
-			}
-			if (portfoliosResult.status === "fulfilled") {
-				setPortfolioLookup(
-					new Map(
-						portfoliosResult.value.map((portfolio) => [
-							portfolio.id,
-							portfolio.name,
-						]),
-					),
-				);
-			}
-			setScopeLookupLoaded(true);
-		};
-
-		fireAndForget(loadScopeLookup());
-		return () => {
-			cancelled = true;
-		};
-	}, [
-		rbac.isRbacEnabled,
-		scopeLookupLoaded,
-		keys,
-		teamService,
-		portfolioService,
-	]);
+		// Each list fills its own lookup; one that could not be loaded leaves its names out.
+		if (teamsRead.answer) {
+			setTeamLookup(
+				new Map(teamsRead.answer.map((team) => [team.id, team.name])),
+			);
+		}
+		if (portfoliosRead.answer) {
+			setPortfolioLookup(
+				new Map(
+					portfoliosRead.answer.map((portfolio) => [
+						portfolio.id,
+						portfolio.name,
+					]),
+				),
+			);
+		}
+		setScopeLookupLoaded(true);
+	}, [needsScopeLookup, teamsRead, portfoliosRead]);
 
 	const handleDelete = async (id: number) => {
 		try {

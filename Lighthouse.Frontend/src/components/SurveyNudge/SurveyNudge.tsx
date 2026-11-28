@@ -7,6 +7,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useLicenseStatusQuery } from "../../hooks/useLicenseRestrictions";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import type { SurveyNudgeAction } from "../../services/Api/SurveyNudgeService";
 import {
@@ -29,12 +30,10 @@ interface SurveyNudgeProps {
  * overlapping clocks, which makes meeting each other the normal case rather than an edge one.
  */
 const SurveyNudge: React.FC<SurveyNudgeProps> = ({ now }) => {
-	const { licensingService, systemInfoService, surveyNudgeService } =
+	const { systemInfoService, surveyNudgeService } =
 		useContext(ApiServiceContext);
 
-	const [isPremium, setIsPremium] = useState<boolean | undefined | null>(
-		undefined,
-	);
+	const isPremium = useLicenseStatusQuery().data?.canUsePremiumFeatures;
 	const [installTimestamp, setInstallTimestamp] = useState<
 		string | undefined | null
 	>(undefined);
@@ -45,8 +44,7 @@ const SurveyNudge: React.FC<SurveyNudgeProps> = ({ now }) => {
 		let cancelled = false;
 
 		const load = async () => {
-			const [license, systemInfo, nudgeState] = await Promise.all([
-				licensingService.getLicenseStatus(),
+			const [systemInfo, nudgeState] = await Promise.all([
 				systemInfoService.getSystemInfo(),
 				surveyNudgeService.getState(),
 			]);
@@ -55,14 +53,12 @@ const SurveyNudge: React.FC<SurveyNudgeProps> = ({ now }) => {
 				return;
 			}
 
-			setIsPremium(license?.canUsePremiumFeatures);
 			setInstallTimestamp(systemInfo?.installTimestamp);
 			setNextEligibleAt(nudgeState?.nextEligibleAt ?? null);
 		};
 
 		load().catch(() => {
 			if (!cancelled) {
-				setIsPremium(undefined);
 				setInstallTimestamp(undefined);
 			}
 		});
@@ -70,7 +66,7 @@ const SurveyNudge: React.FC<SurveyNudgeProps> = ({ now }) => {
 		return () => {
 			cancelled = true;
 		};
-	}, [licensingService, systemInfoService, surveyNudgeService]);
+	}, [systemInfoService, surveyNudgeService]);
 
 	const decision = useMemo(
 		() =>

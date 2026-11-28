@@ -14,6 +14,7 @@ import {
 	createMockPortfolioService,
 	createMockTeamService,
 } from "../tests/MockApiServiceProvider";
+import { pageFreshQueryKey } from "./pageFreshQueryKey";
 import { useLicenseRestrictions } from "./useLicenseRestrictions";
 
 const aFreeLicence = { canUsePremiumFeatures: false } as ILicenseStatus;
@@ -257,11 +258,15 @@ describe("Story 6406 (slice 02): creating a Team or Portfolio waits for the lice
 			new Error("the network dropped"),
 		);
 		await act(async () => {
-			await queryClient.refetchQueries({ queryKey: ["teams"] });
+			await queryClient.refetchQueries({
+				queryKey: pageFreshQueryKey(["teams"]),
+			});
 			// TanStack tells its observers on the next tick, so the page sees the failed refresh only after this.
 			await new Promise((resolve) => setTimeout(resolve));
 		});
-		expect(queryClient.getQueryState(["teams"])?.status).toBe("error");
+		expect(
+			queryClient.getQueryState(pageFreshQueryKey(["teams"]))?.status,
+		).toBe("error");
 		expect(result.current.status).toBe("ready");
 		expect(result.current.canCreateTeam).toBe(false);
 	});
@@ -285,8 +290,14 @@ describe("Story 6406 (slice 02): creating a Team or Portfolio waits for the lice
 		queryClient.setQueryData(["licenseStatus"], aFreeLicence, {
 			updatedAt: Date.now() - 60_000,
 		});
-		queryClient.setQueryData(["teams"], teams(1));
-		queryClient.setQueryData(["portfolios"], portfolios(0));
+		queryClient.setQueryData(pageFreshQueryKey(["teams"]), {
+			answer: teams(1),
+			askedOnPage: 0,
+		});
+		queryClient.setQueryData(pageFreshQueryKey(["portfolios"]), {
+			answer: portfolios(0),
+			askedOnPage: 0,
+		});
 
 		const { result } = renderHook(() => useLicenseRestrictions(), { wrapper });
 
@@ -313,8 +324,14 @@ describe("Story 6406 (slice 02): creating a Team or Portfolio waits for the lice
 			portfolioList: deferred<Portfolio[]>().promise,
 		});
 		queryClient.setQueryData(["licenseStatus"], aFreeLicence);
-		queryClient.setQueryData(["teams"], teams(1));
-		queryClient.setQueryData(["portfolios"], portfolios(1));
+		queryClient.setQueryData(pageFreshQueryKey(["teams"]), {
+			answer: teams(1),
+			askedOnPage: 0,
+		});
+		queryClient.setQueryData(pageFreshQueryKey(["portfolios"]), {
+			answer: portfolios(1),
+			askedOnPage: 0,
+		});
 
 		const { result } = renderHook(() => useLicenseRestrictions(), { wrapper });
 

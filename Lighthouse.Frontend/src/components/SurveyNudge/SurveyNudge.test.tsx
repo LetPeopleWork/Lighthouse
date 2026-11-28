@@ -1,9 +1,10 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { ILicenseStatus } from "../../models/ILicenseStatus";
 import type { SystemInfo } from "../../models/SystemInfo/SystemInfo";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import { createMockApiServiceContext } from "../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../tests/renderWithQueryClient";
 import SurveyNudge from "./SurveyNudge";
 
 const FIXED_NOW = new Date("2026-06-01T00:00:00.000Z");
@@ -50,7 +51,7 @@ const renderNudge = (options: {
 		},
 	});
 
-	return render(
+	return renderWithQueryClient(
 		<ApiServiceContext.Provider value={context}>
 			<SurveyNudge now={FIXED_NOW} />
 		</ApiServiceContext.Provider>,

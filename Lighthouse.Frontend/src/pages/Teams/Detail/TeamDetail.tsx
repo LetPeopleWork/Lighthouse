@@ -31,6 +31,7 @@ import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useRbac } from "../../../hooks/useRbac";
 import { useRefinementSetUpReporter } from "../../../hooks/useRefinementSetUpReporter";
 import { useScopedAccess } from "../../../hooks/useScopedAccess";
+import { useUnitListsChanged } from "../../../hooks/useUnitLists";
 import type { Team } from "../../../models/Team/Team";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -126,6 +127,7 @@ const TeamDetail: React.FC = () => {
 
 	const { teamService, updateSubscriptionService, workTrackingSystemService } =
 		useContext(ApiServiceContext);
+	const unitListsChanged = useUnitListsChanged();
 	const reportUsage = useUsageDataReporter();
 	useFeaturesHeldForUsageData(
 		"Team",
@@ -170,13 +172,14 @@ const TeamDetail: React.FC = () => {
 			const settings = await teamService.getTeamSettings(team.id);
 			updateFn(settings);
 			await teamService.updateTeam(settings);
+			await unitListsChanged();
 			await fetchTeam();
 
 			if (shouldUpdatePortfolioForecasts) {
 				await teamService.updateForecastsForTeamPortfolios(team.id);
 			}
 		},
-		[team, teamService, fetchTeam],
+		[team, teamService, fetchTeam, unitListsChanged],
 	);
 
 	// The save already went through, so a failed read here keeps the Team on screen rather than
@@ -193,11 +196,12 @@ const TeamDetail: React.FC = () => {
 	const saveTeamSettings = useCallback(
 		async (settings: ITeamSettings) => {
 			const savedSettings = await teamService.updateTeam(settings);
+			await unitListsChanged();
 			settingsSaved(savedSettings);
 			await rereadTeamAfterSave();
 			return savedSettings;
 		},
-		[teamService, rereadTeamAfterSave, settingsSaved],
+		[teamService, rereadTeamAfterSave, settingsSaved, unitListsChanged],
 	);
 
 	const onUpdateTeamData = async () => {

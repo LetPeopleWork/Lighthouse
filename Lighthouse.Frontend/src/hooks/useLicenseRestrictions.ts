@@ -1,12 +1,10 @@
-import {
-	type UseQueryResult,
-	useQuery,
-	useQueryClient,
-} from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useContext } from "react";
 import type { ILicenseStatus } from "../models/ILicenseStatus";
-import { ApiError } from "../services/Api/ApiError";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
+import { PageMovesContext } from "./PageMovesContext";
+import { recordAskOnPage } from "./pageOfTheLatestAsk";
+import { listOf, usePortfoliosQuery, useTeamsQuery } from "./useUnitLists";
 
 /** Whether the license and the counts the create gates read have arrived. */
 export type LicenseCheckStatus = "loading" | "ready" | "failed";
@@ -25,25 +23,25 @@ interface LicenseRestrictions {
 const MAX_TEAMS_WITHOUT_PREMIUM = 3;
 const MAX_PORTFOLIOS_WITHOUT_PREMIUM = 1;
 
+export const LICENSE_STATUS_KEY = ["licenseStatus"] as const;
+
 /**
- * What a list read gives to count: the list itself, even when a later refresh failed, and an empty list when the
- * caller may not read it at all. Undefined means there is nothing to go on yet.
+ * The one place the license is read for gating: every gate, the header icon and the survey nudge share this
+ * query. The page-move refresh asks it again like the other shared reads, which is why each ask records its page.
  */
-const listOf = <T>(query: UseQueryResult<T[]>): T[] | undefined =>
-	query.data ??
-	(query.error instanceof ApiError && query.error.code === 403
-		? []
-		: undefined);
-
-const LICENSE_STATUS_KEY = ["licenseStatus"] as const;
-
-/** The one place the license is read for gating: every gate and the header icon share this query. */
 export const useLicenseStatusQuery = () => {
 	const { licensingService } = useContext(ApiServiceContext);
+	const page = useContext(PageMovesContext);
 
 	return useQuery({
 		queryKey: LICENSE_STATUS_KEY,
-		queryFn: () => licensingService.getLicenseStatus(),
+		queryFn: ({ client, queryKey }) => {
+			const asked = client.getQueryCache().find({ queryKey, exact: true });
+			if (asked) {
+				recordAskOnPage(asked, page);
+			}
+			return licensingService.getLicenseStatus();
+		},
 		staleTime: 1000 * 60 * 5,
 		refetchInterval: 1000 * 60 * 60,
 	});
@@ -82,24 +80,12 @@ export const useStoreImportedLicense = (): ((
 };
 
 export const useLicenseRestrictions = (): LicenseRestrictions => {
-	const { teamService, portfolioService } = useContext(ApiServiceContext);
-
 	const license = useLicenseStatusQuery();
 	const licenseStatus = license.data ?? null;
 	const needsCounts = licenseStatus?.canUsePremiumFeatures === false;
 
-	const teams = useQuery({
-		queryKey: ["teams"],
-		queryFn: () => teamService.getTeams(),
-		enabled: needsCounts,
-		staleTime: 0,
-	});
-	const portfolios = useQuery({
-		queryKey: ["portfolios"],
-		queryFn: () => portfolioService.getPortfolios(),
-		enabled: needsCounts,
-		staleTime: 0,
-	});
+	const teams = useTeamsQuery({ enabled: needsCounts });
+	const portfolios = usePortfoliosQuery({ enabled: needsCounts });
 
 	const limits = {
 		licenseStatus,
@@ -136,7 +122,7 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 
 	if (!teamList || !portfolioList) {
 		return unsettled(
-			teams.isError || portfolios.isError ? "failed" : "loading",
+			teams.isFailed || portfolios.isFailed ? "failed" : "loading",
 		);
 	}
 

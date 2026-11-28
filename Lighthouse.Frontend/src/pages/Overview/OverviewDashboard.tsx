@@ -25,6 +25,13 @@ import {
 } from "../../hooks/useConfiguredConnections";
 import { useLicenseRestrictions } from "../../hooks/useLicenseRestrictions";
 import { useRbac } from "../../hooks/useRbac";
+import {
+	listCouldNotBeLoaded,
+	listOf,
+	usePortfoliosQuery,
+	useTeamsQuery,
+	useUnitListsChanged,
+} from "../../hooks/useUnitLists";
 import type { IFeatureOwner } from "../../models/IFeatureOwner";
 import type { Portfolio } from "../../models/Portfolio/Portfolio";
 import type { IReportOwner } from "../../models/Reports/Report";
@@ -99,16 +106,33 @@ const OwnerDeleteDialog: React.FC<{
 	);
 };
 
+const NO_TEAMS: Team[] = [];
+const NO_PORTFOLIOS: Portfolio[] = [];
+
 const OverviewDashboard: React.FC = () => {
-	const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
-	const [teams, setTeams] = useState<Team[]>([]);
+	const teamsRead = useTeamsQuery();
+	const portfoliosRead = usePortfoliosQuery();
+	const unitListsChanged = useUnitListsChanged();
+	const teams = listOf(teamsRead) ?? NO_TEAMS;
+	const portfolios = listOf(portfoliosRead) ?? NO_PORTFOLIOS;
 	const [connections, setConnections] = useState<
 		IWorkTrackingSystemConnection[]
 	>([]);
 	const [connectionsRefused, setConnectionsRefused] = useState(false);
 	const rbac = useRbac();
-	const [isLoading, setIsLoading] = useState(true);
-	const [hasError, setHasError] = useState(false);
+	// The connections and a delete in progress are this page's own; the lists are shared and come from their reads.
+	const [connectionsLoading, setConnectionsLoading] = useState(true);
+	const [isDeleting, setIsDeleting] = useState(false);
+	const [ownError, setOwnError] = useState(false);
+	const isLoading =
+		connectionsLoading ||
+		isDeleting ||
+		teamsRead.isLoading ||
+		portfoliosRead.isLoading;
+	const hasError =
+		ownError ||
+		listCouldNotBeLoaded(teamsRead) ||
+		listCouldNotBeLoaded(portfoliosRead);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
 	const [selectedItem, setSelectedItem] = useState<Portfolio | Team | null>(
 		null,
@@ -144,26 +168,9 @@ const OverviewDashboard: React.FC = () => {
 	const hasConnections = connections.length > 0;
 	const hasTeams = teams.length > 0;
 
-	const fetchData = useCallback(async () => {
+	const fetchConnections = useCallback(async () => {
 		try {
-			setIsLoading(true);
-			const portfoliosPromise = portfolioService
-				.getPortfolios()
-				.catch((error: unknown) => {
-					if (error instanceof ApiError && error.code === 403) {
-						return [];
-					}
-
-					throw error;
-				});
-			const teamsPromise = teamService.getTeams().catch((error: unknown) => {
-				if (error instanceof ApiError && error.code === 403) {
-					return [];
-				}
-
-				throw error;
-			});
-			const configuredConnectionsPromise = workTrackingSystemService
+			const connectionData = await workTrackingSystemService
 				.getConfiguredWorkTrackingSystems()
 				.then((connectionList) => {
 					setConnectionsRefused(false);
@@ -177,26 +184,19 @@ const OverviewDashboard: React.FC = () => {
 
 					throw error;
 				});
-			const [portfolioData, teamData, connectionData] = await Promise.all([
-				portfoliosPromise,
-				teamsPromise,
-				configuredConnectionsPromise,
-			]);
-			setPortfolios(portfolioData);
-			setTeams(teamData);
 			setConnections(connectionData);
-			setIsLoading(false);
+			setConnectionsLoading(false);
 		} catch (error) {
 			console.error("Error fetching overview data:", error);
-			setHasError(true);
+			setOwnError(true);
 		}
-	}, [portfolioService, teamService, workTrackingSystemService]);
+	}, [workTrackingSystemService]);
 
 	useEffect(() => {
-		fetchData().catch((error) => {
+		fetchConnections().catch((error) => {
 			console.error("Error fetching overview data:", error);
 		});
-	}, [fetchData]);
+	}, [fetchConnections]);
 
 	const handlePortfolioDelete = (portfolio: IFeatureOwner) => {
 		setSelectedItem(portfolio as Portfolio);
@@ -227,7 +227,7 @@ const OverviewDashboard: React.FC = () => {
 
 		const owner: IReportOwner = { kind: deleteType, id: selectedItem.id };
 		try {
-			setIsLoading(true);
+			setIsDeleting(true);
 			if (deleteType === "portfolio") {
 				await portfolioService.deletePortfolio(selectedItem.id);
 				reportUsage({ name: UsageDataEventName.PortfolioDeleted });
@@ -236,11 +236,12 @@ const OverviewDashboard: React.FC = () => {
 				reportUsage({ name: UsageDataEventName.TeamDeleted });
 			}
 			forgetReportsOf(owner);
-			await fetchData();
+			await unitListsChanged();
 		} catch (error) {
 			console.error(`Error deleting ${deleteType}:`, error);
-			setHasError(true);
+			setOwnError(true);
 		} finally {
+			setIsDeleting(false);
 			closeDeleteDialog();
 		}
 	};

@@ -9,6 +9,10 @@ import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandle
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useRefreshPermissions } from "../../../hooks/useRbac";
 import { useRbacGate } from "../../../hooks/useRbacGate";
+import {
+	useTeamsLoader,
+	useUnitListsChanged,
+} from "../../../hooks/useUnitLists";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -23,6 +27,8 @@ const EditPortfolio: React.FC = () => {
 	const gate = useRbacGate({ kind: "systemAdmin" });
 	const reportUsage = useUsageDataReporter();
 	const refreshPermissions = useRefreshPermissions();
+	const unitListsChanged = useUnitListsChanged();
+	const getAllTeams = useTeamsLoader();
 
 	const cloneFromId = Number.parseInt(
 		new URLSearchParams(globalThis.location.search).get("cloneFrom") ?? "",
@@ -32,7 +38,7 @@ const EditPortfolio: React.FC = () => {
 	const useWizard = isNewPortfolio && !hasCloneSource;
 
 	const navigate = useNavigate();
-	const { portfolioService, workTrackingSystemService, teamService } =
+	const { portfolioService, workTrackingSystemService } =
 		useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const { status, canCreatePortfolio } = useLicenseRestrictions();
@@ -62,10 +68,6 @@ const EditPortfolio: React.FC = () => {
 		return await workTrackingSystemService.getConfiguredWorkTrackingSystems();
 	};
 
-	const getAllTeams = async () => {
-		return await teamService.getTeams();
-	};
-
 	const validateProjectSettings = async (
 		updatedProjectSettings: IPortfolioSettings,
 	) => {
@@ -80,12 +82,14 @@ const EditPortfolio: React.FC = () => {
 			savedSettings = await portfolioService.createPortfolio(updatedSettings);
 			reportUsage({ name: UsageDataEventName.PortfolioCreated });
 			await refreshPermissions();
+			await unitListsChanged();
 			await portfolioService.refreshFeaturesForPortfolio(savedSettings.id);
 			reportFailedNavigation(
 				navigate(`/portfolios/${savedSettings.id}/settings`),
 			);
 		} else {
 			savedSettings = await portfolioService.updatePortfolio(updatedSettings);
+			await unitListsChanged();
 			reportFailedNavigation(navigate(`/portfolios/${savedSettings.id}`));
 		}
 		return savedSettings;
@@ -102,6 +106,7 @@ const EditPortfolio: React.FC = () => {
 			await portfolioService.createPortfolio(updatedSettings);
 		reportUsage({ name: UsageDataEventName.PortfolioCreated });
 		await refreshPermissions();
+		await unitListsChanged();
 		await portfolioService.refreshFeaturesForPortfolio(savedSettings.id);
 		reportFailedNavigation(navigate(`/portfolios/${savedSettings.id}/metrics`));
 	};

@@ -6,13 +6,11 @@ import { describe, expect, it } from "vitest";
 const sourceRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /**
- * The service itself, and two pages that read the licence for something other than gating: the survey nudge
- * and the licence card in System Settings. Every other module that needs the licence asks through one shared
+ * The service itself. Every module that needs the licence, the survey nudge included, asks through one shared
  * query, so a page with many gates sends one request.
  */
 const READ_THE_LICENCE_FOR_OTHER_REASONS = new Set([
 	"services/Api/LicensingService.ts",
-	"components/SurveyNudge/SurveyNudge.tsx",
 ]);
 
 const productionModules = (): string[] =>

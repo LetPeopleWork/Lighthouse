@@ -10,6 +10,7 @@ import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useRefreshPermissions } from "../../../hooks/useRbac";
 import { useRbacGate } from "../../../hooks/useRbacGate";
 import { useRefinementSetUpReporter } from "../../../hooks/useRefinementSetUpReporter";
+import { useUnitListsChanged } from "../../../hooks/useUnitLists";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -25,6 +26,7 @@ const EditTeamPage: React.FC = () => {
 	const gate = useRbacGate({ kind: "systemAdmin" });
 	const reportUsage = useUsageDataReporter();
 	const refreshPermissions = useRefreshPermissions();
+	const unitListsChanged = useUnitListsChanged();
 	const { settingsLoaded, settingsSaved } = useRefinementSetUpReporter();
 
 	const cloneFromId = Number.parseInt(
@@ -55,12 +57,13 @@ const EditTeamPage: React.FC = () => {
 			newSettings = await teamService.createTeam(updatedSettings);
 			reportUsage({ name: UsageDataEventName.TeamCreated });
 			await refreshPermissions();
+			await unitListsChanged();
 			await teamService.updateTeamData(newSettings.id);
 			reportFailedNavigation(navigate(`/teams/${newSettings.id}/settings`));
 		} else {
-			newSettings = settingsSaved(
-				await teamService.updateTeam(updatedSettings),
-			);
+			const updated = await teamService.updateTeam(updatedSettings);
+			await unitListsChanged();
+			newSettings = settingsSaved(updated);
 			reportFailedNavigation(navigate(`/teams/${newSettings.id}`));
 		}
 		return newSettings;
@@ -95,6 +98,7 @@ const EditTeamPage: React.FC = () => {
 		const newSettings = await teamService.createTeam(updatedSettings);
 		reportUsage({ name: UsageDataEventName.TeamCreated });
 		await refreshPermissions();
+		await unitListsChanged();
 		await teamService.updateTeamData(newSettings.id);
 		reportFailedNavigation(navigate(`/teams/${newSettings.id}/metrics`));
 	};

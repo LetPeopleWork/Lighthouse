@@ -130,6 +130,12 @@ vi.mock("../../../hooks/useLicenseRestrictions", () => ({
 	useLicenseRestrictions: () => mockLicenseRestrictions,
 }));
 
+const unitListsChanged = vi.fn().mockResolvedValue(undefined);
+
+vi.mock("../../../hooks/useUnitLists", () => ({
+	useUnitListsChanged: () => unitListsChanged,
+}));
+
 const renderEditTeamWithContext = () => {
 	const mockApiServiceContext = {
 		settingsService: mockSettingsService,
@@ -337,6 +343,8 @@ describe("EditTeam", () => {
 
 			expect(mockTeamService.createTeam).toHaveBeenCalled();
 			expect(reportsOfRefinementSetUp()).toHaveLength(0);
+			// The new Team shows in the shared lists at once, without a page move.
+			expect(unitListsChanged).toHaveBeenCalledTimes(1);
 		});
 	});
 
