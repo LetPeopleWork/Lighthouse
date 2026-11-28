@@ -156,13 +156,2710 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Paradigm</h2>
 
-<p>None.</p>
+<p>object_oriented</p>
 
 <h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>No schema or behaviour change: the Story only moves types; no entity, DbSet, migration, model snapshot, route, DTO shape, payload, usage-data event or configuration key changes, so Lighthouse.Migrations.*, Lighthouse.Frontend and Lighthouse.EndToEndTests stay byte-identical.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4</p>
+
+<h4>D2</h4>
+
+<pre><code>Kernel is the three base types: ADR-270 Decision 7 allows shared ids, truly shared value objects and the event base type; Lighthouse has no shared id or value object type (ids are int), so the Kernel rows are IDomainEvent, IEntity and IConcurrencyTokenEntity only. Widely used types (StateCategories, InstanceCalendar, WorkTrackingSystems) are not promoted: each has an owner in ADR-270&#x27;s context table, and calling them kernel would hide that owner&#x27;s published language.
+</code></pre>
+<p>Governed slices: S1, S4</p>
+
+<h4>D3</h4>
+
+<pre><code>One catalogue row per Models type: KernelCatalogue (test side, Tests/Architecture) holds one row per top-level Models type, standing Kernel or Owned(owner context or Platform lane, blockers, freeing Story). Blockers are a closed set, each a property measured from the IL or the EF model, never a name: Entity (in LighthouseAppContext&#x27;s model), Wire (reachable from a controller action signature or an API.DTO public property, transitively), HeldBy(type) (a staying Models type references it), Shared (IL users in two or more Modules.&lt;X&gt; contexts), InfraReached (named by Data, a repository or the composition root), PathPinned(consumer) (a non-test consumer reads its file by path), Event (implements IDomainEvent). A row with no blocker is a mover and is allowed only while it is on the shrink-only movers list.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4</p>
+
+<h4>D4</h4>
+
+<pre><code>Move whole files only: a file moves only if all its top-level types are free and share one owner; no file split and no rename, so each move commit is a pure move (refactor(kernel): move ...). Files of mixed standing wait for S12c.
+</code></pre>
+<p>Governed slices: S2, S3</p>
+
+<h4>D5</h4>
+
+<pre><code>Destination follows measured IL edges: a context-owned mover goes to Modules/&lt;Owner&gt;/Domain when its IL edges reach only the three kernel types, the BCL and that module&#x27;s Domain, otherwise to Modules/&lt;Owner&gt;/Application; a Platform-owned mover goes to Platform/&lt;Area&gt;. No Contracts folder receives a mover and no new module folder is created; an owner without a module keeps its row Owned with its blocker.
+</code></pre>
+<p>Governed slices: S2, S3</p>
+
+<h4>D6</h4>
+
+<pre><code>Rules see the move before it happens: NamespaceMoveLaw is already generic (NamespaceMove plus PatternRoleMap), so it is reused unchanged and fed a new Models pattern-role map (Models.* old namespaces in role Place for KernelRules.TheModels, Context for ReportsModuleArchUnitTest.ReportModelsPattern and every module pattern) plus a rename list fixed in S1 from the pre-move literal sweep; the list only shrinks and is empty after S4.
+</code></pre>
+<p>Governed slices: S1, S4</p>
+
+<h4>D7</h4>
+
+<pre><code>Drop the event-move slice: Story 6382 already moved every domain event type into its publisher&#x27;s Modules/&lt;Publisher&gt;/Contracts; only IDomainEvent stays in Models/Events, as a Kernel row. The design&#x27;s former S5 (rules by namespace only and docs) is this feature&#x27;s S4.
+</code></pre>
+<p>Governed slices: S1, S4</p>
+
+<h4>D8</h4>
+
+<pre><code>Wire types and entities stay owned: wire types wait for S12c or S09a&#x27;s contracts and entities for S12c or S13, because both EF snapshots carry entity CLR names; their rows carry the measured blocker and the freeing Story.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>D9</h4>
+
+<pre><code>Kernel-size rule on existing ratchet parts: KernelCatalogueArchUnitTest compares the catalogue with the IL both ways through InlineBaseline, and KernelRules gains the rule that every Kernel row is used by two or more contexts; failures name the type and the fix.
+</code></pre>
+<p>Governed slices: S1, S4</p>
+
+<h4>D10</h4>
+
+<pre><code>Unit tests move with their production type: unit tests of moved types (Tests/Models/**, Tests/Services/Implementation/DeliverySources/DeliverySourceBindabilityTest.cs) move to Tests/Modules/&lt;Owner&gt;/&lt;Layer&gt; with namespace equal to folder, kept there by each module&#x27;s existing unit-test placement rule; port, host and wire tests stay and change only using lines.
+</code></pre>
+<p>Governed slices: S3</p>
+
+<h4>D11</h4>
+
+<pre><code>Commit per slice and push once: each GREEN slice is a plain git commit with hooks; moves commit apart from edits; no slice touches Program.cs; S1 to S4 are pushed together after the candidate review and EXAMINE, so one CI run covers the Story.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4</p>
+
+<h4>D12</h4>
+
+<pre><code>Behaviour-free proof reuses existing probes: architecture rules (all), ef-model-unchanged, the unchanged backend suites on both revisions, and test-selection-show for the moved OAuth file; no new compare command.
+</code></pre>
+<p>Governed slices: S2, S3, S4</p>
+
+<h4>D13</h4>
+
+<pre><code>Mutation bar on moved files: Stryker.NET runs last on frozen code over the moved production files; the bar is no new survivor or no-coverage mutant against the same files on the pre-move revision. Enums and constant classes yield no meaningful mutants, stated as not applicable.
+</code></pre>
+<p>Governed slices: S2, S3</p>
+
+<h4>D14</h4>
+
+<pre><code>No formal model, exhaustive checks instead: every claim is a relation over a closed finite set (the Models types of one compiled assembly times the catalogue times measured IL and EF properties) with no shared mutable state, multi-step protocol, concurrency, retry, crash window or progress claim. Claim-to-checker: K1 to K5 and the move law are checked by native NUnit tests that evaluate the real assembly exhaustively (the executable projection is the check itself, in the default suite); no Quint, TLA+/TLC or Agda model, so no checker probe, install or waiver is needed. Property-based testing is not applicable: the domain is closed and enumerated in full.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4</p>
+
+<h4>D15</h4>
+
+<pre><code>Algebra lives only on the test side: runtime layers (domain, application, adapters, infrastructure) keep their states, operations and observations unchanged. The test-side carriers are KernelCatalogue rows (records owned by KernelCatalogue in Tests/Architecture), KernelRuleVerdict for rule outcomes (owned by KernelRules), NamespaceMoveLaw&#x27;s PatternBreak for move-law breaks, and NUnit failure messages as the error surface; there is no per-process state. Operations: measure a type&#x27;s blockers from IL and EF model, compare catalogue and IL both ways, evaluate a pattern map over a move.
+</code></pre>
+<p>Governed slices: S1, S4</p>
+
+<h4>D16</h4>
+
+<pre><code>Keep the object-oriented paradigm: the repository is object-oriented (CLAUDE.md); the catalogue is a first-class collection of row records with the decision on each row (is its claim true), measured through IlDependencies; no new production type is created.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>D17</h4>
+
+<pre><code>Rigor per slice as proposed: S1 thorough (opus for acceptance designer and crafter, sonnet for reviewers) because the measured blockers and the move law are where earlier reviews found misses; S2, S3 and S4 standard (sonnet, reviewers haiku). Pass model explicitly on every dispatch.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4</p>
+
+<h4>D18</h4>
+
+<pre><code>Confirm the open-question defaults: AC 1 restated as Kernel or owned with a measured blocker and freeing Story (S4 amends the slice-12 brief); kernel is the three base types; files of mixed standing are not split; a later Story that frees a row fails K2 until it updates or moves that row; ConnectionFetchShapeChanged and Models/WriteBack ownership follow where Stories 6382 and 6657 put them, as S1 measures.
+</code></pre>
+<p>Governed slices: S1, S4</p>
+
+<h4>D19</h4>
+
+<pre><code>Revise S2 and S3 targets after S1 measures: the recorded movers are the design&#x27;s expected list; S1&#x27;s IL measurement is the authority on which files are free and on each destination layer. Before the S2 and S3 acceptance-designer dispatches, the host reopens this design (design open --from-current) with S1&#x27;s measured movers so the architect removes blocked files, corrects destination layers, and adds every consumer file whose using lines change.
+</code></pre>
+<p>Governed slices: S2, S3</p>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>S1 starts only after the predecessors are merged: for each of Stories 6365, 6366, 6468, 6657 and 6382, the ADO state is Closed, git log main --grep finds the Story&#x27;s final commit and git merge-base --is-ancestor holds, and the content check holds (Modules/Refinement, Modules/Reports, Modules/OrganisationSetup present; no Services/{Implementation,Interfaces}/{Refinement,Reports}; Modules/*/Contracts with its contracts-only rule; no loose Services/Implementation/WriteBack*.cs). A failed check stops S1 and is reported with the Story, the check and its output.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>K2</h4>
+
+<pre><code>S1 re-measures R1 to R11 from the IL and the EF model (every Models type, entity names in both snapshots, wire reachability, held-by closure, users per context, Contracts placement, the write-back owner, rule-file literals, NamespaceMoveLaw shape, non-test path consumers, S12c and S13 state); every count in the feature-delta is a noisy text measurement and a difference is recorded, not argued.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>K3</h4>
+
+<pre><code>Contexts are read from Modules.&lt;X&gt; namespaces only; API, Data, Platform.*, repositories, the composition root and loose Services are not contexts.
+</code></pre>
+<p>Governed slices: S1, S4</p>
+
+<h4>K4</h4>
+
+<pre><code>No bound on catalogue size is set by any authority; the catalogue starts at the IL count S1 measures and may only shrink (rows leave when their type leaves Models).
+</code></pre>
+<p>Governed slices: S1, S4</p>
+
+<h4>K5</h4>
+
+<pre><code>At most four slices in one nwdes feature, each about one day or less; slices run in order S1, S2, S3, S4.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4</p>
+
+<h4>K6</h4>
+
+<pre><code>Tests follow .claude/skills/test-writing/SKILL.md and references/backend.md, which win over nWave&#x27;s own timing and PBT-density rules; architecture rules are native NUnit plus ArchUnitNET or IL tests under Tests/Architecture; behaviour is observed through the unchanged acceptance tests at the application-service port; no nWave scenario tags in code, so an untagged test is correct here.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4</p>
+
+<h4>K7</h4>
+
+<pre><code>Inside a slice the fast loop is Lighthouse.Backend/Test-Fast.ps1 (builds first) plus the slice oracle; the slice&#x27;s verification commands run once at its end. Live connector categories are never run.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4</p>
+
+<h4>K8</h4>
+
+<pre><code>Non-test path consumers stay working: Scripts/test-selection/path-classifier.sh (SHARED_REGEX, JIRA_REGEX) and Lighthouse.Frontend/src/services/UsageData/usageDataRouteKeys.test.ts, which reads Models/UsageData/UsageDataRouteKey.cs and UsageDataRoutePatterns.cs by path; those two files stay (PathPinned).
+</code></pre>
+<p>Governed slices: S2, S3</p>
+
+<h4>K9</h4>
+
+<pre><code>Comments are rare and written for a stranger; no internal id (decision, slice or ADR number) is the only reason in a comment.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4</p>
+
+<h3>Reuse</h3>
+
+<p>KernelRules</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs:14</p>
+
+<p>Extend</p>
+
+<pre><code>Owns the kernel rules (Models does not depend on Services, Modules, Platform or the update queue) run on real and planted types; it gains the rule that every Kernel row is used by two or more contexts.
+</code></pre>
+
+<p>KernelRuleVerdict</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs:55</p>
+
+<p>Reuse</p>
+
+<pre><code>Already carries examined types, offenders and the rule text for kernel-rule failures; the new rule returns the same verdict.
+</code></pre>
+
+<p>InlineBaseline</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InlineBaseline.cs:9</p>
+
+<p>Reuse</p>
+
+<pre><code>Owns the both-ways compare of an inline list with a measured set; K1 and the shrink-only movers list use it rather than a second compare.
+</code></pre>
+
+<p>IlDependencies</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IlDependencies.cs:13</p>
+
+<p>Reuse</p>
+
+<pre><code>Owns IL edge reading through Mono.Cecil, async bodies included; HeldBy, Shared, Wire and InfraReached are measured with it.
+</code></pre>
+
+<p>NamespaceMoveLaw</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:114</p>
+
+<p>Reuse</p>
+
+<pre><code>Already generic over a NamespaceMove and a PatternRoleMap and used by several moves; the Models move adds a role map and a rename list, not a second law.
+</code></pre>
+
+<p>PlatformLaneMembership</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs:47</p>
+
+<p>Reuse</p>
+
+<pre><code>Namespace-agnostic membership shape copied for the catalogue; its lane rules keep the Platform movers in the lane.
+</code></pre>
+
+<p>ContextContractsMembership</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembership.cs:20</p>
+
+<p>Reuse</p>
+
+<pre><code>Decides cross-context references through Contracts; the catalogue decides only Models standing, so they do not decide the same fact; S1 checks the actual scope and records any overlap.
+</code></pre>
+
+<h3>Impact</h3>
+
+<p>migrations</p>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Postgres:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>No entity moves, so the model snapshot and migrations stay byte-identical.
+</code></pre>
+
+<p>migrations</p>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Sqlite:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>No entity moves, so the model snapshot and migrations stay byte-identical.
+</code></pre>
+
+<p>frontend-test</p>
+
+<p>Lighthouse.Frontend/src/services/UsageData/usageDataRouteKeys.test.ts:21</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Reads Models/UsageData/UsageDataRouteKey.cs and UsageDataRoutePatterns.cs by path; both files stay.
+</code></pre>
+
+<p>ci-script</p>
+
+<p>Scripts/test-selection/path-classifier.sh:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Its Models regexes name files that stay; the only mover it can see (Models/OAuth/OAuthCompleteResult.cs) lands in Modules/TrackerIntegration/Application, already in SHARED_REGEX; S3 checks with test-selection-show.
+</code></pre>
+
+<p>build-config</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/GlobalSuppressions.cs:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Names no mover; S1 re-greps it with .editorconfig, the Stryker config and appsettings files.
+</code></pre>
+
+<h3>Agreement</h3>
+
+<p>None.</p>
+
+<h3>Not applicable</h3>
+
+<p>agreement</p>
+
+<pre><code>No shared wire, schema or configuration contract changes: System.Text.Json writes no type names, Swashbuckle uses short schema ids, no type-name reflection exists, and no entity moves, so no producer or consumer outside the compiled assembly sees a namespace.
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>Every caller of a moved type is inside the one backend deployable and changes in the same commit; no persisted or wire data names a namespace, so the primary oracle and the unchanged suites cover them.
+</code></pre>
+
+<h3>Boundaries</h3>
+
+<pre><code>Unchanged at runtime (controllers, the update queue, the event dispatcher). The oracles&#x27; driving port is the compiled Lighthouse.Backend assembly read through IlDependencies and the EF model of LighthouseAppContext, in-process; nearest argv: dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+</code></pre>
+
+<h4>Driven ports</h4>
+
+<pre><code>Unchanged: LighthouseAppContext, repositories and tracker connectors; no new external call.
+</code></pre>
+
+<pre><code>Models stays the bottom layer and depends on nothing above it (Models does not depend on Services, Modules or Platform); moved types land in Modules/&lt;Owner&gt;/{Domain,Application} or Platform/&lt;Area&gt; and may depend downward on Models.
+</code></pre>
+
+<h4>Failures</h4>
+
+<h5>B1</h5>
+
+<pre><code>A Models type has no catalogue row.
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>Failure names the type: add its row with its owner and measured blocker, or move it to Modules/&lt;Owner&gt; or Platform/&lt;Area&gt;; why: ADR-270 Decision 7 lets the kernel hold only shared ids, value objects and the event base type.
+</code></pre>
+
+<h5>B2</h5>
+
+<pre><code>A row&#x27;s blocker is false when measured.
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>Failure names the type and the blocker: give it its true blocker or move it to its owner.
+</code></pre>
+
+<h5>B3</h5>
+
+<pre><code>A free row is not on the movers list, or the movers list is not empty after S4.
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>Failure names the type and its destination: move it there.
+</code></pre>
+
+<h5>B4</h5>
+
+<pre><code>A blocker cannot be measured (IL body unreadable).
+</code></pre>
+
+<p>Indeterminate</p>
+
+<pre><code>Failure says could not verify, names the type and the unreadable member; never counted as true.
+</code></pre>
+
+<h3>Observations</h3>
+
+<pre><code>Architecture suite outcome per Models type: pass, or a failure naming the type, its false claim and the fix.
+</code></pre>
+
+<p>NUnit outcome with message</p>
+
+<pre><code>Runtime behaviour of the type; a blocker that holds for a reason the closed blocker set does not name.
+</code></pre>
+
+<pre><code>Unchanged backend suites (application-service port acceptance tests, unit tests) pass on the revision before S1 and after S4 with unchanged assertions.
+</code></pre>
+
+<p>NUnit outcomes per test</p>
+
+<pre><code>Behaviour no existing test observes; that is why the change is restricted to moves with unchanged bodies.
+</code></pre>
+
+<h3>Equality</h3>
+
+<p>catalogue</p>
+
+<pre><code>Two catalogues are equal when they hold the same set of rows (type full name, standing, owner, blocker kinds, freeing Story); row order and file layout are ignored.
+</code></pre>
+
+<h3>Constructors</h3>
+
+<p>KernelCatalogue.Kernel</p>
+
+<p>Kernel(string fullName) -&gt; CatalogueRow</p>
+
+<p>KernelCatalogue.Owned</p>
+
+<p>Owned(string fullName, Owner owner, Blocker first, params Blocker[] more, FreeingStory by) -&gt; CatalogueRow</p>
+
+<p>KernelCatalogue.Mover</p>
+
+<p>Mover(string oldFullName, string newFullName, Owner owner) -&gt; MoverRow</p>
+
+<h3>Laws</h3>
+
+<h4>L1</h4>
+
+<pre><code>The unchanged backend suites give the same outcome on the revision before S1 and after S4, with no assertion changed (only using lines in tests of moved types).
+</code></pre>
+
+<p>Refinement</p>
+
+<p>Application</p>
+
+<p>unchanged backend suites</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>full filtered dotnet test on both revisions
+</code></pre>
+
+<pre><code>ef-model-unchanged on both revisions
+</code></pre>
+
+<pre><code>empty diff under Lighthouse.Migrations.*, Lighthouse.Frontend and Lighthouse.EndToEndTests
+</code></pre>
+
+<pre><code>Two revisions and three fixed checks: the domain is the finite set of existing suites, so each is run once per revision.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<p>None.</p>
+
+<h3>Claims</h3>
+
+<h4>C1</h4>
+
+<pre><code>A Models type without a catalogue row, or a row whose blocker is false, cannot pass the Architecture suite.
+</code></pre>
+
+<pre><code>A new context type lands in the shared kernel unseen, or a stale reason keeps a free type in Models.
+</code></pre>
+
+<p>KernelCatalogueArchUnitTest</p>
+
+<pre><code>The compiled Lighthouse.Backend assembly and LighthouseAppContext&#x27;s EF model.
+</code></pre>
+
+<p>KernelCatalogue rows measured through IlDependencies</p>
+
+<p>KernelCatalogueArchUnitTest and KernelRules</p>
+
+<pre><code>dotnet test on the Architecture namespace fails naming the type, the claim and the fix.
+</code></pre>
+
+<pre><code>A type compiled into another assembly under the Models namespace, or generated at runtime, is not scanned; none exists today (no source generators emit Models types, no Reflection.Emit). Remaining check: K1 enumerates the one production assembly only, stated in its message.
+</code></pre>
+
+<h3>States</h3>
+
+<p>Admitted</p>
+
+<pre><code>Kernel row for one of the three base types.
+</code></pre>
+
+<p>None.</p>
+
+<p>Admitted</p>
+
+<pre><code>Owned row whose every blocker is measured true.
+</code></pre>
+
+<p>None.</p>
+
+<p>Admitted</p>
+
+<pre><code>Mover row on the shrink-only movers list, until S4 empties it.
+</code></pre>
+
+<p>None.</p>
+
+<p>Excluded</p>
+
+<pre><code>A Models type with no row.
+</code></pre>
+
+<p>None.</p>
+
+<p>Excluded</p>
+
+<pre><code>A row naming a type not in Models.
+</code></pre>
+
+<p>None.</p>
+
+<p>Excluded</p>
+
+<pre><code>A row with a false blocker.
+</code></pre>
+
+<p>None.</p>
+
+<p>Excluded</p>
+
+<pre><code>A free row not on the movers list, or any mover after S4.
+</code></pre>
+
+<p>None.</p>
+
+<p>Unknown</p>
+
+<pre><code>A blocker IlDependencies cannot measure (unreadable body): reported as could-not-verify, never as true.
+</code></pre>
+
+<p>S1 acceptance designer</p>
+
+<h3>Models</h3>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<pre><code>catalogue
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>K1 and K2 exclude an off-catalogue type and a false blocker; planted-type falsifiers in S1 and S4 show the exclusion fails loudly.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>catalogue
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>The real assembly yields a valid catalogue: three Kernel rows and Owned rows with measured blockers, built by KernelCatalogue&#x27;s constructors from the IL.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>catalogue
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>compiled assembly + EF model -&gt; KernelCatalogue measured by IlDependencies -&gt; K1 to K5 -&gt; dotnet test on the Architecture namespace, exit and message.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>catalogue
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>No liveness claim: each check is one synchronous evaluation over a finite set with no state, scheduling or eventual progress.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption negated: a mention in API/DTO means on the wire. Controllers return Models types directly.
+</code></pre>
+
+<pre><code>Wire rows are true.
+</code></pre>
+
+<pre><code>More rows marked Wire than the text scan found.
+</code></pre>
+
+<pre><code>A wire type moving without its contract.
+</code></pre>
+
+<pre><code>None: R3 measures reachability from controller signatures and API.DTO properties.
+</code></pre>
+
+<p>S1 acceptance designer</p>
+
+<h4>Y2</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption negated: a single-context type is free. A staying type may hold it, also through extension-method calls the text scan misses (BlackoutDaysExtensions).
+</code></pre>
+
+<pre><code>HeldBy rows are true.
+</code></pre>
+
+<pre><code>Fewer movers.
+</code></pre>
+
+<pre><code>Moving a held type, which breaks Models does not depend on Modules.
+</code></pre>
+
+<pre><code>None: the IL closure measures it.
+</code></pre>
+
+<p>S1 acceptance designer</p>
+
+<h4>Y3</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption negated: only tests read Models paths. The frontend test and the CI classifier read them.
+</code></pre>
+
+<pre><code>Path consumers keep working.
+</code></pre>
+
+<pre><code>PathPinned rows.
+</code></pre>
+
+<pre><code>A pinned file moving and breaking the frontend test or test selection.
+</code></pre>
+
+<pre><code>None: PathPinned plus the classifier test.
+</code></pre>
+
+<p>S1 acceptance designer</p>
+
+<h4>Y4</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption negated: predecessors left Models as measured on 2026-11-24. Story 6382 moved the event types; 6657 placed the write-back round.
+</code></pre>
+
+<pre><code>Catalogue matches the IL at S1.
+</code></pre>
+
+<pre><code>Different movers and owners than expected.
+</code></pre>
+
+<pre><code>Catalogue built from the feature-delta&#x27;s text counts.
+</code></pre>
+
+<pre><code>S2 and S3 targets revised from S1&#x27;s measurement.
+</code></pre>
+
+<p>host and architect</p>
+
+<h4>Y5</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption negated: a blocker stays true. S12c or S13 will free rows.
+</code></pre>
+
+<pre><code>K2 names the freed type.
+</code></pre>
+
+<pre><code>A later Story fails until it updates or moves the row.
+</code></pre>
+
+<pre><code>A stale blocker passing.
+</code></pre>
+
+<pre><code>Accepted friction, stated in the failure message.
+</code></pre>
+
+<p>owner of the freeing Story</p>
+
+<h4>Y6</h4>
+
+<p>SinglePointOfFailure</p>
+
+<pre><code>IlDependencies is the one reader for HeldBy, Shared, Wire and InfraReached.
+</code></pre>
+
+<pre><code>Blockers measured from IL, async bodies included.
+</code></pre>
+
+<pre><code>Could-not-verify reaches the summary.
+</code></pre>
+
+<pre><code>An unreadable body counted as no edge.
+</code></pre>
+
+<pre><code>Its existing planted-type tests; a could-not-verify result fails K2.
+</code></pre>
+
+<p>S1 acceptance designer</p>
+
+<h4>Y7</h4>
+
+<p>Bypass</p>
+
+<pre><code>Reflection, Type.GetType, serializer type names or another assembly could reach or define Models types outside the IL scan.
+</code></pre>
+
+<pre><code>Namespace moves change no JSON or API document.
+</code></pre>
+
+<pre><code>None.
+</code></pre>
+
+<pre><code>A runtime lookup by full name breaking after a move.
+</code></pre>
+
+<pre><code>Unreachable today: no JsonDerivedType, TypeNameHandling, Type.GetType or CustomSchemaIds; S1 re-greps (R10).
+</code></pre>
+
+<p>S1 acceptance designer</p>
+
+<h4>Y8</h4>
+
+<p>Stressor</p>
+
+<pre><code>Second set, walked over the finished design (walkthrough, not execution): a moved enum persisted as int; a Swagger schema-name clash; DI registration by namespace scan.
+</code></pre>
+
+<pre><code>Stored values, API document and registrations unchanged.
+</code></pre>
+
+<pre><code>None.
+</code></pre>
+
+<pre><code>Changed persisted value, schema id or registration.
+</code></pre>
+
+<pre><code>None found: no entity moves and enum values are unchanged; schema ids are short names; registrations name types, not namespaces.
+</code></pre>
+
+<p>S4 reviewer</p>
+
+<h3>Architectural tests</h3>
+
+<p>None.</p>
+
+<h3>Contract tests</h3>
 
 <p>None.</p>
 
 <h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Its Models pattern is widened where the move law requires, and KernelRuleVerdict leaves the file in the prefactoring commit.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRuleVerdict.cs</p>
+
+<p>Create</p>
+
+<pre><code>Prefactoring: one type per file before KernelRules changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>ReportModelsPattern treats Models.Reports as part of Reports; widened so it keeps seeing the Reports movers.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~KernelCatalogueArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+dotnet build Lighthouse.Backend
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogue.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsPatternRoles.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsStringsTheMoveRenames.cs</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run the Architecture tests on the compiled assembly before any file moves: KernelCatalogueArchUnitTest compares the catalogue with the IL and the EF model both ways, measures every row&#x27;s blockers, reads the shrink-only movers list, and evaluates NamespaceMoveLaw over the Models pattern-role map and rename list.
+</code></pre>
+
+<pre><code>Every top-level Models type has exactly one row and every row names a Models type; every Owned row&#x27;s blockers are true by measurement; every type with no blocker is on the movers list with its old and new namespace and owner. RED first on the movers&#x27; rows and on the move law for KernelRules.TheModels and ReportModelsPattern; GREEN once the widened patterns are in; the unchanged backend suites pass.
+</code></pre>
+
+<pre><code>A planted Lighthouse.Backend.Models fixture type used by one module and absent from the catalogue fails naming itself; a row claiming Wire for a type no controller reaches fails naming the type and the blocker; a free type left off the movers list fails naming its destination.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>Per touched file. KernelRules.cs holds KernelRules and KernelRuleVerdict, not variants of one sum type: split-now, KernelRuleVerdict moves to Tests/Architecture/KernelRuleVerdict.cs in its own refactor commit before the catalogue work; this makes the S4 kernel rule addition touch a one-type file. ReportsModuleArchUnitTest.cs holds one type: not-applicable, nothing moves.
+</code></pre>
+
+<pre><code>Every kernel rule&#x27;s outcome and message; KernelRulesCatchANewOffenderArchUnitTest unchanged and green before and after.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRulesCatchANewOffenderArchUnitTest.cs</p>
+
+<h5>Verification</h5>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~KernelRulesCatchANewOffenderArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs:16</p>
+
+<p>Changed</p>
+
+<pre><code>TheModels widened per the move law until S4 narrows it.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs:55</p>
+
+<p>Migrated</p>
+
+<pre><code>KernelRuleVerdict moves to KernelRuleVerdict.cs unchanged.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs:43</p>
+
+<p>Changed</p>
+
+<pre><code>ReportModelsPattern widened per the move law until S4 narrows it.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRuleVerdict.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives KernelRuleVerdict unchanged from KernelRules.cs.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>reuse</p>
+
+<pre><code>The S1 targets extend existing owners recorded in the shared reuse analysis: KernelRules (Extend, owner of TheModels) and ReportsModuleArchUnitTest&#x27;s ReportModelsPattern (owner of the Reports view of Models.Reports, widened for the movers); KernelRuleVerdict.cs only receives the existing KernelRuleVerdict record unchanged in the prefactoring split. No new responsibility is created.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L4</h6>
+
+<pre><code>K1: every top-level type in Lighthouse.Backend.Models has exactly one catalogue row and every row names an existing Models type.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>KernelCatalogueArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>real assembly: every type matched
+</code></pre>
+
+<pre><code>planted fixture type absent from the catalogue: fails naming itself
+</code></pre>
+
+<pre><code>row for a type that does not exist: fails naming the row
+</code></pre>
+
+<pre><code>The domain is the closed set of Models types in one compiled assembly; the test enumerates all of them.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L5</h6>
+
+<pre><code>K2: every Owned row&#x27;s blockers are true when measured from the IL and the EF model (Entity, Wire, HeldBy, Shared, InfraReached, PathPinned, Event); a type with no true blocker is on the movers list.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>KernelCatalogueArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>real rows: all true
+</code></pre>
+
+<pre><code>row claiming Entity for a non-entity: fails
+</code></pre>
+
+<pre><code>row claiming Wire for a type no controller reaches: fails
+</code></pre>
+
+<pre><code>free type off the movers list: fails naming its destination
+</code></pre>
+
+<pre><code>Each blocker is a finite measurement over the same closed set of types.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L6</h6>
+
+<pre><code>Move law: every governed rule pattern keeps (role Context) or drops (role Place) each mover under its new namespace, as the Models pattern-role map declares; the rename list only shrinks.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>KernelCatalogueArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>TheModels and ReportModelsPattern before widening: RED
+</code></pre>
+
+<pre><code>after widening: GREEN
+</code></pre>
+
+<pre><code>an undeclared pattern naming a mover: fails naming the field
+</code></pre>
+
+<pre><code>The domain is the finite set of rule-pattern fields in the test assembly times the movers.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T3</h6>
+
+<pre><code>The catalogue is closed both ways with measured blockers (K1, K2) and the rules see the move (move law).
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~KernelCatalogueArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEmitPermit.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected Platform mover; S1&#x27;s measurement confirms it or the design revision removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEmitPermit.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEmitPermit.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataSuppressionReason.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected Platform mover; S1&#x27;s measurement confirms it or the design revision removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataSuppressionReason.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataSuppressionReason.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/Encryption/SecretReadResult.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected Platform mover; S1&#x27;s measurement confirms it or the design revision removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Encryption/SecretReadResult.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/Encryption/SecretReadResult.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/Logging/RefreshSubject.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected Platform mover; S1&#x27;s measurement confirms it or the design revision removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Logging/RefreshSubject.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/Logging/RefreshSubject.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Names a Platform mover by its Models full name; renamed per S1&#x27;s rename list.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLanePatternRoles.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Names a Platform mover by its Models full name; renamed per S1&#x27;s rename list.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PlatformOwnedModelsTypesLiveInPlatformArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+dotnet build Lighthouse.Backend
+dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration&quot;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogue.cs</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run the Architecture tests after the Platform-owned movers moved: the oracle reads each Platform mover&#x27;s catalogue row and looks the type up in the compiled assembly.
+</code></pre>
+
+<pre><code>Each Platform mover exists only under Lighthouse.Backend.Platform.&lt;Area&gt; with the same public members, its row names that namespace, and the Platform lane rules pass. RED before the move (the type is still under Models); GREEN after; the unchanged backend suites pass.
+</code></pre>
+
+<pre><code>Leaving a mover under Models, or moving it into a module instead of Platform/&lt;Area&gt;, fails naming the type and its expected namespace.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEmitPermit.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEmitPermit.cs; consumers change only using lines.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataSuppressionReason.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataSuppressionReason.cs; consumers change only using lines.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Encryption/SecretReadResult.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Platform/Encryption/SecretReadResult.cs; consumers change only using lines.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Logging/RefreshSubject.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Platform/Logging/RefreshSubject.cs; consumers change only using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs:47</p>
+
+<p>Changed</p>
+
+<pre><code>Lane membership names the movers under Platform.&lt;Area&gt;.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLanePatternRoles.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Pattern-role literal for a mover renamed (S2) or its widened Models alternative removed (S4).
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEmitPermit.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataSuppressionReason.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/Encryption/SecretReadResult.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/Logging/RefreshSubject.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>reuse</p>
+
+<pre><code>A pure move keeps each existing type unchanged; its destination folders Platform/UsageData, Platform/Encryption and Platform/Logging already exist and are reused; no new responsibility is created.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>Per touched file. UsageDataEmitPermit.cs, UsageDataSuppressionReason.cs, SecretReadResult.cs, RefreshSubject.cs: one type each, not-applicable, they move whole. PlatformLanePatternRoles.cs: one type, not-applicable. PlatformLaneMembership.cs: holds several declarations of the lane map; not-applicable in this slice because the slice changes only full-name strings in it, and the accepted design keeps this Story to pure moves plus literal renames; a split is offered to the improvement backlog.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L2</h6>
+
+<pre><code>Each Platform mover exists only under its Platform.&lt;Area&gt; namespace and its catalogue row names that namespace.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>PlatformOwnedModelsTypesLiveInPlatformArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>each mover found at Platform.&lt;Area&gt;
+</code></pre>
+
+<pre><code>a mover still under Models: fails
+</code></pre>
+
+<pre><code>a mover under Modules: fails
+</code></pre>
+
+<pre><code>The domain is the finite list of Platform movers S1 measured.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T1</h6>
+
+<pre><code>The Platform lane keeps holding its types after the move.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembershipArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PlatformLaneMembershipArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/EmbedSessionTokenRedemption.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected context mover; S1&#x27;s measurement confirms it and its layer (Domain or Application by IL edges), or the design revision corrects or removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Auth/EmbedSessionTokenRedemption.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/EmbedSessionTokenRedemption.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected context mover; S1&#x27;s measurement confirms it and its layer (Domain or Application by IL edges), or the design revision corrects or removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacGuardRequirement.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected context mover; S1&#x27;s measurement confirms it and its layer (Domain or Application by IL edges), or the design revision corrects or removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacOperationResult.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceDescriptor.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected context mover; S1&#x27;s measurement confirms it and its layer (Domain or Application by IL edges), or the design revision corrects or removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceDescriptor.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceDescriptor.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DeliverySourceBindability.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected context mover; S1&#x27;s measurement confirms it and its layer (Domain or Application by IL edges), or the design revision corrects or removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceBindability.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DeliverySourceBindability.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DeliverySourceOption.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected context mover; S1&#x27;s measurement confirms it and its layer (Domain or Application by IL edges), or the design revision corrects or removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceOption.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DeliverySourceOption.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthCompleteResult.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected context mover; S1&#x27;s measurement confirms it and its layer (Domain or Application by IL edges), or the design revision corrects or removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthCompleteResult.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthCompleteResult.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/RealityCheckVerdictTypes.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected context mover; S1&#x27;s measurement confirms it and its layer (Domain or Application by IL edges), or the design revision corrects or removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/RealityCheckVerdictTypes.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/RealityCheckVerdictTypes.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/ManualRankComparer.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected context mover; S1&#x27;s measurement confirms it and its layer (Domain or Application by IL edges), or the design revision corrects or removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/ManualRankComparer.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/ManualRankComparer.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMoved.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected context mover; S1&#x27;s measurement confirms it and its layer (Domain or Application by IL edges), or the design revision corrects or removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/OwnersWhoseFetchMoved.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMoved.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AdditionalFieldInUse.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected context mover; S1&#x27;s measurement confirms it and its layer (Domain or Application by IL edges), or the design revision corrects or removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/AdditionalFieldInUse.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AdditionalFieldInUse.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportOwnerGoneException.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected context mover; S1&#x27;s measurement confirms it and its layer (Domain or Application by IL edges), or the design revision corrects or removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportOwnerGoneException.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportOwnerGoneException.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportRefusalCodes.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected context mover; S1&#x27;s measurement confirms it and its layer (Domain or Application by IL edges), or the design revision corrects or removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportRefusalCodes.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportRefusalCodes.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected context mover; S1&#x27;s measurement confirms it and its layer (Domain or Application by IL edges), or the design revision corrects or removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemRules/RuleSetSemantics.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/SpecialCauseType.cs</p>
+
+<p>Create</p>
+
+<pre><code>Expected context mover; S1&#x27;s measurement confirms it and its layer (Domain or Application by IL edges), or the design revision corrects or removes it.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/SpecialCauseType.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/SpecialCauseType.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/ManualRankComparerTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>Unit test moves beside its production type, namespace equal to folder, kept there by the module&#x27;s unit-test placement rule.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ManualRankComparerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/ManualRankComparerTest.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMovedTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>Unit test moves beside its production type, namespace equal to folder, kept there by the module&#x27;s unit-test placement rule.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/OwnersWhoseFetchMovedTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMovedTest.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/AdditionalFieldInUseTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>Unit test moves beside its production type, namespace equal to folder, kept there by the module&#x27;s unit-test placement rule.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/AdditionalFieldInUseTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/AdditionalFieldInUseTest.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/DeliverySourceBindabilityTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>Unit test moves beside its production type, namespace equal to folder, kept there by the module&#x27;s unit-test placement rule.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliverySourceBindabilityTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the move; the file&#x27;s bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/DeliverySourceBindabilityTest.cs with only namespace and using lines changed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AdditionalFieldInUseRulePurityArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Names a context mover or its Models namespace by literal; renamed per S1&#x27;s rename list.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Names a context mover or its Models namespace by literal; renamed per S1&#x27;s rename list.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingMembershipArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Names a context mover or its Models namespace by literal; renamed per S1&#x27;s rename list.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Names a context mover or its Models namespace by literal; renamed per S1&#x27;s rename list.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Names a context mover or its Models namespace by literal; renamed per S1&#x27;s rename list.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Names a context mover or its Models namespace by literal; renamed per S1&#x27;s rename list.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPatternRoles.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Names a context mover or its Models namespace by literal; renamed per S1&#x27;s rename list.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Names a context mover or its Models namespace by literal; renamed per S1&#x27;s rename list.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureOrderingSingleSourceArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Names a context mover or its Models namespace by literal; renamed per S1&#x27;s rename list.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Names a context mover or its Models namespace by literal; renamed per S1&#x27;s rename list.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextOwnedModelsTypesLiveInTheirModuleArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ContextOwnedModelsTypesLiveInTheirModuleArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+dotnet build Lighthouse.Backend
+dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration&quot;
+bash Scripts/test-selection/test-path-classifier.sh
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogue.cs</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run the Architecture tests after the context-owned movers and their unit tests moved: the oracle reads each context mover&#x27;s catalogue row and looks the type up in the compiled assembly.
+</code></pre>
+
+<pre><code>Each context mover exists only under Lighthouse.Backend.Modules.&lt;Owner&gt;.Domain or .Application as its row names, its unit tests sit under Tests/Modules/&lt;Owner&gt; in the matching layer, and every module&#x27;s boundary and placement rules pass. RED before the move; GREEN after; the unchanged backend suites and the path-classifier test pass.
+</code></pre>
+
+<pre><code>Leaving a mover under Models, putting it in another module or the wrong layer, or leaving its unit test under Tests/Models, fails naming the type and its expected place.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Auth/EmbedSessionTokenRedemption.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/EmbedSessionTokenRedemption.cs; consumers change only using lines.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacGuardRequirement.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs; consumers change only using lines.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacOperationResult.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs; consumers change only using lines.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceDescriptor.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceDescriptor.cs; consumers change only using lines.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceBindability.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DeliverySourceBindability.cs; consumers change only using lines.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceOption.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DeliverySourceOption.cs; consumers change only using lines.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthCompleteResult.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthCompleteResult.cs; consumers change only using lines.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/RealityCheckVerdictTypes.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/RealityCheckVerdictTypes.cs; consumers change only using lines.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/ManualRankComparer.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/ManualRankComparer.cs; consumers change only using lines.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/OwnersWhoseFetchMoved.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMoved.cs; consumers change only using lines.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/AdditionalFieldInUse.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AdditionalFieldInUse.cs; consumers change only using lines.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportOwnerGoneException.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportOwnerGoneException.cs; consumers change only using lines.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportRefusalCodes.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportRefusalCodes.cs; consumers change only using lines.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemRules/RuleSetSemantics.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs; consumers change only using lines.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/SpecialCauseType.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/SpecialCauseType.cs; consumers change only using lines.
+</code></pre>
+
+<p>test-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ManualRankComparerTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/ManualRankComparerTest.cs; consumers change only using lines.
+</code></pre>
+
+<p>test-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/OwnersWhoseFetchMovedTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMovedTest.cs; consumers change only using lines.
+</code></pre>
+
+<p>test-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/AdditionalFieldInUseTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/AdditionalFieldInUseTest.cs; consumers change only using lines.
+</code></pre>
+
+<p>test-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliverySourceBindabilityTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/DeliverySourceBindabilityTest.cs; consumers change only using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AdditionalFieldInUseRulePurityArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Literal for a mover renamed to its module namespace.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Literal for a mover renamed to its module namespace.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingMembershipArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Literal for a mover renamed to its module namespace.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Literal for a mover renamed to its module namespace.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Literal for a mover renamed to its module namespace.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Literal for a mover renamed to its module namespace.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPatternRoles.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Literal for a mover renamed to its module namespace.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Literal for a mover renamed to its module namespace.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureOrderingSingleSourceArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Literal for a mover renamed to its module namespace.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Literal for a mover renamed to its module namespace.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/EmbedSessionTokenRedemption.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceDescriptor.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DeliverySourceBindability.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DeliverySourceOption.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthCompleteResult.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/RealityCheckVerdictTypes.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/ManualRankComparer.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMoved.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AdditionalFieldInUse.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportOwnerGoneException.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportRefusalCodes.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>production-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/SpecialCauseType.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved file; only namespace and using lines differ from the Models original.
+</code></pre>
+
+<p>test-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/ManualRankComparerTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved unit test beside its production type; assertions unchanged.
+</code></pre>
+
+<p>test-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMovedTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved unit test beside its production type; assertions unchanged.
+</code></pre>
+
+<p>test-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/AdditionalFieldInUseTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved unit test beside its production type; assertions unchanged.
+</code></pre>
+
+<p>test-move</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/DeliverySourceBindabilityTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Receives the moved unit test beside its production type; assertions unchanged.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>reuse</p>
+
+<pre><code>A pure move keeps each existing type unchanged; the destination modules and their Domain and Application folders already exist and are reused; no new responsibility is created.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>Per touched file. Movers with one type each (EmbedSessionTokenRedemption.cs, RbacGuardRequirement.cs, DeliverySourceDescriptor.cs, DeliverySourceBindability.cs, OAuthCompleteResult.cs, ManualRankComparer.cs, OwnersWhoseFetchMoved.cs, ReportOwnerGoneException.cs, ReportRefusalCodes.cs, RuleSetSemantics.cs, SpecialCauseType.cs) and the four moved unit tests: not-applicable, they move whole. Movers holding several types (RbacOperationResult.cs, DeliverySourceOption.cs, RealityCheckVerdictTypes.cs, AdditionalFieldInUse.cs): not-applicable in this slice, because the accepted design moves a file whole and keeps every commit a pure move; their split waits for S12c. Rule files holding one type (AdditionalFieldInUseRulePurityArchUnitTest.cs, OrganisationSetupPatternRoles.cs, FeatureOrderingSingleSourceArchUnitTest.cs): not-applicable. Rule files holding several types (AccessApplicationLayoutArchUnitTest.cs, AccessAndLicensingMembershipArchUnitTest.cs, TrackerIntegrationMembershipArchUnitTest.cs, TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs, OrganisationSetupMembership.cs, ReportsMembership.cs, EveryActionDeclaresItsAccessArchitectureTest.cs): not-applicable in this slice, because the slice changes only literal strings in them and their extra types are planted fixtures of the rule; a split is offered to the improvement backlog.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L3</h6>
+
+<pre><code>Each context mover exists only under Modules.&lt;Owner&gt;.Domain or .Application as its catalogue row names, and its unit tests sit in the matching Tests/Modules/&lt;Owner&gt; layer.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>ContextOwnedModelsTypesLiveInTheirModuleArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>each mover found at its row&#x27;s namespace
+</code></pre>
+
+<pre><code>a mover still under Models: fails
+</code></pre>
+
+<pre><code>a mover in the wrong module or layer: fails
+</code></pre>
+
+<pre><code>a unit test left under Tests/Models: fails
+</code></pre>
+
+<pre><code>The domain is the finite list of context movers S1 measured.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T2</h6>
+
+<pre><code>Every module&#x27;s boundary, layout and unit-test placement rules stay green with the moved types inside.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S4</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Gains the rule that every Kernel row is used by two or more contexts; TheModels narrowed back to Models only.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>ReportModelsPattern narrowed: Reports&#x27; types are named by module namespace only.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLanePatternRoles.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Any widened Models alternative removed.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPatternRoles.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Any widened Models alternative removed.
+</code></pre>
+
+<p>ARCHITECTURE.md</p>
+
+<p>Extend</p>
+
+<pre><code>Section 4 line 109 and the diagram node describe the kernel as the three base types and point to the catalogue.
+</code></pre>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md</p>
+
+<p>Extend</p>
+
+<pre><code>Decision 7 gains a status line: today three base types; every other Models type is listed with owner and blocker by the kernel catalogue.
+</code></pre>
+
+<p>docs/feature/epic-6264-modular-monolith/slices/slice-12-s04b-reduce-models-to-kernel.md</p>
+
+<p>Extend</p>
+
+<pre><code>AC 1 and the hypothesis restated as measured.
+</code></pre>
+
+<p>docs/feature/epic-6264-modular-monolith/feature-delta.md</p>
+
+<p>Extend</p>
+
+<pre><code>KPI 3 (Models files) re-measured.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsRulesNameOnlyTheOwnersArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ModelsRulesNameOnlyTheOwnersArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~KernelRulesCatchANewOffenderArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+dotnet build Lighthouse.Backend
+dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration&quot;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogue.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsStringsTheMoveRenames.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRulesCatchANewOffenderArchUnitTest.cs</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run the Architecture tests with the movers list and the rename list empty: the oracle sweeps every rule-pattern field and literal in Tests/Architecture for a Models name of a moved type (its own files and fixtures excluded by exact path, that exclusion list asserted equal to those paths), and plants a made-up Models type off the catalogue.
+</code></pre>
+
+<pre><code>No rule names a moved type by its old Models name and no widened Models alternative remains; the planted type fails naming itself and the fix; every Kernel row is used by two or more contexts; Models does not depend on Services, Modules, Platform or the update queue. RED while S1&#x27;s widened alternatives remain; GREEN once narrowed; the unchanged backend suites pass. ARCHITECTURE.md and ADR-270 Decision 7 are prose, verified by review and EXAMINE, not pinned by a test.
+</code></pre>
+
+<pre><code>A rule keeping a Models alternative for a moved type, a non-empty movers or rename list, a planted Models type that passes, or a Kernel row used by one context, fails naming it.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<p>P5</p>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs:16</p>
+
+<p>Changed</p>
+
+<pre><code>TheModels narrowed; new Kernel-row usage rule.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs:43</p>
+
+<p>Changed</p>
+
+<pre><code>ReportModelsPattern narrowed.
+</code></pre>
+
+<p>docs</p>
+
+<p>ARCHITECTURE.md:109</p>
+
+<p>Changed</p>
+
+<pre><code>Kernel described as it is after the Story.
+</code></pre>
+
+<p>docs</p>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:1062</p>
+
+<p>Changed</p>
+
+<pre><code>Decision 7 status line.
+</code></pre>
+
+<p>docs</p>
+
+<p>docs/feature/epic-6264-modular-monolith/slices/slice-12-s04b-reduce-models-to-kernel.md:22</p>
+
+<p>Changed</p>
+
+<pre><code>AC 1 restated.
+</code></pre>
+
+<p>docs</p>
+
+<p>docs/feature/epic-6264-modular-monolith/feature-delta.md:1</p>
+
+<p>Changed</p>
+
+<pre><code>KPI 3 re-measured.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLanePatternRoles.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Pattern-role literal for a mover renamed (S2) or its widened Models alternative removed (S4).
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPatternRoles.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Pattern-role literal for a mover renamed (S2) or its widened Models alternative removed (S4).
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>Per touched file. KernelRules.cs holds one type after S1&#x27;s split: not-applicable. ReportsModuleArchUnitTest.cs, PlatformLanePatternRoles.cs and OrganisationSetupPatternRoles.cs hold one type each: not-applicable. ARCHITECTURE.md, the ADR-270 file, the slice-12 brief and the epic feature-delta are documents, not code: not-applicable.
+</code></pre>
+
+<p>reuse</p>
+
+<pre><code>The S4 targets are the existing owners of the facts they change: KernelRules (Extend, shared reuse analysis) gains the Kernel-row usage rule; ReportsModuleArchUnitTest and the pattern-role files narrow their own patterns; NamespaceMoveLaw&#x27;s existing old-path sweep is reused with an empty rename list; ARCHITECTURE.md, ADR-270, the slice-12 brief and the epic feature-delta describe the kernel. No new responsibility is created.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L7</h6>
+
+<pre><code>K3: after S4 the movers list and the rename list are empty and no rule pattern or literal names a moved type by its old Models name.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>ModelsRulesNameOnlyTheOwnersArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>real rules after narrowing: GREEN
+</code></pre>
+
+<pre><code>a Models alternative left for a mover: fails naming the field
+</code></pre>
+
+<pre><code>a non-empty movers list: fails naming the type
+</code></pre>
+
+<pre><code>The domain is the finite set of rule fields and literals in the test assembly.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L8</h6>
+
+<pre><code>K4: every Kernel row is an interface or base type used by two or more contexts in the IL.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>KernelRules</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>IDomainEvent, IEntity, IConcurrencyTokenEntity: each used by two or more contexts
+</code></pre>
+
+<pre><code>planted kernel type used by one context: fails
+</code></pre>
+
+<pre><code>The domain is the three Kernel rows.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L9</h6>
+
+<pre><code>K5 (kept): Models does not depend on Services, Modules, Platform or the update queue.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>KernelRules</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>real assembly: no offender
+</code></pre>
+
+<pre><code>planted offender in KernelRulesCatchANewOffenderArchUnitTest: fails naming it
+</code></pre>
+
+<pre><code>The domain is the finite set of Models types and their IL edges.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T4</h6>
+
+<pre><code>Rules name moved types by namespace only and a new Models type off the catalogue fails naming itself (K3, K1 planted).
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsRulesNameOnlyTheOwnersArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ModelsRulesNameOnlyTheOwnersArchUnitTest
+</code></pre>
+
+<h6>T5</h6>
+
+<pre><code>Kernel rows are shared by two or more contexts and Models depends on nothing above it (K4, K5), each with a planted offender.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRulesCatchANewOffenderArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~KernelRulesCatchANewOffenderArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
 
 <p>None.</p>
 
