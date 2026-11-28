@@ -138,6 +138,13 @@ const buildContext = (options: BuildContextOptions) => {
 	return { Wrapper };
 };
 
+const renderSettings = (Wrapper: React.FC<{ children: React.ReactNode }>) =>
+	renderWithQueryClient(
+		<Wrapper>
+			<ApiKeysSettings />
+		</Wrapper>,
+	);
+
 const waitForTableRow = async (rowId: number) => {
 	await waitFor(() => {
 		expect(screen.getByTestId(`api-key-row-${rowId}`)).toBeInTheDocument();
@@ -168,11 +175,7 @@ describe("F-FE-2 — API Keys listing Scopes column", () => {
 			teamsResolution: [{ id: PLATFORM_TEAM_ID, name: PLATFORM_TEAM_NAME }],
 		});
 
-		renderWithQueryClient(
-			<Wrapper>
-				<ApiKeysSettings />
-			</Wrapper>,
-		);
+		renderSettings(Wrapper);
 
 		await waitForTableRow(1);
 		expect(
@@ -203,11 +206,7 @@ describe("F-FE-2 — API Keys listing Scopes column", () => {
 			authorizationSummary: buildSummary({ isRbacEnabled: false }),
 		});
 
-		renderWithQueryClient(
-			<Wrapper>
-				<ApiKeysSettings />
-			</Wrapper>,
-		);
+		renderSettings(Wrapper);
 
 		await waitForTableRow(1);
 		expect(
@@ -231,11 +230,7 @@ describe("F-FE-2 — API Keys listing Scopes column", () => {
 			authorizationSummary: buildSummary({ isRbacEnabled: true }),
 		});
 
-		renderWithQueryClient(
-			<Wrapper>
-				<ApiKeysSettings />
-			</Wrapper>,
-		);
+		renderSettings(Wrapper);
 
 		await waitForTableRow(1);
 		expect(
@@ -259,11 +254,7 @@ describe("F-FE-2 — API Keys listing Scopes column", () => {
 			authorizationSummary: buildSummary({ isRbacEnabled: false }),
 		});
 
-		renderWithQueryClient(
-			<Wrapper>
-				<ApiKeysSettings />
-			</Wrapper>,
-		);
+		renderSettings(Wrapper);
 
 		await waitForTableRow(1);
 		expect(
@@ -287,11 +278,7 @@ describe("F-FE-2 — API Keys listing Scopes column", () => {
 			authorizationSummary: buildSummary({ isRbacEnabled: true }),
 		});
 
-		renderWithQueryClient(
-			<Wrapper>
-				<ApiKeysSettings />
-			</Wrapper>,
-		);
+		renderSettings(Wrapper);
 
 		await waitForTableRow(9);
 		const row = screen.getByTestId("api-key-row-9");
@@ -315,11 +302,7 @@ describe("F-FE-2 — API Keys listing Scopes column", () => {
 			authorizationSummary: pendingSummary,
 		});
 
-		renderWithQueryClient(
-			<Wrapper>
-				<ApiKeysSettings />
-			</Wrapper>,
-		);
+		renderSettings(Wrapper);
 
 		await waitForTableRow(1);
 		expect(
@@ -352,11 +335,7 @@ describe("F-FE-2 — API Keys listing Scopes column", () => {
 			portfoliosRejects: true,
 		});
 
-		renderWithQueryClient(
-			<Wrapper>
-				<ApiKeysSettings />
-			</Wrapper>,
-		);
+		renderSettings(Wrapper);
 
 		await waitForTableRow(3);
 		const row = screen.getByTestId("api-key-row-3");

@@ -141,6 +141,10 @@ const RbacSettings: React.FC = () => {
 		fireAndForget(load());
 	}, [load]);
 
+	// The user may have changed their own rights, so the permissions every component shares are asked again too.
+	const reloadAfterAccessChange = () =>
+		Promise.all([load(), refreshPermissions()]);
+
 	useEffect(() => {
 		let cancelled = false;
 		authService
@@ -163,7 +167,7 @@ const RbacSettings: React.FC = () => {
 	const handleBootstrap = async () => {
 		try {
 			await rbacService.bootstrapCurrentUserAsSystemAdmin();
-			await Promise.all([load(), refreshPermissions()]);
+			await reloadAfterAccessChange();
 		} catch {
 			setError("Failed to bootstrap System Admin.");
 		}
@@ -172,7 +176,7 @@ const RbacSettings: React.FC = () => {
 	const handleGrantSystemAdmin = async (userId: number) => {
 		try {
 			await rbacService.grantSystemAdmin(userId);
-			await Promise.all([load(), refreshPermissions()]);
+			await reloadAfterAccessChange();
 		} catch {
 			setError("Failed to grant System Admin role.");
 		}
@@ -181,7 +185,7 @@ const RbacSettings: React.FC = () => {
 	const handleRevokeSystemAdmin = async (userId: number) => {
 		try {
 			await rbacService.revokeSystemAdmin(userId);
-			await Promise.all([load(), refreshPermissions()]);
+			await reloadAfterAccessChange();
 		} catch {
 			setError("Failed to revoke System Admin role.");
 		}
@@ -203,7 +207,7 @@ const RbacSettings: React.FC = () => {
 				reportUsage({ name: UsageDataEventName.SystemWideAccessGranted });
 			}
 			setGroupValueInput("");
-			await Promise.all([load(), refreshPermissions()]);
+			await reloadAfterAccessChange();
 		} catch {
 			setError("Failed to create group mapping.");
 		}
@@ -212,7 +216,7 @@ const RbacSettings: React.FC = () => {
 	const handleRemoveGroupMapping = async (mappingId: number) => {
 		try {
 			await rbacService.removeGroupMapping(mappingId);
-			await Promise.all([load(), refreshPermissions()]);
+			await reloadAfterAccessChange();
 		} catch {
 			setError("Failed to remove group mapping.");
 		}
@@ -224,7 +228,7 @@ const RbacSettings: React.FC = () => {
 		setRemoveDialogUserId(null);
 		try {
 			await rbacService.deleteUser(userId);
-			await Promise.all([load(), refreshPermissions()]);
+			await reloadAfterAccessChange();
 		} catch {
 			setError("Failed to remove user.");
 		}

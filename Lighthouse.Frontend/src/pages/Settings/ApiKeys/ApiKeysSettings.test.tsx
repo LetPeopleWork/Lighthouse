@@ -41,6 +41,13 @@ const buildWrapper = (
 	return { Wrapper, mockApiKeyService, mockAuthService };
 };
 
+const renderSettings = (Wrapper: React.FC<{ children: React.ReactNode }>) =>
+	renderWithQueryClient(
+		<Wrapper>
+			<ApiKeysSettings />
+		</Wrapper>,
+	);
+
 describe("ApiKeysSettings", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -51,11 +58,7 @@ describe("ApiKeysSettings", () => {
 			getApiKeys: vi.fn().mockResolvedValue([]),
 		});
 
-		renderWithQueryClient(
-			<Wrapper>
-				<ApiKeysSettings />
-			</Wrapper>,
-		);
+		renderSettings(Wrapper);
 
 		await waitFor(() => {
 			expect(screen.getByTestId("no-api-keys-message")).toBeInTheDocument();
@@ -77,11 +80,7 @@ describe("ApiKeysSettings", () => {
 			getApiKeys: vi.fn().mockResolvedValue(keys),
 		});
 
-		renderWithQueryClient(
-			<Wrapper>
-				<ApiKeysSettings />
-			</Wrapper>,
-		);
+		renderSettings(Wrapper);
 
 		await waitFor(() => {
 			expect(screen.getByTestId("api-keys-table")).toBeInTheDocument();
@@ -105,11 +104,7 @@ describe("ApiKeysSettings", () => {
 			getApiKeys: vi.fn().mockResolvedValue(keys),
 		});
 
-		renderWithQueryClient(
-			<Wrapper>
-				<ApiKeysSettings />
-			</Wrapper>,
-		);
+		renderSettings(Wrapper);
 
 		await waitFor(() => {
 			expect(screen.getByText("Never")).toBeInTheDocument();
@@ -119,11 +114,7 @@ describe("ApiKeysSettings", () => {
 	it("renders create api key button", async () => {
 		const { Wrapper } = buildWrapper();
 
-		renderWithQueryClient(
-			<Wrapper>
-				<ApiKeysSettings />
-			</Wrapper>,
-		);
+		renderSettings(Wrapper);
 
 		await waitFor(() => {
 			expect(screen.getByTestId("create-api-key-button")).toBeEnabled();
@@ -141,11 +132,7 @@ describe("ApiKeysSettings", () => {
 			},
 		);
 
-		renderWithQueryClient(
-			<Wrapper>
-				<ApiKeysSettings />
-			</Wrapper>,
-		);
+		renderSettings(Wrapper);
 
 		await waitFor(() => {
 			expect(
@@ -162,11 +149,7 @@ describe("ApiKeysSettings", () => {
 	it("opens create dialog when create button is clicked", async () => {
 		const { Wrapper } = buildWrapper();
 
-		renderWithQueryClient(
-			<Wrapper>
-				<ApiKeysSettings />
-			</Wrapper>,
-		);
+		renderSettings(Wrapper);
 		await waitFor(() => {
 			expect(screen.getByTestId("create-api-key-button")).toBeEnabled();
 		});
@@ -195,11 +178,7 @@ describe("ApiKeysSettings", () => {
 			deleteApiKey: mockDeleteApiKey,
 		});
 
-		renderWithQueryClient(
-			<Wrapper>
-				<ApiKeysSettings />
-			</Wrapper>,
-		);
+		renderSettings(Wrapper);
 
 		await waitFor(() => {
 			expect(screen.getByTestId("delete-api-key-5")).toBeInTheDocument();
@@ -227,11 +206,7 @@ describe("ApiKeysSettings", () => {
 			getApiKeys: vi.fn().mockResolvedValue(keys),
 		});
 
-		renderWithQueryClient(
-			<Wrapper>
-				<ApiKeysSettings />
-			</Wrapper>,
-		);
+		renderSettings(Wrapper);
 
 		await waitFor(() => {
 			expect(screen.getByTestId("api-keys-table")).toBeInTheDocument();
@@ -257,11 +232,7 @@ describe("ApiKeysSettings", () => {
 			deleteApiKey: vi.fn().mockResolvedValue(undefined),
 		});
 
-		renderWithQueryClient(
-			<Wrapper>
-				<ApiKeysSettings />
-			</Wrapper>,
-		);
+		renderSettings(Wrapper);
 
 		await waitFor(() => {
 			expect(screen.getByTestId("api-key-row-5")).toBeInTheDocument();
@@ -283,11 +254,7 @@ describe("CreateApiKeyDialog (via ApiKeysSettings)", () => {
 	const openDialog = async (
 		Wrapper: React.FC<{ children: React.ReactNode }>,
 	) => {
-		renderWithQueryClient(
-			<Wrapper>
-				<ApiKeysSettings />
-			</Wrapper>,
-		);
+		renderSettings(Wrapper);
 		await waitFor(() => {
 			expect(screen.getByTestId("create-api-key-button")).toBeEnabled();
 		});
