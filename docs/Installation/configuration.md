@@ -470,3 +470,25 @@ docker run -p 80:80 \
   -e "Telemetry__Logging__Format=json" \
   ghcr.io/letpeoplework/lighthouse:latest
 ```
+
+## Response Compression
+
+Lighthouse compresses its own answers. When a browser offers Brotli or Gzip, the frontend files and the API answers that are safe to compress go out compressed, which makes a first page load much faster on a slow connection. A reverse proxy in front of Lighthouse needs no compression of its own: it passes the compressed answers through as they are.
+
+Answers that could carry a secret are always sent uncompressed: answers to requests that change something (POST, PUT, PATCH, DELETE), the live update connection, the logs, and the embed handshake. A client that does not ask for compression gets the plain answer.
+
+**`ResponseCompression:Enabled`** — when `true` (the default), Lighthouse compresses answers as described above. Set it to `false` to send every answer uncompressed, for example when your proxy compresses answers itself. The setting is read at start-up, so restart Lighthouse after you change it.
+
+**Default Value:** `true`
+
+**Override Options:**
+- Command Line: `--ResponseCompression:Enabled`
+- Environment Variable: `ResponseCompression__Enabled`
+
+**Example:**
+
+```bash
+docker run -p 80:80 \
+  -e "ResponseCompression__Enabled=false" \
+  ghcr.io/letpeoplework/lighthouse:latest
+```

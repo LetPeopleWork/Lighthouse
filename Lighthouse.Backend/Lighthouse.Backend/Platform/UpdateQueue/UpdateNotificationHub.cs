@@ -10,6 +10,8 @@ namespace Lighthouse.Backend.Platform.UpdateQueue
     [Authorize]
     public class UpdateNotificationHub : Hub
     {
+        public const string Route = "api/updateNotificationHub";
+
         private readonly IUpdateStatusStore statusStore;
         private readonly IRefreshLogService refreshLogService;
         private readonly ILogger<UpdateNotificationHub> logger;

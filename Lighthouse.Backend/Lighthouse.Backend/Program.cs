@@ -75,6 +75,8 @@ using Lighthouse.Backend.Modules.FlowMetrics.Application.Policies;
 using Lighthouse.Backend.Modules.Promises.Application;
 using Lighthouse.Backend.Modules.Promises.Application.Policies;
 using Lighthouse.Backend.Platform.Host;
+using Microsoft.AspNetCore.ResponseCompression;
+using System.IO.Compression;
 
 namespace Lighthouse.Backend
 {
@@ -167,6 +169,8 @@ namespace Lighthouse.Backend
 
             app.UseForwardedHeaders();
 
+            app.UseResponseCompression();
+
             app.UseCors("AllowAll");
 
             app.UseSwagger();
@@ -212,7 +216,7 @@ namespace Lighthouse.Backend
 
             app.MapControllers();
 
-            app.MapHub<UpdateNotificationHub>("api/updateNotificationHub");
+            app.MapHub<UpdateNotificationHub>(UpdateNotificationHub.Route);
 
             MapHealthEndpoints(app);
             TelemetryConfigurator.MapEndpoints(app);
@@ -283,6 +287,7 @@ namespace Lighthouse.Backend
             ConfigureDataProtection(builder, keyStore);
             ConfigureAuthentication(builder, authConfig);
             ConfigureRateLimiting(builder);
+            ConfigureResponseCompression(builder);
             ConfigureHealthChecks(builder);
             ConfigureGracefulShutdown(builder);
             TelemetryConfigurator.Configure(builder.Services, builder.Configuration);
@@ -1047,6 +1052,30 @@ namespace Lighthouse.Backend
             RateLimitingConfiguration.UsageDataIngestPolicy,
             RateLimitingConfiguration.RefinementContributionPolicy,
         ];
+
+        private static void ConfigureResponseCompression(WebApplicationBuilder builder)
+        {
+            var compressionConfig = builder.Configuration
+                .GetSection(ResponseCompressionConfiguration.SectionName)
+                .Get<ResponseCompressionConfiguration>() ?? new ResponseCompressionConfiguration();
+
+            builder.Services.AddSingleton(compressionConfig);
+
+            builder.Services.AddResponseCompression(options =>
+            {
+                // Which answers are safe to compress is decided by the route and method, not the scheme,
+                // so TLS terminated at a proxy changes nothing.
+                options.EnableForHttps = true;
+                options.Providers.Add<BrotliCompressionProvider>();
+                options.Providers.Add<GzipCompressionProvider>();
+            });
+
+            // SmallestSize is Brotli quality 11, about 140 times slower than Optimal for barely smaller files.
+            builder.Services.Configure<BrotliCompressionProviderOptions>(options => options.Level = CompressionLevel.Optimal);
+            builder.Services.Configure<GzipCompressionProviderOptions>(options => options.Level = CompressionLevel.Optimal);
+
+            builder.Services.AddSingleton<IResponseCompressionProvider, BreachSafeResponseCompressionProvider>();
+        }
 
         private static void ConfigureRateLimiting(WebApplicationBuilder builder)
         {

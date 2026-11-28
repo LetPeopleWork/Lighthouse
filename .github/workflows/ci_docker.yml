@@ -105,6 +105,16 @@ jobs:
             *) echo "Expected a runtime that starts with .NET 11, got: $runtime"; exit 1 ;;
           esac
 
+      - name: Check the container sends compressed answers only when asked
+        run: |
+          asset=$(curl --silent --fail --insecure https://localhost:443/ | grep -o '/assets/[^"]*\.js' | head -n 1)
+          if [ -z "$asset" ]; then echo "No /assets/*.js found in the page shell"; exit 1; fi
+          echo "Checking $asset"
+          encoding=$(curl --silent --fail --insecure --output /dev/null --dump-header - -H "Accept-Encoding: br" "https://localhost:443$asset" | tr -d '\r' | awk -F': ' 'tolower($1)=="content-encoding" {print $2}')
+          if [ "$encoding" != "br" ]; then echo "Expected content-encoding br for $asset, got: '$encoding'"; exit 1; fi
+          plain=$(curl --silent --fail --insecure --output /dev/null --dump-header - https://localhost:443/api/latest/systeminfo | tr -d '\r' | awk -F': ' 'tolower($1)=="content-encoding" {print $2}')
+          if [ -n "$plain" ]; then echo "Expected no content-encoding on systeminfo without Accept-Encoding, got: '$plain'"; exit 1; fi
+
       - name: Cleanup test container
         if: always()
         run: |

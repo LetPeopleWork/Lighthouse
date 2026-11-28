@@ -297,6 +297,8 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "IPortfolioUpdater",
                 "ITeamUpdater",
                 "IUpdateService"),
+            .. Stays("The web host's pipeline", "Lighthouse.Backend.Platform.Host",
+                "BreachSafeResponseCompressionProvider"),
         ];
 
         public static IReadOnlyList<NamespaceThatStays> NamespacesThatStay { get; } =
