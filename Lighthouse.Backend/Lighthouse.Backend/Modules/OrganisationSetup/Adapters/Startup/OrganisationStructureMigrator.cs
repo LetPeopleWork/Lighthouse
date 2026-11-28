@@ -26,6 +26,13 @@ namespace Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Startup
                 return;
             }
 
+            if (context.ChangeTracker.HasChanges())
+            {
+                throw new InvalidOperationException(
+                    "The upgrade to levels did not start: the shared database context holds changes an earlier start-up step staged and did not save, "
+                    + "and the upgrade would either commit or discard them. Save them in the step that staged them before the organisation structure is built.");
+            }
+
             // Postgres runs with a retrying execution strategy, which refuses a user-initiated transaction
             // unless the whole unit of work is handed to it.
             var strategy = context.Database.CreateExecutionStrategy();
@@ -47,6 +54,8 @@ namespace Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Startup
 
         private async Task TheFirstUpgrade()
         {
+            // The context was empty when the upgrade began, so this drops only what a failed earlier attempt of
+            // this upgrade staged before the execution strategy retried it.
             context.ChangeTracker.Clear();
             await using var transaction = await context.Database.BeginTransactionAsync();
 

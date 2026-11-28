@@ -15,6 +15,8 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private const string StructureApplication = @"^Lighthouse\.Backend\.Modules\.OrganisationSetup\.Application\.Structure$";
 
+        private const string StructureAndMappingDomain = @"^Lighthouse\.Backend\.Modules\.OrganisationSetup\.Domain\.(Structure|Mapping)$";
+
         private const string StorageClockOrIo =
             @"^Microsoft\.EntityFrameworkCore(\.|$)|^Lighthouse\.Backend\.Data(\.|$)"
             + @"|^Lighthouse\.Backend\.API(\.|$)|^Lighthouse\.Backend\.Modules\.[^.]+\.Adapters(\.|$)"
@@ -42,6 +44,16 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(offenders, Is.Empty,
                 $"The upgrade's planner reaches [{string.Join("; ", offenders.Select(offender => $"{offender.TypeName} -> {string.Join(", ", offender.Targets)}"))}]. "
                 + "It must decide from the values it is handed alone: read and write in OrganisationStructureMigrator and pass the planner what it needs.");
+        }
+
+        [Test]
+        public void The_levels_and_the_mappings_depend_on_no_storage_clock_or_io_type()
+        {
+            var offenders = IlDependencies.DependentsIn(production, StructureAndMappingDomain, IsStorageClockOrIo);
+
+            Assert.That(offenders, Is.Empty,
+                $"The levels or the connection mappings reach [{string.Join("; ", offenders.Select(offender => $"{offender.TypeName} -> {string.Join(", ", offender.Targets)}"))}]. "
+                + "They decide from their own state alone: load and save them through the stores in Adapters.Persistence.");
         }
 
         [Test]
