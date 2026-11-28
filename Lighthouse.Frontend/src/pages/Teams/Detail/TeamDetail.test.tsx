@@ -1180,7 +1180,7 @@ describe("TeamDetail - RBAC Access Tab and Write Controls Visibility", () => {
 			screen.getByRole("button", { name: "System WIP Limit" }),
 		).toBeInTheDocument();
 	});
-	// Epic #5511 slice 01 / AC-01.6. Until this slice a refresh that broke arrived as "Completed", so the
+	// Before the fix a refresh that broke arrived as "Completed", so the
 	// icon went back to idle and the only sign anything was wrong was a chart that quietly stopped moving.
 	const renderAndCaptureTheUpdateFeed = (
 		summary: {

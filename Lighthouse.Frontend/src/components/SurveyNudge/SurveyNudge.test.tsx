@@ -82,7 +82,7 @@ describe("SurveyNudge eligibility gating", () => {
 		expect(await queryHeadingFound()).toBeInTheDocument();
 	});
 
-	// Epic 5733 slice 01. This popup currently tells every Community user that Lighthouse never
+	// This popup currently tells every Community user that Lighthouse never
 	// tracks how they use it. The day Usage Data ships, an indicator in the footer says otherwise,
 	// and the product contradicts itself in two places a reader can see at once. Pending until the
 	// copy is corrected — it fails today, and that is the point of it.

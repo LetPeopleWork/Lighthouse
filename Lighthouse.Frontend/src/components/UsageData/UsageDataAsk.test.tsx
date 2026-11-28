@@ -73,7 +73,7 @@ describe("UsageDataAsk", () => {
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
 
-	// AC-05.2. The record of having asked is written when the question is put, not when it is
+	// The record of having asked is written when the question is put, not when it is
 	// answered - a browser that closes the dialog has answered nothing, and is exactly the browser
 	// this has to remember.
 	it("records that this browser has been asked, as it asks", async () => {
@@ -97,7 +97,7 @@ describe("UsageDataAsk", () => {
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
 
-	// AC-05.6. The survey nudge got there first, so this waits for another session - consent
+	// The survey nudge got there first, so this waits for another session - consent
 	// collected beside an unrelated request is not freely given.
 	it("stays silent when another prompt already holds this session", async () => {
 		sessionStorage.setItem("lighthouse:prompt-slot", "survey-nudge");
@@ -117,7 +117,7 @@ describe("UsageDataAsk", () => {
 		expect(sessionStorage.getItem("lighthouse:prompt-slot")).toBe("usage-data");
 	});
 
-	// AC-05.3. There is no third button, and closing is not an answer - nothing is recorded on the
+	// There is no third button, and closing is not an answer - nothing is recorded on the
 	// server and the footer indicator goes on saying what it said before.
 	it("records no decision when the dialog is closed without one", async () => {
 		const service = usageDataService({ mayAsk: true });

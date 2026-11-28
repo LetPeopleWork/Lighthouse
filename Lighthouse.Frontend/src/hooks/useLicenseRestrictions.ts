@@ -3,7 +3,7 @@ import { useCallback, useContext } from "react";
 import type { ILicenseStatus } from "../models/ILicenseStatus";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import { PageMovesContext } from "./PageMovesContext";
-import { recordAskOnPage } from "./pageOfTheLatestAsk";
+import { recordAskOnPageFor } from "./pageOfTheLatestAsk";
 import { listOf, usePortfoliosQuery, useTeamsQuery } from "./useUnitLists";
 
 /** Whether the license and the counts the create gates read have arrived. */
@@ -35,11 +35,8 @@ export const useLicenseStatusQuery = () => {
 
 	return useQuery({
 		queryKey: LICENSE_STATUS_KEY,
-		queryFn: ({ client, queryKey }) => {
-			const asked = client.getQueryCache().find({ queryKey, exact: true });
-			if (asked) {
-				recordAskOnPage(asked, page);
-			}
+		queryFn: (context) => {
+			recordAskOnPageFor(context, page);
 			return licensingService.getLicenseStatus();
 		},
 		staleTime: 1000 * 60 * 5,

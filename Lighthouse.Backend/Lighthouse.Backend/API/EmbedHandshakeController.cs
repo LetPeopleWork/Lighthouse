@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 
 namespace Lighthouse.Backend.API
 {
-    // ADR-137 hop 2. Its own controller on the embed prefix so [AllowAnonymous] covers nothing but
+    // Second hop of the embed handshake. Its own controller on the embed prefix so [AllowAnonymous] covers nothing but
     // this one read verb: the poller holds no credential.
     [Route("api/v1/embed")]
     [Route("api/latest/embed")]
@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.API
                 return NotFound();
             }
 
-            // D31, the same two answers hop 1 gives: the embed surface does not exist on an instance
+            // The same two answers the first hop gives: the embed surface does not exist on an instance
             // whose authentication is off or cannot work, and Blocked withholds a surface it admits to.
             var mode = authModeResolver.Resolve().Mode;
             if (mode != AuthMode.Enabled)
@@ -55,7 +55,7 @@ namespace Lighthouse.Backend.API
                 ExpiresAt = outcome.ExpiresAt,
                 RefusalCode = outcome.RefusalCode,
 
-                // Only on a grant: D45 keeps unresolved, unknown, consumed and refused identical.
+                // Only on a grant, so the unresolved, unknown, consumed and refused answers stay identical.
                 SessionLifetimeSeconds = outcome.Token is null ? null : ResolveSessionLifetimeSeconds(),
             });
         }

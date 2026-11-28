@@ -12,7 +12,7 @@ import type { PageFreshQuery } from "./PageFreshQuery";
 import type { PageFreshRead } from "./PageFreshRead";
 import { PageMovesContext } from "./PageMovesContext";
 import { pageFreshQueryKey } from "./pageFreshQueryKey";
-import { recordAskOnPage } from "./pageOfTheLatestAsk";
+import { recordAskOnPageFor } from "./pageOfTheLatestAsk";
 
 const pageOfTheLatestSettledAsk = <T>(
 	query: PageFreshQuery<T>,
@@ -24,14 +24,10 @@ const pageOfTheLatestSettledAsk = <T>(
 // One way to ask a shared read, so a reader and a promise-style caller record the page of their ask alike.
 const askOnPage =
 	<T>(ask: () => Promise<T>, page: number) =>
-	async ({
-		client,
-		queryKey,
-	}: QueryFunctionContext<QueryKey>): Promise<PageFreshAnswer<T>> => {
-		const asked = client.getQueryCache().find({ queryKey, exact: true });
-		if (asked) {
-			recordAskOnPage(asked, page);
-		}
+	async (
+		context: QueryFunctionContext<QueryKey>,
+	): Promise<PageFreshAnswer<T>> => {
+		recordAskOnPageFor(context, page);
 		try {
 			return { answer: await ask(), askedOnPage: page };
 		} catch (error) {
