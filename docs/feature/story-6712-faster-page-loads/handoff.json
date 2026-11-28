@@ -655,13 +655,17 @@
 "P10"
 ],
 "disposition": {
-"kind": "NotTested",
-"owner": "design",
-"reason": "F724"
+"kind": "Tested",
+"obligations": [
+"L6/F295"
+],
+"still_passes_if": "F736",
+"test": "A_signed_in_user_is_told_the_newest_version_when_two_newer_releases_exist",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/NewestVersionWireContractTest.cs"
 },
-"expected": "F722",
-"stimulus": "F721",
-"user_result": "F723"
+"expected": "F734",
+"stimulus": "F733",
+"user_result": "F735"
 },
 {
 "covers": [
@@ -692,12 +696,12 @@
 "obligations": [
 "T4"
 ],
-"still_passes_if": "F732",
-"test": "ProtectedControllers_DoNotHaveAllowAnonymous",
-"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/EndpointAuthorizationPolicyTest.cs"
+"still_passes_if": "F739",
+"test": "EveryProductionActionDeclaresItsAccess",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs"
 },
-"expected": "F730",
-"stimulus": "F729",
+"expected": "F738",
+"stimulus": "F737",
 "user_result": "F731"
 }
 ]
@@ -707,7 +711,7 @@
 "C": 3,
 "D": 13,
 "E": 13,
-"F": 732,
+"F": 739,
 "K": 13,
 "L": 7,
 "N": 16,
@@ -3154,19 +3158,19 @@
 "F718": "The newest of all releases is returned",
 "F719": "A development build is offered the newest release",
 "F720": "Returns none for a development build",
-"F721": "Ask the newest-version route when no release is newer, and ask it signed out",
-"F722": "404 when none; refused when not signed in",
-"F723": "Route behaves like the release-notes route",
-"F724": "The design leaves the controller test unchanged and names no action name or wire-contract locator for the new route; the attribute scan covers only the authorization attribute once the route exists",
 "F725": "Open the footer when, in turn, the installed version, distribution, update question, newest version or update support question cannot be answered",
 "F726": "The footer shows its error and no update icon in each case",
 "F727": "If any one version check fails the footer shows its error as today",
 "F728": "A failure of one check is swallowed once checks run together",
-"F729": "Scan every API action of the protected controllers for an authorization attribute, including the new newest-version route once it exists",
 "F73": "Open question 3 resolved (Features tab reads instead of full Team settings): it reads nothing extra. PortfolioDetail.fetchPortfolio calls teamService.getTeamSettings once per involved Team and stores the result in the involvedTeams state, which no code reads; the Features tab (PortfolioFeatureList) and the Deliveries tab already render from portfolio.involvedTeams, the entity references inside the portfolio answer. So the per-Team settings fetch and the dead state are removed; updateTeamSettingsFromPortfolio keeps its on-demand read before a save. Team pages do not load Team settings for their Features tab. Side effect: the Portfolio load chain loses one step; the rest of that chain stays out of scope.",
-"F730": "No protected action is open to signed-out callers",
 "F731": "The new update check is available to signed-in users only",
-"F732": "The new route is added with an anonymous attribute that is not on the allow list is caught; a route with no attribute at all is not caught by this rule",
+"F733": "Ask the newest-version route as a signed-in user when two newer releases exist and when none is newer, and as a signed-out caller, through both route versions",
+"F734": "A signed-in user gets the newest version number from the first newer release; with no newer release the answer is 404; a signed-out caller is refused exactly as the update check refuses them and is told no version",
+"F735": "The update pop-up learns the newest version without release notes, and only for signed-in users",
+"F736": "A route that answers a different number than the first newer release fails; one that refuses signed-out callers through some other action than the update check's own rule would still pass, which is allowed",
+"F737": "Scan every API action for a declared access rule, including the newest-version route once it exists",
+"F738": "No production action lacks an access declaration, so the new route cannot be left open or undeclared",
+"F739": "A route declared signed-in only where anonymous was meant, since the scan checks that a declaration exists and not which one is right",
 "F75": "S3: useUnitLists.ts owns the Teams and Portfolios keys (reusing the existing teams and portfolios keys of useLicenseRestrictions) with useTeamsQuery, usePortfoliosQuery and useUnitListsChanged; the licence keeps useLicenseStatusQuery (LICENSE_STATUS_KEY, its hourly refetch) and joins the page-move refresh. useLicenseRestrictions, OverviewDashboard, EditPortfolio, ApiKeysSettings and SurveyNudge read these hooks instead of calling the services. useUnitListsChanged is called after own create (EditTeam, EditPortfolio), rename (TeamDetail and PortfolioDetail settings saves, EditTeam/EditPortfolio updates) and delete (OverviewDashboard). useLicenseRestrictions keeps its 403-as-empty rule.",
 "F76": "S5: new route GET version/newest on VersionController (SignedInOnly, same reason as hasupdate) returns the newest release version string from a new LighthouseReleaseService.GetNewestReleaseVersion (the first of GetNewReleases, so the number equals today’s newReleases[0].version), 404 when there is none, as /version/new. GET version/new stays for the dialog. LighthouseVersion runs current, distribution and hasupdate together with Promise.all; when an update exists it runs newest and, for lighthouse-internal, updateSupported together; any rejection sets the footer error as today. Only data dependencies remain, no order between independent checks. LatestReleaseInformationDialog receives the newest version and reads the release notes with useQuery (key version, newReleases; enabled only while open) and has three states: loading (the dialog with the newest version and a CircularProgress where the notes go), loaded (today’s notes), failed (the newest version, the message Could not load the release notes. and a Retry button that refetches). Sketch at the start of DELIVER.",
 "F78": "Tests: Lighthouse test-writing skill wins over nWave test rules (nine-run timing, PBT density). Frontend rules on hooks in .test.ts/.test.tsx with renderWithQueryClient; backend S1 is a wire contract on WireContractTest because only a running host shows Content-Encoding and headers produced by middleware order; the policy rule itself is pinned by unit rows on BreachSafeResponseCompressionProvider over DefaultHttpContext. No nWave tags in test code.",

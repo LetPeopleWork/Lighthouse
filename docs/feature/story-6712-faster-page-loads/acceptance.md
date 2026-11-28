@@ -1186,26 +1186,31 @@ Returns none for a development build
 P10
 
 ```text
-Ask the newest-version route when no release is newer, and ask it signed out
+Ask the newest-version route as a signed-in user when two newer releases exist and when none is newer, and as a signed-out caller, through both route versions
 ```
 
 ```text
-404 when none; refused when not signed in
+A signed-in user gets the newest version number from the first newer release; with no newer release the answer is 404; a signed-out caller is refused exactly as the update check refuses them and is told no version
 ```
 
 ```text
-Route behaves like the release-notes route
+The update pop-up learns the newest version without release notes, and only for signed-in users
 ```
 
 ##### Disposition
 
-NotTested
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/NewestVersionWireContractTest\.cs
+
+A\_signed\_in\_user\_is\_told\_the\_newest\_version\_when\_two\_newer\_releases\_exist
 
 ```text
-The design leaves the controller test unchanged and names no action name or wire-contract locator for the new route; the attribute scan covers only the authorization attribute once the route exists
+A route that answers a different number than the first newer release fails; one that refuses signed-out callers through some other action than the update check's own rule would still pass, which is allowed
 ```
 
-design
+###### Obligations
+
 
 ##### Covers
 
@@ -1246,11 +1251,11 @@ A failure of one check is swallowed once checks run together
 P10
 
 ```text
-Scan every API action of the protected controllers for an authorization attribute, including the new newest-version route once it exists
+Scan every API action for a declared access rule, including the newest-version route once it exists
 ```
 
 ```text
-No protected action is open to signed-out callers
+No production action lacks an access declaration, so the new route cannot be left open or undeclared
 ```
 
 ```text
@@ -1261,12 +1266,12 @@ The new update check is available to signed-in users only
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/EndpointAuthorizationPolicyTest\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/EveryActionDeclaresItsAccessArchitectureTest\.cs
 
-ProtectedControllers\_DoNotHaveAllowAnonymous
+EveryProductionActionDeclaresItsAccess
 
 ```text
-The new route is added with an anonymous attribute that is not on the allow list is caught; a route with no attribute at all is not caught by this rule
+A route declared signed-in only where anonymous was meant, since the scan checks that a declaration exists and not which one is right
 ```
 
 ###### Obligations
