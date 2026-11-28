@@ -107,7 +107,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         [TestCase("SourceOptionBlockReason", ReachedByTheKernel)]
         [TestCase("DeliveryForecastPublication", UsedByCodeThatStays)]
         [TestCase("DeliveryForecastPublishResult", UsedByCodeThatStays)]
-        [TestCase("DeliverySourceBindability", UsedByCodeThatStays)]
         [TestCase("DeliverySourceDescriptor", UsedByCodeThatStays)]
         [TestCase("DeliverySourceOption", UsedByCodeThatStays)]
         [TestCase("DeliverySourceResolution", UsedByCodeThatStays)]

@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Models.Auth
+namespace Lighthouse.Backend.Modules.Access.Domain
 {
     public record CurrentUserProfileStatus
     {

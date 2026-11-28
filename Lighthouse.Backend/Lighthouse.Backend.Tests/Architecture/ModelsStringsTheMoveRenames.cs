@@ -11,8 +11,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         [
             new("Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs", "Lighthouse.Backend.Models.Authorization.RbacGuardRequirement", "Lighthouse.Backend.Modules.Access.Domain.RbacGuardRequirement"),
             new("Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs", "Lighthouse.Backend.Models.Authorization.RbacOperationResult", "Lighthouse.Backend.Modules.Access.Domain.RbacOperationResult"),
-            new("Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OverTimeReconstructionSeamArchUnitTest.cs", "Models/OptionalFeatures/OptionalFeatureKeys.cs", "Modules/OrganisationSetup/Domain/OptionalFeatureKeys.cs"),
-            new("Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs", "Models/ManualRankComparer.cs", "Modules/OrganisationSetup/Domain/ManualRankComparer.cs"),
         ];
     }
 }

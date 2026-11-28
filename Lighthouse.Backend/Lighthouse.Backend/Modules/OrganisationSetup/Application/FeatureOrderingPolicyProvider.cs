@@ -2,6 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.Modules.OrganisationSetup.Application
 {

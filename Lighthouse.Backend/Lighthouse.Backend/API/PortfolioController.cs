@@ -3,7 +3,6 @@ using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Modules.FlowMetrics.Domain;
 using Lighthouse.Backend.Modules.Licensing.Adapters.Http;
 using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
@@ -18,6 +17,7 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.API
 {

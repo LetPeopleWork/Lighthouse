@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Models
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Domain
 {
     public readonly record struct PortfolioSize(int FeatureCount)
     {

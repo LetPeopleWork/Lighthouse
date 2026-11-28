@@ -1,4 +1,6 @@
-namespace Lighthouse.Backend.Models.Auth
+using Lighthouse.Backend.Models;
+
+namespace Lighthouse.Backend.Modules.Access.Domain
 {
     // ADR-137 D63: a redeemed row names either an API key or a viewer, never both, so the caller
     // branches on which one arrived rather than on a sentinel.

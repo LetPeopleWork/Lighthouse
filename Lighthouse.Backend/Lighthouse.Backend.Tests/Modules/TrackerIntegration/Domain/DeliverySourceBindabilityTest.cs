@@ -1,7 +1,8 @@
 using Lighthouse.Backend.Models.DeliverySources;
 using NUnit.Framework;
+using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
+namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Domain
 {
     /// <summary>
     /// DISTILL acceptance specifications for Epic 5565 slice 01a - which offered sources may be bound.

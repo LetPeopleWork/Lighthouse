@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.Reports.Domain;
 
 namespace Lighthouse.Backend.Tests.Modules.Reports.Application
 {

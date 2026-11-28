@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Modules.Access.Domain;
 
 namespace Lighthouse.Backend.Tests.Models.Auth
 {

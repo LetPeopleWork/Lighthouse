@@ -1,9 +1,9 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Platform.Seeding;
 using Microsoft.EntityFrameworkCore;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.Services.Implementation.Seeding
 {

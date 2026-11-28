@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Lighthouse.Backend.Modules.WorkItems.Domain;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections
 {

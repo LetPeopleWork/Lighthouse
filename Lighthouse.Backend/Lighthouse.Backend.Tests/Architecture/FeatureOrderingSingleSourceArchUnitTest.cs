@@ -4,6 +4,7 @@ using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Modules.Refinement.Application;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 

@@ -3,7 +3,6 @@ using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Modules.Access.Adapters.Http;
@@ -24,6 +23,7 @@ using NUnit.Framework;
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 {

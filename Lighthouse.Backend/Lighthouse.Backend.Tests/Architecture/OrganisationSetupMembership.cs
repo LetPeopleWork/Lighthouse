@@ -145,7 +145,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "Models/WorkTrackingSystemOptionsOwner.cs",
                 "Models/BlackoutDaysExtensions.cs",
                 "Models/FeatureOrderingPolicy.cs",
-                "Models/ManualRankComparer.cs",
+                "Modules/OrganisationSetup/Domain/ManualRankComparer.cs",
                 "Modules/OrganisationSetup/Contracts/TeamDeleted.cs",
                 "Modules/OrganisationSetup/Contracts/BlackoutConfigurationChanged.cs",
                 "Modules/OrganisationSetup/Contracts/FeatureOrderingPolicyChanged.cs",

@@ -1,4 +1,6 @@
-namespace Lighthouse.Backend.Models
+using Lighthouse.Backend.Models;
+
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Domain
 {
     /// <summary>
     /// Which Teams, or which Portfolios, a connection save changed what they ask the tracker for. Each map holds,

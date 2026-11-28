@@ -6,6 +6,7 @@ using Lighthouse.Backend.Modules.Reports.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Moq;
+using Lighthouse.Backend.Modules.Reports.Domain;
 
 namespace Lighthouse.Backend.Tests.Modules.Reports.Application
 {

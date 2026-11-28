@@ -2,11 +2,11 @@ using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Platform.UsageData;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.DependencyInjection;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.Tests.Integration.UsageData
 {

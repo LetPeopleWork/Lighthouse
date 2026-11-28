@@ -1,4 +1,6 @@
-namespace Lighthouse.Backend.Models
+using Lighthouse.Backend.Models;
+
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Domain
 {
     /// <summary>Whether a connection default is held for the Teams or for the Portfolios on the connection.</summary>
     public enum DefaultHeldFor

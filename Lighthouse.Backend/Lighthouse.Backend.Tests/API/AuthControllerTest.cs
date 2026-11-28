@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System.Security.Claims;
+using Lighthouse.Backend.Modules.Access.Domain;
 
 namespace Lighthouse.Backend.Tests.API
 {

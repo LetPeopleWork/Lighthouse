@@ -1,8 +1,9 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Modules.WorkItems.Domain;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
-namespace Lighthouse.Backend.Tests.Models
+namespace Lighthouse.Backend.Tests.Modules.OrganisationSetup.Domain
 {
     [TestFixture]
     public class OwnersWhoseFetchMovedTest

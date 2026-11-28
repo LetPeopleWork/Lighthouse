@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.API.DTO
 {

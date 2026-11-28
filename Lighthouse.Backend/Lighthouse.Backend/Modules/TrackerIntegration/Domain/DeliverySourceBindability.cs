@@ -1,4 +1,7 @@
-namespace Lighthouse.Backend.Models.DeliverySources
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.DeliverySources;
+
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Domain
 {
     /// <summary>
     /// The single bindability rule, shared by the options endpoint and the create path so the picker and

@@ -5,6 +5,7 @@ using Lighthouse.Backend.Modules.FlowMetrics.Contracts;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using static Lighthouse.Backend.Modules.Reports.Domain.ReportSeriesReading;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.Reports.Domain;
 
 namespace Lighthouse.Backend.Modules.Reports.Application
 {

@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
-namespace Lighthouse.Backend.Tests.Models
+namespace Lighthouse.Backend.Tests.Modules.OrganisationSetup.Domain
 {
     /// <summary>
     /// The comparison this instance's own order is built on (INV-O1): places ascending, never-placed

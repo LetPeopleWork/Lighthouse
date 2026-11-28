@@ -1,9 +1,9 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation.Seeding;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
 {

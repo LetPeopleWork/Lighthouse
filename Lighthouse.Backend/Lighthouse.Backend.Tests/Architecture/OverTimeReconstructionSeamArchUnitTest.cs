@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// <summary>A request to the filler for days, as it is spelled where one is made rather than where it is declared.</summary>
         private const string AskingTheFillerForDays = ".AskFor(";
 
-        private const string TheKeyList = "Models/OptionalFeatures/OptionalFeatureKeys.cs";
+        private const string TheKeyList = "Modules/OrganisationSetup/Domain/OptionalFeatureKeys.cs";
 
         private const string TheOptionalFeatureSeeder = "Services/Implementation/Seeding/OptionalFeatureSeeder.cs";
 

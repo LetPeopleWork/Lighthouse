@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
 using NUnit.Framework;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.Tests.Models
 {

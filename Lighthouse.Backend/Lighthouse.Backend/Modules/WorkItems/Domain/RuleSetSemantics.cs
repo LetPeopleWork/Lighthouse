@@ -1,4 +1,7 @@
-namespace Lighthouse.Backend.Models.WorkItemRules
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.WorkItemRules;
+
+namespace Lighthouse.Backend.Modules.WorkItems.Domain
 {
     /// <summary>
     /// Caller-side descriptor for how a <see cref="WorkItemRuleSet"/> evaluation result should

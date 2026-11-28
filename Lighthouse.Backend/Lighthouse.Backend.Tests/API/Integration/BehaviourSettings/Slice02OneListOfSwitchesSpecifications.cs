@@ -1,10 +1,10 @@
 using System.Net;
 using System.Text.Json;
-using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Moq;
 using NUnit.Framework;
 using Serilog.Events;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 {

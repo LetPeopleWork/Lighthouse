@@ -1,4 +1,6 @@
-namespace Lighthouse.Backend.Models
+using Lighthouse.Backend.Models;
+
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Domain
 {
     public sealed record RemovedAdditionalField(int Id, string DisplayName);
 

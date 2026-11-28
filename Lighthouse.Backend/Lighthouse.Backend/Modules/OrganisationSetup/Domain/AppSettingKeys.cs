@@ -1,4 +1,6 @@
-﻿namespace Lighthouse.Backend.Models.AppSettings
+using Lighthouse.Backend.Models;
+
+﻿namespace Lighthouse.Backend.Modules.OrganisationSetup.Domain
 {
     public static class AppSettingKeys
     {

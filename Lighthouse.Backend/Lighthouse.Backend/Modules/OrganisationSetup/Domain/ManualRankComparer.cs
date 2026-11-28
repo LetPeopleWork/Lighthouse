@@ -1,4 +1,6 @@
-namespace Lighthouse.Backend.Models
+using Lighthouse.Backend.Models;
+
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Domain
 {
     /// <summary>
     /// This instance's own places, ascending, with the never-placed sorting last (INV-O1). Gaps,

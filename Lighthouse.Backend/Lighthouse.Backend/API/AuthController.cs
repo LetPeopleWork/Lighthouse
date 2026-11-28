@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
+using Lighthouse.Backend.Modules.Access.Domain;
 
 namespace Lighthouse.Backend.API
 {

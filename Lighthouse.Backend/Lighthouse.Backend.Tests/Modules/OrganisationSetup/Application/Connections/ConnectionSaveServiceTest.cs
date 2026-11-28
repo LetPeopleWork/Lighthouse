@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.Tests.Modules.OrganisationSetup.Application.Connections
 {

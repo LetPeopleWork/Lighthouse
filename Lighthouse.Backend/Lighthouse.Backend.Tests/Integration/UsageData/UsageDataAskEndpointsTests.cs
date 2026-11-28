@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Models.UsageData;
 using Lighthouse.Backend.Platform.UsageData;
@@ -12,6 +11,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.Tests.Integration.UsageData
 {

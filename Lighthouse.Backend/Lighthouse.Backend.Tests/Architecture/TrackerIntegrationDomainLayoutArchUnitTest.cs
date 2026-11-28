@@ -34,6 +34,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "WorkItemStateTransitionMapper",
             "ParentSourceSelector",
             "DependencyFieldReferences",
+            "DeliverySourceBindability",
         ];
 
         private static readonly string[] ApplicationTypes =
@@ -75,7 +76,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void TheTrackerIntegrationDomain_HoldsExactlyTheThreeTranslationRulesThatReachOnlyTheKernel()
+        public void TheTrackerIntegrationDomain_HoldsExactlyTheFourTranslationRulesThatReachOnlyTheKernel()
         {
             // A nested type belongs to the type that declares it, so only the outermost types count.
             var held = IlDependencies.TypesIn(ProductionModule.Value, TrackerIntegrationDomain)

@@ -15,6 +15,7 @@ using Moq;
 using Lighthouse.Backend.Platform.Host;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.Tests.Services
 {

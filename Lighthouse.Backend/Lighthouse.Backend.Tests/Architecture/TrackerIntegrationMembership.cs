@@ -28,6 +28,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "ConnectionHealthService",
             "CsvWorkTrackingConnector",
             "CsvWorkTrackingOptionNames",
+            "DeliverySourceBindability",
             "DependencyFieldReferences",
             "DependencySourceSelector",
             "IAzureDevOpsWorkTrackingConnector",

@@ -1,5 +1,6 @@
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
@@ -17,7 +18,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             Types().That()
                 .Are(typeof(AdditionalFieldInUse), typeof(RemovedAdditionalField), typeof(DefaultNamingAField), typeof(OwnerNamingFields))
-                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(AnythingOfLighthouseOutsideModels))
+                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(AnythingOfLighthouseOutsideModels)
+                    .And().AreNot(typeof(AdditionalFieldInUse), typeof(RemovedAdditionalField), typeof(DefaultNamingAField), typeof(OwnerNamingFields)))
                 .Because(
                     "the rule that refuses removing a field still in use is handed the removed fields, the defaults and " +
                     "the owners' own values, and must not read the database or reach into the services itself: the " +

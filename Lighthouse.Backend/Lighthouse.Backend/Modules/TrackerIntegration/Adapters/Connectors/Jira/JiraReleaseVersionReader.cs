@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Lighthouse.Backend.Models.DeliverySources;
+using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
 
 namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira
 {

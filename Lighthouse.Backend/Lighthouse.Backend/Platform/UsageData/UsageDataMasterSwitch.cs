@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.Platform.UsageData
 {

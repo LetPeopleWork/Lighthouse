@@ -16,6 +16,7 @@ using System.Diagnostics;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Modules.Promises.Application;
 using Lighthouse.Backend.Modules.Forecasting.Application.WriteBack;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {

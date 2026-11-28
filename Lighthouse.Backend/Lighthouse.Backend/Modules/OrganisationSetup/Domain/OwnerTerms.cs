@@ -1,4 +1,6 @@
-namespace Lighthouse.Backend.Models
+using Lighthouse.Backend.Models;
+
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Domain
 {
     /// <summary>
     /// What this instance calls its Teams, Portfolios and Features, as set under Settings, Terminology. A term

@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "WorkItemsModule",
             "WorkItemService", "IWorkItemService", "BlockedItemService", "IBlockedItemService", "SyncModeResolver", "FetchFingerprint",
             "TeamDataService", "ITeamDataService",
-            "RuleEvaluator", "IRuleEvaluator", "IRuleFieldProvider", "WorkItemFieldProvider", "FeatureFieldProvider",
+            "RuleEvaluator", "RuleSetSemantics", "IRuleEvaluator", "IRuleFieldProvider", "WorkItemFieldProvider", "FeatureFieldProvider",
             "DependencyDecision", "DependencyHonourPolicy", "DependencyReconciler", "DependencyRefreshReporter", "DependencyCycleDetector",
             "DependencyFacts", "DependencyLoop", "DependencyLoops", "DependenciesAsRead", "FeatureDependencyRendering", "WhatTheForecastWaitsFor",
             "IDependencyDecision", "IDependencyHonourPolicy", "IDependencyReconciler", "IDependencyRefreshReporter", "IWhatTheForecastWaitsFor",

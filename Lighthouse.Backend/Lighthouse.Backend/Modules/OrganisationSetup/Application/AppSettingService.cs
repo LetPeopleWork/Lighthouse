@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using System.Globalization;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.Modules.OrganisationSetup.Application
 {
