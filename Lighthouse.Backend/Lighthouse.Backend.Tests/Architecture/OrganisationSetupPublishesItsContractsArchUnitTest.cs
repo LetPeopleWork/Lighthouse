@@ -176,9 +176,8 @@ namespace Lighthouse.Backend.Tests.Architecture
                 $"The list of tolerated cross-context edges still names these edges into a published type of Organisation set-up: {string.Join("; ", intoPublishedTypes)}. Why it matters: once the types are published, an edge into them is the legal way in, and a listed one hides the day the edge goes back to the old place. How to fix: take each of these entries off the list; the list then holds only the edges into code that is not published.");
         }
 
-        // A rule that reads only set-up's Adapters (Refinement's forbidden code, through "any module's adapters") does not judge
-        // set-up's Application or Domain: those edges belong to the contracts rule alone, so it is not a rule this check can ask
-        // to read them as foreign. Every other row that reads Adapters reads Application and Domain too, so none is left out.
+        // A rule is checked here only when it reads both set-up's Adapters and its Application as foreign. Refinement's forbidden
+        // code reads only set-up's Adapters, so it is left out: edges from it into set-up's other code belong to the contracts rule.
         private static List<(string Description, string Target)> TheDownstreamRulesThatReadOrganisationSetupAsForeign()
         {
             var table = StaticValueOf(typeof(OrganisationSetupIsAnOpenHostArchUnitTest), "DownstreamOutboundRules") as System.Collections.IEnumerable;

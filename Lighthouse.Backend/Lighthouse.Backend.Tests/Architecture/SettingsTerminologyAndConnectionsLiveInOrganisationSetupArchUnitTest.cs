@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static IReadOnlyList<OrganisationSetupType> Group => [.. OrganisationSetupMembership.MovingTypes.Skip(TypesBeforeTheGroup)];
 
-        private static string TheEdgeTheMoveAdds => $"{TheCadence} -> {OrganisationSetupMembership.MovingTypes.Single(type => type.Name == "IAppSettingService").NewFullName}";
+        private static string TheCadenceEdgeIntoTheSettingsPort => $"{TheCadence} -> {OrganisationSetupMembership.MovingTypes.Single(type => type.Name == "IAppSettingService").NewFullName}";
 
         [OneTimeTearDown]
         public void DisposeModules()
@@ -204,7 +204,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var listed = TheEdgesTrackerIntegrationListsIntoOtherContexts();
 
-            var problems = TheListedEdgesAgainstTheOneTheMoveAdds(listed);
+            var problems = EachListedEdgeAsAProblem(listed);
 
             Assert.That(
                 problems,
@@ -215,7 +215,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void AnEmptyTrackerIntegrationList_IsNamedNoProblem()
         {
-            var problems = TheListedEdgesAgainstTheOneTheMoveAdds([]);
+            var problems = EachListedEdgeAsAProblem([]);
 
             Assert.That(problems, Is.Empty, "WHAT: an empty list was named as a problem. WHY: Tracker integration lists no edge into set-up. HOW: name only the listed edges.");
         }
@@ -223,12 +223,12 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void ATrackerIntegrationListNamingTheCadenceEdge_IsNamedAsHoldingAnEdge()
         {
-            var problems = TheListedEdgesAgainstTheOneTheMoveAdds([TheEdgeTheMoveAdds]);
+            var problems = EachListedEdgeAsAProblem([TheCadenceEdgeIntoTheSettingsPort]);
 
             Assert.That(problems, Has.Count.EqualTo(1).And.Some.Contain("ConnectionHealthCadence"), "WHAT: the cadence edge on the list was not named. WHY: the list may hold no edge into set-up, so a second owner would pass unseen. HOW: name each listed edge.");
         }
 
-        private static List<string> TheListedEdgesAgainstTheOneTheMoveAdds(IReadOnlyCollection<string> listed)
+        private static List<string> EachListedEdgeAsAProblem(IReadOnlyCollection<string> listed)
         {
             return [.. listed.Select(edge => $"the edge '{edge}' is listed")];
         }
