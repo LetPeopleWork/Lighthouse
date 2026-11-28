@@ -156,7 +156,245 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A browser that accepts br, then one that accepts gzip, asks the server for the built frontend script
+</code></pre>
+
+<pre><code>The script arrives with Content-Encoding br or gzip, Vary contains Accept-Encoding, and the decoded body is the file byte for byte
+</code></pre>
+
+<pre><code>The frontend JavaScript arrives compressed, about a third of the bytes, and runs unchanged
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/ResponseCompressionWireContractTest.cs</p>
+
+<p>A_browser_that_accepts_compression_gets_the_script_compressed_and_the_same_file_once_decoded</p>
+
+<pre><code>It would still pass a server that compresses the few-KB fixture but not the real bundle under TLS, which the Docker smoke step covers
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A client that sends no Accept-Encoding asks for the built frontend script
+</code></pre>
+
+<pre><code>No Content-Encoding and the body is the file byte for byte
+</code></pre>
+
+<pre><code>A browser or tool without compression still gets the same working file
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/ResponseCompressionWireContractTest.cs</p>
+
+<p>A_browser_that_does_not_accept_compression_gets_the_plain_script</p>
+
+<pre><code>Today&#x27;s pipeline passes it; it fails a server that compresses whatever the client sends
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A browser that accepts br opens the site root
+</code></pre>
+
+<pre><code>The page shell arrives with Content-Encoding br and keeps Cache-Control no-cache, no-store, must-revalidate
+</code></pre>
+
+<pre><code>The first page arrives compressed and the user still always gets the newest version of the app
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/ResponseCompressionWireContractTest.cs</p>
+
+<p>The_page_shell_is_compressed_and_still_never_cached</p>
+
+<pre><code>It would pass with a shell whose decoded body is wrong; the script row pins the decoded bytes for static files
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A browser that offers gzip and br asks for the current version, and a client that offers nothing asks again
+</code></pre>
+
+<pre><code>The first answer carries Content-Encoding br and Vary Accept-Encoding; the second has no Content-Encoding
+</code></pre>
+
+<pre><code>Safe API answers take fewer bytes for a browser, and command-line clients get them plain as today
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/ResponseCompressionWireContractTest.cs</p>
+
+<p>A_safe_api_answer_to_a_client_that_asks_for_no_compression_is_plain</p>
+
+<pre><code>A server compressing only the version route would pass; the rule rows over many routes cover other GETs
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A browser that accepts br creates an API key, and opens the update hub handshake
+</code></pre>
+
+<pre><code>Both answers arrive without Content-Encoding, the key with 201 Created and the handshake with 200
+</code></pre>
+
+<pre><code>No answer that carries a new key or a connection token can be guessed from its compressed size
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/ResponseCompressionWireContractTest.cs</p>
+
+<p>The_update_hub_handshake_is_never_sent_compressed</p>
+
+<pre><code>Today&#x27;s pipeline passes both; a rule that refuses POST but matches the hub only by exact path still passes the handshake row, so the hub GET rows in both cases in the rule table catch that
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The compression rule is asked about a GET of JSON with br, a HEAD of a script with gzip and a GET of a route that only starts with the letters logs
+</code></pre>
+
+<pre><code>Each answer is compressed
+</code></pre>
+
+<pre><code>Safe answers, including routes that only look like an excluded one, reach the browser compressed
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/BreachSafeResponseCompressionProviderTest.cs</p>
+
+<p>A_safe_answer_to_a_client_that_accepts_compression_is_compressed</p>
+
+<pre><code>A rule that compresses everything passes these rows; the refusal rows fail it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The compression rule is asked about POST, PUT and DELETE of JSON, a PNG, a problem answer, the update hub in lower and upper case and its negotiate POST, the logs routes, the embed handshake, all with br, and a GET of JSON without Accept-Encoding
+</code></pre>
+
+<pre><code>None of these answers is compressed
+</code></pre>
+
+<pre><code>Answers that can carry a secret, cannot be compressed, or were not asked for compressed go out as today
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/BreachSafeResponseCompressionProviderTest.cs</p>
+
+<p>An_answer_that_could_carry_a_secret_or_is_not_asked_for_compressed_is_sent_as_it_is</p>
+
+<pre><code>A rule that compresses nothing passes these rows; the compressed rows fail it. PATCH is not a separate row
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>With ResponseCompression:Enabled false the rule is asked about a GET of JSON with br
+</code></pre>
+
+<pre><code>The answer is not compressed
+</code></pre>
+
+<pre><code>An operator can turn compression off with one setting and a restart
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/BreachSafeResponseCompressionProviderTest.cs</p>
+
+<p>Turning_compression_off_sends_a_safe_answer_as_it_is</p>
+
+<pre><code>A switch that is ignored when the section is absent passes; the safe-answer rows run with the section absent and pin the default on
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 

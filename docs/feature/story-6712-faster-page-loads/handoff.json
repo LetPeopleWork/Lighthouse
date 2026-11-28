@@ -1,10 +1,172 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F151",
+"L1/F152",
+"T2"
+],
+"still_passes_if": "F429",
+"test": "A_browser_that_accepts_compression_gets_the_script_compressed_and_the_same_file_once_decoded",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/ResponseCompressionWireContractTest.cs"
+},
+"expected": "F427",
+"stimulus": "F426",
+"user_result": "F428"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F153",
+"T2"
+],
+"still_passes_if": "F433",
+"test": "A_browser_that_does_not_accept_compression_gets_the_plain_script",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/ResponseCompressionWireContractTest.cs"
+},
+"expected": "F431",
+"stimulus": "F430",
+"user_result": "F432"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F151",
+"T1",
+"T2"
+],
+"still_passes_if": "F437",
+"test": "The_page_shell_is_compressed_and_still_never_cached",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/ResponseCompressionWireContractTest.cs"
+},
+"expected": "F435",
+"stimulus": "F434",
+"user_result": "F436"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F156",
+"L2/F163",
+"T2"
+],
+"still_passes_if": "F441",
+"test": "A_safe_api_answer_to_a_client_that_asks_for_no_compression_is_plain",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/ResponseCompressionWireContractTest.cs"
+},
+"expected": "F439",
+"stimulus": "F438",
+"user_result": "F440"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F158",
+"L2/F389",
+"T2"
+],
+"still_passes_if": "F445",
+"test": "The_update_hub_handshake_is_never_sent_compressed",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/ResponseCompressionWireContractTest.cs"
+},
+"expected": "F443",
+"stimulus": "F442",
+"user_result": "F444"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F156",
+"L2/F157",
+"L2/F393"
+],
+"still_passes_if": "F449",
+"test": "A_safe_answer_to_a_client_that_accepts_compression_is_compressed",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/BreachSafeResponseCompressionProviderTest.cs"
+},
+"expected": "F447",
+"stimulus": "F446",
+"user_result": "F448"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F158",
+"L2/F159",
+"L2/F160",
+"L2/F161",
+"L2/F386",
+"L2/F387",
+"L2/F388",
+"L2/F389",
+"L2/F390",
+"L2/F391",
+"L2/F392",
+"L2/F163"
+],
+"still_passes_if": "F453",
+"test": "An_answer_that_could_carry_a_secret_or_is_not_asked_for_compressed_is_sent_as_it_is",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/BreachSafeResponseCompressionProviderTest.cs"
+},
+"expected": "F451",
+"stimulus": "F450",
+"user_result": "F452"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F394"
+],
+"still_passes_if": "F457",
+"test": "Turning_compression_off_sends_a_safe_answer_as_it_is",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/BreachSafeResponseCompressionProviderTest.cs"
+},
+"expected": "F455",
+"stimulus": "F454",
+"user_result": "F456"
+}
+]
+},
 "counters": {
 "B": 5,
 "C": 3,
 "D": 13,
 "E": 13,
-"F": 425,
+"F": 457,
 "K": 13,
 "L": 7,
 "N": 4,
@@ -2209,9 +2371,41 @@
 "F423": "The oracle does not see the loading look on a slow connection or that the notes are identical to today's.",
 "F424": "When release notes cannot load, the dialog still shows the newest version number, says the notes could not be loaded, and its Retry button asks again and shows the notes on success.",
 "F425": "The oracle does not see repeated failures or Retry after a recovered connection.",
+"F426": "A browser that accepts br, then one that accepts gzip, asks the server for the built frontend script",
+"F427": "The script arrives with Content-Encoding br or gzip, Vary contains Accept-Encoding, and the decoded body is the file byte for byte",
+"F428": "The frontend JavaScript arrives compressed, about a third of the bytes, and runs unchanged",
+"F429": "It would still pass a server that compresses the few-KB fixture but not the real bundle under TLS, which the Docker smoke step covers",
 "F43": "Faster is proven by bytes and calls, measured with the spike's probes (measure-bytes.mjs, measure-calls.mjs) before and after; slow-4G times are reported as evidence, not promised, because emulated timings are noisy. (Maintainer, 2026-11-28)",
+"F430": "A client that sends no Accept-Encoding asks for the built frontend script",
+"F431": "No Content-Encoding and the body is the file byte for byte",
+"F432": "A browser or tool without compression still gets the same working file",
+"F433": "Today's pipeline passes it; it fails a server that compresses whatever the client sends",
+"F434": "A browser that accepts br opens the site root",
+"F435": "The page shell arrives with Content-Encoding br and keeps Cache-Control no-cache, no-store, must-revalidate",
+"F436": "The first page arrives compressed and the user still always gets the newest version of the app",
+"F437": "It would pass with a shell whose decoded body is wrong; the script row pins the decoded bytes for static files",
+"F438": "A browser that offers gzip and br asks for the current version, and a client that offers nothing asks again",
+"F439": "The first answer carries Content-Encoding br and Vary Accept-Encoding; the second has no Content-Encoding",
 "F44": "Permission freshness stays as today: shared cache, asked again when the user moves to another page, and at once after the user's own create or grant actions. (Maintainer, 2026-11-28)",
+"F440": "Safe API answers take fewer bytes for a browser, and command-line clients get them plain as today",
+"F441": "A server compressing only the version route would pass; the rule rows over many routes cover other GETs",
+"F442": "A browser that accepts br creates an API key, and opens the update hub handshake",
+"F443": "Both answers arrive without Content-Encoding, the key with 201 Created and the handshake with 200",
+"F444": "No answer that carries a new key or a connection token can be guessed from its compressed size",
+"F445": "Today's pipeline passes both; a rule that refuses POST but matches the hub only by exact path still passes the handshake row, so the hub GET rows in both cases in the rule table catch that",
+"F446": "The compression rule is asked about a GET of JSON with br, a HEAD of a script with gzip and a GET of a route that only starts with the letters logs",
+"F447": "Each answer is compressed",
+"F448": "Safe answers, including routes that only look like an excluded one, reach the browser compressed",
+"F449": "A rule that compresses everything passes these rows; the refusal rows fail it",
 "F45": "Team, Portfolio and licence lists follow the same rule: the user's own change shows at once, others' changes on the next page move. (Maintainer, 2026-11-28)",
+"F450": "The compression rule is asked about POST, PUT and DELETE of JSON, a PNG, a problem answer, the update hub in lower and upper case and its negotiate POST, the logs routes, the embed handshake, all with br, and a GET of JSON without Accept-Encoding",
+"F451": "None of these answers is compressed",
+"F452": "Answers that can carry a secret, cannot be compressed, or were not asked for compressed go out as today",
+"F453": "A rule that compresses nothing passes these rows; the compressed rows fail it. PATCH is not a separate row",
+"F454": "With ResponseCompression:Enabled false the rule is asked about a GET of JSON with br",
+"F455": "The answer is not compressed",
+"F456": "An operator can turn compression off with one setting and a restart",
+"F457": "A switch that is ignored when the section is absent passes; the safe-answer rows run with the section absent and pin the default on",
 "F46": "Release notes load when the new-version dialog opens; the pop-up and footer need only the newest version number. If the notes cannot be loaded the dialog shows a message and a Retry button. (Maintainer, 2026-11-28)",
 "F47": "The parallel version checks keep today's error rule: any failure shows the footer error. (Maintainer, 2026-11-28)",
 "F48": "In scope beyond permissions: Teams and Portfolios lists, licence, and Team settings on lists. Out: the other useEffect hooks and the Portfolio chain. (Maintainer, 2026-11-28)",
