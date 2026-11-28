@@ -98,7 +98,7 @@ You can find more information on the configuration options under [Configuration]
 
 ## Updating Lighthouse
 
-If a new version is released, you will see an indicator in the lower right corner of the footer. Clicking it opens a dialog with release notes for all newer versions.
+If a new version is released, you will see an indicator in the lower right corner of the footer. Clicking it opens a dialog that names the newest version and loads the release notes for all newer versions. If the release notes cannot be loaded, the dialog says so and offers **Retry**.
 
 {: .note }
 Published packages do not include the database — your data is preserved across updates. Lighthouse always supports migrations to newer versions.
