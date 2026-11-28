@@ -1,0 +1,128 @@
+{
+"counters": {
+"F": 16,
+"P": 5,
+"S": 4
+},
+"facts": {
+"F1": "Story 6368 S04b: reduce Models to the shared kernel and add a kernel-size rule. Every type under Lighthouse.Backend.Models is either the shared kernel ADR-270 Decision 7 allows (IDomainEvent, IEntity, IConcurrencyTokenEntity) or owned by a named context with a blocker measured from the compiled code and the Story that frees it; the free ones move to their owner (Platform/<Area> or Modules/<Owner>/{Domain,Application}); a rule keeps that catalogue true and shrinking. Behaviour-free. Design: docs/feature/story-6368-s04b-models-to-kernel/feature-delta.md (its slice S4, the event move, is already done by Story 6382 and is dropped; its S5 is this feature's S4).",
+"F10": "Every Models type has a known owner and a true reason to stay.",
+"F11": "The Platform-owned free files move to Platform/<Area>; their catalogue rows name the new namespace.",
+"F12": "The platform lane holds its own types.",
+"F13": "The context-owned free files move to Modules/<Owner>/Domain or Application with their unit tests; their catalogue rows name the new namespace.",
+"F14": "Each context holds its own types.",
+"F15": "The rules name moved types by namespace only (movers list empty), a planted Models type off the catalogue fails naming itself, and ARCHITECTURE.md section 4 and ADR-270 D7 describe the kernel.",
+"F16": "A new type in Models cannot land unseen.",
+"F2": "A maintainer sees for every Models type who owns it and why it still sits there, and a new context type placed in Models fails the architecture rules and names itself.",
+"F3": "Every type in Lighthouse.Backend.Models is on one catalogue, closed both ways: it stands as Kernel (one of the three base types ADR-270 Decision 7 allows) or as owned by a named context with a blocker that is true when measured from the compiled code and the EF model, and the Story that frees it.",
+"F4": "The Models types that nothing blocks leave Models: Platform-owned ones to Platform/<Area>, context-owned ones to Modules/<Owner>/Domain or Application, with their unit tests beside them, and every module's boundary and placement rules still green.",
+"F5": "A type added to Models that is not on the catalogue, or a catalogue row whose claim is false, fails the architecture rules and names itself and the fix; the rules name the moved types by their new namespace only, with no old-path allowance left.",
+"F6": "Nothing a user or a client sees changes: no schema, migration, route, DTO, payload, usage-data event or answer differs from the revision before the Story.",
+"F7": "ARCHITECTURE.md section 4 and ADR-270 Decision 7 describe the kernel as it is after the Story and point to the catalogue for every other Models type.",
+"F8": "Moving EF entities, wire types (DTOs and controller signatures) or types held by a staying Models type; splitting files of mixed standing; moving event types (done by Story 6382); any schema or behaviour change.",
+"F9": "The catalogue: one row per Models type with its standing (Kernel or owner and measured blocker), the movers named with old and new namespace, and the move law sees the Models map; red today for the movers."
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F6"
+},
+{
+"id": "P5",
+"kind": "Outcome",
+"text": "F7"
+}
+],
+"scope_out": [
+"F8"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F9",
+"promises": [
+"P1",
+"P4"
+],
+"work": {
+"size": "M",
+"value": "F10"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F11",
+"promises": [
+"P2",
+"P4"
+],
+"work": {
+"size": "S",
+"value": "F12"
+}
+},
+{
+"depends_on": [
+"S2"
+],
+"id": "S3",
+"observation": "F13",
+"promises": [
+"P2",
+"P4"
+],
+"work": {
+"size": "M",
+"value": "F14"
+}
+},
+{
+"depends_on": [
+"S3"
+],
+"id": "S4",
+"observation": "F15",
+"promises": [
+"P3",
+"P5",
+"P4"
+],
+"work": {
+"size": "S",
+"value": "F16"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6368-s04b-models-to-kernel",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
