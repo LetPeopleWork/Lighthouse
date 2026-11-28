@@ -242,6 +242,78 @@
 "stimulus": "F353",
 "user_result": "F355"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F155",
+"L2/F156",
+"L2/F157"
+],
+"still_passes_if": "F426",
+"test": "ThePlatformType_IsFoundOnlyInTheLanesNamespaceOfItsArea",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest.cs"
+},
+"expected": "F424",
+"stimulus": "F423",
+"user_result": "F425"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F430",
+"test": "ThePlatformTypesRow_NamesTheLanesNamespaceOfItsArea",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest.cs"
+},
+"expected": "F428",
+"stimulus": "F427",
+"user_result": "F429"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F434",
+"test": "ThePlatformTypesTheModelsStillHeld_AreTheFourUsageDataTypes",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest.cs"
+},
+"expected": "F432",
+"stimulus": "F431",
+"user_result": "F433"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F438",
+"test": "PlatformLaneMembershipArchUnitTest",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembershipArchUnitTest.cs"
+},
+"expected": "F436",
+"stimulus": "F435",
+"user_result": "F437"
+}
 ]
 },
 "counters": {
@@ -249,7 +321,7 @@
 "C": 1,
 "D": 19,
 "E": 9,
-"F": 422,
+"F": 438,
 "K": 9,
 "L": 9,
 "P": 5,
@@ -5092,7 +5164,23 @@
 "F420": "Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/DeliverySourceBindabilityTest.cs.",
 "F421": "A pure move keeps each existing type unchanged; the destination modules and their Domain folders already exist and are reused; no new responsibility is created.",
 "F422": "Per touched file. Movers that hold several types move whole, because the accepted design keeps every commit a pure move and their split waits for S12c: AdditionalFieldInUse.cs (4 types), RbacOperationResult.cs (2), ConnectionFieldDefaults.cs (3), DeliverySourceOption.cs (2), StalenessPolicy.cs (2), StalenessVerdict.cs (2). All other movers hold one type and move whole, as do the seven moved unit tests. Rule files holding several types are not-applicable in this slice, because it changes only literal strings in them; a split is offered to the improvement backlog. Consumer files change only using lines and are not moved.",
+"F423": "Run the Architecture tests after the platform-owned usage-data types left the shared Models; each type is looked up by name in the compiled backend",
+"F424": "Each of the four types is found exactly once, under the platform lane's usage-data namespace, and nowhere under Models or in a module",
+"F425": "The platform lane holds its own usage-data types; nothing is left behind in the shared kernel",
+"F426": "A type left under Models, moved into a module instead of the platform lane, or copied so it exists in both places",
+"F427": "Read the catalogue row of each platform-owned usage-data type",
+"F428": "Each row names the lane's usage-data namespace as the place the type moves to",
+"F429": "The catalogue that keeps Models shrinking tells the truth about where these types live",
 "F43": "Non-test path consumers stay working: Scripts/test-selection/path-classifier.sh (SHARED_REGEX, JIRA_REGEX) and Lighthouse.Frontend/src/services/UsageData/usageDataRouteKeys.test.ts, which reads Models/UsageData/UsageDataRouteKey.cs and UsageDataRoutePatterns.cs by path; those two files stay (PathPinned).",
+"F430": "A row that still names the Models or a module namespace while the type is elsewhere",
+"F431": "List the catalogue's free platform-owned types",
+"F432": "They are exactly the four usage-data types",
+"F433": "No platform type slips out of the move unnoticed and none is moved unlisted",
+"F434": "A fifth platform type added to the list, or one of the four dropped, without the oracle being updated",
+"F435": "Run the existing platform lane membership and boundary architecture tests after the move",
+"F436": "They still pass unchanged: the lane keeps holding its types and no rule was weakened",
+"F437": "Nothing a user or client sees changes; the move is behaviour-free",
+"F438": "A rule edited so it no longer finds the moved types",
 "F44": "Comments are rare and written for a stranger; no internal id (decision, slice or ADR number) is the only reason in a comment.",
 "F45": "Owns the kernel rules (Models does not depend on Services, Modules, Platform or the update queue) run on real and planted types; it gains the rule that every Kernel row is used by two or more contexts.",
 "F46": "Already carries examined types, offenders and the rule text for kernel-rule failures; the new rule returns the same verdict.",

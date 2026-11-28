@@ -440,6 +440,134 @@ the declared list itself were widened with an ordinary type in the same change, 
 
 
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+Run the Architecture tests after the platform-owned usage-data types left the shared Models; each type is looked up by name in the compiled backend
+```
+
+```text
+Each of the four types is found exactly once, under the platform lane's usage-data namespace, and nowhere under Models or in a module
+```
+
+```text
+The platform lane holds its own usage-data types; nothing is left behind in the shared kernel
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest\.cs
+
+ThePlatformType\_IsFoundOnlyInTheLanesNamespaceOfItsArea
+
+```text
+A type left under Models, moved into a module instead of the platform lane, or copied so it exists in both places
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P2
+
+```text
+Read the catalogue row of each platform-owned usage-data type
+```
+
+```text
+Each row names the lane's usage-data namespace as the place the type moves to
+```
+
+```text
+The catalogue that keeps Models shrinking tells the truth about where these types live
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest\.cs
+
+ThePlatformTypesRow\_NamesTheLanesNamespaceOfItsArea
+
+```text
+A row that still names the Models or a module namespace while the type is elsewhere
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+List the catalogue's free platform-owned types
+```
+
+```text
+They are exactly the four usage-data types
+```
+
+```text
+No platform type slips out of the move unnoticed and none is moved unlisted
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest\.cs
+
+ThePlatformTypesTheModelsStillHeld\_AreTheFourUsageDataTypes
+
+```text
+A fifth platform type added to the list, or one of the four dropped, without the oracle being updated
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Run the existing platform lane membership and boundary architecture tests after the move
+```
+
+```text
+They still pass unchanged: the lane keeps holding its types and no rule was weakened
+```
+
+```text
+Nothing a user or client sees changes; the move is behaviour-free
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneMembershipArchUnitTest\.cs
+
+PlatformLaneMembershipArchUnitTest
+
+```text
+A rule edited so it no longer finds the moved types
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

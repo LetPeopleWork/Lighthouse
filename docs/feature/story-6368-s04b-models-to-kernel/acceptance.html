@@ -538,6 +538,118 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the Architecture tests after the platform-owned usage-data types left the shared Models; each type is looked up by name in the compiled backend
+</code></pre>
+
+<pre><code>Each of the four types is found exactly once, under the platform lane&#x27;s usage-data namespace, and nowhere under Models or in a module
+</code></pre>
+
+<pre><code>The platform lane holds its own usage-data types; nothing is left behind in the shared kernel
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest.cs</p>
+
+<p>ThePlatformType_IsFoundOnlyInTheLanesNamespaceOfItsArea</p>
+
+<pre><code>A type left under Models, moved into a module instead of the platform lane, or copied so it exists in both places
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read the catalogue row of each platform-owned usage-data type
+</code></pre>
+
+<pre><code>Each row names the lane&#x27;s usage-data namespace as the place the type moves to
+</code></pre>
+
+<pre><code>The catalogue that keeps Models shrinking tells the truth about where these types live
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest.cs</p>
+
+<p>ThePlatformTypesRow_NamesTheLanesNamespaceOfItsArea</p>
+
+<pre><code>A row that still names the Models or a module namespace while the type is elsewhere
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>List the catalogue&#x27;s free platform-owned types
+</code></pre>
+
+<pre><code>They are exactly the four usage-data types
+</code></pre>
+
+<pre><code>No platform type slips out of the move unnoticed and none is moved unlisted
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest.cs</p>
+
+<p>ThePlatformTypesTheModelsStillHeld_AreTheFourUsageDataTypes</p>
+
+<pre><code>A fifth platform type added to the list, or one of the four dropped, without the oracle being updated
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Run the existing platform lane membership and boundary architecture tests after the move
+</code></pre>
+
+<pre><code>They still pass unchanged: the lane keeps holding its types and no rule was weakened
+</code></pre>
+
+<pre><code>Nothing a user or client sees changes; the move is behaviour-free
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembershipArchUnitTest.cs</p>
+
+<p>PlatformLaneMembershipArchUnitTest</p>
+
+<pre><code>A rule edited so it no longer finds the moved types
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
