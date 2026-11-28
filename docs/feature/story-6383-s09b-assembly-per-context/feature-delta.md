@@ -52,7 +52,7 @@ exists. A failed check stops S1 and is reported with the Story, the check and it
 | 2 Users / value | PASS | Maintainers: a decision with its reasons and a measurable reopen trigger instead of a standing doubt. No user-visible change. |
 | 3 Hypothesis | PASS, **holds, with a corrected reason** | "ArchUnit rules are enough, assemblies add cost for little extra enforcement." Holds on text evidence: the CI payoff an assembly split would add over path-based selection is compile-time only (E7, E8), and three assembly cycles block a split anyway (E3–E5). The brief's premise that single-binary publish is a cost is **refuted** (E1). Disproved only if S1's IL measurement finds no cycle and S1's payoff measurement crosses D-4's thresholds. |
 | 4 Size | PASS | **S, about 1.5 days**, one nwdes feature, 2 slices. |
-| 5 AC from UAT | PASS, one AC made precise | (a) ADR covering every weigh-point of the brief, decision yes/no/partial → ADR-288 (S2), decision **"no, not now"** with a reopen trigger (D-4). (b) "If yes: a follow-up Story outline" → not applicable under "no"; the ADR instead carries the outline of what a later "yes" must keep (single binary, all topologies) so the trigger has a ready next step. |
+| 5 AC from UAT | PASS, one AC made precise | (a) ADR covering every weigh-point of the brief, decision yes/no/partial → ADR-289 (S2), decision **"no, not now"** with a reopen trigger (D-4). (b) "If yes: a follow-up Story outline" → not applicable under "no"; the ADR instead carries the outline of what a later "yes" must keep (single binary, all topologies) so the trigger has a ready next step. |
 | 6 Dependencies | PASS | Hard: all S03*, S09a, "no cycles between contexts". **The last one is not true today on text** (E3) and no test measures it (E4): S1 measures it from the IL and pins it. Soft: S04b (what `Models` keeps), S05*/S10 (repositories, `Data`), #6302 line (test selection). |
 | 7 Technical notes | PASS | No production code, no schema, no publish, Stryker, classifier or workflow change (D-0). One new architecture test (S1); docs in S2. |
 
@@ -130,7 +130,7 @@ implies (customer/supplier directions); nothing measures it (E4). S1 adds one ru
 - Rejected: a test that the solution has exactly N production assemblies (pins a designation, adds ceremony, and would
   have to be deleted by the one Story it exists to inform).
 
-### D-3 Measurements S1 records (receipts in the slice's commit body, numbers in ADR-288)
+### D-3 Measurements S1 records (receipts in the slice's commit body, numbers in ADR-289)
 | M | What | Command (literal at S1) | Feeds |
 |---|---|---|---|
 | M1 | Context graph and its SCCs from the IL | the S1 rule's own output | D-1 (1), D-4 P1 |
@@ -143,7 +143,7 @@ A measurement that disagrees with this design is recorded, not argued with; if M
 D-4's T1 thresholds, the hypothesis is disproved and S2 writes "partial/yes" with the follow-up outline (open question 1).
 
 ### D-4 Reopen trigger — RECOMMENDED: preconditions AND one payoff trigger, each with its measuring command
-Reopen ADR-288 when **all** preconditions hold **and** at least one trigger fires:
+Reopen ADR-289 when **all** preconditions hold **and** at least one trigger fires:
 - **P1** `ContextCycleEdges` is empty (S1 rule green with an empty list).
 - **P2** No IL edge from `Modules.*` to `Lighthouse.Backend.Services|API|Data` and none from `Data` to `Services` (the
   remnant drained: S05*/S10).
@@ -158,16 +158,16 @@ Reopen ADR-288 when **all** preconditions hold **and** at least one trigger fire
 Owner: the maintainer, checked when S10 closes and at each Epic 6264 milestone review. When P1–P3 hold and no trigger
 fires, the ADR stays "no" with a dated note.
 
-### D-5 Docs — RECOMMENDED: a new ADR-288 that supersedes ADR-027 D5's reason; ADR-027 gets a pointer
-ADR-288 "Module boundaries stay in one assembly (not now)": context, every brief weigh-point answered (table below),
+### D-5 Docs — RECOMMENDED: a new ADR-289 that supersedes ADR-027 D5's reason; ADR-027 gets a pointer
+ADR-289 "Module boundaries stay in one assembly (not now)": context, every brief weigh-point answered (table below),
 decision D-1, trigger D-4, "what a later yes must keep" (one binary in Standalone/Docker/Helm, all four topologies,
 expand-only migrations through `Create-Migration.ps1`, one `DbContext`, ArchUnit loader over all module assemblies,
-embedded licence key and version read from the entry assembly). ADR-027 D5 row gets "reason superseded by ADR-288"
+embedded licence key and version read from the entry assembly). ADR-027 D5 row gets "reason superseded by ADR-289"
 (the decision stays). `ARCHITECTURE.md` §4 gains one line under S09a's "Context contracts" bullet. Catalogue S09b row
 ticked. ADR number: next free at S2 (288 at `952040471`).
 Rejected: editing D5's reason in place (rewrites a dated decision's chronology).
 
-| Brief weigh-point | Answer in ADR-288 |
+| Brief weigh-point | Answer in ADR-289 |
 |---|---|
 | For: compiler-enforced `internal` | Real, only benefit the IL rules cannot match fully (E11); cost: visibility sweep + `InternalsVisibleTo` per context. |
 | For: sound CI test selection | Achievable by path + R-C1 without assemblies (E7); assemblies add only the reflection/`dynamic` blind spot (T1). |
@@ -198,12 +198,14 @@ the inline list empty the rule fails on today's cycle (E3), naming it; that run 
 PBT: N/A (closed finite domain).
 
 ## Wave: DESIGN / [REF] Slices
+Delivered 2026-11-28 as ADR-289 only; S1 (rule and measurements) dropped by the maintainer's decision of 2026-11-26.
+
 One nwdes feature, `story-6383-s09b-assembly-decision`, 2 slices, committed per slice, pushed together after S2.
 
 | Slice | Delivers | Oracle / proof | Rigor (proposed) |
 |---|---|---|---|
 | **S1** Context graph rule + measurements | `ContextDependencyGraphArchUnitTest` (D-2) with its inline `ContextCycleEdges` baseline measured from the IL; M1–M6 receipts (D-3) | RED: the rule with an empty list fails naming the cycle path; GREEN: with the measured list; stale-entry case: a listed edge not in the IL fails. Runs in the fast loop (`Test-Fast.ps1`, no host) | `thorough` (IL graph rule, owner choice for the cycle edge) |
-| **S2** ADR-288 + doc pointers | ADR-288 (D-1, D-4, D-5 table, "what a later yes must keep"), ADR-027 D5 pointer, `ARCHITECTURE.md` §4 line, catalogue row | Prose-only slice: no oracle; verified by review and EXAMINE (read the ADR cold, answer "why not now, and when"). | `standard` |
+| **S2** ADR-289 + doc pointers | ADR-289 (D-1, D-4, D-5 table, "what a later yes must keep"), ADR-027 D5 pointer, `ARCHITECTURE.md` §4 line, catalogue row | Prose-only slice: no oracle; verified by review and EXAMINE (read the ADR cold, answer "why not now, and when"). | `standard` |
 
 Driving port: `dotnet test --filter FullyQualifiedName~Tests.Architecture.ContextDependencyGraphArchUnitTest`
 (in-process ArchUnit model, `LighthouseArchitecture.Production`); nearest executable argv is that command.
@@ -216,7 +218,7 @@ SCC check → NUnit result + refusal text. All parts exist after S09a except the
   copying), `ModuleWording` refusal format (REUSE). CREATE_NEW: only the test class; no existing rule owns
   context-level acyclicity (E4).
 - **Impact closure:** `Tests/Architecture/ContextDependencyGraphArchUnitTest.cs` CHANGED (new); S09a enumerator
-  UNCHANGED_COMPATIBLE or visibility-only; ADR-288 new; ADR-027, `ARCHITECTURE.md`, catalogue CHANGED (prose);
+  UNCHANGED_COMPATIBLE or visibility-only; ADR-289 new; ADR-027, `ARCHITECTURE.md`, catalogue CHANGED (prose);
   csproj/sln/classifier/workflows/Stryker UNCHANGED. Agreement analysis: no shared contract touched — not applicable.
   Contract tests: not applicable (one deployable, no wire). Architectural test: applicable, D-2.
 - **Residuality** (assumption negated → outcome): *S09a lands without the enumerator* → S1 builds the context set
@@ -226,7 +228,7 @@ SCC check → NUnit result + refusal text. All parts exist after S09a except the
   owners, P1 further away, decision unchanged; *M5/M6 cross T1* → open question 1. Second stressor set (walkthrough,
   not executed): a new context added later is caught by R-C3 and enters the graph automatically; a cycle through the
   remnant (`Modules.A → Services → Modules.B`) is **not** a context edge and stays invisible to this rule — residue,
-  owner S05*/S10, recorded in ADR-288 under P2.
+  owner S05*/S10, recorded in ADR-289 under P2.
 
 ## Wave: DESIGN / [REF] Context-map placement
 - Contexts touched: none in production. The rule observes all ten contexts' dependency graph.
@@ -241,7 +243,7 @@ SCC check → NUnit result + refusal text. All parts exist after S09a except the
 - [ ] Start condition checked for all six predecessors (S1).
 - [ ] M1–M6 measured and recorded; differences from this design noted, not argued (S1).
 - [ ] RED of the empty-list rule seen and recorded before the list is filled (S1).
-- [ ] ADR-288 answers every brief weigh-point and the #6302 note; trigger D-4 with commands (S2).
+- [ ] ADR-289 answers every brief weigh-point and the #6302 note; trigger D-4 with commands (S2).
 - [ ] ADR-027 D5 pointer, `ARCHITECTURE.md` §4 line, ADR-270 ratchet entry and glossary terms, catalogue S09b row (S2).
 - [ ] Finalize checklist: docs prose N/A (no user docs), screenshots N/A, demo data N/A, website N/A, clients N/A,
       context map ✔ (above), usage data N/A (below), mutation N/A (D-7) — each answered explicitly at finalize.
@@ -252,7 +254,7 @@ SCC check → NUnit result + refusal text. All parts exist after S09a except the
   the Docker folder publish (`dotnet Lighthouse.dll`), Helm via the image, the Standalone packages built from the
   single-file output. The decision changes none of them (D-0). The platform evidence the decision rests on is E1,
   confirmed by M3 in S1 (one scratch publish, not committed, outside the repository). Platform risk of this Story:
-  none. Platform risk of a later "yes", recorded in ADR-288: the bundle must still contain every context assembly
+  none. Platform risk of a later "yes", recorded in ADR-289: the bundle must still contain every context assembly
   (`IncludeNativeLibrariesForSelfExtract` stays on linux-x64), the osx-arm64 publish relies on the csproj's
   `PublishSingleFile` (no CLI flag), the Docker image gains DLLs beside `Lighthouse.dll`, codesign/SBOM steps see
   only the bundle.
@@ -269,7 +271,7 @@ SCC check → NUnit result + refusal text. All parts exist after S09a except the
    precondition, guards ADR-270's map directions today, and is the only producer for trigger P1.
 3. **Trigger thresholds** (25 % one-context commits, 60 s incremental build, 2 escapes in 6 months). Default: as
    written; the maintainer may change the numbers without changing the decision.
-4. **New ADR-288 vs amending ADR-027 D5 in place.** Default: new ADR, ADR-027 keeps its dated decision and gains a
+4. **New ADR-289 vs amending ADR-027 D5 in place.** Default: new ADR, ADR-027 keeps its dated decision and gains a
    pointer.
 5. **Which direction of the FlowMetrics ↔ WorkItems cycle is listed, and its owner.** Default: the edge an existing
    or new event can replace (likely WorkItems → FlowMetrics `PercentileCalculator`, owner the Flow metrics ratchet);
@@ -311,4 +313,4 @@ reads the compiled assembly and checks that contexts do not depend on each other
   committed-migration-DLL cycle independently of module enforcement.
 - *Path-based test selection* — kept as the route to the CI payoff (#6302 line); assemblies are not needed for it.
 - *Superseding ADR rather than editing history* — chosen: ADR-027 D5's decision stands, its reason is replaced by
-  ADR-288.
+  ADR-289.

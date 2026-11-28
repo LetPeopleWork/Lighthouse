@@ -370,7 +370,7 @@ Conventions for every Story: `@infrastructure` · `job_id: infrastructure-only` 
 - AC:
   - [x] ADR with every weigh-point from the brief, including the #6302 note (measured CI slowness comes from test bodies, so a split helps only by skipping unaffected tests).
   - [x] If "yes": a follow-up Story outline that keeps the single binary and topologies unchanged. Not applicable: the answer is no.
-  - *S09b done (2026-11-26):* decided **no, not now (ADR-289)**. One assembly stays; the `Contracts` namespaces and the compiled-code rules are the boundary. ADR-027 D5's reason (single binary) is superseded: the real blockers are cycles between contexts and the old `Services`, `API` and `Data` code. A later split must also split the data per context; reopen by the preconditions and triggers in ADR-289.
+  - *S09b decided (2026-11-26):* no, not now (ADR-289). The design's cycle rule and build measurements were not run; the decision rests on text measurements (ADR-289, Context).
 
 #### S10 — Data ownership per context (logical only)
 
