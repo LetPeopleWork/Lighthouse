@@ -1,3 +1,5 @@
+using Lighthouse.Backend.Configuration;
+using Lighthouse.Backend.Platform.Host;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -11,15 +13,10 @@ namespace Lighthouse.Backend.Tests.Platform.Host
     /// can put there lets the attacker guess the secret from the answer's size, so only safe-method answers of
     /// compressible types are compressed, and never the update hub, the logs or the embed handshake.
     /// The rule is asked the way the compression middleware asks it: does the request accept compression, may this
-    /// answer be compressed, and is there an encoding both sides know. The rule is looked up by the name the design
-    /// gives it, so that this file builds before the rule exists and fails on its answers instead.
+    /// answer be compressed, and is there an encoding both sides know.
     /// </summary>
     public class BreachSafeResponseCompressionProviderTest
     {
-        private const string TheRuleName = "Lighthouse.Backend.Platform.Host.BreachSafeResponseCompressionProvider";
-
-        private const string TheSwitchName = "Lighthouse.Backend.Configuration.ResponseCompressionConfiguration";
-
         private const string Json = "application/json; charset=utf-8";
 
         [TestCase("GET", "/api/latest/teams", Json, "br")]
@@ -65,35 +62,26 @@ namespace Lighthouse.Backend.Tests.Platform.Host
             Assert.That(compressed, Is.False, "WHAT: with ResponseCompression:Enabled false a GET of JSON to Accept-Encoding br is sent compressed. WHY: an operator turns compression off with this switch, for example behind a proxy that compresses itself. HOW: answer no for every request when the switch is off.");
         }
 
-        private static IResponseCompressionProvider TheRuleWithSettings(Dictionary<string, string?> settings)
+        private static BreachSafeResponseCompressionProvider TheRuleWithSettings(Dictionary<string, string?> settings)
         {
-            var lighthouse = typeof(Program).Assembly;
-            var ruleType = lighthouse.GetType(TheRuleName);
-            var switchType = lighthouse.GetType(TheSwitchName);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(ruleType, Is.Not.Null, $"WHAT: Lighthouse has no compression rule {TheRuleName}. WHY: without it every answer goes out uncompressed, or a default rule compresses answers that carry secrets. HOW: add the rule as a ResponseCompressionProvider that decides which answers may be compressed.");
-                Assert.That(switchType, Is.Not.Null, $"WHAT: Lighthouse has no compression switch {TheSwitchName}. WHY: an operator must be able to turn compression off with ResponseCompression:Enabled. HOW: add the configuration section, enabled when absent.");
-            }
-
             var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
-            var theSwitch = configuration.GetSection("ResponseCompression").Get(switchType!) ?? Activator.CreateInstance(switchType!)!;
+            var theSwitch = configuration.GetSection(ResponseCompressionConfiguration.SectionName).Get<ResponseCompressionConfiguration>() ?? new ResponseCompressionConfiguration();
 
             var services = new ServiceCollection();
+            services.AddLogging();
             services.AddResponseCompression(options =>
             {
                 options.EnableForHttps = true;
                 options.Providers.Add<BrotliCompressionProvider>();
                 options.Providers.Add<GzipCompressionProvider>();
             });
-            services.AddSingleton(switchType!, theSwitch);
+            services.AddSingleton(theSwitch);
 
             using var provider = services.BuildServiceProvider();
-            return (IResponseCompressionProvider)ActivatorUtilities.CreateInstance(provider, ruleType!);
+            return ActivatorUtilities.CreateInstance<BreachSafeResponseCompressionProvider>(provider);
         }
 
-        private static bool Compresses(IResponseCompressionProvider rule, string method, string path, string contentType, string? acceptEncoding)
+        private static bool Compresses(BreachSafeResponseCompressionProvider rule, string method, string path, string contentType, string? acceptEncoding)
         {
             var context = new DefaultHttpContext();
             context.Request.Method = method;
