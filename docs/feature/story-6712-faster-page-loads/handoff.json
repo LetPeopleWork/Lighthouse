@@ -711,7 +711,7 @@
 "C": 3,
 "D": 13,
 "E": 13,
-"F": 748,
+"F": 756,
 "K": 14,
 "L": 7,
 "N": 16,
@@ -2528,6 +2528,95 @@
 }
 }
 },
+"examination": {
+"E1": {
+"class": "observation_gap",
+"observations": [
+"F754"
+],
+"verdict": "unmet",
+"waiver": {
+"by": "F749",
+"coverage": "F752",
+"reason": "F751",
+"waived_at": "F750"
+}
+},
+"E11": {
+"observations": [
+"F755"
+],
+"verdict": "met"
+},
+"E12": {
+"observations": [
+"F755"
+],
+"verdict": "met"
+},
+"E13": {
+"observations": [
+"F755"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F754"
+],
+"verdict": "met"
+},
+"E3": {
+"class": "observation_gap",
+"observations": [
+"F754"
+],
+"verdict": "unmet",
+"waiver": {
+"by": "F749",
+"coverage": "F753",
+"reason": "F751",
+"waived_at": "F750"
+}
+},
+"E4": {
+"observations": [
+"F755"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F755"
+],
+"verdict": "met"
+},
+"E6": {
+"observations": [
+"F755"
+],
+"verdict": "met"
+},
+"E7": {
+"observations": [
+"F755"
+],
+"verdict": "met"
+},
+"E8": {
+"observations": [
+"F756",
+"F755"
+],
+"verdict": "met"
+},
+"E9": {
+"observations": [
+"F756"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -2626,7 +2715,21 @@
 ],
 "text": "F424"
 }
-]
+],
+"waivers": {
+"E1": {
+"by": "F749",
+"coverage": "F752",
+"reason": "F751",
+"waived_at": "F750"
+},
+"E3": {
+"by": "F749",
+"coverage": "F753",
+"reason": "F751",
+"waived_at": "F750"
+}
+}
 },
 "facts": {
 "F1": "ADO User Story 6712 \"Faster page loads on slow connections: compression, shared cache, smaller update check\", as written on the board:\n\nOn a slow connection, Lighthouse pages take 8–20 s to show their data on a first visit, and 5–9 s when you click to a Team or Portfolio page. A measuring spike (2026-11-27, docs/feature/api-shape-evaluation/spike/findings.md) found that most of that time is spent sending uncompressed JavaScript, not on the number of API calls.\n\nFixes found by the spike\n- Compression. The frontend is served with UseStaticFiles, which ignores the .gz files the build already makes, and API answers are not compressed. JavaScript: 3.4 MB raw vs 1.0 MB compressed. Expected gain on slow 4G: about 4–10 s per page.\n- One shared cache for data every page uses. useRbac fetches the user's permissions once per component that uses it (72 repeated calls over 16 pages). Teams, portfolios, licence and Team settings repeat for similar reasons.\n- A smaller update check. GET /version/new sends 368 KB of release notes on every first visit, only to show whether an update exists.\n- Parallel version checks. The version footer runs 5 independent checks one after another.\n\nNo visible UI change; pages show the same data, sooner. Measure before and after with the spike's probe (measure-calls.mjs, measure-bytes.mjs).\n\nSeparate from the GraphQL / API-shape evaluation, which continues on its own and ends in an ADR.",
@@ -3200,7 +3303,15 @@
 "F746": "Support: footer rows follow the parallel checks and the newest-version call",
 "F747": "Support: its version service mock gains getNewestVersion",
 "F748": "Support: its access-adapter layout rows list the new GET version/newest action",
+"F749": "Maintainer (chat answer 'waive e1 and e3', 2026-11-28)",
 "F75": "S3: useUnitLists.ts owns the Teams and Portfolios keys (reusing the existing teams and portfolios keys of useLicenseRestrictions) with useTeamsQuery, usePortfoliosQuery and useUnitListsChanged; the licence keeps useLicenseStatusQuery (LICENSE_STATUS_KEY, its hourly refetch) and joins the page-move refresh. useLicenseRestrictions, OverviewDashboard, EditPortfolio, ApiKeysSettings and SurveyNudge read these hooks instead of calling the services. useUnitListsChanged is called after own create (EditTeam, EditPortfolio), rename (TeamDetail and PortfolioDetail settings saves, EditTeam/EditPortfolio updates) and delete (OverviewDashboard). useLicenseRestrictions keeps its 403-as-empty rule.",
+"F750": "2026-11-28T14:12:34Z",
+"F751": "Observation gap: the declared examine probes are test runners only; none measures response bytes against a running server.",
+"F752": "ResponseCompressionWireContractTest (br and gzip on static files and safe GETs; identity when the switch is off or Accept-Encoding is absent); DEVOPS measurement on the current bundle: 3361 KB JavaScript, Optimal 3.22x gzip and 3.23x Brotli; ci_docker.yml checks the Brotli Content-Encoding header on the built image.",
+"F753": "ResponseCompressionWireContractTest and BreachSafeResponseCompressionProviderTest (every safe GET of a compressible MIME type is compressed unless its endpoint is marked never-compress; POST and the marked logs, embed handshake and update hub answers are not); SecretBearingAnswersAreNeverCompressedTest keeps the marker on the secret-bearing classes.",
+"F754": "Probe backend-tests Compression: 20 of 20 passed. Script br and gzip compressed and decode to same file; plain script without Accept-Encoding; page shell compressed and still never cached; safe API GET compressed with br when gzip,br offered, plain without; API key creation POST and update hub negotiate never compressed; unsafe methods, png, problem+json sent as is; switch off sends plain. NOT observed: any real byte measure (3.4 MB to about 1 MB), a large metrics, feature-list or settings answer, other pages.",
+"F755": "Probe frontend-tests over useRbac, LighthouseVersion, PageMoveRefresh, licence hooks, SurveyNudge: 11 files, 122 tests, 0 failed. By name: permissions asked once per page; late component reuses answer; admin change shows on next page while kept components keep their answer; left page's answer never shown; failed page-move ask keeps answer, one retry asks once; own change shows at once without loading; first-load failure gives every component could-not-load with permissive fallback, one retry asks once; strict mode asks once; licence asked once, shared; footer questions asked together, no release notes on load; progress indicator then notes; could-not-load text keeps newest version, Retry loads again; a failed footer check shows footer error.",
+"F756": "Probe frontend-tests UnitList,TeamsQuery,PortfoliosQuery: 2 files, 20 tests, 0 failed. Teams, Portfolios and licence asked once when menus, page and nudge all read them; lists show create, rename, delete of Team at once without page move; Portfolio create, copy, edit, rename, delete on each page shows at once; change by someone else shows on next page move, not before; reader after a page with no reader asks once; Teams could-not-load reaches every reader, one retry asks once. Real second session and real server not probed.",
 "F76": "S5: new route GET version/newest on VersionController (SignedInOnly, same reason as hasupdate) returns the newest release version string from a new LighthouseReleaseService.GetNewestReleaseVersion (the first of GetNewReleases, so the number equals today’s newReleases[0].version), 404 when there is none, as /version/new. GET version/new stays for the dialog. LighthouseVersion runs current, distribution and hasupdate together with Promise.all; when an update exists it runs newest and, for lighthouse-internal, updateSupported together; any rejection sets the footer error as today. Only data dependencies remain, no order between independent checks. LatestReleaseInformationDialog receives the newest version and reads the release notes with useQuery (key version, newReleases; enabled only while open) and has three states: loading (the dialog with the newest version and a CircularProgress where the notes go), loaded (today’s notes), failed (the newest version, the message Could not load the release notes. and a Retry button that refetches). Sketch at the start of DELIVER.",
 "F78": "Tests: Lighthouse test-writing skill wins over nWave test rules (nine-run timing, PBT density). Frontend rules on hooks in .test.ts/.test.tsx with renderWithQueryClient; backend S1 is a wire contract on WireContractTest because only a running host shows Content-Encoding and headers produced by middleware order; the policy rule itself is pinned by unit rows on BreachSafeResponseCompressionProvider over DefaultHttpContext. No nWave tags in test code.",
 "F8": "The user goes to another page",

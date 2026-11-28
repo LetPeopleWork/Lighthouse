@@ -1493,7 +1493,33 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h3>Waivers</h3>
 
-<p>None.</p>
+<h4>E1</h4>
+
+<pre><code>Maintainer (chat answer &#x27;waive e1 and e3&#x27;, 2026-11-28)
+</code></pre>
+
+<pre><code>2026-11-28T14:12:34Z
+</code></pre>
+
+<pre><code>Observation gap: the declared examine probes are test runners only; none measures response bytes against a running server.
+</code></pre>
+
+<pre><code>ResponseCompressionWireContractTest (br and gzip on static files and safe GETs; identity when the switch is off or Accept-Encoding is absent); DEVOPS measurement on the current bundle: 3361 KB JavaScript, Optimal 3.22x gzip and 3.23x Brotli; ci_docker.yml checks the Brotli Content-Encoding header on the built image.
+</code></pre>
+
+<h4>E3</h4>
+
+<pre><code>Maintainer (chat answer &#x27;waive e1 and e3&#x27;, 2026-11-28)
+</code></pre>
+
+<pre><code>2026-11-28T14:12:34Z
+</code></pre>
+
+<pre><code>Observation gap: the declared examine probes are test runners only; none measures response bytes against a running server.
+</code></pre>
+
+<pre><code>ResponseCompressionWireContractTest and BreachSafeResponseCompressionProviderTest (every safe GET of a compressible MIME type is compressed unless its endpoint is marked never-compress; POST and the marked logs, embed handshake and update hub answers are not); SecretBearingAnswersAreNeverCompressedTest keeps the marker on the secret-bearing classes.
+</code></pre>
 
 <h2>Charter</h2>
 
@@ -1501,6 +1527,147 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Examination</h2>
 
-<p>None.</p>
+<h3>E1</h3>
+
+<p>unmet</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe backend-tests Compression: 20 of 20 passed. Script br and gzip compressed and decode to same file; plain script without Accept-Encoding; page shell compressed and still never cached; safe API GET compressed with br when gzip,br offered, plain without; API key creation POST and update hub negotiate never compressed; unsafe methods, png, problem+json sent as is; switch off sends plain. NOT observed: any real byte measure (3.4 MB to about 1 MB), a large metrics, feature-list or settings answer, other pages.
+</code></pre>
+
+<p>observation_gap</p>
+
+<h4>Waiver</h4>
+
+<pre><code>Maintainer (chat answer &#x27;waive e1 and e3&#x27;, 2026-11-28)
+</code></pre>
+
+<pre><code>2026-11-28T14:12:34Z
+</code></pre>
+
+<pre><code>Observation gap: the declared examine probes are test runners only; none measures response bytes against a running server.
+</code></pre>
+
+<pre><code>ResponseCompressionWireContractTest (br and gzip on static files and safe GETs; identity when the switch is off or Accept-Encoding is absent); DEVOPS measurement on the current bundle: 3361 KB JavaScript, Optimal 3.22x gzip and 3.23x Brotli; ci_docker.yml checks the Brotli Content-Encoding header on the built image.
+</code></pre>
+
+<h3>E2</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe backend-tests Compression: 20 of 20 passed. Script br and gzip compressed and decode to same file; plain script without Accept-Encoding; page shell compressed and still never cached; safe API GET compressed with br when gzip,br offered, plain without; API key creation POST and update hub negotiate never compressed; unsafe methods, png, problem+json sent as is; switch off sends plain. NOT observed: any real byte measure (3.4 MB to about 1 MB), a large metrics, feature-list or settings answer, other pages.
+</code></pre>
+
+<h3>E3</h3>
+
+<p>unmet</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe backend-tests Compression: 20 of 20 passed. Script br and gzip compressed and decode to same file; plain script without Accept-Encoding; page shell compressed and still never cached; safe API GET compressed with br when gzip,br offered, plain without; API key creation POST and update hub negotiate never compressed; unsafe methods, png, problem+json sent as is; switch off sends plain. NOT observed: any real byte measure (3.4 MB to about 1 MB), a large metrics, feature-list or settings answer, other pages.
+</code></pre>
+
+<p>observation_gap</p>
+
+<h4>Waiver</h4>
+
+<pre><code>Maintainer (chat answer &#x27;waive e1 and e3&#x27;, 2026-11-28)
+</code></pre>
+
+<pre><code>2026-11-28T14:12:34Z
+</code></pre>
+
+<pre><code>Observation gap: the declared examine probes are test runners only; none measures response bytes against a running server.
+</code></pre>
+
+<pre><code>ResponseCompressionWireContractTest and BreachSafeResponseCompressionProviderTest (every safe GET of a compressible MIME type is compressed unless its endpoint is marked never-compress; POST and the marked logs, embed handshake and update hub answers are not); SecretBearingAnswersAreNeverCompressedTest keeps the marker on the secret-bearing classes.
+</code></pre>
+
+<h3>E4</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe frontend-tests over useRbac, LighthouseVersion, PageMoveRefresh, licence hooks, SurveyNudge: 11 files, 122 tests, 0 failed. By name: permissions asked once per page; late component reuses answer; admin change shows on next page while kept components keep their answer; left page&#x27;s answer never shown; failed page-move ask keeps answer, one retry asks once; own change shows at once without loading; first-load failure gives every component could-not-load with permissive fallback, one retry asks once; strict mode asks once; licence asked once, shared; footer questions asked together, no release notes on load; progress indicator then notes; could-not-load text keeps newest version, Retry loads again; a failed footer check shows footer error.
+</code></pre>
+
+<h3>E5</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe frontend-tests over useRbac, LighthouseVersion, PageMoveRefresh, licence hooks, SurveyNudge: 11 files, 122 tests, 0 failed. By name: permissions asked once per page; late component reuses answer; admin change shows on next page while kept components keep their answer; left page&#x27;s answer never shown; failed page-move ask keeps answer, one retry asks once; own change shows at once without loading; first-load failure gives every component could-not-load with permissive fallback, one retry asks once; strict mode asks once; licence asked once, shared; footer questions asked together, no release notes on load; progress indicator then notes; could-not-load text keeps newest version, Retry loads again; a failed footer check shows footer error.
+</code></pre>
+
+<h3>E6</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe frontend-tests over useRbac, LighthouseVersion, PageMoveRefresh, licence hooks, SurveyNudge: 11 files, 122 tests, 0 failed. By name: permissions asked once per page; late component reuses answer; admin change shows on next page while kept components keep their answer; left page&#x27;s answer never shown; failed page-move ask keeps answer, one retry asks once; own change shows at once without loading; first-load failure gives every component could-not-load with permissive fallback, one retry asks once; strict mode asks once; licence asked once, shared; footer questions asked together, no release notes on load; progress indicator then notes; could-not-load text keeps newest version, Retry loads again; a failed footer check shows footer error.
+</code></pre>
+
+<h3>E7</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe frontend-tests over useRbac, LighthouseVersion, PageMoveRefresh, licence hooks, SurveyNudge: 11 files, 122 tests, 0 failed. By name: permissions asked once per page; late component reuses answer; admin change shows on next page while kept components keep their answer; left page&#x27;s answer never shown; failed page-move ask keeps answer, one retry asks once; own change shows at once without loading; first-load failure gives every component could-not-load with permissive fallback, one retry asks once; strict mode asks once; licence asked once, shared; footer questions asked together, no release notes on load; progress indicator then notes; could-not-load text keeps newest version, Retry loads again; a failed footer check shows footer error.
+</code></pre>
+
+<h3>E8</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe frontend-tests UnitList,TeamsQuery,PortfoliosQuery: 2 files, 20 tests, 0 failed. Teams, Portfolios and licence asked once when menus, page and nudge all read them; lists show create, rename, delete of Team at once without page move; Portfolio create, copy, edit, rename, delete on each page shows at once; change by someone else shows on next page move, not before; reader after a page with no reader asks once; Teams could-not-load reaches every reader, one retry asks once. Real second session and real server not probed.
+</code></pre>
+
+<pre><code>Probe frontend-tests over useRbac, LighthouseVersion, PageMoveRefresh, licence hooks, SurveyNudge: 11 files, 122 tests, 0 failed. By name: permissions asked once per page; late component reuses answer; admin change shows on next page while kept components keep their answer; left page&#x27;s answer never shown; failed page-move ask keeps answer, one retry asks once; own change shows at once without loading; first-load failure gives every component could-not-load with permissive fallback, one retry asks once; strict mode asks once; licence asked once, shared; footer questions asked together, no release notes on load; progress indicator then notes; could-not-load text keeps newest version, Retry loads again; a failed footer check shows footer error.
+</code></pre>
+
+<h3>E9</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe frontend-tests UnitList,TeamsQuery,PortfoliosQuery: 2 files, 20 tests, 0 failed. Teams, Portfolios and licence asked once when menus, page and nudge all read them; lists show create, rename, delete of Team at once without page move; Portfolio create, copy, edit, rename, delete on each page shows at once; change by someone else shows on next page move, not before; reader after a page with no reader asks once; Teams could-not-load reaches every reader, one retry asks once. Real second session and real server not probed.
+</code></pre>
+
+<h3>E11</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe frontend-tests over useRbac, LighthouseVersion, PageMoveRefresh, licence hooks, SurveyNudge: 11 files, 122 tests, 0 failed. By name: permissions asked once per page; late component reuses answer; admin change shows on next page while kept components keep their answer; left page&#x27;s answer never shown; failed page-move ask keeps answer, one retry asks once; own change shows at once without loading; first-load failure gives every component could-not-load with permissive fallback, one retry asks once; strict mode asks once; licence asked once, shared; footer questions asked together, no release notes on load; progress indicator then notes; could-not-load text keeps newest version, Retry loads again; a failed footer check shows footer error.
+</code></pre>
+
+<h3>E12</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe frontend-tests over useRbac, LighthouseVersion, PageMoveRefresh, licence hooks, SurveyNudge: 11 files, 122 tests, 0 failed. By name: permissions asked once per page; late component reuses answer; admin change shows on next page while kept components keep their answer; left page&#x27;s answer never shown; failed page-move ask keeps answer, one retry asks once; own change shows at once without loading; first-load failure gives every component could-not-load with permissive fallback, one retry asks once; strict mode asks once; licence asked once, shared; footer questions asked together, no release notes on load; progress indicator then notes; could-not-load text keeps newest version, Retry loads again; a failed footer check shows footer error.
+</code></pre>
+
+<h3>E13</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe frontend-tests over useRbac, LighthouseVersion, PageMoveRefresh, licence hooks, SurveyNudge: 11 files, 122 tests, 0 failed. By name: permissions asked once per page; late component reuses answer; admin change shows on next page while kept components keep their answer; left page&#x27;s answer never shown; failed page-move ask keeps answer, one retry asks once; own change shows at once without loading; first-load failure gives every component could-not-load with permissive fallback, one retry asks once; strict mode asks once; licence asked once, shared; footer questions asked together, no release notes on load; progress indicator then notes; could-not-load text keeps newest version, Retry loads again; a failed footer check shows footer error.
+</code></pre>
 
 </body></html>
