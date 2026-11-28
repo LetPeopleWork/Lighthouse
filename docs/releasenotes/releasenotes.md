@@ -4,7 +4,7 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse vNext
+# Lighthouse v26.11.28.7
 
 ## Did We Keep Our Promise?
 
@@ -75,7 +75,7 @@ Special thanks to everyone who contributed feedback for this release:
 - [Steve Pereira](https://www.linkedin.com/in/devopsto/)
 - [Gunnar R. Fischer](https://www.linkedin.com/in/gunnar-fischer/)
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.11.15.4...HEAD)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.11.15.4...v26.11.28.7)
 
 # Lighthouse v26.11.15.4
 
