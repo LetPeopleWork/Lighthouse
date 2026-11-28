@@ -824,6 +824,246 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S4</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Sweep every rule pattern and source file of the test project for a moved type&#x27;s former Models name, with no movers and no renamed strings
+</code></pre>
+
+<pre><code>None is found; the widened Reports alternative is reported by field name
+</code></pre>
+
+<pre><code>A rule cannot keep a dead Models alternative for a moved type
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsRulesNameOnlyTheOwnersArchUnitTest.cs</p>
+
+<p>NoRulePatternNamesAMovedTypeByItsModelsNameUnlessItIsDeclaredAnOldLocation</p>
+
+<pre><code>a pattern that takes in the whole Models is flagged
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Plant a pattern that keeps a Models alternative, a root type&#x27;s Models name, a narrowed, a declared and a whole-kernel pattern
+</code></pre>
+
+<pre><code>Only the first two are named
+</code></pre>
+
+<pre><code>A new offender is caught and named
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsRulesNameOnlyTheOwnersArchUnitTest.cs</p>
+
+<p>AMadeUpPatternKeepingAModelsAlternativeForAMovedTypeIsNamedAndNarrowedDeclaredOrWholeKernelPatternsAreNot</p>
+
+<pre><code>a sweep blind to the root type&#x27;s Models name
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Check the movers and rename lists
+</code></pre>
+
+<pre><code>Both are empty, a non-empty one names its entries
+</code></pre>
+
+<pre><code>No excuse list can hide a former name
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsRulesNameOnlyTheOwnersArchUnitTest.cs</p>
+
+<p>NoMoversAndNoRenamedStringsAreLeftToExcuseAFormerName</p>
+
+<pre><code>only one of the two lists is checked
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Count the distinct contexts using each of the three Kernel rows in the compiled backend
+</code></pre>
+
+<pre><code>Each is used by two or more contexts
+</code></pre>
+
+<pre><code>The shared kernel holds only what several contexts share
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRulesCatchANewOffenderArchUnitTest.cs</p>
+
+<p>EveryKernelRow_IsUsedByTwoOrMoreContexts</p>
+
+<pre><code>a count of users rather than contexts
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Plant a kernel row used by one context and one used by two
+</code></pre>
+
+<pre><code>Only the one-context row is named
+</code></pre>
+
+<pre><code>A context-owned type cannot sit in the kernel unseen
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRulesCatchANewOffenderArchUnitTest.cs</p>
+
+<p>AKernelRowUsedByOnlyOneContext_IsNamedAndOneUsedByTwoIsNot</p>
+
+<pre><code>counting every user as a context
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the kernel dependency rule over the compiled backend
+</code></pre>
+
+<pre><code>No Model reaches Services, a module, the platform or the update queue
+</code></pre>
+
+<pre><code>The kernel depends on nothing above it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsDoNotDependOnTheUpdateQueueArchUnitTest.cs</p>
+
+<p>TheDomainModel_KnowsNothingOfTheUpdateQueue_NotEvenTheNameOfAnUpdateType</p>
+
+<pre><code>an async-only reach goes unseen
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the kernel rules over made-up Models that reach Services or the update queue
+</code></pre>
+
+<pre><code>Each offender is named
+</code></pre>
+
+<pre><code>A new offender is caught
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRulesCatchANewOffenderArchUnitTest.cs</p>
+
+<p>AModelThatReachesIntoServices_FailsTheKernelRuleAndIsNamed</p>
+
+<pre><code>a rule that names the wrong type
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>ARCHITECTURE.md section 4 and ADR-270 Decision 7 prose
+</code></pre>
+
+<pre><code>Describe the kernel as three base types and point to the catalogue
+</code></pre>
+
+<pre><code>Readers see the kernel as it is
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>Prose, verified by review and EXAMINE, not pinned
+</code></pre>
+
+<p>crafter</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Unchanged backend suites after the story
+</code></pre>
+
+<pre><code>No schema, route or payload change
+</code></pre>
+
+<pre><code>Nothing a user sees changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>Observed by the unchanged suites at the story end
+</code></pre>
+
+<p>crafter</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

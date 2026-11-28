@@ -421,6 +421,158 @@
 "stimulus": "F503",
 "user_result": "F505"
 }
+],
+"S4": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F263",
+"T4"
+],
+"still_passes_if": "F514",
+"test": "NoRulePatternNamesAMovedTypeByItsModelsNameUnlessItIsDeclaredAnOldLocation",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsRulesNameOnlyTheOwnersArchUnitTest.cs"
+},
+"expected": "F512",
+"stimulus": "F511",
+"user_result": "F513"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F264"
+],
+"still_passes_if": "F518",
+"test": "AMadeUpPatternKeepingAModelsAlternativeForAMovedTypeIsNamedAndNarrowedDeclaredOrWholeKernelPatternsAreNot",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsRulesNameOnlyTheOwnersArchUnitTest.cs"
+},
+"expected": "F516",
+"stimulus": "F515",
+"user_result": "F517"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F265",
+"L1/F75",
+"L1/F76",
+"L1/F77"
+],
+"still_passes_if": "F522",
+"test": "NoMoversAndNoRenamedStringsAreLeftToExcuseAFormerName",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsRulesNameOnlyTheOwnersArchUnitTest.cs"
+},
+"expected": "F520",
+"stimulus": "F519",
+"user_result": "F521"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L8/F268",
+"T5"
+],
+"still_passes_if": "F526",
+"test": "EveryKernelRow_IsUsedByTwoOrMoreContexts",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRulesCatchANewOffenderArchUnitTest.cs"
+},
+"expected": "F524",
+"stimulus": "F523",
+"user_result": "F525"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L8/F269"
+],
+"still_passes_if": "F530",
+"test": "AKernelRowUsedByOnlyOneContext_IsNamedAndOneUsedByTwoIsNot",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRulesCatchANewOffenderArchUnitTest.cs"
+},
+"expected": "F528",
+"stimulus": "F527",
+"user_result": "F529"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L9/F272"
+],
+"still_passes_if": "F534",
+"test": "TheDomainModel_KnowsNothingOfTheUpdateQueue_NotEvenTheNameOfAnUpdateType",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsDoNotDependOnTheUpdateQueueArchUnitTest.cs"
+},
+"expected": "F532",
+"stimulus": "F531",
+"user_result": "F533"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L9/F273"
+],
+"still_passes_if": "F538",
+"test": "AModelThatReachesIntoServices_FailsTheKernelRuleAndIsNamed",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRulesCatchANewOffenderArchUnitTest.cs"
+},
+"expected": "F536",
+"stimulus": "F535",
+"user_result": "F537"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "crafter",
+"reason": "F542"
+},
+"expected": "F540",
+"stimulus": "F539",
+"user_result": "F541"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "crafter",
+"reason": "F546"
+},
+"expected": "F544",
+"stimulus": "F543",
+"user_result": "F545"
+}
 ]
 },
 "counters": {
@@ -428,7 +580,7 @@
 "C": 1,
 "D": 20,
 "E": 9,
-"F": 510,
+"F": 546,
 "K": 10,
 "L": 9,
 "P": 5,
@@ -3196,8 +3348,44 @@
 "F509": "A type stays in the Models only while outside code would break its owner's module rules by the move, or while a staying Models type reads its constants; a row that claims either for a type that is free fails, naming the type and the reason",
 "F51": "Decides cross-context references through Contracts; the catalogue decides only Models standing, so they do not decide the same fact; S1 checks the actual scope and records any overlap.",
 "F510": "the reached measurement counted a user inside the owner's module, or one that already reaches the owner's Domain, as outside; or the constants path also matched the constants type's own file",
+"F511": "Sweep every rule pattern and source file of the test project for a moved type's former Models name, with no movers and no renamed strings",
+"F512": "None is found; the widened Reports alternative is reported by field name",
+"F513": "A rule cannot keep a dead Models alternative for a moved type",
+"F514": "a pattern that takes in the whole Models is flagged",
+"F515": "Plant a pattern that keeps a Models alternative, a root type's Models name, a narrowed, a declared and a whole-kernel pattern",
+"F516": "Only the first two are named",
+"F517": "A new offender is caught and named",
+"F518": "a sweep blind to the root type's Models name",
+"F519": "Check the movers and rename lists",
 "F52": "No entity moves, so the model snapshot and migrations stay byte-identical.",
+"F520": "Both are empty, a non-empty one names its entries",
+"F521": "No excuse list can hide a former name",
+"F522": "only one of the two lists is checked",
+"F523": "Count the distinct contexts using each of the three Kernel rows in the compiled backend",
+"F524": "Each is used by two or more contexts",
+"F525": "The shared kernel holds only what several contexts share",
+"F526": "a count of users rather than contexts",
+"F527": "Plant a kernel row used by one context and one used by two",
+"F528": "Only the one-context row is named",
+"F529": "A context-owned type cannot sit in the kernel unseen",
 "F53": "Reads Models/UsageData/UsageDataRouteKey.cs and UsageDataRoutePatterns.cs by path; both files stay.",
+"F530": "counting every user as a context",
+"F531": "Run the kernel dependency rule over the compiled backend",
+"F532": "No Model reaches Services, a module, the platform or the update queue",
+"F533": "The kernel depends on nothing above it",
+"F534": "an async-only reach goes unseen",
+"F535": "Run the kernel rules over made-up Models that reach Services or the update queue",
+"F536": "Each offender is named",
+"F537": "A new offender is caught",
+"F538": "a rule that names the wrong type",
+"F539": "ARCHITECTURE.md section 4 and ADR-270 Decision 7 prose",
+"F540": "Describe the kernel as three base types and point to the catalogue",
+"F541": "Readers see the kernel as it is",
+"F542": "Prose, verified by review and EXAMINE, not pinned",
+"F543": "Unchanged backend suites after the story",
+"F544": "No schema, route or payload change",
+"F545": "Nothing a user sees changes",
+"F546": "Observed by the unchanged suites at the story end",
 "F55": "Names no mover; S1 re-greps it with .editorconfig, the Stryker config and appsettings files.",
 "F56": "No shared wire, schema or configuration contract changes: System.Text.Json writes no type names, Swashbuckle uses short schema ids, no type-name reflection exists, and no entity moves, so no producer or consumer outside the compiled assembly sees a namespace.",
 "F57": "Every caller of a moved type is inside the one backend deployable and changes in the same commit; no persisted or wire data names a namespace, so the primary oracle and the unchanged suites cover them.",

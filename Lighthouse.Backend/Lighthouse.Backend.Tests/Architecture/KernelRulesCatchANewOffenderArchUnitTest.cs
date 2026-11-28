@@ -3,7 +3,35 @@ using Lighthouse.Backend.Models.KernelFixtures.Offending;
 using Lighthouse.Backend.Models.KernelFixtures.OffendingInAnAsyncBody;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.KernelFixtures;
 using Lighthouse.Backend.Services.KernelFixtures;
+using System.Text.RegularExpressions;
+using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Tests.Architecture.KernelRowFixtures;
 using Mono.Cecil;
+
+namespace Lighthouse.Backend.Tests.Architecture.KernelRowFixtures
+{
+    internal interface IUsedByOneContext
+    {
+    }
+
+    internal interface IUsedByTwoContexts
+    {
+    }
+}
+
+namespace Lighthouse.Backend.Tests.Architecture.KernelRowFixtures.Modules.Alpha
+{
+    internal sealed class AlphaRecord : IUsedByOneContext, IUsedByTwoContexts
+    {
+    }
+}
+
+namespace Lighthouse.Backend.Tests.Architecture.KernelRowFixtures.Modules.Beta
+{
+    internal sealed class BetaRecord : IUsedByTwoContexts
+    {
+    }
+}
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -27,6 +55,22 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly Lazy<ModuleDefinition> FixtureModule = new(() => IlDependencies.ReadModule(typeof(OffendingModel).Assembly));
 
+        private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(LighthouseAppContext).Assembly));
+
+        // Contexts are the Modules.<X> namespaces only; the API, the data layer, the platform and the loose services are not.
+        private static List<string> ContextsUsing(ModuleDefinition module, string modulesRoot, string rowFullName)
+        {
+            var contextRoot = new Regex($@"^{Regex.Escape(modulesRoot)}\.(?<context>[A-Za-z0-9_]+)(\.|$)", RegexOptions.None, TimeSpan.FromSeconds(1));
+
+            return [.. module.Types
+                .Select(type => contextRoot.Match(type.Namespace))
+                .Where(found => found.Success)
+                .Select(found => found.Groups["context"].Value)
+                .Distinct(StringComparer.Ordinal)
+                .Where(context => IlDependencies.DependentsIn(module, $@"^{Regex.Escape(modulesRoot)}\.{Regex.Escape(context)}(\.|$)", type => type.FullName == rowFullName).Count > 0)
+                .Order(StringComparer.Ordinal)];
+        }
+
         [OneTimeTearDown]
         public void DisposeModule()
         {
@@ -34,6 +78,43 @@ namespace Lighthouse.Backend.Tests.Architecture
             {
                 FixtureModule.Value.Dispose();
             }
+        }
+
+        [OneTimeTearDown]
+        public void DisposeTheProductionModule()
+        {
+            if (ProductionModule.IsValueCreated)
+            {
+                ProductionModule.Value.Dispose();
+            }
+        }
+
+        [Test]
+        public void EveryKernelRow_IsUsedByTwoOrMoreContexts()
+        {
+            var contextsByRow = KernelCatalogue.TheKernelTypes.ToDictionary(
+                row => $"{KernelCatalogue.TheModelsRoot}.{row}",
+                row => ContextsUsing(ProductionModule.Value, "Lighthouse.Backend.Modules", $"{KernelCatalogue.TheModelsRoot}.{row}"));
+
+            var tooFew = contextsByRow.Where(entry => entry.Value.Count < 2).Select(entry => $"{entry.Key} is used by [{string.Join(", ", entry.Value)}]").ToList();
+
+            Assert.That(tooFew, Is.Empty,
+                $"{tooFew.Count} of the {contextsByRow.Count} Kernel rows are used by fewer than two contexts: {string.Join("; ", tooFew)}." + Environment.NewLine +
+                "Why it matters: a type only one context uses is that context's own type, and the shared kernel is meant for what several contexts build on. " +
+                "How to fix: move the type to its single user, and take its Kernel row off the catalogue.");
+        }
+
+        [Test]
+        public void AKernelRowUsedByOnlyOneContext_IsNamedAndOneUsedByTwoIsNot()
+        {
+            var rows = new[] { typeof(IUsedByOneContext).FullName!, typeof(IUsedByTwoContexts).FullName! };
+            var root = "Lighthouse.Backend.Tests.Architecture.KernelRowFixtures.Modules";
+
+            var tooFew = rows.Where(row => ContextsUsing(FixtureModule.Value, root, row).Count < 2).ToList();
+
+            Assert.That(tooFew, Is.EqualTo(new[] { typeof(IUsedByOneContext).FullName }),
+                $"Of {rows.Length} made-up Kernel rows the rule named [{string.Join("; ", tooFew)}], and should name only the one that a single context uses." + Environment.NewLine +
+                "Why it matters: a rule that cannot fail lets a context-owned type sit in the kernel. How to fix: count the distinct Modules contexts whose types reference the row.");
         }
 
         [Test]

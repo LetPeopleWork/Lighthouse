@@ -7,10 +7,6 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// </summary>
     internal static class ModelsStringsTheMoveRenames
     {
-        public static IReadOnlyList<RenamedString> Entries { get; } =
-        [
-            new("Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs", "Lighthouse.Backend.Models.Authorization.RbacGuardRequirement", "Lighthouse.Backend.Modules.Access.Domain.RbacGuardRequirement"),
-            new("Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs", "Lighthouse.Backend.Models.Authorization.RbacOperationResult", "Lighthouse.Backend.Modules.Access.Domain.RbacOperationResult"),
-        ];
+        public static IReadOnlyList<RenamedString> Entries { get; } = [];
     }
 }

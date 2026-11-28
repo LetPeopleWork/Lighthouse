@@ -766,6 +766,282 @@ A row that omits a true blocker, or claims one the type is free of, is refused i
 
 None.
 
+### S4
+
+##### Covers
+
+P3
+
+```text
+Sweep every rule pattern and source file of the test project for a moved type's former Models name, with no movers and no renamed strings
+```
+
+```text
+None is found; the widened Reports alternative is reported by field name
+```
+
+```text
+A rule cannot keep a dead Models alternative for a moved type
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModelsRulesNameOnlyTheOwnersArchUnitTest\.cs
+
+NoRulePatternNamesAMovedTypeByItsModelsNameUnlessItIsDeclaredAnOldLocation
+
+```text
+a pattern that takes in the whole Models is flagged
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+Plant a pattern that keeps a Models alternative, a root type's Models name, a narrowed, a declared and a whole-kernel pattern
+```
+
+```text
+Only the first two are named
+```
+
+```text
+A new offender is caught and named
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModelsRulesNameOnlyTheOwnersArchUnitTest\.cs
+
+AMadeUpPatternKeepingAModelsAlternativeForAMovedTypeIsNamedAndNarrowedDeclaredOrWholeKernelPatternsAreNot
+
+```text
+a sweep blind to the root type's Models name
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Check the movers and rename lists
+```
+
+```text
+Both are empty, a non-empty one names its entries
+```
+
+```text
+No excuse list can hide a former name
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModelsRulesNameOnlyTheOwnersArchUnitTest\.cs
+
+NoMoversAndNoRenamedStringsAreLeftToExcuseAFormerName
+
+```text
+only one of the two lists is checked
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P3
+
+```text
+Count the distinct contexts using each of the three Kernel rows in the compiled backend
+```
+
+```text
+Each is used by two or more contexts
+```
+
+```text
+The shared kernel holds only what several contexts share
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelRulesCatchANewOffenderArchUnitTest\.cs
+
+EveryKernelRow\_IsUsedByTwoOrMoreContexts
+
+```text
+a count of users rather than contexts
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+Plant a kernel row used by one context and one used by two
+```
+
+```text
+Only the one-context row is named
+```
+
+```text
+A context-owned type cannot sit in the kernel unseen
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelRulesCatchANewOffenderArchUnitTest\.cs
+
+AKernelRowUsedByOnlyOneContext\_IsNamedAndOneUsedByTwoIsNot
+
+```text
+counting every user as a context
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Run the kernel dependency rule over the compiled backend
+```
+
+```text
+No Model reaches Services, a module, the platform or the update queue
+```
+
+```text
+The kernel depends on nothing above it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModelsDoNotDependOnTheUpdateQueueArchUnitTest\.cs
+
+TheDomainModel\_KnowsNothingOfTheUpdateQueue\_NotEvenTheNameOfAnUpdateType
+
+```text
+an async-only reach goes unseen
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Run the kernel rules over made-up Models that reach Services or the update queue
+```
+
+```text
+Each offender is named
+```
+
+```text
+A new offender is caught
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelRulesCatchANewOffenderArchUnitTest\.cs
+
+AModelThatReachesIntoServices\_FailsTheKernelRuleAndIsNamed
+
+```text
+a rule that names the wrong type
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+ARCHITECTURE.md section 4 and ADR-270 Decision 7 prose
+```
+
+```text
+Describe the kernel as three base types and point to the catalogue
+```
+
+```text
+Readers see the kernel as it is
+```
+
+##### Disposition
+
+NotTested
+
+```text
+Prose, verified by review and EXAMINE, not pinned
+```
+
+crafter
+
+##### Covers
+
+P4
+
+```text
+Unchanged backend suites after the story
+```
+
+```text
+No schema, route or payload change
+```
+
+```text
+Nothing a user sees changes
+```
+
+##### Disposition
+
+NotTested
+
+```text
+Observed by the unchanged suites at the story end
+```
+
+crafter
+
 ## Expectations
 
 ### Rows
