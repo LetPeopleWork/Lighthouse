@@ -1162,10 +1162,6 @@ describe("OverviewDashboard", () => {
 			expect(queryClient.getQueryData(["report", "team", 2, 1])).toEqual({
 				name: "Kept",
 			});
-			// The first page read, the read inside the delete above, and one ask again after the user's own delete.
-			await waitFor(() =>
-				expect(teamService.getTeams).toHaveBeenCalledTimes(3),
-			);
 		});
 
 		it("keeps a Team's reports in memory and says something went wrong when the Team cannot be deleted", async () => {

@@ -39,6 +39,12 @@ const askOnPage =
 		}
 	};
 
+// A failed ask is shown to every reader and retried only on request, so neither a reader nor a loader retries alone.
+const sharedAskOptions = {
+	staleTime: Number.POSITIVE_INFINITY,
+	retry: false,
+} as const;
+
 interface PageFreshOptions {
 	/** False keeps the read from asking while the component does not need it; it then shows as loading. */
 	enabled?: boolean;
@@ -64,7 +70,7 @@ export function usePageFreshLoader<T>(
 			>({
 				queryKey: pageFreshQueryKey(key),
 				queryFn: askOnPage(ask, page),
-				staleTime: Number.POSITIVE_INFINITY,
+				...sharedAskOptions,
 			});
 			return fetched.answer;
 		} catch (error) {
@@ -109,8 +115,7 @@ export function usePageFreshQuery<T>(
 		queryKey: pageFreshQueryKey(key),
 		queryFn: askOnPage(ask, page),
 		enabled,
-		staleTime: Number.POSITIVE_INFINITY,
-		retry: false,
+		...sharedAskOptions,
 		refetchOnMount: (q) => (asksOnMount(q) ? "always" : false),
 		retryOnMount: asksOnMount,
 	});
