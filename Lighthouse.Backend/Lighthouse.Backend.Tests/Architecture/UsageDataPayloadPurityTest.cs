@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models.UsageData;
+using Lighthouse.Backend.Platform.UsageData;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {

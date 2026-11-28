@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Models.UsageData
+namespace Lighthouse.Backend.Platform.UsageData
 {
     /// <summary>
     /// Why a batch was not forwarded. Closed on purpose: an outcome that does not appear here cannot

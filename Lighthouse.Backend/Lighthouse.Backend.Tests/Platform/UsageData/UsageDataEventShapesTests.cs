@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models.UsageData;
+using Lighthouse.Backend.Platform.UsageData;
 
-namespace Lighthouse.Backend.Tests.Models.UsageData
+namespace Lighthouse.Backend.Tests.Platform.UsageData
 {
     /// <summary>
     /// When a vote was cast is the one thing a sizing event says, and which verdict a Refinement day

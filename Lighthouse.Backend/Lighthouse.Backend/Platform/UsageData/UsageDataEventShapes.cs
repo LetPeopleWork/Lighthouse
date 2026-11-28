@@ -1,6 +1,7 @@
 using System.Collections.Frozen;
+using Lighthouse.Backend.Models.UsageData;
 
-namespace Lighthouse.Backend.Models.UsageData
+namespace Lighthouse.Backend.Platform.UsageData
 {
     /// <summary>
     /// What each event is allowed to carry. Two of them are about a page somebody opened and say

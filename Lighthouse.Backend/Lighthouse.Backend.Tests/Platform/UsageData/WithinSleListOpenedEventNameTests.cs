@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models.UsageData;
+using Lighthouse.Backend.Platform.UsageData;
 
-namespace Lighthouse.Backend.Tests.Models.UsageData
+namespace Lighthouse.Backend.Tests.Platform.UsageData
 {
     /// <summary>
     /// The name is the contract. The event is appended after the one that came before it, so nothing already

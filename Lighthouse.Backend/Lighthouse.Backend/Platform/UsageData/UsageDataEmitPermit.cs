@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Models.UsageData
+namespace Lighthouse.Backend.Platform.UsageData
 {
     /// <summary>
     /// Proof that somebody agreed, minted only where that was actually checked. The part that sends

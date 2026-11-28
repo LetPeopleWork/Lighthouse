@@ -1,4 +1,6 @@
-namespace Lighthouse.Backend.Models.UsageData
+using Lighthouse.Backend.Models.UsageData;
+
+namespace Lighthouse.Backend.Platform.UsageData
 {
     /// <summary>
     /// One thing a browser reported, as this application holds it once the message has been read.
