@@ -144,6 +144,11 @@ are reviewed is complete.
    nothing more. Do not finalize, do not start the next feature. With `push: "per-slice"`, the final
    gates' commits are pushed the same way as a slice's; otherwise nothing is pushed.
 
+**In a git worktree, leave the marker alone at the end.** Once the work is pushed and CI is green, the
+maintainer removes the worktree, and the gitignored marker goes with it. So skip the final marker
+writes (`status: "holding"` or `"off"`, closing log lines). Still delete the heartbeat job, move the
+ADO items, and post the summary. In the main checkout the marker outlives the run, so update it there.
+
 Wave-defined reviewers and gates run without asking — they are part of the wave, not an extra.
 
 ## Ask first, with a 15-minute default, for choices that cost a lot of time
