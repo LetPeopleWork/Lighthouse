@@ -1,39 +1,1896 @@
 {
 "counters": {
-"F": 69,
+"B": 5,
+"C": 2,
+"D": 10,
+"F": 350,
+"K": 13,
+"L": 7,
+"N": 4,
 "P": 12,
-"S": 5
+"S": 5,
+"T": 4,
+"Y": 5
+},
+"design": {
+"adrs": [
+{
+"key": "004",
+"status": "Proposed",
+"title": "Compress safe-method answers and static files at serve time"
+}
+],
+"paradigm": "object_oriented",
+"shared": {
+"constraints": [
+{
+"id": "K1",
+"text": "F80"
+},
+{
+"id": "K2",
+"text": "F81"
+},
+{
+"id": "K3",
+"text": "F82"
+},
+{
+"id": "K4",
+"text": "F83"
+},
+{
+"id": "K5",
+"text": "F84"
+},
+{
+"id": "K6",
+"text": "F85"
+},
+{
+"id": "K7",
+"text": "F86"
+},
+{
+"id": "K8",
+"text": "F43"
+},
+{
+"id": "K9",
+"text": "F44"
+},
+{
+"id": "K10",
+"text": "F45"
+},
+{
+"id": "K11",
+"text": "F46"
+},
+{
+"id": "K12",
+"text": "F47"
+},
+{
+"id": "K13",
+"text": "F48"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F70"
+},
+{
+"id": "D2",
+"slices": [
+"S1"
+],
+"text": "F71"
+},
+{
+"id": "D3",
+"slices": [
+"S1"
+],
+"text": "F72"
+},
+{
+"id": "D4",
+"slices": [
+"S4"
+],
+"text": "F73"
+},
+{
+"id": "D5",
+"slices": [
+"S2"
+],
+"text": "F74"
+},
+{
+"id": "D6",
+"slices": [
+"S3"
+],
+"text": "F75"
+},
+{
+"id": "D7",
+"slices": [
+"S5"
+],
+"text": "F76"
+},
+{
+"id": "D8",
+"text": "F77"
+},
+{
+"id": "D9",
+"text": "F78"
+},
+{
+"id": "D10",
+"slices": [
+"S2",
+"S3"
+],
+"text": "F79"
+}
+],
+"models": [
+{
+"assumptions": [
+"F95",
+"F96"
+],
+"atoms": [
+{
+"kind": "State",
+"name": "page",
+"site": "Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx",
+"symbol": "PageMoveRefresh"
+},
+{
+"kind": "State",
+"name": "cache",
+"site": "Lighthouse.Frontend/src/hooks/usePageFreshQuery.ts",
+"symbol": "PageFreshAnswer"
+},
+{
+"kind": "State",
+"name": "mountedOn",
+"site": "Lighthouse.Frontend/src/hooks/usePageFreshQuery.ts",
+"symbol": "usePageFreshQuery"
+},
+{
+"atomicity": "F94",
+"kind": "State",
+"name": "inflight",
+"site": "Lighthouse.Frontend/src/App.tsx",
+"symbol": "QueryClient"
+},
+{
+"kind": "Action",
+"name": "movesToAnotherPage",
+"site": "Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx",
+"symbol": "PageMoveRefresh"
+},
+{
+"kind": "Action",
+"name": "componentMounts",
+"site": "Lighthouse.Frontend/src/hooks/usePageFreshQuery.ts",
+"symbol": "usePageFreshQuery"
+},
+{
+"kind": "Action",
+"name": "userRetries",
+"site": "Lighthouse.Frontend/src/hooks/useRbac.ts",
+"symbol": "useRbac"
+},
+{
+"kind": "Action",
+"name": "ownChangeCompletes",
+"site": "Lighthouse.Frontend/src/hooks/useRbac.ts",
+"symbol": "useRefreshPermissions"
+}
+],
+"language": "Quint",
+"mutants": [
+{
+"description": "F97",
+"id": "N1",
+"kills": [
+"pageComponentsSeeOnlyThisPage"
+]
+},
+{
+"description": "F98",
+"id": "N2",
+"kills": [
+"oneRequestPerPage"
+]
+},
+{
+"description": "F99",
+"id": "N3",
+"kills": [
+"noEarlierPageRequestInFlight"
+]
+},
+{
+"description": "F100",
+"id": "N4",
+"kills": [
+"ownChangeIsAsked"
+]
+}
+],
+"path": "docs/feature/story-6712-faster-page-loads/design/shared_page_reads.qnt",
+"properties": [
+{
+"kind": "Invariant",
+"name": "pageComponentsSeeOnlyThisPage",
+"site": "Lighthouse.Frontend/src/hooks/usePageFreshQuery.ts",
+"statement": "F90",
+"symbol": "usePageFreshQuery"
+},
+{
+"kind": "Invariant",
+"name": "oneRequestPerPage",
+"site": "Lighthouse.Frontend/src/hooks/usePageFreshQuery.ts",
+"statement": "F91",
+"symbol": "usePageFreshQuery"
+},
+{
+"kind": "Invariant",
+"name": "noEarlierPageRequestInFlight",
+"site": "Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx",
+"statement": "F92",
+"symbol": "PageMoveRefresh"
+},
+{
+"kind": "Invariant",
+"name": "ownChangeIsAsked",
+"site": "Lighthouse.Frontend/src/hooks/useRbac.ts",
+"statement": "F93",
+"symbol": "useRefreshPermissions"
+}
+]
+}
+],
+"risks": [
+{
+"allowed": "F103",
+"forbidden": "F104",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "BreachSafeResponseCompressionProvider",
+"preserved": "F102",
+"residue": "F105",
+"source": "F101"
+},
+{
+"allowed": "F108",
+"forbidden": "F109",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "DEVOPS",
+"preserved": "F107",
+"residue": "F110",
+"source": "F106"
+},
+{
+"allowed": "F113",
+"forbidden": "F114",
+"id": "Y3",
+"kind": "SinglePointOfFailure",
+"owner": "PageMoveRefresh",
+"preserved": "F112",
+"residue": "F115",
+"source": "F111"
+},
+{
+"allowed": "F118",
+"forbidden": "F119",
+"id": "Y4",
+"kind": "Bypass",
+"owner": "useRbac",
+"preserved": "F117",
+"residue": "F120",
+"source": "F116"
+},
+{
+"allowed": "F123",
+"forbidden": "F124",
+"id": "Y5",
+"kind": "Stressor",
+"owner": "DEVOPS",
+"preserved": "F122",
+"residue": "F125",
+"source": "F121"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "usePageFreshQuery",
+"state": "F87"
+},
+{
+"kind": "Excluded",
+"owner": "usePageFreshQuery",
+"state": "F88"
+},
+{
+"kind": "Unknown",
+"owner": "DEVOPS",
+"state": "F89"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/ResponseCompressionWireContractTest.cs",
+"public_oracle": {
+"expected": "F127",
+"falsifier": "F128",
+"promises": [
+"P1",
+"P2"
+],
+"stimulus": "F126"
+},
+"records": {
+"agreement": [
+{
+"contract": "HTTP content encoding of Lighthouse answers",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:194",
+"party": "Producer",
+"reason": "F138"
+},
+{
+"contract": "HTTP content encoding of Lighthouse answers",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Frontend (browsers and Standalone webview)",
+"party": "Consumer",
+"reason": "F139"
+},
+{
+"contract": "HTTP content encoding of Lighthouse answers",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse-Clients CLI and MCP (/api/v1/version/current)",
+"party": "Consumer",
+"reason": "F140"
+},
+{
+"contract": "HTTP content encoding of Lighthouse answers",
+"decision": "UnchangedCompatible",
+"locator": "Self-hosted reverse proxies",
+"party": "Consumer",
+"reason": "F141"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~TestHostUseGuardTest",
+"id": "T1",
+"obligation": "F174",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F145",
+"driven_ports": [
+"F144"
+],
+"driving_port": "F143",
+"failures": [
+{
+"condition": "F146",
+"id": "B1",
+"observation": "F147",
+"outcome": "Refusal"
+}
+]
+},
+"claims": [
+{
+"admitted_input": "F166",
+"bypass": "F168",
+"constructor": "BreachSafeResponseCompressionProvider.ShouldCompressResponse",
+"consumer": "ResponseCompressionMiddleware",
+"harm": "F165",
+"id": "C1",
+"owner": "BreachSafeResponseCompressionProvider",
+"proposition": "F164",
+"public_observation": "F167"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F170",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F169"
+},
+{
+"axis": "Inhabitation",
+"basis": "F171",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F169"
+},
+{
+"axis": "PublicReachability",
+"basis": "F172",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F169"
+},
+{
+"axis": "Liveness",
+"basis": "F173",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F169"
+}
+],
+"contract_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~ResponseCompressionWireContractTest",
+"consumer": "HttpClient with automatic decompression as browser stand-in",
+"contract": "HTTP Accept-Encoding / Content-Encoding / Vary on static and GET API answers",
+"id": "T2",
+"obligation": "F175",
+"observation": "F176",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/ResponseCompressionWireContractTest.cs",
+"producer": "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "composition-root",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:194",
+"reason": "F134"
+},
+{
+"decision": "Changed",
+"kind": "class",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/Host/BreachSafeResponseCompressionProvider.cs:1",
+"reason": "F135"
+},
+{
+"decision": "Changed",
+"kind": "class",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateNotificationHub.cs:1",
+"reason": "F136"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SpaFallbackRoutingTests.cs:1",
+"reason": "F137"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "RoundTrip",
+"layer": "Infrastructure",
+"owner": "BreachSafeResponseCompressionProvider",
+"statement": "F150",
+"treatment": {
+"cases": [
+"F151",
+"F152",
+"F153"
+],
+"kind": "Finite",
+"reason": "F154"
+}
+},
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "BreachSafeResponseCompressionProvider",
+"statement": "F155",
+"treatment": {
+"cases": [
+"F156",
+"F157",
+"F158",
+"F159",
+"F160",
+"F161",
+"F162",
+"F163"
+],
+"kind": "Finite",
+"reason": "F154"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F142"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F149",
+"description": "F148",
+"result_type": "HTTP headers and bytes"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:166",
+"reason": "F129",
+"symbol": "UseForwardedHeaders"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:179",
+"reason": "F130",
+"symbol": "staticFileOptions"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/Host/BreachSafeResponseCompressionProvider.cs:1",
+"reason": "F131",
+"symbol": "BreachSafeResponseCompressionProvider"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateNotificationHub.cs:1",
+"reason": "F132",
+"symbol": "UpdateNotificationHub"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/WireContractTest.cs:17",
+"reason": "F133",
+"symbol": "WireContractTest"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/BreachSafeResponseCompressionProviderTest.cs"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/Host/BreachSafeResponseCompressionProvider.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateNotificationHub.cs"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~ResponseCompressionWireContractTest|FullyQualifiedName~BreachSafeResponseCompressionProviderTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~TestHostUseGuardTest|FullyQualifiedName~SpaFallbackRoutingTests"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx",
+"public_oracle": {
+"expected": "F203",
+"falsifier": "F204",
+"promises": [
+"P3",
+"P4",
+"P5",
+"P6"
+],
+"stimulus": "F202"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "pnpm --dir Lighthouse.Frontend exec vitest run src/hooks/sharedReadOwners.test.ts",
+"id": "T3",
+"obligation": "F253",
+"oracle": "Lighthouse.Frontend/src/hooks/sharedReadOwners.test.ts"
+}
+],
+"boundaries": {
+"dependency_direction": "F232",
+"driven_ports": [
+"F231"
+],
+"driving_port": "F230",
+"failures": [
+{
+"condition": "F233",
+"id": "B2",
+"observation": "F234",
+"outcome": "Retry"
+}
+]
+},
+"claims": [
+{
+"admitted_input": "F245",
+"bypass": "F247",
+"constructor": "usePageFreshQuery queryFn wrapping the answer in PageFreshAnswer with askedOnPage",
+"consumer": "useRbac",
+"harm": "F244",
+"id": "C2",
+"owner": "usePageFreshQuery",
+"proposition": "F243",
+"public_observation": "F246"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F249",
+"design": "Pass",
+"evidence": [
+"docs/feature/story-6712-faster-page-loads/design/shared_page_reads.qnt"
+],
+"runtime": "DesignedNotBuilt",
+"subject": "F248"
+},
+{
+"axis": "Inhabitation",
+"basis": "F250",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F248"
+},
+{
+"axis": "PublicReachability",
+"basis": "F251",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F248"
+},
+{
+"axis": "Liveness",
+"basis": "F252",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F248"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "hook",
+"locator": "Lighthouse.Frontend/src/hooks/useRbac.ts:33",
+"reason": "F215"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumers",
+"locator": "Lighthouse.Frontend/src/hooks/useRbacGate.ts:14",
+"reason": "F216"
+},
+{
+"decision": "Changed",
+"kind": "app-root",
+"locator": "Lighthouse.Frontend/src/App.tsx:241",
+"reason": "F217"
+},
+{
+"decision": "Changed",
+"kind": "grant-flows",
+"locator": "Lighthouse.Frontend/src/hooks/useScopedAccess.ts:1",
+"reason": "F218"
+},
+{
+"decision": "Changed",
+"kind": "create-flows",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.tsx:53",
+"reason": "F219"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/hooks/useRbac.test.ts:1",
+"reason": "F220"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-support",
+"locator": "Lighthouse.Frontend/src/tests/renderWithQueryClient.tsx:1",
+"reason": "F221"
+},
+{
+"decision": "Changed",
+"kind": "hook",
+"locator": "Lighthouse.Frontend/src/hooks/usePageFreshQuery.ts:1",
+"reason": "F222"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx:1",
+"reason": "F223"
+},
+{
+"decision": "Changed",
+"kind": "page",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx:1",
+"reason": "F224"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/EveryoneSignedInSection.tsx:1",
+"reason": "F225"
+},
+{
+"decision": "Changed",
+"kind": "page",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx:78",
+"reason": "F226"
+}
+],
+"laws": [
+{
+"evidence": [
+"docs/feature/story-6712-faster-page-loads/design/shared_page_reads.qnt"
+],
+"id": "L4",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "usePageFreshQuery",
+"statement": "F237",
+"treatment": {
+"cases": [
+"F238",
+"F239",
+"F240",
+"F241",
+"F242"
+],
+"kind": "Finite",
+"reason": "F154"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F227"
+},
+{
+"analysis": "contract_tests",
+"reason": "F228"
+},
+{
+"analysis": "prefactoring",
+"reason": "F229"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F236",
+"description": "F235",
+"result_type": "RbacState and number"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/hooks/useRbac.ts:33",
+"reason": "F205",
+"symbol": "useRbac"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/App.tsx:70",
+"reason": "F206",
+"symbol": "QueryClient"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/hooks/usePageFreshQuery.ts:1",
+"reason": "F207",
+"symbol": "usePageFreshQuery"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx:1",
+"reason": "F208",
+"symbol": "PageMoveRefresh"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/hooks/useScopedAccess.ts:1",
+"reason": "F209",
+"symbol": "useScopedAccess"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx:1",
+"reason": "F210",
+"symbol": "RbacSettings"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/EveryoneSignedInSection.tsx:1",
+"reason": "F211",
+"symbol": "EveryoneSignedInSection"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.tsx:53",
+"reason": "F212",
+"symbol": "createTeam"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx:78",
+"reason": "F213",
+"symbol": "createPortfolio"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/hooks/useRbac.test.ts:1",
+"reason": "F214",
+"symbol": "useRbac"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/hooks/useRbac.ts"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/hooks/usePageFreshQuery.ts"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/App.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/hooks/useScopedAccess.ts"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/Rbac/EveryoneSignedInSection.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/hooks/useRbac.test.ts",
+"reason": "F201"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/hooks/useRbac.sharedAnswer.test.tsx src/hooks/useRbac.test.ts src/hooks/useRbacGate.test.ts"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Frontend/src/hooks/useUnitLists.test.tsx",
+"public_oracle": {
+"expected": "F306",
+"falsifier": "F307",
+"promises": [
+"P7",
+"P8"
+],
+"stimulus": "F305"
+},
+"records": {
+"boundaries": {
+"dependency_direction": "F336",
+"driven_ports": [
+"F335"
+],
+"driving_port": "F334",
+"failures": [
+{
+"condition": "F337",
+"id": "B5",
+"observation": "F338",
+"outcome": "Retry"
+}
+]
+},
+"closure": [
+{
+"axis": "Safety",
+"basis": "F347",
+"design": "Pass",
+"evidence": [
+"docs/feature/story-6712-faster-page-loads/design/shared_page_reads.qnt"
+],
+"runtime": "DesignedNotBuilt",
+"subject": "F346"
+},
+{
+"axis": "Inhabitation",
+"basis": "F348",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F346"
+},
+{
+"axis": "PublicReachability",
+"basis": "F349",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F346"
+},
+{
+"axis": "Liveness",
+"basis": "F350",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F346"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "hook",
+"locator": "Lighthouse.Frontend/src/hooks/useLicenseRestrictions.ts:84",
+"reason": "F319"
+},
+{
+"decision": "Changed",
+"kind": "consumers",
+"locator": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:151",
+"reason": "F320"
+},
+{
+"decision": "Changed",
+"kind": "consumers",
+"locator": "Lighthouse.Frontend/src/pages/Settings/ApiKeys/ApiKeysSettings.tsx:162",
+"reason": "F321"
+},
+{
+"decision": "Changed",
+"kind": "consumers",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx:64",
+"reason": "F322"
+},
+{
+"decision": "Changed",
+"kind": "consumers",
+"locator": "Lighthouse.Frontend/src/components/SurveyNudge/SurveyNudge.tsx:49",
+"reason": "F323"
+},
+{
+"decision": "Changed",
+"kind": "rename-flows",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:193",
+"reason": "F324"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-support",
+"locator": "Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts:199",
+"reason": "F325"
+},
+{
+"decision": "Changed",
+"kind": "hook",
+"locator": "Lighthouse.Frontend/src/hooks/useUnitLists.ts:1",
+"reason": "F326"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx:1",
+"reason": "F327"
+},
+{
+"decision": "Changed",
+"kind": "page",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.tsx:53",
+"reason": "F328"
+},
+{
+"decision": "Changed",
+"kind": "page",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:166",
+"reason": "F329"
+}
+],
+"laws": [
+{
+"evidence": [
+"docs/feature/story-6712-faster-page-loads/design/shared_page_reads.qnt"
+],
+"id": "L7",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "useUnitLists",
+"statement": "F341",
+"treatment": {
+"cases": [
+"F342",
+"F343",
+"F344",
+"F345"
+],
+"kind": "Finite",
+"reason": "F154"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F330"
+},
+{
+"analysis": "agreement",
+"reason": "F331"
+},
+{
+"analysis": "contract_tests",
+"reason": "F332"
+},
+{
+"analysis": "prefactoring",
+"reason": "F333"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F340",
+"description": "F339",
+"result_type": "arrays, ILicenseStatus and numbers"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/hooks/useLicenseRestrictions.ts:41",
+"reason": "F308",
+"symbol": "useLicenseStatusQuery"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/hooks/useLicenseRestrictions.ts:84",
+"reason": "F309",
+"symbol": "useLicenseRestrictions"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/hooks/useUnitLists.ts:1",
+"reason": "F310",
+"symbol": "useUnitLists"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/hooks/useLicenseRestrictions.ts:46",
+"reason": "F311",
+"symbol": "useQuery"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx:1",
+"reason": "F312",
+"symbol": "PageMoveRefresh"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:151",
+"reason": "F313",
+"symbol": "getPortfolios"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Settings/ApiKeys/ApiKeysSettings.tsx:162",
+"reason": "F314",
+"symbol": "getTeams"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx:64",
+"reason": "F315",
+"symbol": "getTeams"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.tsx:53",
+"reason": "F316",
+"symbol": "createTeam"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:193",
+"reason": "F317",
+"symbol": "saveTeamSettings"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:166",
+"reason": "F317",
+"symbol": "updatePortfolioSettings"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/SurveyNudge/SurveyNudge.tsx:49",
+"reason": "F318",
+"symbol": "getLicenseStatus"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/hooks/useUnitLists.ts"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/hooks/useLicenseRestrictions.ts"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx",
+"reason": "F304"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/ApiKeys/ApiKeysSettings.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/SurveyNudge/SurveyNudge.tsx"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/hooks/useUnitLists.test.tsx src/hooks/useLicenseRestrictions.test.ts"
+]
+},
+"S4": {
+"oracle": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.teamSettings.test.tsx",
+"public_oracle": {
+"expected": "F178",
+"falsifier": "F179",
+"promises": [
+"P9"
+],
+"stimulus": "F177"
+},
+"records": {
+"boundaries": {
+"dependency_direction": "F190",
+"driven_ports": [
+"F189"
+],
+"driving_port": "F188"
+},
+"closure": [
+{
+"axis": "Safety",
+"basis": "F197",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F196"
+},
+{
+"axis": "Inhabitation",
+"basis": "F198",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F196"
+},
+{
+"axis": "PublicReachability",
+"basis": "F199",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F196"
+},
+{
+"axis": "Liveness",
+"basis": "F200",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F196"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "page",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:91",
+"reason": "F182"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "tests",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx:1",
+"reason": "F183"
+}
+],
+"laws": [
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "PortfolioDetail",
+"statement": "F193",
+"treatment": {
+"cases": [
+"F194",
+"F195"
+],
+"kind": "Finite",
+"reason": "F154"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F184"
+},
+{
+"analysis": "agreement",
+"reason": "F185"
+},
+{
+"analysis": "contract_tests",
+"reason": "F186"
+},
+{
+"analysis": "prefactoring",
+"reason": "F187"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F192",
+"description": "F191",
+"result_type": "DOM rows and number"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.tsx:62",
+"reason": "F180",
+"symbol": "PortfolioFeatureList"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:124",
+"reason": "F181",
+"symbol": "fetchPortfolio"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Portfolios/Detail/PortfolioDetail.teamSettings.test.tsx"
+]
+},
+"S5": {
+"oracle": "Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.updateCheck.test.tsx",
+"public_oracle": {
+"expected": "F255",
+"falsifier": "F256",
+"promises": [
+"P10",
+"P11",
+"P12"
+],
+"stimulus": "F254"
+},
+"records": {
+"agreement": [
+{
+"contract": "Version routes under api/v1 and api/latest",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/VersionController.cs:52",
+"party": "Producer",
+"reason": "F272"
+},
+{
+"contract": "Version routes under api/v1 and api/latest",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/services/Api/VersionService.ts:9",
+"party": "Consumer",
+"reason": "F273"
+},
+{
+"contract": "Version routes under api/v1 and api/latest",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse-Clients CLI and MCP (/api/v1/version/current)",
+"party": "Consumer",
+"reason": "F274"
+},
+{
+"contract": "Version routes under api/v1 and api/latest",
+"decision": "UnchangedCompatible",
+"locator": "Jira app and served-version probe (version/current)",
+"party": "Consumer",
+"reason": "F275"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~EndpointAuthorizationPolicyTest",
+"id": "T4",
+"obligation": "F303",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/EndpointAuthorizationPolicyTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F280",
+"driven_ports": [
+"F279"
+],
+"driving_port": "F278",
+"failures": [
+{
+"condition": "F281",
+"id": "B3",
+"observation": "F282",
+"outcome": "Retry"
+},
+{
+"condition": "F283",
+"id": "B4",
+"observation": "F284",
+"outcome": "Refusal"
+}
+]
+},
+"closure": [
+{
+"axis": "Safety",
+"basis": "F299",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F298"
+},
+{
+"axis": "Inhabitation",
+"basis": "F300",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F298"
+},
+{
+"axis": "PublicReachability",
+"basis": "F301",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F298"
+},
+{
+"axis": "Liveness",
+"basis": "F302",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F298"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/Releases/ILighthouseReleaseService.cs:6",
+"reason": "F263"
+},
+{
+"decision": "Changed",
+"kind": "controller",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/VersionController.cs:52",
+"reason": "F264"
+},
+{
+"decision": "Changed",
+"kind": "service",
+"locator": "Lighthouse.Frontend/src/services/Api/VersionService.ts:9",
+"reason": "F265"
+},
+{
+"decision": "Changed",
+"kind": "test-support",
+"locator": "Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts:1",
+"reason": "F266"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/EndpointAuthorizationPolicyTest.cs:1",
+"reason": "F267"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/VersionControllerTest.cs:1",
+"reason": "F268"
+},
+{
+"decision": "Changed",
+"kind": "service",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/Releases/LighthouseReleaseService.cs:60",
+"reason": "F269"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.tsx:26",
+"reason": "F270"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/App/LetPeopleWork/LatestReleaseInformationDialog.tsx:36",
+"reason": "F271"
+}
+],
+"laws": [
+{
+"id": "L5",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "LighthouseVersion",
+"statement": "F287",
+"treatment": {
+"cases": [
+"F288",
+"F289",
+"F290",
+"F291",
+"F292",
+"F293"
+],
+"kind": "Finite",
+"reason": "F154"
+}
+},
+{
+"id": "L6",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "LighthouseReleaseService",
+"statement": "F294",
+"treatment": {
+"cases": [
+"F295",
+"F296",
+"F297"
+],
+"kind": "Finite",
+"reason": "F154"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F276"
+},
+{
+"analysis": "prefactoring",
+"reason": "F277"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F286",
+"description": "F285",
+"result_type": "calls and DOM"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/Releases/LighthouseReleaseService.cs:60",
+"reason": "F257",
+"symbol": "GetNewReleases"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/VersionController.cs:14",
+"reason": "F258",
+"symbol": "VersionController"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/services/Api/VersionService.ts:18",
+"reason": "F259",
+"symbol": "VersionService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/App/LetPeopleWork/LatestReleaseInformationDialog.tsx:36",
+"reason": "F260",
+"symbol": "LatestReleaseInformationDialog"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.tsx:26",
+"reason": "F261",
+"symbol": "LighthouseVersion"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/Releases/ILighthouseReleaseService.cs:6",
+"reason": "F262",
+"symbol": "ILighthouseReleaseService"
+}
+]
+},
+"supports": [
+"Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Releases/LighthouseReleaseServiceNewestVersionTest.cs"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/Releases/ILighthouseReleaseService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/Releases/LighthouseReleaseService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/VersionController.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/services/Api/VersionService.ts"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/App/LetPeopleWork/LatestReleaseInformationDialog.tsx"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/App/LetPeopleWork/LighthouseVersion.updateCheck.test.tsx",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~LighthouseReleaseServiceNewestVersionTest|FullyQualifiedName~EndpointAuthorizationPolicyTest"
+]
+}
+}
 },
 "facts": {
 "F1": "ADO User Story 6712 \"Faster page loads on slow connections: compression, shared cache, smaller update check\", as written on the board:\n\nOn a slow connection, Lighthouse pages take 8–20 s to show their data on a first visit, and 5–9 s when you click to a Team or Portfolio page. A measuring spike (2026-11-27, docs/feature/api-shape-evaluation/spike/findings.md) found that most of that time is spent sending uncompressed JavaScript, not on the number of API calls.\n\nFixes found by the spike\n- Compression. The frontend is served with UseStaticFiles, which ignores the .gz files the build already makes, and API answers are not compressed. JavaScript: 3.4 MB raw vs 1.0 MB compressed. Expected gain on slow 4G: about 4–10 s per page.\n- One shared cache for data every page uses. useRbac fetches the user's permissions once per component that uses it (72 repeated calls over 16 pages). Teams, portfolios, licence and Team settings repeat for similar reasons.\n- A smaller update check. GET /version/new sends 368 KB of release notes on every first visit, only to show whether an update exists.\n- Parallel version checks. The version footer runs 5 independent checks one after another.\n\nNo visible UI change; pages show the same data, sooner. Measure before and after with the spike's probe (measure-calls.mjs, measure-bytes.mjs).\n\nSeparate from the GraphQL / API-shape evaluation, which continues on its own and ends in an ADR.",
 "F10": "The user's own change of rights shows at once",
+"F100": "An own change completes without asking again",
+"F101": "Assumption negated: no GET answer carries a secret (a future GET returns a token next to reflected query text)",
+"F102": "POST answers stay uncompressed",
+"F103": "That GET answer is compressed",
+"F104": "Silent claim that every compressed answer is BREACH-safe",
+"F105": "Endpoint authors must answer secrets on unsafe methods or extend BreachSafeResponseCompressionProvider; recorded in the ADR consequences",
+"F106": "Assumption negated: the client decodes what it asked for (a proxy strips or rewrites Accept-Encoding)",
+"F107": "Identity answer when Accept-Encoding is absent",
+"F108": "No compression behind such a proxy",
+"F109": "An encoded body without Content-Encoding, or double encoding",
 "F11": "A user creates a Team or Portfolio, or changes a grant themselves",
+"F110": "DEVOPS checks nginx, Traefik, Caddy, IIS and the Standalone webview",
+"F111": "PageMoveRefresh is the only trigger that asks shared reads again on a page move",
+"F112": "Own changes still refresh through useRefreshPermissions and useUnitListsChanged",
+"F113": "Permissions stay as of the last ask if it is not mounted",
+"F114": "A page component shows an earlier-page answer as ready",
+"F115": "Readiness is decided per component from askedOnPage, so a missing trigger shows loading, never stale-as-current; App.tsx mounts it once inside the Router",
+"F116": "A component calls rbacService.getAuthorizationSummary or teamService.getTeams directly",
+"F117": "useRbac and useUnitLists remain the owners",
+"F118": "none",
+"F119": "A second reader with its own freshness",
 "F12": "The change completes",
+"F120": "Architectural test on the frontend source scans every non-test file for direct callers",
+"F121": "Second stressor set (walkthrough, not execution): server CPU spike under many cold loads; an answer that arrives after the user moved twice; a browser tab restored from bfcache; a licence import while on a page",
+"F122": "Compression CPU about 50 ms per cold bundle, assets reused from browser cache; late answer cancelled by invalidation; bfcache restore keeps the last page answers and the next move asks again; licence import sets the cache at once through useStoreImportedLicense",
+"F123": "Slower first byte under load",
+"F124": "A wrong or stale permission shown as ready",
+"F125": "No new residue; CPU on small hosts is a DEVOPS check",
+"F126": "On a test host whose web root holds index.html and assets/app.js (a few KB of repetitive JavaScript), GET /assets/app.js with Accept-Encoding br, then gzip, then none; GET / with br; GET /api/latest/version/updateSupported with br; a POST with a JSON answer (the API-key creation answer when reachable, else a POST row at the policy unit)",
+"F127": "br and gzip rows carry Content-Encoding br or gzip, Vary contains Accept-Encoding and the body decodes to the file bytes exactly; the no-encoding row has no Content-Encoding and the file bytes; GET / is compressed and still Cache-Control no-store; the GET API answer is compressed; the POST answer has no Content-Encoding",
+"F128": "Today’s pipeline: no Content-Encoding on any row, so the br and gzip rows fail; a compress-everything policy fails the POST row",
+"F129": "Shared-framework ResponseCompression middleware is inserted right after UseForwardedHeaders; it does negotiation, Vary and skips already-encoded answers; no compression owner exists today",
 "F13": "The actions that follow from it (for example the admin actions on the new Team) show at once, without a reload",
+"F130": "Keeps the no-cache rule for index.html and sw.js on both paths unchanged",
+"F131": "No class decides which answers may be compressed; the default provider decides by MIME only",
+"F132": "Owns its route as a named constant so MapHub and the policy agree on one literal",
+"F133": "One host per fixture for the wire rows; AdjustTheHost sets a temporary web root as SpaFallbackWebApplicationFactory does",
+"F134": "Adds AddResponseCompression with providers, the policy registration and UseResponseCompression before UseDefaultFiles; MapHub reads the hub route constant",
+"F135": "New policy",
+"F136": "Route constant added, behaviour unchanged",
+"F137": "Status, media type and no-store assertions hold with compression; test client sends no Accept-Encoding",
+"F138": "Starts compressing safe-method answers when asked",
+"F139": "Browsers and the WebKit webview send Accept-Encoding and decode transparently",
 "F14": "Permissions that cannot be loaded behave as today",
+"F140": "Node fetch decodes br and gzip transparently; without Accept-Encoding they get identity",
+"F141": "Encoded upstream answers pass through; checked in DEVOPS",
+"F142": "Program.cs holds one type (Program); UpdateNotificationHub.cs holds one type; BreachSafeResponseCompressionProvider.cs is new. No file holds several types, nothing moves.",
+"F143": "HTTP GET of a built frontend file or an API route on the Lighthouse host (Kestrel pipeline in Program.cs)",
+"F144": "wwwroot static files",
+"F145": "Program.cs (composition root) registers BreachSafeResponseCompressionProvider; the provider depends only on ASP.NET Core abstractions and the UpdateNotificationHub route constant",
+"F146": "Client sends no Accept-Encoding or an unsupported one",
+"F147": "Identity answer, same bytes as today",
+"F148": "Content-Encoding and Vary headers plus decoded body of an answer",
+"F149": "Which compression level was used; CPU cost",
 "F15": "The permissions answer cannot be loaded",
+"F150": "Decoding a compressed static answer yields the file bytes exactly, for br, gzip and identity",
+"F151": "br",
+"F152": "gzip",
+"F153": "identity",
+"F154": "The domain is a closed finite set of cases, so native example rows cover every member",
+"F155": "An answer is compressed iff method is GET or HEAD, MIME is compressible, Accept-Encoding offers br or gzip and the path is not the hub",
+"F156": "GET json br -> compressed",
+"F157": "HEAD js gzip -> compressed",
+"F158": "POST json br -> not",
+"F159": "PUT json br -> not",
 "F16": "A page that gates on permissions is shown",
+"F160": "DELETE json br -> not",
+"F161": "GET image/png br -> not",
+"F162": "GET hub path br -> not",
+"F163": "GET json no Accept-Encoding -> not",
+"F164": "No answer to an unsafe-method request is compressed",
+"F165": "BREACH recovery of the API key echoed in a compressed POST answer",
+"F166": "Any HTTP request reaching Kestrel",
+"F167": "Content-Encoding absent on POST, PUT, PATCH, DELETE answers",
+"F168": "A future GET answer carrying a secret; middleware placed before UseResponseCompression writing its own encoding",
+"F169": "compressed static and GET answers",
 "F17": "Every component sees the same could-not-load state and fallback as today, and one retry asks again once for all of them",
+"F170": "Policy table of unit rows and the POST wire row",
+"F171": "Shared-framework Brotli and Gzip providers; probe compressed the real bundle 3.2x",
+"F172": "Kestrel pipeline: UseResponseCompression before UseStaticFiles and MapControllers, observed by the wire contract",
+"F173": "No liveness claim: a single synchronous request-response transformation, no waiting state",
+"F174": "A test that starts a host is a named skeleton or a wire contract; the new compression contract sits in Tests/Contracts on WireContractTest",
+"F175": "Browsers, proxies and the Standalone webview change apart from the server; the encoding negotiation is a wire contract",
+"F176": "Headers and decoded bytes per row",
+"F177": "Render PortfolioDetail on its Features tab for a portfolio with two involved Teams and three features",
+"F178": "The same feature rows and columns as today, and teamService.getTeamSettings not called",
+"F179": "Today’s fetchPortfolio calls getTeamSettings once per involved Team",
 "F18": "The lists of Teams and Portfolios and the licence status that the app shell and pages use are fetched once and shared, not once per component, measured with measure-calls.mjs before and after.",
+"F180": "Already renders from portfolio.involvedTeams",
+"F181": "Drop the unread per-Team settings fetch and the involvedTeams state",
+"F182": "State and fetch removed; rendered rows unchanged",
+"F183": "Tests that mock getTeamSettings keep passing; mocks become unused",
+"F184": "No dependency or ownership law changes",
+"F185": "No shared contract touched; GET teams/{id}/settings stays for its other readers",
+"F186": "No wire change",
+"F187": "PortfolioDetail.tsx holds one component; nothing moves",
+"F188": "PortfolioDetail page render (Features tab)",
+"F189": "portfolioService.getPortfolio, getPortfolioSettings",
 "F19": "The user's own change to a Team or Portfolio shows in the lists at once",
+"F190": "PortfolioDetail -> services; teamService.getTeamSettings only on a save",
+"F191": "Rendered feature rows and getTeamSettings call count",
+"F192": "Answer size",
+"F193": "Rendering a Portfolio tab never calls getTeamSettings; a save from the Portfolio still reads it once",
+"F194": "Features tab render -> 0 calls",
+"F195": "Team settings save from Portfolio -> 1 call",
+"F196": "Features tab without Team settings",
+"F197": "Removed state has no reader (grep of involvedTeams in PortfolioDetail.tsx)",
+"F198": "portfolio.involvedTeams already in the portfolio answer",
+"F199": "Route /portfolios/:id/features",
 "F2": "On a slow connection, Lighthouse pages show the same data sooner: less JavaScript and API bytes on the line and fewer repeated calls, with no change to what a page shows.",
 "F20": "A user creates, renames or deletes a Team or Portfolio",
+"F200": "No liveness claim: removal of a call, no waiting state",
+"F201": "Existing tests gain the QueryClient wrapper",
+"F202": "Render three components that call useRbac() under one QueryClient, PageMoveRefresh and a MemoryRouter; change the route; change the mocked summary between moves; call useRefreshPermissions; make the summary reject then call retry",
+"F203": "getAuthorizationSummary called once for the three components on a page and once per route change; after a move the new page components are loading until the answer asked after the move, then show the new grants; after useRefreshPermissions the new summary shows without a route change; on rejection every component has loadFailed true with the permissive fallback, and one retry calls the service once",
+"F204": "Today’s useRbac: three calls for three components, and no refresh for components that stay mounted",
+"F205": "Owner of permission gating; keeps RbacState, swaps its useEffect fetch for the shared query",
+"F206": "Existing shared cache; no second cache",
+"F207": "No owner decides page-move freshness; useLicenseRestrictions uses staleTime 0, which repeats per mount",
+"F208": "Nothing observes page moves for shared reads today; remounting did it implicitly",
+"F209": "Owner of own grant and removal mutations on a unit; calls useRefreshPermissions after success",
 "F21": "The menus, overview and lists show it at once; a change made by someone else shows on the user's next move to another page",
+"F210": "Owner of system-admin grants; calls useRefreshPermissions after success",
+"F211": "Owner of the everyone-signed-in rule; calls useRefreshPermissions after success",
+"F212": "Own create: the creator becomes Team Admin, so permissions are asked again at once",
+"F213": "Own create: the creator becomes Portfolio Admin, so permissions are asked again at once",
+"F214": "Existing hook tests stay, rendered with renderWithQueryClient",
+"F215": "Shared query; RbacState shape unchanged",
+"F216": "20 consumers read the same RbacState fields with the same meaning",
+"F217": "Mounts PageMoveRefresh inside the Router",
+"F218": "Calls useRefreshPermissions after own grant or removal; RbacSettings.tsx and EveryoneSignedInSection.tsx likewise",
+"F219": "Calls useRefreshPermissions after create; EditPortfolio.tsx:78 likewise",
 "F22": "A Features tab renders its list without loading the full Team settings (32 KB today) it does not show; it shows the same rows and columns as today.",
+"F220": "Existing hook tests now need a QueryClient wrapper (renderWithQueryClient)",
+"F221": "Reused as the wrapper",
+"F222": "New owner of page-move freshness",
+"F223": "New page counter and refresh",
+"F224": "Calls useRefreshPermissions after own grant",
+"F225": "Calls useRefreshPermissions after change",
+"F226": "Calls useRefreshPermissions after create",
+"F227": "No wire or persisted contract changes; RbacState is an in-deployable TypeScript interface whose shape stays the same for its consumers in the same commit",
+"F228": "Producer and consumers ship in one deployable in one commit; no wire change",
+"F229": "useRbac.ts holds one hook plus its RbacState interface (one concept); App.tsx, EditTeam.tsx, EditPortfolio.tsx, RbacSettings.tsx, EveryoneSignedInSection.tsx each hold one component; useScopedAccess.ts holds one hook; new files hold one unit each. Nothing moves.",
 "F23": "On page load the update check sends only what the footer and the update pop-up show (whether an update exists and the newest version number), not the release notes (368 KB today). The version checks of the footer run at the same time, not one after another; if any one fails, the footer shows its error as today.",
+"F230": "useRbac() hook rendered by the gating components",
+"F231": "rbacService.getAuthorizationSummary (GET /api/latest/authorization/my-summary)",
+"F232": "Components -> useRbac -> usePageFreshQuery -> TanStack QueryClient -> rbacService; PageMoveRefresh -> QueryClient",
+"F233": "my-summary cannot be loaded",
+"F234": "loadFailed true and permissive fallback for every component; one retry asks once",
+"F235": "RbacState of each mounted component and the call count of getAuthorizationSummary",
+"F236": "Network timing of the answer",
+"F237": "Projection of model invariants on the hook: one call per page plus one per retry and own change; a component mounted after a move is never ready with the answer asked before it",
+"F238": "three components one page -> one call",
+"F239": "move -> one call, new components loading until answer",
 "F24": "Release notes load when the dialog opens",
+"F240": "late answer of previous page after move -> not shown",
+"F241": "own grant -> one call, new summary shown",
+"F242": "failure -> all loadFailed, retry -> one call",
+"F243": "A page component never treats a permissions answer asked on an earlier page as current",
+"F244": "A lost right shows an action as available",
+"F245": "Any sequence of mounts, page moves, answers, failures, retries and own changes",
+"F246": "isLoading true until the post-move answer",
+"F247": "A component reading the query cache directly with useQueryClient; backend still refuses the action (403)",
+"F248": "shared permissions answer",
+"F249": "Quint model invariants pageComponentsSeeOnlyThisPage, oneRequestPerPage, noEarlierPageRequestInFlight, ownChangeIsAsked: quint run 20000 samples 15 steps no violation; quint verify Apalache 8 steps NoError; each invariant killed by its mutant",
 "F25": "An update is available",
+"F250": "useQuery with the existing rbacService answer",
+"F251": "All 20 consumers reach it through useRbac(); PageMoveRefresh mounted in App.tsx",
+"F252": "No liveness claim: arrival of the answer depends on the HTTP answer, outside the design; safety is the claim",
+"F253": "Only useRbac.ts calls getAuthorizationSummary and only useUnitLists.ts calls getTeams/getPortfolios in non-test frontend source, including files added later",
+"F254": "Render LighthouseVersion with a version service whose calls are held: current, distribution and hasupdate pending; then resolve with an update; open the dialog; make getNewReleases pending, then resolve; separately make it reject and press Retry; separately reject one footer check",
+"F255": "current, distribution and hasupdate all started before any resolves; getNewReleases not called on load; the pop-up shows the newest version from getNewestVersion; the open dialog shows the version and a progress indicator, then the notes; on rejection the version, Could not load the release notes. and a Retry button that calls getNewReleases again; any rejected footer check shows the footer error",
+"F256": "Today’s footer awaits each check before starting the next and calls getNewReleases on load",
+"F257": "GetNewestReleaseVersion takes its first release so the number equals today’s pop-up",
+"F258": "Owner of the version routes",
+"F259": "Adds getNewestVersion",
 "F26": "The user opens the new-version dialog",
+"F260": "Loads notes on open; reuses CircularProgress and Alert already imported",
+"F261": "Parallel checks, newest version instead of releases",
+"F262": "Port of the release application service gains GetNewestReleaseVersion",
+"F263": "Adds GetNewestReleaseVersion; implemented by LighthouseReleaseService",
+"F264": "Adds GET newest with SignedInOnly",
+"F265": "IVersionService gains getNewestVersion",
+"F266": "Version service mock gains getNewestVersion",
+"F267": "Covers the new action through its attribute scan",
+"F268": "Existing rows unchanged",
+"F269": "Adds GetNewestReleaseVersion",
 "F27": "The dialog shows a loading look, then the same release notes as today",
+"F270": "Parallel checks, newest version only on load",
+"F271": "Notes loaded on open with loading and failed states",
+"F272": "Adds GET newest; current, new, hasupdate unchanged",
+"F273": "Calls newest on load and new on dialog open",
+"F274": "They call only version/current, unchanged",
+"F275": "Anonymous current unchanged",
+"F276": "The new route has one consumer, the frontend in the same deployable and commit; external clients use only version/current, unchanged",
+"F277": "VersionController.cs, LighthouseReleaseService.cs, ILighthouseReleaseService.cs, VersionService.ts (one class plus its interface IVersionService, one concept), LighthouseVersion.tsx and LatestReleaseInformationDialog.tsx each hold one type; nothing moves",
+"F278": "LighthouseVersion footer render and its new-version dialog; backend GET /api/latest/version/newest",
+"F279": "VersionService (frontend) -> VersionController -> ILighthouseReleaseService -> IGitHubService",
 "F28": "Release notes that cannot be loaded",
+"F280": "Controller -> application service -> GitHub port; UI -> VersionService",
+"F281": "Release notes cannot be loaded",
+"F282": "Dialog shows newest version, Could not load the release notes. and Retry",
+"F283": "Any footer version check fails",
+"F284": "Footer error as today",
+"F285": "Call order and count on the version service; dialog content in its three states",
+"F286": "Bytes on the line (measured by measure-bytes.mjs)",
+"F287": "Footer error iff any started check rejects; independent checks start together",
+"F288": "all resolve, no update",
+"F289": "all resolve, update, internal",
 "F29": "An update is available and the release notes cannot be loaded",
+"F290": "current rejects",
+"F291": "hasupdate rejects",
+"F292": "newest rejects",
+"F293": "updateSupported rejects",
+"F294": "GetNewestReleaseVersion equals the version of the first of GetNewReleases, none when it is empty",
+"F295": "two newer releases -> first",
+"F296": "current is newest -> none",
+"F297": "DEV -> newest of all",
+"F298": "update check without notes",
+"F299": "Finite rows over the any-failure rule",
 "F3": "A browser that accepts compressed answers receives the frontend's JavaScript compressed: on a cold load of the spike's pages, JavaScript bytes on the line drop to about a third of today's (3.4 MB raw against about 1 MB compressed), measured with measure-bytes.mjs before and after. A browser that does not accept compression still gets the same, working files.",
 "F30": "The dialog still shows the newest version number and says the release notes could not be loaded, with a Retry button that asks again",
+"F300": "Newest from existing GetNewReleases",
+"F301": "Footer in the app shell; route under api/v1 and api/latest",
+"F302": "No liveness claim: each check is one HTTP answer outside the design",
+"F303": "Every API action carries an authorization attribute, including GET version/newest",
+"F304": "Adds the Teams, Portfolios and licence keys to the page-move refresh",
+"F305": "Render several components using useTeamsQuery, usePortfoliosQuery, useLicenseRestrictions and SurveyNudge under one QueryClient with PageMoveRefresh; call useUnitListsChanged after a mocked create, rename and delete; change the route after a mocked change by someone else",
+"F306": "getTeams, getPortfolios and getLicenseStatus each called once per page however many components read them; after useUnitListsChanged the lists show the change without a route change; the change by someone else shows after the route change",
+"F307": "Today: useLicenseRestrictions with staleTime 0 plus SurveyNudge and OverviewDashboard each call the services, so counts exceed one",
+"F308": "Already the one licence read for gating; joins page-move refresh; SurveyNudge moves onto it",
+"F309": "Its teams/portfolios queries with staleTime 0 move to useUnitLists, same keys",
 "F31": "Compressed delivery of the built frontend files (JavaScript, CSS, HTML) by the Lighthouse server.",
+"F310": "Teams and Portfolios lists are read by five owners today with no shared hook",
+"F311": "The shared reads move from plain useQuery to usePageFreshQuery, created in S2, the one owner of page-move freshness",
+"F312": "Created by S2 as the single page-move refresh owner; S3 adds the Teams, Portfolios and licence keys to its refresh set, and creates it if S2 has not landed",
+"F313": "Reads lists from useUnitLists; delete calls useUnitListsChanged",
+"F314": "Both read sites use useTeamsQuery and usePortfoliosQuery",
+"F315": "Teams from useTeamsQuery; create and update call useUnitListsChanged",
+"F316": "Create and update call useUnitListsChanged",
+"F317": "A rename through settings calls useUnitListsChanged",
+"F318": "Reads the licence from useLicenseStatusQuery instead of a second fetch",
+"F319": "Reads shared lists; LicenseRestrictions shape unchanged",
 "F32": "Compression of API answers that the design judges safe.",
+"F320": "Lists from the shared hooks; delete calls useUnitListsChanged",
+"F321": "Both reads use the shared hooks",
+"F322": "Teams from the shared hook; create/update call useUnitListsChanged",
+"F323": "Licence from useLicenseStatusQuery",
+"F324": "Settings save calls useUnitListsChanged; PortfolioDetail.tsx:177 and EditTeam.tsx:53 likewise",
+"F325": "Mocks unchanged",
+"F326": "New owner of the Teams and Portfolios reads",
+"F327": "Refresh set gains three keys",
+"F328": "Calls useUnitListsChanged after create and update",
+"F329": "Calls useUnitListsChanged after a settings save",
 "F33": "One shared, keyed cache for the user's permissions behind useRbac(), with the freshness of P4 and P5.",
+"F330": "The direct-caller law for getTeams/getPortfolios is covered by the S2 architectural test sharedReadOwners.test.ts",
+"F331": "No wire change; hooks are in-deployable",
+"F332": "One deployable, one commit, no wire change",
+"F333": "useLicenseRestrictions.ts holds functions and hooks of one concept (licence gating), not several types; OverviewDashboard, ApiKeysSettings, EditPortfolio, EditTeam, TeamDetail, PortfolioDetail, SurveyNudge each hold one component; ApiKeysSettings.tsx holds two components (lines 152 and 386) but the change only swaps two reads and leaves its layout move to a later item. Nothing moves.",
+"F334": "useTeamsQuery, usePortfoliosQuery and useLicenseStatusQuery rendered by shell and page components",
+"F335": "teamService.getTeams, portfolioService.getPortfolios, licensingService.getLicenseStatus",
+"F336": "Components -> useUnitLists / useLicenseRestrictions -> usePageFreshQuery -> QueryClient -> services",
+"F337": "A list or the licence cannot be loaded",
+"F338": "Today’s looks per consumer (useLicenseRestrictions failed status, Overview error); shared error for all readers",
+"F339": "Lists and licence seen by each component, and call counts per service",
 "F34": "One shared cache for the Teams list, the Portfolios list and the licence status, with the freshness of P8.",
+"F340": "Network timing",
+"F341": "Same projection as S2 over the Teams, Portfolios and licence reads: one call per page plus one per own change; own change visible without a page move",
+"F342": "two readers one page -> one call each",
+"F343": "own create -> list shows it",
+"F344": "other user change -> shows after move",
+"F345": "403 on lists -> empty list for counts, as today",
+"F346": "shared unit lists and licence",
+"F347": "Same Quint model as S2 (protocol is identical per shared read)",
+"F348": "Existing service answers",
+"F349": "Readers listed in impact reach the hooks",
 "F35": "Features tabs that no longer load full Team settings to render a list.",
+"F350": "No liveness claim: answer arrival depends on HTTP",
 "F36": "An update check without release notes on page load; release notes loaded when the new-version dialog opens, with a loading and a failure look.",
 "F37": "The version footer's independent checks run in parallel, with today's error rule.",
 "F38": "Moving the other data hooks that fetch through useEffect (about 37 files) to TanStack Query.",
@@ -72,8 +1929,38 @@
 "F68": "On page load the update check sends no release notes and the footer's checks run at the same time; the new-version dialog loads the notes when opened, with a loading look and a could-not-load message with Retry.",
 "F69": "368 KB less on every first visit when an update exists; a shorter footer chain.",
 "F7": "A user has a page open and an administrator grants or removes one of their rights",
+"F70": "Paradigm object_oriented (settled by CLAUDE.md). Backend: ports-and-adapters, compression is a host (platform lane) concern owned by Program.cs as composition root plus one policy class. Frontend: React hooks over TanStack Query; each shared read has one owning hook module that holds its query key, and one page-move freshness owner.",
+"F71": "Open question 1 resolved (compression of the built frontend): compress at serve time with ASP.NET Core ResponseCompression (shared framework, no new package), Brotli and Gzip providers at CompressionLevel.Optimal, app.UseResponseCompression placed after UseForwardedHeaders and before UseDefaultFiles/UseStaticFiles so static files, the SPA fallback page and API answers pass through one mechanism. UseStaticFiles(staticFileOptions) and the UseSpa DefaultPageStaticFileOptions stay unchanged, so index.html and sw.js keep no-cache, no-store, must-revalidate on both paths. Measured on the current bundle (3361 KB of JavaScript): Optimal gives 3.22x gzip and 3.23x Brotli at 44-55 ms CPU for the whole bundle; Fastest gives only 2.32x gzip, which misses the about-a-third outcome. Rejected: MapStaticAssets (needs the static web assets manifest built after pnpm build fills wwwroot, replaces the StaticFileOptions path that the no-cache rule lives on, and is empty in dev); a Vite precompression plugin plus a custom precompressed-file provider (new dependency and hand-written content negotiation for a saving of about 50 ms CPU per cold load).",
+"F72": "Open question 2 resolved (BREACH): the rule is that an answer is compressed only when the request method is GET or HEAD, the response MIME type is in ResponseCompressionDefaults.MimeTypes, the client sent Accept-Encoding, and the path is not the SignalR update-notification hub. Reason: BREACH needs a secret and attacker-reflected input in one compressed body. No GET answer carries a secret today: connection options blank secret values (WorkTrackingSystemConnectionOptionDto sets Value empty when IsSecret), session and embed cookies travel in headers, which ResponseCompression never compresses; the one body that carries a secret, the plain-text API key of ApiKeyCreationResult, answers a POST, and unsafe-method answers are where submitted text is echoed. EnableForHttps is true because the rule, not the scheme, is the mitigation, so TLS terminated at a proxy does not change the answer. Owner in code: BreachSafeResponseCompressionProvider in Platform/Host, a subclass of ResponseCompressionProvider overriding ShouldCompressResponse; the hub route is one named constant on UpdateNotificationHub read by both MapHub and the policy. DEVOPS must check: reverse proxies that already compress (a proxy must not double-encode; ResponseCompression skips a response that already has Content-Encoding, and nginx/Traefik/Caddy pass an encoded upstream answer through), proxies that strip Accept-Encoding (then answers go uncompressed, as today), the Docker image (no change, same Kestrel), the Standalone Tauri webview against the local backend (webview sends Accept-Encoding and decodes), and CPU on small hosts.",
+"F73": "Open question 3 resolved (Features tab reads instead of full Team settings): it reads nothing extra. PortfolioDetail.fetchPortfolio calls teamService.getTeamSettings once per involved Team and stores the result in the involvedTeams state, which no code reads; the Features tab (PortfolioFeatureList) and the Deliveries tab already render from portfolio.involvedTeams, the entity references inside the portfolio answer. So the per-Team settings fetch and the dead state are removed; updateTeamSettingsFromPortfolio keeps its on-demand read before a save. Team pages do not load Team settings for their Features tab. Side effect: the Portfolio load chain loses one step; the rest of that chain stays out of scope.",
+"F74": "S2: useRbac keeps the RbacState shape (isLoading, loadFailed, retry, isRbacEnabled, isSystemAdmin, canCreateTeam, canCreatePortfolio, isTeamAdmin, isPortfolioAdmin, summary) so its 20 consumers do not change. The permissions query key lives only in useRbac.ts; failure keeps today’s permissive fallback with loadFailed true for every component; retry calls refetch once for all. useRefreshPermissions, exported from useRbac.ts, is called after the user’s own grant actions (useScopedAccess, RbacSettings, EveryoneSignedInSection) and own Team or Portfolio creation (EditTeam, EditPortfolio).",
+"F75": "S3: useUnitLists.ts owns the Teams and Portfolios keys (reusing the existing teams and portfolios keys of useLicenseRestrictions) with useTeamsQuery, usePortfoliosQuery and useUnitListsChanged; the licence keeps useLicenseStatusQuery (LICENSE_STATUS_KEY, its hourly refetch) and joins the page-move refresh. useLicenseRestrictions, OverviewDashboard, EditPortfolio, ApiKeysSettings and SurveyNudge read these hooks instead of calling the services. useUnitListsChanged is called after own create (EditTeam, EditPortfolio), rename (TeamDetail and PortfolioDetail settings saves, EditTeam/EditPortfolio updates) and delete (OverviewDashboard). useLicenseRestrictions keeps its 403-as-empty rule.",
+"F76": "S5: new route GET version/newest on VersionController (SignedInOnly, same reason as hasupdate) returns the newest release version string from a new LighthouseReleaseService.GetNewestReleaseVersion (the first of GetNewReleases, so the number equals today’s newReleases[0].version), 404 when there is none, as /version/new. GET version/new stays for the dialog. LighthouseVersion runs current, distribution and hasupdate together with Promise.all; when an update exists it runs newest and, for lighthouse-internal, updateSupported together; any rejection sets the footer error as today. Only data dependencies remain, no order between independent checks. LatestReleaseInformationDialog receives the newest version and reads the release notes with useQuery (key version, newReleases; enabled only while open) and has three states: loading (the dialog with the newest version and a CircularProgress where the notes go), loaded (today’s notes), failed (the newest version, the message Could not load the release notes. and a Retry button that refetches). Sketch at the start of DELIVER.",
+"F77": "Formal verification: claim-to-checker. Shared-read freshness (S2, S3: one request per page, no earlier-page answer for a new component, cancelled earlier-page requests, own change asked at once) has several actors (components, navigation, network, user) on one cache, so it is modelled in Quint (shared_page_reads.qnt), checked with quint run and quint verify (Apalache, bounded). No model for compression and the BREACH rule: a pure decision over one request with no shared state or multi-step protocol; its finite table is checked by unit rows and the wire contract. No model for the Features tab read: removal of an unread fetch, no state window. No model for the parallel version checks: a single Promise.all with one shared error flag, no shared mutable state between actors; finite example rows cover any-failure. Liveness: no liveness claim, because eventual arrival of a page’s answer depends on the HTTP answer arriving, which this design does not control; safety is the claim. No TLA+ or Agda needed.",
+"F78": "Tests: Lighthouse test-writing skill wins over nWave test rules (nine-run timing, PBT density). Frontend rules on hooks in .test.ts/.test.tsx with renderWithQueryClient; backend S1 is a wire contract on WireContractTest because only a running host shows Content-Encoding and headers produced by middleware order; the policy rule itself is pinned by unit rows on BreachSafeResponseCompressionProvider over DefaultHttpContext. No nWave tags in test code.",
+"F79": "Page-move freshness (S2, S3): one owner, usePageFreshQuery in src/hooks/usePageFreshQuery.ts, wraps useQuery with staleTime Infinity, retry false and refetchOnMount false; its queryFn stores the answer together with the page it was asked on (carrier PageFreshAnswer of T: answer and askedOnPage). PageMoveRefresh in src/components/App/PageMoveRefresh/PageMoveRefresh.tsx, mounted inside the Router in App.tsx, holds the page counter (per-process state, a React context), advances it when location.pathname changes and invalidates the shared page reads once (invalidateQueries cancels a request still in flight from the previous page). A component records the page it mounted on; it is loading until an answer asked on or after that page arrives, failed when the shared query failed, ready otherwise. Components mounted later on the same page reuse the cached answer and ask nothing. Model shared_page_reads.qnt checks this protocol.",
 "F8": "The user goes to another page",
-"F9": "That page shows the actions the user now has, and hides the ones they lost, without a reload, as today"
+"F80": "No visible UI change except the new-version dialog loading and could-not-load looks; pages show the same data.",
+"F81": "All UI permission gating derives from useRbac(); only useRbac.ts calls rbacService.getAuthorizationSummary.",
+"F82": "index.html and sw.js keep Cache-Control no-cache, no-store, must-revalidate on the static and the SPA fallback path (Bug #5732); unmatched requests keep their 404.",
+"F83": "A client that sends no Accept-Encoding receives identical uncompressed bytes as today; Lighthouse-Clients call only /api/v1/version/current, which is unchanged.",
+"F84": "Faster is proven by bytes and calls with measure-bytes.mjs and measure-calls.mjs before and after; slow-4G times are evidence, not promised. No numeric bound on compression ratio is promised beyond about a third; the design does not add a size threshold for compression.",
+"F85": "No EF migration; no API shape change except the added GET version/newest; ADR-288 keeps REST.",
+"F86": "Out of scope: the other useEffect data hooks, the Portfolio load chain beyond removing the unread Team settings step, metrics call count.",
+"F87": "Shared read is loading, ready (asked on or after the component's mount page) or failed (permissive fallback for permissions)",
+"F88": "A component mounted on the current page reports ready with an answer asked on an earlier page",
+"F89": "Behaviour of third-party reverse proxies with encoded upstream answers",
+"F9": "That page shows the actions the user now has, and hides the ones they lost, without a reload, as today",
+"F90": "A component of the current page never treats an answer asked on an earlier page as current",
+"F91": "Requests on one page are at most one plus one per retry and per own change",
+"F92": "A request asked on an earlier page never lands after a page move",
+"F93": "After the user’s own change an answer missing it is never the latest word without a refetch in flight",
+"F94": "model-only: TanStack in-flight fetch",
+"F95": "TanStack invalidateQueries cancels a request in flight and starts one refetch for active observers",
+"F96": "Bounded to 3 page moves, 3 observers, 2 retries and 2 own changes per page; network answers or fails per request",
+"F97": "Readiness ignores the page the answer was asked on",
+"F98": "A mounting component asks again when nothing is in flight (staleTime 0 behaviour)",
+"F99": "A page move keeps a request still in flight from the previous page"
 },
 "product": {
 "decisions": [

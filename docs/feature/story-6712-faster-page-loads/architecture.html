@@ -156,18 +156,2849 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Paradigm</h2>
 
-<p>None.</p>
+<p>object_oriented</p>
 
 <h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>Paradigm object_oriented (settled by CLAUDE.md). Backend: ports-and-adapters, compression is a host (platform lane) concern owned by Program.cs as composition root plus one policy class. Frontend: React hooks over TanStack Query; each shared read has one owning hook module that holds its query key, and one page-move freshness owner.
+</code></pre>
+
+<h4>D2</h4>
+
+<pre><code>Open question 1 resolved (compression of the built frontend): compress at serve time with ASP.NET Core ResponseCompression (shared framework, no new package), Brotli and Gzip providers at CompressionLevel.Optimal, app.UseResponseCompression placed after UseForwardedHeaders and before UseDefaultFiles/UseStaticFiles so static files, the SPA fallback page and API answers pass through one mechanism. UseStaticFiles(staticFileOptions) and the UseSpa DefaultPageStaticFileOptions stay unchanged, so index.html and sw.js keep no-cache, no-store, must-revalidate on both paths. Measured on the current bundle (3361 KB of JavaScript): Optimal gives 3.22x gzip and 3.23x Brotli at 44-55 ms CPU for the whole bundle; Fastest gives only 2.32x gzip, which misses the about-a-third outcome. Rejected: MapStaticAssets (needs the static web assets manifest built after pnpm build fills wwwroot, replaces the StaticFileOptions path that the no-cache rule lives on, and is empty in dev); a Vite precompression plugin plus a custom precompressed-file provider (new dependency and hand-written content negotiation for a saving of about 50 ms CPU per cold load).
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>D3</h4>
+
+<pre><code>Open question 2 resolved (BREACH): the rule is that an answer is compressed only when the request method is GET or HEAD, the response MIME type is in ResponseCompressionDefaults.MimeTypes, the client sent Accept-Encoding, and the path is not the SignalR update-notification hub. Reason: BREACH needs a secret and attacker-reflected input in one compressed body. No GET answer carries a secret today: connection options blank secret values (WorkTrackingSystemConnectionOptionDto sets Value empty when IsSecret), session and embed cookies travel in headers, which ResponseCompression never compresses; the one body that carries a secret, the plain-text API key of ApiKeyCreationResult, answers a POST, and unsafe-method answers are where submitted text is echoed. EnableForHttps is true because the rule, not the scheme, is the mitigation, so TLS terminated at a proxy does not change the answer. Owner in code: BreachSafeResponseCompressionProvider in Platform/Host, a subclass of ResponseCompressionProvider overriding ShouldCompressResponse; the hub route is one named constant on UpdateNotificationHub read by both MapHub and the policy. DEVOPS must check: reverse proxies that already compress (a proxy must not double-encode; ResponseCompression skips a response that already has Content-Encoding, and nginx/Traefik/Caddy pass an encoded upstream answer through), proxies that strip Accept-Encoding (then answers go uncompressed, as today), the Docker image (no change, same Kestrel), the Standalone Tauri webview against the local backend (webview sends Accept-Encoding and decodes), and CPU on small hosts.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>D4</h4>
+
+<pre><code>Open question 3 resolved (Features tab reads instead of full Team settings): it reads nothing extra. PortfolioDetail.fetchPortfolio calls teamService.getTeamSettings once per involved Team and stores the result in the involvedTeams state, which no code reads; the Features tab (PortfolioFeatureList) and the Deliveries tab already render from portfolio.involvedTeams, the entity references inside the portfolio answer. So the per-Team settings fetch and the dead state are removed; updateTeamSettingsFromPortfolio keeps its on-demand read before a save. Team pages do not load Team settings for their Features tab. Side effect: the Portfolio load chain loses one step; the rest of that chain stays out of scope.
+</code></pre>
+<p>Governed slices: S4</p>
+
+<h4>D5</h4>
+
+<pre><code>S2: useRbac keeps the RbacState shape (isLoading, loadFailed, retry, isRbacEnabled, isSystemAdmin, canCreateTeam, canCreatePortfolio, isTeamAdmin, isPortfolioAdmin, summary) so its 20 consumers do not change. The permissions query key lives only in useRbac.ts; failure keeps today’s permissive fallback with loadFailed true for every component; retry calls refetch once for all. useRefreshPermissions, exported from useRbac.ts, is called after the user’s own grant actions (useScopedAccess, RbacSettings, EveryoneSignedInSection) and own Team or Portfolio creation (EditTeam, EditPortfolio).
+</code></pre>
+<p>Governed slices: S2</p>
+
+<h4>D6</h4>
+
+<pre><code>S3: useUnitLists.ts owns the Teams and Portfolios keys (reusing the existing teams and portfolios keys of useLicenseRestrictions) with useTeamsQuery, usePortfoliosQuery and useUnitListsChanged; the licence keeps useLicenseStatusQuery (LICENSE_STATUS_KEY, its hourly refetch) and joins the page-move refresh. useLicenseRestrictions, OverviewDashboard, EditPortfolio, ApiKeysSettings and SurveyNudge read these hooks instead of calling the services. useUnitListsChanged is called after own create (EditTeam, EditPortfolio), rename (TeamDetail and PortfolioDetail settings saves, EditTeam/EditPortfolio updates) and delete (OverviewDashboard). useLicenseRestrictions keeps its 403-as-empty rule.
+</code></pre>
+<p>Governed slices: S3</p>
+
+<h4>D7</h4>
+
+<pre><code>S5: new route GET version/newest on VersionController (SignedInOnly, same reason as hasupdate) returns the newest release version string from a new LighthouseReleaseService.GetNewestReleaseVersion (the first of GetNewReleases, so the number equals today’s newReleases[0].version), 404 when there is none, as /version/new. GET version/new stays for the dialog. LighthouseVersion runs current, distribution and hasupdate together with Promise.all; when an update exists it runs newest and, for lighthouse-internal, updateSupported together; any rejection sets the footer error as today. Only data dependencies remain, no order between independent checks. LatestReleaseInformationDialog receives the newest version and reads the release notes with useQuery (key version, newReleases; enabled only while open) and has three states: loading (the dialog with the newest version and a CircularProgress where the notes go), loaded (today’s notes), failed (the newest version, the message Could not load the release notes. and a Retry button that refetches). Sketch at the start of DELIVER.
+</code></pre>
+<p>Governed slices: S5</p>
+
+<h4>D8</h4>
+
+<pre><code>Formal verification: claim-to-checker. Shared-read freshness (S2, S3: one request per page, no earlier-page answer for a new component, cancelled earlier-page requests, own change asked at once) has several actors (components, navigation, network, user) on one cache, so it is modelled in Quint (shared_page_reads.qnt), checked with quint run and quint verify (Apalache, bounded). No model for compression and the BREACH rule: a pure decision over one request with no shared state or multi-step protocol; its finite table is checked by unit rows and the wire contract. No model for the Features tab read: removal of an unread fetch, no state window. No model for the parallel version checks: a single Promise.all with one shared error flag, no shared mutable state between actors; finite example rows cover any-failure. Liveness: no liveness claim, because eventual arrival of a page’s answer depends on the HTTP answer arriving, which this design does not control; safety is the claim. No TLA+ or Agda needed.
+</code></pre>
+
+<h4>D9</h4>
+
+<pre><code>Tests: Lighthouse test-writing skill wins over nWave test rules (nine-run timing, PBT density). Frontend rules on hooks in .test.ts/.test.tsx with renderWithQueryClient; backend S1 is a wire contract on WireContractTest because only a running host shows Content-Encoding and headers produced by middleware order; the policy rule itself is pinned by unit rows on BreachSafeResponseCompressionProvider over DefaultHttpContext. No nWave tags in test code.
+</code></pre>
+
+<h4>D10</h4>
+
+<pre><code>Page-move freshness (S2, S3): one owner, usePageFreshQuery in src/hooks/usePageFreshQuery.ts, wraps useQuery with staleTime Infinity, retry false and refetchOnMount false; its queryFn stores the answer together with the page it was asked on (carrier PageFreshAnswer of T: answer and askedOnPage). PageMoveRefresh in src/components/App/PageMoveRefresh/PageMoveRefresh.tsx, mounted inside the Router in App.tsx, holds the page counter (per-process state, a React context), advances it when location.pathname changes and invalidates the shared page reads once (invalidateQueries cancels a request still in flight from the previous page). A component records the page it mounted on; it is loading until an answer asked on or after that page arrives, failed when the shared query failed, ready otherwise. Components mounted later on the same page reuse the cached answer and ask nothing. Model shared_page_reads.qnt checks this protocol.
+</code></pre>
+<p>Governed slices: S2, S3</p>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>No visible UI change except the new-version dialog loading and could-not-load looks; pages show the same data.
+</code></pre>
+
+<h4>K2</h4>
+
+<pre><code>All UI permission gating derives from useRbac(); only useRbac.ts calls rbacService.getAuthorizationSummary.
+</code></pre>
+
+<h4>K3</h4>
+
+<pre><code>index.html and sw.js keep Cache-Control no-cache, no-store, must-revalidate on the static and the SPA fallback path (Bug #5732); unmatched requests keep their 404.
+</code></pre>
+
+<h4>K4</h4>
+
+<pre><code>A client that sends no Accept-Encoding receives identical uncompressed bytes as today; Lighthouse-Clients call only /api/v1/version/current, which is unchanged.
+</code></pre>
+
+<h4>K5</h4>
+
+<pre><code>Faster is proven by bytes and calls with measure-bytes.mjs and measure-calls.mjs before and after; slow-4G times are evidence, not promised. No numeric bound on compression ratio is promised beyond about a third; the design does not add a size threshold for compression.
+</code></pre>
+
+<h4>K6</h4>
+
+<pre><code>No EF migration; no API shape change except the added GET version/newest; ADR-288 keeps REST.
+</code></pre>
+
+<h4>K7</h4>
+
+<pre><code>Out of scope: the other useEffect data hooks, the Portfolio load chain beyond removing the unread Team settings step, metrics call count.
+</code></pre>
+
+<h4>K8</h4>
+
+<pre><code>Faster is proven by bytes and calls, measured with the spike&#x27;s probes (measure-bytes.mjs, measure-calls.mjs) before and after; slow-4G times are reported as evidence, not promised, because emulated timings are noisy. (Maintainer, 2026-11-28)
+</code></pre>
+
+<h4>K9</h4>
+
+<pre><code>Permission freshness stays as today: shared cache, asked again when the user moves to another page, and at once after the user&#x27;s own create or grant actions. (Maintainer, 2026-11-28)
+</code></pre>
+
+<h4>K10</h4>
+
+<pre><code>Team, Portfolio and licence lists follow the same rule: the user&#x27;s own change shows at once, others&#x27; changes on the next page move. (Maintainer, 2026-11-28)
+</code></pre>
+
+<h4>K11</h4>
+
+<pre><code>Release notes load when the new-version dialog opens; the pop-up and footer need only the newest version number. If the notes cannot be loaded the dialog shows a message and a Retry button. (Maintainer, 2026-11-28)
+</code></pre>
+
+<h4>K12</h4>
+
+<pre><code>The parallel version checks keep today&#x27;s error rule: any failure shows the footer error. (Maintainer, 2026-11-28)
+</code></pre>
+
+<h4>K13</h4>
+
+<pre><code>In scope beyond permissions: Teams and Portfolios lists, licence, and Team settings on lists. Out: the other useEffect hooks and the Portfolio chain. (Maintainer, 2026-11-28)
+</code></pre>
+
+<h3>Reuse</h3>
+
+<p>None.</p>
+
+<h3>Impact</h3>
+
+<p>None.</p>
+
+<h3>Agreement</h3>
+
+<p>None.</p>
+
+<h3>Not applicable</h3>
+
+<p>None.</p>
+
+<h3>Boundaries</h3>
+
+<p>None.</p>
+
+<h3>Observations</h3>
+
+<p>None.</p>
+
+<h3>Equality</h3>
+
+<p>None.</p>
+
+<h3>Constructors</h3>
+
+<p>None.</p>
+
+<h3>Laws</h3>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<p>None.</p>
+
+<h3>Claims</h3>
+
+<p>None.</p>
+
+<h3>States</h3>
+
+<p>Admitted</p>
+
+<pre><code>Shared read is loading, ready (asked on or after the component&#x27;s mount page) or failed (permissive fallback for permissions)
+</code></pre>
+
+<p>usePageFreshQuery</p>
+
+<p>Excluded</p>
+
+<pre><code>A component mounted on the current page reports ready with an answer asked on an earlier page
+</code></pre>
+
+<p>usePageFreshQuery</p>
+
+<p>Unknown</p>
+
+<pre><code>Behaviour of third-party reverse proxies with encoded upstream answers
+</code></pre>
+
+<p>DEVOPS</p>
+
+<h3>Models</h3>
+
+<p>Quint</p>
+
+<p>docs/feature/story-6712-faster-page-loads/design/shared_page_reads.qnt</p>
+
+<h5>Properties</h5>
+
+<p>pageComponentsSeeOnlyThisPage</p>
+
+<p>Invariant</p>
+
+<pre><code>A component of the current page never treats an answer asked on an earlier page as current
+</code></pre>
+
+<p>usePageFreshQuery</p>
+
+<p>Lighthouse.Frontend/src/hooks/usePageFreshQuery.ts</p>
+
+<p>oneRequestPerPage</p>
+
+<p>Invariant</p>
+
+<pre><code>Requests on one page are at most one plus one per retry and per own change
+</code></pre>
+
+<p>usePageFreshQuery</p>
+
+<p>Lighthouse.Frontend/src/hooks/usePageFreshQuery.ts</p>
+
+<p>noEarlierPageRequestInFlight</p>
+
+<p>Invariant</p>
+
+<pre><code>A request asked on an earlier page never lands after a page move
+</code></pre>
+
+<p>PageMoveRefresh</p>
+
+<p>Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx</p>
+
+<p>ownChangeIsAsked</p>
+
+<p>Invariant</p>
+
+<pre><code>After the user’s own change an answer missing it is never the latest word without a refetch in flight
+</code></pre>
+
+<p>useRefreshPermissions</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.ts</p>
+
+<h5>Atoms</h5>
+
+<p>State</p>
+
+<p>page</p>
+
+<p>PageMoveRefresh</p>
+
+<p>Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx</p>
+
+<p>None.</p>
+
+<p>State</p>
+
+<p>cache</p>
+
+<p>PageFreshAnswer</p>
+
+<p>Lighthouse.Frontend/src/hooks/usePageFreshQuery.ts</p>
+
+<p>None.</p>
+
+<p>State</p>
+
+<p>mountedOn</p>
+
+<p>usePageFreshQuery</p>
+
+<p>Lighthouse.Frontend/src/hooks/usePageFreshQuery.ts</p>
+
+<p>None.</p>
+
+<p>State</p>
+
+<p>inflight</p>
+
+<p>QueryClient</p>
+
+<p>Lighthouse.Frontend/src/App.tsx</p>
+
+<pre><code>model-only: TanStack in-flight fetch
+</code></pre>
+
+<p>Action</p>
+
+<p>movesToAnotherPage</p>
+
+<p>PageMoveRefresh</p>
+
+<p>Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx</p>
+
+<p>None.</p>
+
+<p>Action</p>
+
+<p>componentMounts</p>
+
+<p>usePageFreshQuery</p>
+
+<p>Lighthouse.Frontend/src/hooks/usePageFreshQuery.ts</p>
+
+<p>None.</p>
+
+<p>Action</p>
+
+<p>userRetries</p>
+
+<p>useRbac</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.ts</p>
+
+<p>None.</p>
+
+<p>Action</p>
+
+<p>ownChangeCompletes</p>
+
+<p>useRefreshPermissions</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.ts</p>
+
+<p>None.</p>
+
+<h5>Assumptions</h5>
+
+<pre><code>TanStack invalidateQueries cancels a request in flight and starts one refetch for active observers
+</code></pre>
+
+<pre><code>Bounded to 3 page moves, 3 observers, 2 retries and 2 own changes per page; network answers or fails per request
+</code></pre>
+
+<h5>Mutants</h5>
+
+<h6>N1</h6>
+
+<pre><code>Readiness ignores the page the answer was asked on
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>pageComponentsSeeOnlyThisPage</p>
+
+<h6>N2</h6>
+
+<pre><code>A mounting component asks again when nothing is in flight (staleTime 0 behaviour)
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>oneRequestPerPage</p>
+
+<h6>N3</h6>
+
+<pre><code>A page move keeps a request still in flight from the previous page
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>noEarlierPageRequestInFlight</p>
+
+<h6>N4</h6>
+
+<pre><code>An own change completes without asking again
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>ownChangeIsAsked</p>
+
+<h3>Closure</h3>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption negated: no GET answer carries a secret (a future GET returns a token next to reflected query text)
+</code></pre>
+
+<pre><code>POST answers stay uncompressed
+</code></pre>
+
+<pre><code>That GET answer is compressed
+</code></pre>
+
+<pre><code>Silent claim that every compressed answer is BREACH-safe
+</code></pre>
+
+<pre><code>Endpoint authors must answer secrets on unsafe methods or extend BreachSafeResponseCompressionProvider; recorded in the ADR consequences
+</code></pre>
+
+<p>BreachSafeResponseCompressionProvider</p>
+
+<h4>Y2</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption negated: the client decodes what it asked for (a proxy strips or rewrites Accept-Encoding)
+</code></pre>
+
+<pre><code>Identity answer when Accept-Encoding is absent
+</code></pre>
+
+<pre><code>No compression behind such a proxy
+</code></pre>
+
+<pre><code>An encoded body without Content-Encoding, or double encoding
+</code></pre>
+
+<pre><code>DEVOPS checks nginx, Traefik, Caddy, IIS and the Standalone webview
+</code></pre>
+
+<p>DEVOPS</p>
+
+<h4>Y3</h4>
+
+<p>SinglePointOfFailure</p>
+
+<pre><code>PageMoveRefresh is the only trigger that asks shared reads again on a page move
+</code></pre>
+
+<pre><code>Own changes still refresh through useRefreshPermissions and useUnitListsChanged
+</code></pre>
+
+<pre><code>Permissions stay as of the last ask if it is not mounted
+</code></pre>
+
+<pre><code>A page component shows an earlier-page answer as ready
+</code></pre>
+
+<pre><code>Readiness is decided per component from askedOnPage, so a missing trigger shows loading, never stale-as-current; App.tsx mounts it once inside the Router
+</code></pre>
+
+<p>PageMoveRefresh</p>
+
+<h4>Y4</h4>
+
+<p>Bypass</p>
+
+<pre><code>A component calls rbacService.getAuthorizationSummary or teamService.getTeams directly
+</code></pre>
+
+<pre><code>useRbac and useUnitLists remain the owners
+</code></pre>
+
+<pre><code>none
+</code></pre>
+
+<pre><code>A second reader with its own freshness
+</code></pre>
+
+<pre><code>Architectural test on the frontend source scans every non-test file for direct callers
+</code></pre>
+
+<p>useRbac</p>
+
+<h4>Y5</h4>
+
+<p>Stressor</p>
+
+<pre><code>Second stressor set (walkthrough, not execution): server CPU spike under many cold loads; an answer that arrives after the user moved twice; a browser tab restored from bfcache; a licence import while on a page
+</code></pre>
+
+<pre><code>Compression CPU about 50 ms per cold bundle, assets reused from browser cache; late answer cancelled by invalidation; bfcache restore keeps the last page answers and the next move asks again; licence import sets the cache at once through useStoreImportedLicense
+</code></pre>
+
+<pre><code>Slower first byte under load
+</code></pre>
+
+<pre><code>A wrong or stale permission shown as ready
+</code></pre>
+
+<pre><code>No new residue; CPU on small hosts is a DEVOPS check
+</code></pre>
+
+<p>DEVOPS</p>
+
+<h3>Architectural tests</h3>
+
+<p>None.</p>
+
+<h3>Contract tests</h3>
 
 <p>None.</p>
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/Host/BreachSafeResponseCompressionProvider.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateNotificationHub.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/ResponseCompressionWireContractTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~ResponseCompressionWireContractTest|FullyQualifiedName~BreachSafeResponseCompressionProviderTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~TestHostUseGuardTest|FullyQualifiedName~SpaFallbackRoutingTests
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/BreachSafeResponseCompressionProviderTest.cs</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>On a test host whose web root holds index.html and assets/app.js (a few KB of repetitive JavaScript), GET /assets/app.js with Accept-Encoding br, then gzip, then none; GET / with br; GET /api/latest/version/updateSupported with br; a POST with a JSON answer (the API-key creation answer when reachable, else a POST row at the policy unit)
+</code></pre>
+
+<pre><code>br and gzip rows carry Content-Encoding br or gzip, Vary contains Accept-Encoding and the body decodes to the file bytes exactly; the no-encoding row has no Content-Encoding and the file bytes; GET / is compressed and still Cache-Control no-store; the GET API answer is compressed; the POST answer has no Content-Encoding
+</code></pre>
+
+<pre><code>Today’s pipeline: no Content-Encoding on any row, so the br and gzip rows fail; a compress-everything policy fails the POST row
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>UseForwardedHeaders</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:166</p>
+
+<p>Reuse</p>
+
+<pre><code>Shared-framework ResponseCompression middleware is inserted right after UseForwardedHeaders; it does negotiation, Vary and skips already-encoded answers; no compression owner exists today
+</code></pre>
+
+<p>staticFileOptions</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:179</p>
+
+<p>Reuse</p>
+
+<pre><code>Keeps the no-cache rule for index.html and sw.js on both paths unchanged
+</code></pre>
+
+<p>BreachSafeResponseCompressionProvider</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/Host/BreachSafeResponseCompressionProvider.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No class decides which answers may be compressed; the default provider decides by MIME only
+</code></pre>
+
+<p>UpdateNotificationHub</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateNotificationHub.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Owns its route as a named constant so MapHub and the policy agree on one literal
+</code></pre>
+
+<p>WireContractTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/WireContractTest.cs:17</p>
+
+<p>Reuse</p>
+
+<pre><code>One host per fixture for the wire rows; AdjustTheHost sets a temporary web root as SpaFallbackWebApplicationFactory does
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>composition-root</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:194</p>
+
+<p>Changed</p>
+
+<pre><code>Adds AddResponseCompression with providers, the policy registration and UseResponseCompression before UseDefaultFiles; MapHub reads the hub route constant
+</code></pre>
+
+<p>class</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/Host/BreachSafeResponseCompressionProvider.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>New policy
+</code></pre>
+
+<p>class</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateNotificationHub.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Route constant added, behaviour unchanged
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SpaFallbackRoutingTests.cs:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Status, media type and no-store assertions hold with compression; test client sends no Accept-Encoding
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>HTTP content encoding of Lighthouse answers</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:194</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Starts compressing safe-method answers when asked
+</code></pre>
+
+<p>HTTP content encoding of Lighthouse answers</p>
+
+<p>Lighthouse.Frontend (browsers and Standalone webview)</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Browsers and the WebKit webview send Accept-Encoding and decode transparently
+</code></pre>
+
+<p>HTTP content encoding of Lighthouse answers</p>
+
+<p>Lighthouse-Clients CLI and MCP (/api/v1/version/current)</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Node fetch decodes br and gzip transparently; without Accept-Encoding they get identity
+</code></pre>
+
+<p>HTTP content encoding of Lighthouse answers</p>
+
+<p>Self-hosted reverse proxies</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Encoded upstream answers pass through; checked in DEVOPS
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>Program.cs holds one type (Program); UpdateNotificationHub.cs holds one type; BreachSafeResponseCompressionProvider.cs is new. No file holds several types, nothing moves.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>HTTP GET of a built frontend file or an API route on the Lighthouse host (Kestrel pipeline in Program.cs)
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<pre><code>wwwroot static files
+</code></pre>
+
+<pre><code>Program.cs (composition root) registers BreachSafeResponseCompressionProvider; the provider depends only on ASP.NET Core abstractions and the UpdateNotificationHub route constant
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>####### B1</p>
+
+<pre><code>Client sends no Accept-Encoding or an unsupported one
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>Identity answer, same bytes as today
+</code></pre>
+
+<h5>Observations</h5>
+
+<pre><code>Content-Encoding and Vary headers plus decoded body of an answer
+</code></pre>
+
+<p>HTTP headers and bytes</p>
+
+<pre><code>Which compression level was used; CPU cost
+</code></pre>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L1</h6>
+
+<pre><code>Decoding a compressed static answer yields the file bytes exactly, for br, gzip and identity
+</code></pre>
+
+<p>RoundTrip</p>
+
+<p>Infrastructure</p>
+
+<p>BreachSafeResponseCompressionProvider</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>br
+</code></pre>
+
+<pre><code>gzip
+</code></pre>
+
+<pre><code>identity
+</code></pre>
+
+<pre><code>The domain is a closed finite set of cases, so native example rows cover every member
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L2</h6>
+
+<pre><code>An answer is compressed iff method is GET or HEAD, MIME is compressible, Accept-Encoding offers br or gzip and the path is not the hub
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>BreachSafeResponseCompressionProvider</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>GET json br -&gt; compressed
+</code></pre>
+
+<pre><code>HEAD js gzip -&gt; compressed
+</code></pre>
+
+<pre><code>POST json br -&gt; not
+</code></pre>
+
+<pre><code>PUT json br -&gt; not
+</code></pre>
+
+<pre><code>DELETE json br -&gt; not
+</code></pre>
+
+<pre><code>GET image/png br -&gt; not
+</code></pre>
+
+<pre><code>GET hub path br -&gt; not
+</code></pre>
+
+<pre><code>GET json no Accept-Encoding -&gt; not
+</code></pre>
+
+<pre><code>The domain is a closed finite set of cases, so native example rows cover every member
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<h6>C1</h6>
+
+<pre><code>No answer to an unsafe-method request is compressed
+</code></pre>
+
+<pre><code>BREACH recovery of the API key echoed in a compressed POST answer
+</code></pre>
+
+<p>BreachSafeResponseCompressionProvider</p>
+
+<pre><code>Any HTTP request reaching Kestrel
+</code></pre>
+
+<p>BreachSafeResponseCompressionProvider.ShouldCompressResponse</p>
+
+<p>ResponseCompressionMiddleware</p>
+
+<pre><code>Content-Encoding absent on POST, PUT, PATCH, DELETE answers
+</code></pre>
+
+<pre><code>A future GET answer carrying a secret; middleware placed before UseResponseCompression writing its own encoding
+</code></pre>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<pre><code>compressed static and GET answers
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Policy table of unit rows and the POST wire row
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>compressed static and GET answers
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Shared-framework Brotli and Gzip providers; probe compressed the real bundle 3.2x
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>compressed static and GET answers
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Kestrel pipeline: UseResponseCompression before UseStaticFiles and MapControllers, observed by the wire contract
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>compressed static and GET answers
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>No liveness claim: a single synchronous request-response transformation, no waiting state
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T1</h6>
+
+<pre><code>A test that starts a host is a named skeleton or a wire contract; the new compression contract sits in Tests/Contracts on WireContractTest
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~TestHostUseGuardTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<h6>T2</h6>
+
+<pre><code>Browsers, proxies and the Standalone webview change apart from the server; the encoding negotiation is a wire contract
+</code></pre>
+
+<p>HTTP Accept-Encoding / Content-Encoding / Vary on static and GET API answers</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>HttpClient with automatic decompression as browser stand-in</p>
+
+<pre><code>Headers and decoded bytes per row
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/ResponseCompressionWireContractTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~ResponseCompressionWireContractTest
+</code></pre>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.ts</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/hooks/usePageFreshQuery.ts</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/App.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/hooks/useScopedAccess.ts</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/EveryoneSignedInSection.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.test.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Existing tests gain the QueryClient wrapper
+</code></pre>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.sharedAnswer.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/hooks/useRbac.sharedAnswer.test.tsx src/hooks/useRbac.test.ts src/hooks/useRbacGate.test.ts
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Render three components that call useRbac() under one QueryClient, PageMoveRefresh and a MemoryRouter; change the route; change the mocked summary between moves; call useRefreshPermissions; make the summary reject then call retry
+</code></pre>
+
+<pre><code>getAuthorizationSummary called once for the three components on a page and once per route change; after a move the new page components are loading until the answer asked after the move, then show the new grants; after useRefreshPermissions the new summary shows without a route change; on rejection every component has loadFailed true with the permissive fallback, and one retry calls the service once
+</code></pre>
+
+<pre><code>Today’s useRbac: three calls for three components, and no refresh for components that stay mounted
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<p>P4</p>
+
+<p>P5</p>
+
+<p>P6</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>useRbac</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.ts:33</p>
+
+<p>Extend</p>
+
+<pre><code>Owner of permission gating; keeps RbacState, swaps its useEffect fetch for the shared query
+</code></pre>
+
+<p>QueryClient</p>
+
+<p>Lighthouse.Frontend/src/App.tsx:70</p>
+
+<p>Reuse</p>
+
+<pre><code>Existing shared cache; no second cache
+</code></pre>
+
+<p>usePageFreshQuery</p>
+
+<p>Lighthouse.Frontend/src/hooks/usePageFreshQuery.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No owner decides page-move freshness; useLicenseRestrictions uses staleTime 0, which repeats per mount
+</code></pre>
+
+<p>PageMoveRefresh</p>
+
+<p>Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>Nothing observes page moves for shared reads today; remounting did it implicitly
+</code></pre>
+
+<p>useScopedAccess</p>
+
+<p>Lighthouse.Frontend/src/hooks/useScopedAccess.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Owner of own grant and removal mutations on a unit; calls useRefreshPermissions after success
+</code></pre>
+
+<p>RbacSettings</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Owner of system-admin grants; calls useRefreshPermissions after success
+</code></pre>
+
+<p>EveryoneSignedInSection</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/EveryoneSignedInSection.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Owner of the everyone-signed-in rule; calls useRefreshPermissions after success
+</code></pre>
+
+<p>createTeam</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.tsx:53</p>
+
+<p>Extend</p>
+
+<pre><code>Own create: the creator becomes Team Admin, so permissions are asked again at once
+</code></pre>
+
+<p>createPortfolio</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx:78</p>
+
+<p>Extend</p>
+
+<pre><code>Own create: the creator becomes Portfolio Admin, so permissions are asked again at once
+</code></pre>
+
+<p>useRbac</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.test.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing hook tests stay, rendered with renderWithQueryClient
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>hook</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.ts:33</p>
+
+<p>Changed</p>
+
+<pre><code>Shared query; RbacState shape unchanged
+</code></pre>
+
+<p>consumers</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbacGate.ts:14</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>20 consumers read the same RbacState fields with the same meaning
+</code></pre>
+
+<p>app-root</p>
+
+<p>Lighthouse.Frontend/src/App.tsx:241</p>
+
+<p>Changed</p>
+
+<pre><code>Mounts PageMoveRefresh inside the Router
+</code></pre>
+
+<p>grant-flows</p>
+
+<p>Lighthouse.Frontend/src/hooks/useScopedAccess.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Calls useRefreshPermissions after own grant or removal; RbacSettings.tsx and EveryoneSignedInSection.tsx likewise
+</code></pre>
+
+<p>create-flows</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.tsx:53</p>
+
+<p>Changed</p>
+
+<pre><code>Calls useRefreshPermissions after create; EditPortfolio.tsx:78 likewise
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.test.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Existing hook tests now need a QueryClient wrapper (renderWithQueryClient)
+</code></pre>
+
+<p>test-support</p>
+
+<p>Lighthouse.Frontend/src/tests/renderWithQueryClient.tsx:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Reused as the wrapper
+</code></pre>
+
+<p>hook</p>
+
+<p>Lighthouse.Frontend/src/hooks/usePageFreshQuery.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New owner of page-move freshness
+</code></pre>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New page counter and refresh
+</code></pre>
+
+<p>page</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Calls useRefreshPermissions after own grant
+</code></pre>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/EveryoneSignedInSection.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Calls useRefreshPermissions after change
+</code></pre>
+
+<p>page</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx:78</p>
+
+<p>Changed</p>
+
+<pre><code>Calls useRefreshPermissions after create
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>agreement</p>
+
+<pre><code>No wire or persisted contract changes; RbacState is an in-deployable TypeScript interface whose shape stays the same for its consumers in the same commit
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>Producer and consumers ship in one deployable in one commit; no wire change
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>useRbac.ts holds one hook plus its RbacState interface (one concept); App.tsx, EditTeam.tsx, EditPortfolio.tsx, RbacSettings.tsx, EveryoneSignedInSection.tsx each hold one component; useScopedAccess.ts holds one hook; new files hold one unit each. Nothing moves.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>useRbac() hook rendered by the gating components
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<pre><code>rbacService.getAuthorizationSummary (GET /api/latest/authorization/my-summary)
+</code></pre>
+
+<pre><code>Components -&gt; useRbac -&gt; usePageFreshQuery -&gt; TanStack QueryClient -&gt; rbacService; PageMoveRefresh -&gt; QueryClient
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>####### B2</p>
+
+<pre><code>my-summary cannot be loaded
+</code></pre>
+
+<p>Retry</p>
+
+<pre><code>loadFailed true and permissive fallback for every component; one retry asks once
+</code></pre>
+
+<h5>Observations</h5>
+
+<pre><code>RbacState of each mounted component and the call count of getAuthorizationSummary
+</code></pre>
+
+<p>RbacState and number</p>
+
+<pre><code>Network timing of the answer
+</code></pre>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L4</h6>
+
+<pre><code>Projection of model invariants on the hook: one call per page plus one per retry and own change; a component mounted after a move is never ready with the answer asked before it
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>usePageFreshQuery</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>three components one page -&gt; one call
+</code></pre>
+
+<pre><code>move -&gt; one call, new components loading until answer
+</code></pre>
+
+<pre><code>late answer of previous page after move -&gt; not shown
+</code></pre>
+
+<pre><code>own grant -&gt; one call, new summary shown
+</code></pre>
+
+<pre><code>failure -&gt; all loadFailed, retry -&gt; one call
+</code></pre>
+
+<pre><code>The domain is a closed finite set of cases, so native example rows cover every member
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>docs/feature/story-6712-faster-page-loads/design/shared_page_reads.qnt</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<h6>C2</h6>
+
+<pre><code>A page component never treats a permissions answer asked on an earlier page as current
+</code></pre>
+
+<pre><code>A lost right shows an action as available
+</code></pre>
+
+<p>usePageFreshQuery</p>
+
+<pre><code>Any sequence of mounts, page moves, answers, failures, retries and own changes
+</code></pre>
+
+<p>usePageFreshQuery queryFn wrapping the answer in PageFreshAnswer with askedOnPage</p>
+
+<p>useRbac</p>
+
+<pre><code>isLoading true until the post-move answer
+</code></pre>
+
+<pre><code>A component reading the query cache directly with useQueryClient; backend still refuses the action (403)
+</code></pre>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<pre><code>shared permissions answer
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Quint model invariants pageComponentsSeeOnlyThisPage, oneRequestPerPage, noEarlierPageRequestInFlight, ownChangeIsAsked: quint run 20000 samples 15 steps no violation; quint verify Apalache 8 steps NoError; each invariant killed by its mutant
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>docs/feature/story-6712-faster-page-loads/design/shared_page_reads.qnt</p>
+
+<pre><code>shared permissions answer
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>useQuery with the existing rbacService answer
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>shared permissions answer
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>All 20 consumers reach it through useRbac(); PageMoveRefresh mounted in App.tsx
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>shared permissions answer
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>No liveness claim: arrival of the answer depends on the HTTP answer, outside the design; safety is the claim
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T3</h6>
+
+<pre><code>Only useRbac.ts calls getAuthorizationSummary and only useUnitLists.ts calls getTeams/getPortfolios in non-test frontend source, including files added later
+</code></pre>
+
+<p>Lighthouse.Frontend/src/hooks/sharedReadOwners.test.ts</p>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/hooks/sharedReadOwners.test.ts
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/hooks/useUnitLists.ts</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/hooks/useLicenseRestrictions.ts</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Adds the Teams, Portfolios and licence keys to the page-move refresh
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/ApiKeys/ApiKeysSettings.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/components/SurveyNudge/SurveyNudge.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/hooks/useUnitLists.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/hooks/useUnitLists.test.tsx src/hooks/useLicenseRestrictions.test.ts
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Render several components using useTeamsQuery, usePortfoliosQuery, useLicenseRestrictions and SurveyNudge under one QueryClient with PageMoveRefresh; call useUnitListsChanged after a mocked create, rename and delete; change the route after a mocked change by someone else
+</code></pre>
+
+<pre><code>getTeams, getPortfolios and getLicenseStatus each called once per page however many components read them; after useUnitListsChanged the lists show the change without a route change; the change by someone else shows after the route change
+</code></pre>
+
+<pre><code>Today: useLicenseRestrictions with staleTime 0 plus SurveyNudge and OverviewDashboard each call the services, so counts exceed one
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P7</p>
+
+<p>P8</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>useLicenseStatusQuery</p>
+
+<p>Lighthouse.Frontend/src/hooks/useLicenseRestrictions.ts:41</p>
+
+<p>Extend</p>
+
+<pre><code>Already the one licence read for gating; joins page-move refresh; SurveyNudge moves onto it
+</code></pre>
+
+<p>useLicenseRestrictions</p>
+
+<p>Lighthouse.Frontend/src/hooks/useLicenseRestrictions.ts:84</p>
+
+<p>Extend</p>
+
+<pre><code>Its teams/portfolios queries with staleTime 0 move to useUnitLists, same keys
+</code></pre>
+
+<p>useUnitLists</p>
+
+<p>Lighthouse.Frontend/src/hooks/useUnitLists.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>Teams and Portfolios lists are read by five owners today with no shared hook
+</code></pre>
+
+<p>useQuery</p>
+
+<p>Lighthouse.Frontend/src/hooks/useLicenseRestrictions.ts:46</p>
+
+<p>Reuse</p>
+
+<pre><code>The shared reads move from plain useQuery to usePageFreshQuery, created in S2, the one owner of page-move freshness
+</code></pre>
+
+<p>PageMoveRefresh</p>
+
+<p>Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>Created by S2 as the single page-move refresh owner; S3 adds the Teams, Portfolios and licence keys to its refresh set, and creates it if S2 has not landed
+</code></pre>
+
+<p>getPortfolios</p>
+
+<p>Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:151</p>
+
+<p>Extend</p>
+
+<pre><code>Reads lists from useUnitLists; delete calls useUnitListsChanged
+</code></pre>
+
+<p>getTeams</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/ApiKeys/ApiKeysSettings.tsx:162</p>
+
+<p>Extend</p>
+
+<pre><code>Both read sites use useTeamsQuery and usePortfoliosQuery
+</code></pre>
+
+<p>getTeams</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx:64</p>
+
+<p>Extend</p>
+
+<pre><code>Teams from useTeamsQuery; create and update call useUnitListsChanged
+</code></pre>
+
+<p>createTeam</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.tsx:53</p>
+
+<p>Extend</p>
+
+<pre><code>Create and update call useUnitListsChanged
+</code></pre>
+
+<p>saveTeamSettings</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:193</p>
+
+<p>Extend</p>
+
+<pre><code>A rename through settings calls useUnitListsChanged
+</code></pre>
+
+<p>updatePortfolioSettings</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:166</p>
+
+<p>Extend</p>
+
+<pre><code>A rename through settings calls useUnitListsChanged
+</code></pre>
+
+<p>getLicenseStatus</p>
+
+<p>Lighthouse.Frontend/src/components/SurveyNudge/SurveyNudge.tsx:49</p>
+
+<p>Extend</p>
+
+<pre><code>Reads the licence from useLicenseStatusQuery instead of a second fetch
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>hook</p>
+
+<p>Lighthouse.Frontend/src/hooks/useLicenseRestrictions.ts:84</p>
+
+<p>Changed</p>
+
+<pre><code>Reads shared lists; LicenseRestrictions shape unchanged
+</code></pre>
+
+<p>consumers</p>
+
+<p>Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:151</p>
+
+<p>Changed</p>
+
+<pre><code>Lists from the shared hooks; delete calls useUnitListsChanged
+</code></pre>
+
+<p>consumers</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/ApiKeys/ApiKeysSettings.tsx:162</p>
+
+<p>Changed</p>
+
+<pre><code>Both reads use the shared hooks
+</code></pre>
+
+<p>consumers</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx:64</p>
+
+<p>Changed</p>
+
+<pre><code>Teams from the shared hook; create/update call useUnitListsChanged
+</code></pre>
+
+<p>consumers</p>
+
+<p>Lighthouse.Frontend/src/components/SurveyNudge/SurveyNudge.tsx:49</p>
+
+<p>Changed</p>
+
+<pre><code>Licence from useLicenseStatusQuery
+</code></pre>
+
+<p>rename-flows</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:193</p>
+
+<p>Changed</p>
+
+<pre><code>Settings save calls useUnitListsChanged; PortfolioDetail.tsx:177 and EditTeam.tsx:53 likewise
+</code></pre>
+
+<p>test-support</p>
+
+<p>Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts:199</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Mocks unchanged
+</code></pre>
+
+<p>hook</p>
+
+<p>Lighthouse.Frontend/src/hooks/useUnitLists.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New owner of the Teams and Portfolios reads
+</code></pre>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/components/App/PageMoveRefresh/PageMoveRefresh.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Refresh set gains three keys
+</code></pre>
+
+<p>page</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.tsx:53</p>
+
+<p>Changed</p>
+
+<pre><code>Calls useUnitListsChanged after create and update
+</code></pre>
+
+<p>page</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:166</p>
+
+<p>Changed</p>
+
+<pre><code>Calls useUnitListsChanged after a settings save
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>architectural_tests</p>
+
+<pre><code>The direct-caller law for getTeams/getPortfolios is covered by the S2 architectural test sharedReadOwners.test.ts
+</code></pre>
+
+<p>agreement</p>
+
+<pre><code>No wire change; hooks are in-deployable
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>One deployable, one commit, no wire change
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>useLicenseRestrictions.ts holds functions and hooks of one concept (licence gating), not several types; OverviewDashboard, ApiKeysSettings, EditPortfolio, EditTeam, TeamDetail, PortfolioDetail, SurveyNudge each hold one component; ApiKeysSettings.tsx holds two components (lines 152 and 386) but the change only swaps two reads and leaves its layout move to a later item. Nothing moves.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>useTeamsQuery, usePortfoliosQuery and useLicenseStatusQuery rendered by shell and page components
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<pre><code>teamService.getTeams, portfolioService.getPortfolios, licensingService.getLicenseStatus
+</code></pre>
+
+<pre><code>Components -&gt; useUnitLists / useLicenseRestrictions -&gt; usePageFreshQuery -&gt; QueryClient -&gt; services
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>####### B5</p>
+
+<pre><code>A list or the licence cannot be loaded
+</code></pre>
+
+<p>Retry</p>
+
+<pre><code>Today’s looks per consumer (useLicenseRestrictions failed status, Overview error); shared error for all readers
+</code></pre>
+
+<h5>Observations</h5>
+
+<pre><code>Lists and licence seen by each component, and call counts per service
+</code></pre>
+
+<p>arrays, ILicenseStatus and numbers</p>
+
+<pre><code>Network timing
+</code></pre>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L7</h6>
+
+<pre><code>Same projection as S2 over the Teams, Portfolios and licence reads: one call per page plus one per own change; own change visible without a page move
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>useUnitLists</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>two readers one page -&gt; one call each
+</code></pre>
+
+<pre><code>own create -&gt; list shows it
+</code></pre>
+
+<pre><code>other user change -&gt; shows after move
+</code></pre>
+
+<pre><code>403 on lists -&gt; empty list for counts, as today
+</code></pre>
+
+<pre><code>The domain is a closed finite set of cases, so native example rows cover every member
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>docs/feature/story-6712-faster-page-loads/design/shared_page_reads.qnt</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<pre><code>shared unit lists and licence
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Same Quint model as S2 (protocol is identical per shared read)
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>docs/feature/story-6712-faster-page-loads/design/shared_page_reads.qnt</p>
+
+<pre><code>shared unit lists and licence
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Existing service answers
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>shared unit lists and licence
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Readers listed in impact reach the hooks
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>shared unit lists and licence
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>No liveness claim: answer arrival depends on HTTP
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S4</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.teamSettings.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Portfolios/Detail/PortfolioDetail.teamSettings.test.tsx
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Render PortfolioDetail on its Features tab for a portfolio with two involved Teams and three features
+</code></pre>
+
+<pre><code>The same feature rows and columns as today, and teamService.getTeamSettings not called
+</code></pre>
+
+<pre><code>Today’s fetchPortfolio calls getTeamSettings once per involved Team
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P9</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>PortfolioFeatureList</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.tsx:62</p>
+
+<p>Reuse</p>
+
+<pre><code>Already renders from portfolio.involvedTeams
+</code></pre>
+
+<p>fetchPortfolio</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:124</p>
+
+<p>Extend</p>
+
+<pre><code>Drop the unread per-Team settings fetch and the involvedTeams state
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>page</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:91</p>
+
+<p>Changed</p>
+
+<pre><code>State and fetch removed; rendered rows unchanged
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Tests that mock getTeamSettings keep passing; mocks become unused
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>architectural_tests</p>
+
+<pre><code>No dependency or ownership law changes
+</code></pre>
+
+<p>agreement</p>
+
+<pre><code>No shared contract touched; GET teams/{id}/settings stays for its other readers
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>No wire change
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>PortfolioDetail.tsx holds one component; nothing moves
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>PortfolioDetail page render (Features tab)
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<pre><code>portfolioService.getPortfolio, getPortfolioSettings
+</code></pre>
+
+<pre><code>PortfolioDetail -&gt; services; teamService.getTeamSettings only on a save
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<pre><code>Rendered feature rows and getTeamSettings call count
+</code></pre>
+
+<p>DOM rows and number</p>
+
+<pre><code>Answer size
+</code></pre>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L3</h6>
+
+<pre><code>Rendering a Portfolio tab never calls getTeamSettings; a save from the Portfolio still reads it once
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>PortfolioDetail</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Features tab render -&gt; 0 calls
+</code></pre>
+
+<pre><code>Team settings save from Portfolio -&gt; 1 call
+</code></pre>
+
+<pre><code>The domain is a closed finite set of cases, so native example rows cover every member
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<pre><code>Features tab without Team settings
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Removed state has no reader (grep of involvedTeams in PortfolioDetail.tsx)
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>Features tab without Team settings
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>portfolio.involvedTeams already in the portfolio answer
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>Features tab without Team settings
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Route /portfolios/:id/features
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>Features tab without Team settings
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>No liveness claim: removal of a call, no waiting state
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S5</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/Releases/ILighthouseReleaseService.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/Releases/LighthouseReleaseService.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/VersionController.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/services/Api/VersionService.ts</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/components/App/LetPeopleWork/LatestReleaseInformationDialog.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.updateCheck.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/components/App/LetPeopleWork/LighthouseVersion.updateCheck.test.tsx
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~LighthouseReleaseServiceNewestVersionTest|FullyQualifiedName~EndpointAuthorizationPolicyTest
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Releases/LighthouseReleaseServiceNewestVersionTest.cs</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Render LighthouseVersion with a version service whose calls are held: current, distribution and hasupdate pending; then resolve with an update; open the dialog; make getNewReleases pending, then resolve; separately make it reject and press Retry; separately reject one footer check
+</code></pre>
+
+<pre><code>current, distribution and hasupdate all started before any resolves; getNewReleases not called on load; the pop-up shows the newest version from getNewestVersion; the open dialog shows the version and a progress indicator, then the notes; on rejection the version, Could not load the release notes. and a Retry button that calls getNewReleases again; any rejected footer check shows the footer error
+</code></pre>
+
+<pre><code>Today’s footer awaits each check before starting the next and calls getNewReleases on load
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P10</p>
+
+<p>P11</p>
+
+<p>P12</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>GetNewReleases</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/Releases/LighthouseReleaseService.cs:60</p>
+
+<p>Extend</p>
+
+<pre><code>GetNewestReleaseVersion takes its first release so the number equals today’s pop-up
+</code></pre>
+
+<p>VersionController</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/VersionController.cs:14</p>
+
+<p>Extend</p>
+
+<pre><code>Owner of the version routes
+</code></pre>
+
+<p>VersionService</p>
+
+<p>Lighthouse.Frontend/src/services/Api/VersionService.ts:18</p>
+
+<p>Extend</p>
+
+<pre><code>Adds getNewestVersion
+</code></pre>
+
+<p>LatestReleaseInformationDialog</p>
+
+<p>Lighthouse.Frontend/src/components/App/LetPeopleWork/LatestReleaseInformationDialog.tsx:36</p>
+
+<p>Extend</p>
+
+<pre><code>Loads notes on open; reuses CircularProgress and Alert already imported
+</code></pre>
+
+<p>LighthouseVersion</p>
+
+<p>Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.tsx:26</p>
+
+<p>Extend</p>
+
+<pre><code>Parallel checks, newest version instead of releases
+</code></pre>
+
+<p>ILighthouseReleaseService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/Releases/ILighthouseReleaseService.cs:6</p>
+
+<p>Extend</p>
+
+<pre><code>Port of the release application service gains GetNewestReleaseVersion
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>interface</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/Releases/ILighthouseReleaseService.cs:6</p>
+
+<p>Changed</p>
+
+<pre><code>Adds GetNewestReleaseVersion; implemented by LighthouseReleaseService
+</code></pre>
+
+<p>controller</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/VersionController.cs:52</p>
+
+<p>Changed</p>
+
+<pre><code>Adds GET newest with SignedInOnly
+</code></pre>
+
+<p>service</p>
+
+<p>Lighthouse.Frontend/src/services/Api/VersionService.ts:9</p>
+
+<p>Changed</p>
+
+<pre><code>IVersionService gains getNewestVersion
+</code></pre>
+
+<p>test-support</p>
+
+<p>Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Version service mock gains getNewestVersion
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/EndpointAuthorizationPolicyTest.cs:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Covers the new action through its attribute scan
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/VersionControllerTest.cs:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Existing rows unchanged
+</code></pre>
+
+<p>service</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/Releases/LighthouseReleaseService.cs:60</p>
+
+<p>Changed</p>
+
+<pre><code>Adds GetNewestReleaseVersion
+</code></pre>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.tsx:26</p>
+
+<p>Changed</p>
+
+<pre><code>Parallel checks, newest version only on load
+</code></pre>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/components/App/LetPeopleWork/LatestReleaseInformationDialog.tsx:36</p>
+
+<p>Changed</p>
+
+<pre><code>Notes loaded on open with loading and failed states
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>Version routes under api/v1 and api/latest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/VersionController.cs:52</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Adds GET newest; current, new, hasupdate unchanged
+</code></pre>
+
+<p>Version routes under api/v1 and api/latest</p>
+
+<p>Lighthouse.Frontend/src/services/Api/VersionService.ts:9</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Calls newest on load and new on dialog open
+</code></pre>
+
+<p>Version routes under api/v1 and api/latest</p>
+
+<p>Lighthouse-Clients CLI and MCP (/api/v1/version/current)</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>They call only version/current, unchanged
+</code></pre>
+
+<p>Version routes under api/v1 and api/latest</p>
+
+<p>Jira app and served-version probe (version/current)</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Anonymous current unchanged
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>contract_tests</p>
+
+<pre><code>The new route has one consumer, the frontend in the same deployable and commit; external clients use only version/current, unchanged
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>VersionController.cs, LighthouseReleaseService.cs, ILighthouseReleaseService.cs, VersionService.ts (one class plus its interface IVersionService, one concept), LighthouseVersion.tsx and LatestReleaseInformationDialog.tsx each hold one type; nothing moves
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>LighthouseVersion footer render and its new-version dialog; backend GET /api/latest/version/newest
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<pre><code>VersionService (frontend) -&gt; VersionController -&gt; ILighthouseReleaseService -&gt; IGitHubService
+</code></pre>
+
+<pre><code>Controller -&gt; application service -&gt; GitHub port; UI -&gt; VersionService
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>####### B3</p>
+
+<pre><code>Release notes cannot be loaded
+</code></pre>
+
+<p>Retry</p>
+
+<pre><code>Dialog shows newest version, Could not load the release notes. and Retry
+</code></pre>
+
+<p>####### B4</p>
+
+<pre><code>Any footer version check fails
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>Footer error as today
+</code></pre>
+
+<h5>Observations</h5>
+
+<pre><code>Call order and count on the version service; dialog content in its three states
+</code></pre>
+
+<p>calls and DOM</p>
+
+<pre><code>Bytes on the line (measured by measure-bytes.mjs)
+</code></pre>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L5</h6>
+
+<pre><code>Footer error iff any started check rejects; independent checks start together
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>LighthouseVersion</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>all resolve, no update
+</code></pre>
+
+<pre><code>all resolve, update, internal
+</code></pre>
+
+<pre><code>current rejects
+</code></pre>
+
+<pre><code>hasupdate rejects
+</code></pre>
+
+<pre><code>newest rejects
+</code></pre>
+
+<pre><code>updateSupported rejects
+</code></pre>
+
+<pre><code>The domain is a closed finite set of cases, so native example rows cover every member
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L6</h6>
+
+<pre><code>GetNewestReleaseVersion equals the version of the first of GetNewReleases, none when it is empty
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>LighthouseReleaseService</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>two newer releases -&gt; first
+</code></pre>
+
+<pre><code>current is newest -&gt; none
+</code></pre>
+
+<pre><code>DEV -&gt; newest of all
+</code></pre>
+
+<pre><code>The domain is a closed finite set of cases, so native example rows cover every member
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<pre><code>update check without notes
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Finite rows over the any-failure rule
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>update check without notes
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Newest from existing GetNewReleases
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>update check without notes
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Footer in the app shell; route under api/v1 and api/latest
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>update check without notes
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>No liveness claim: each check is one HTTP answer outside the design
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T4</h6>
+
+<pre><code>Every API action carries an authorization attribute, including GET version/newest
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/EndpointAuthorizationPolicyTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~EndpointAuthorizationPolicyTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
 <p>None.</p>
 
 <h2>ADRs</h2>
 
-<p>None.</p>
+<p>- 004 Compress safe-method answers and static files at serve time — Proposed</p>
 
 </body></html>

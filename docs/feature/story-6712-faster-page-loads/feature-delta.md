@@ -57,3 +57,25 @@ start of DELIVER. S1–S4 change nothing a user sees.
 | Website marketing surface | N/A, because faster pages on a slow connection are a quality fix, not a new capability worth a page. The release note carries it (tag `Release Notes` on the Story). |
 | Context map | Touches no domain context. S1 is the **platform lane** (how the host serves files and answers). S2 reads **Access** (the authorization summary). S3 reads **Organisation set-up** (Teams and Portfolios as units) and **Licensing**. S4 reads Team settings (Organisation set-up). S5 is the platform lane (the version and update check). No new glossary term or concept, no domain event published or reacted to: these are read caches and transport, not domain behaviour. UI surface after ADR-271: nothing moves; the new-version dialog stays where it is (the footer). ADR-270 and `ARCHITECTURE.md` §4 need no change. |
 | Improvement backlog (`/continuous-improvement before`) | N/A, because 6712 is a Story with no parent Epic, not a new feature Epic. It is itself the speed follow-up of the API-shape evaluation. |
+
+## DESIGN (2026-11-28)
+
+Design facts live in `handoff.json` (rendered to `architecture.md`); the compression rule is
+`docs/product/architecture/ADR-004.md` (Proposed). Choices:
+
+- **Compression at serve time:** ASP.NET Core response compression (Brotli and Gzip, `Optimal`), after
+  `UseForwardedHeaders` and before the static files. No build step, no new package. Measured on today's bundle:
+  3.22× gzip, 3.23× Brotli; `Fastest` gives only 2.32×. Rejected: `MapStaticAssets` (needs a manifest built after
+  `pnpm build`, empty in dev, replaces the no-cache static path) and a Vite precompression plugin.
+- **BREACH rule:** compress only GET/HEAD, compressible types, when the browser asks, never the SignalR hub. Owner:
+  `BreachSafeResponseCompressionProvider` in `Platform/Host`. No GET answer carries a secret today; the API key
+  comes back from a POST. Residual risk: a future GET that returns a secret beside reflected text.
+- **Features tabs:** `PortfolioDetail.fetchPortfolio` loads Team settings per involved Team into a state nothing
+  reads; the fetch goes. Team pages never loaded them.
+- **S2/S3:** a shared query whose answer carries the page it was asked on (`usePageFreshQuery`), a
+  `PageMoveRefresh` inside the Router, and refresh hooks after the user's own changes. `useRbac` keeps its
+  `RbacState` shape. Quint model `design/shared_page_reads.qnt` for the freshness rules.
+- **S5:** new `GET version/newest` (the version of the first new release); `/version/new` stays for the dialog.
+  Footer: current, distribution and hasupdate together, then newest and updateSupported. The dialog has loading,
+  loaded and could-not-load (message + Retry) states.
+- **Order:** S3 builds on S2's freshness owner, so S2 lands first.
