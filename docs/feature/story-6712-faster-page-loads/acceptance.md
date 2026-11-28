@@ -897,6 +897,69 @@ a file added later calls a service through a destructured alias
 ###### Obligations
 
 
+##### Covers
+
+P7
+
+```text
+A settings editor asks for the shared Teams as a promise while the Teams cannot be loaded
+```
+
+```text
+The caller is rejected with the reason the service gave, not a wrapper, and the Teams service was asked exactly once
+```
+
+```text
+A settings editor that cannot get its Teams shows the real reason after one ask, not after three
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/unitListsOwnChanges\.test\.tsx
+
+fails with the reason the Teams could not be loaded\, after asking once
+
+```text
+A loader that rejects with the wrapper but asks once, or that gives the reason after retrying twice
+```
+
+###### Obligations
+
+
+##### Covers
+
+P8
+
+```text
+On each page where the user changes a Team or Portfolio (create wizard, create as a copy, edit page, Settings tab of a Team page and of a Portfolio page, delete on the overview), the user completes the change while the server now holds the changed lists
+```
+
+```text
+Every component showing the lists shows the change without a page move, and Teams and Portfolios were each asked exactly once on opening and once after the change
+```
+
+```text
+After creating, renaming, copying or deleting a Team or Portfolio, the menus, overview and lists show it at once
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/unitListsOwnChanges\.test\.tsx
+
+shows the lists with the change at once\, asking each list once more\, when the user \$change
+
+```text
+A page that skips the refresh after its own change but whose navigation or another page move later refreshes the lists; the oracle opens each page without a page move so this is refused
+```
+
+###### Obligations
+
+
+
 ## Expectations
 
 ### Rows

@@ -939,6 +939,61 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>A settings editor asks for the shared Teams as a promise while the Teams cannot be loaded
+</code></pre>
+
+<pre><code>The caller is rejected with the reason the service gave, not a wrapper, and the Teams service was asked exactly once
+</code></pre>
+
+<pre><code>A settings editor that cannot get its Teams shows the real reason after one ask, not after three
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/unitListsOwnChanges.test.tsx</p>
+
+<p>fails with the reason the Teams could not be loaded, after asking once</p>
+
+<pre><code>A loader that rejects with the wrapper but asks once, or that gives the reason after retrying twice
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P8</p>
+
+<pre><code>On each page where the user changes a Team or Portfolio (create wizard, create as a copy, edit page, Settings tab of a Team page and of a Portfolio page, delete on the overview), the user completes the change while the server now holds the changed lists
+</code></pre>
+
+<pre><code>Every component showing the lists shows the change without a page move, and Teams and Portfolios were each asked exactly once on opening and once after the change
+</code></pre>
+
+<pre><code>After creating, renaming, copying or deleting a Team or Portfolio, the menus, overview and lists show it at once
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/unitListsOwnChanges.test.tsx</p>
+
+<p>shows the lists with the change at once, asking each list once more, when the user $change</p>
+
+<pre><code>A page that skips the refresh after its own change but whose navigation or another page move later refreshes the lists; the oracle opens each page without a page move so this is refused
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

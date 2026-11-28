@@ -499,6 +499,41 @@
 "expected": "F678",
 "stimulus": "F677",
 "user_result": "F679"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7"
+],
+"still_passes_if": "F684",
+"test": "fails with the reason the Teams could not be loaded, after asking once",
+"test_path": "Lighthouse.Frontend/src/hooks/unitListsOwnChanges.test.tsx"
+},
+"expected": "F682",
+"stimulus": "F681",
+"user_result": "F683"
+},
+{
+"covers": [
+"P8"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7",
+"L7/F343"
+],
+"still_passes_if": "F688",
+"test": "shows the lists with the change at once, asking each list once more, when the user $change",
+"test_path": "Lighthouse.Frontend/src/hooks/unitListsOwnChanges.test.tsx"
+},
+"expected": "F686",
+"stimulus": "F685",
+"user_result": "F687"
 }
 ]
 },
@@ -507,7 +542,7 @@
 "C": 3,
 "D": 13,
 "E": 13,
-"F": 680,
+"F": 688,
 "K": 13,
 "L": 7,
 "N": 16,
@@ -3079,6 +3114,14 @@
 "F679": "No page can quietly keep its own copy of the shared lists",
 "F68": "On page load the update check sends no release notes and the footer's checks run at the same time; the new-version dialog loads the notes when opened, with a loading look and a could-not-load message with Retry.",
 "F680": "a file added later calls a service through a destructured alias",
+"F681": "A settings editor asks for the shared Teams as a promise while the Teams cannot be loaded",
+"F682": "The caller is rejected with the reason the service gave, not a wrapper, and the Teams service was asked exactly once",
+"F683": "A settings editor that cannot get its Teams shows the real reason after one ask, not after three",
+"F684": "A loader that rejects with the wrapper but asks once, or that gives the reason after retrying twice",
+"F685": "On each page where the user changes a Team or Portfolio (create wizard, create as a copy, edit page, Settings tab of a Team page and of a Portfolio page, delete on the overview), the user completes the change while the server now holds the changed lists",
+"F686": "Every component showing the lists shows the change without a page move, and Teams and Portfolios were each asked exactly once on opening and once after the change",
+"F687": "After creating, renaming, copying or deleting a Team or Portfolio, the menus, overview and lists show it at once",
+"F688": "A page that skips the refresh after its own change but whose navigation or another page move later refreshes the lists; the oracle opens each page without a page move so this is refused",
 "F69": "368 KB less on every first visit when an update exists; a shorter footer chain.",
 "F7": "A user has a page open and an administrator grants or removes one of their rights",
 "F70": "Paradigm object_oriented (settled by CLAUDE.md). Backend: ports-and-adapters, compression is a host (platform lane) concern owned by Program.cs as composition root plus one policy class. Frontend: React hooks over TanStack Query; each shared read has one owning hook module that holds its query key, and one page-move freshness owner.",
