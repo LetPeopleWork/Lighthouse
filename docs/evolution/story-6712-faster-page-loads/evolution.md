@@ -59,7 +59,7 @@ Pages load faster on a slow connection, and nothing on them looks different, apa
   until the next page move.
 - **EXAMINE waiver (maintainer):** E1 and E3 (byte sizes on a running server) waived as an observation gap; the
   wire contract, the measured ratios and the CI image check are their coverage.
-- `ADR-004` (the compression rule) stays `Proposed`; its acceptance is the maintainer's.
+- `ADR-004` (the compression rule) was accepted by the maintainer after the push (2026-11-28).
 - The 5-minute review windows were skipped for this story (maintainer).
 
 ## Gates
