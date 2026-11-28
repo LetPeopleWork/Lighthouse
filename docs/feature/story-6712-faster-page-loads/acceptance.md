@@ -1144,26 +1144,6 @@ None.
 
 None.
 
-#### E10
-
-##### Promises
-
-P9
-
-```text
-A Features tab loads without the full Team settings (32 KB today) and shows the same rows and columns as today.
-```
-
-```text
-A byte or call check does not show rows and columns are unchanged for all Team kinds and data.
-```
-
-None.
-
-None.
-
-None.
-
 #### E11
 
 ##### Promises

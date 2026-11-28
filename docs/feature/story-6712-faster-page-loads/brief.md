@@ -176,18 +176,6 @@ The menus, overview and lists show it at once; a change made by someone else sho
 
 None.
 
-### P9
-
-Outcome
-
-```text
-A Features tab renders its list without loading the full Team settings (32 KB today) it does not show; it shows the same rows and columns as today.
-```
-
-#### Amendment
-
-None.
-
 ### P10
 
 Outcome
@@ -298,6 +286,10 @@ Any change to what a page shows, apart from the loading and failure looks of the
 Changes to the Lighthouse-Clients CLI or MCP; they call only /version/current.
 ```
 
+```text
+Removing the per-Team settings fetch on the Portfolio page. The Feature WIP quick setting reads each Team's feature WIP from it, so the fetch stays as today.
+```
+
 ## Decisions
 
 ```text
@@ -391,6 +383,15 @@ Suggestion, not in scope: a later item for the Portfolio page's four-step load c
 #### Status
 
 Proposed
+
+
+```text
+S4 dropped (maintainer, 2026-11-28): the Portfolio page keeps its per-Team settings fetch, because the Feature WIP quick setting reads featureWIP from it. Loading it on dialog open or adding featureWIP to the portfolio answer would change the UI or a shared contract.
+```
+
+#### Status
+
+Confirmed
 
 
 ## Journey
@@ -533,32 +534,6 @@ M
 
 ```text
 Fewer repeated shell calls on every load.
-```
-
-##### Rework
-
-None.
-
-### S4
-
-```text
-A Features tab shows the same list as today without loading full Team settings.
-```
-
-#### Promises
-
-P9
-
-#### Depends on
-
-None.
-
-#### Slice work
-
-S
-
-```text
-32 KB less per Features tab.
 ```
 
 ##### Rework

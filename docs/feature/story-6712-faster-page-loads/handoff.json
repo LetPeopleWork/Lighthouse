@@ -542,7 +542,7 @@
 "C": 3,
 "D": 13,
 "E": 13,
-"F": 688,
+"F": 692,
 "K": 13,
 "L": 7,
 "N": 16,
@@ -636,9 +636,6 @@
 },
 {
 "id": "D4",
-"slices": [
-"S4"
-],
 "text": "F73"
 },
 {
@@ -2048,135 +2045,6 @@
 "pnpm --dir Lighthouse.Frontend exec vitest run src/hooks/sharedListOwners.test.ts"
 ]
 },
-"S4": {
-"oracle": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.teamSettings.test.tsx",
-"public_oracle": {
-"expected": "F178",
-"falsifier": "F179",
-"promises": [
-"P9"
-],
-"stimulus": "F177"
-},
-"records": {
-"boundaries": {
-"dependency_direction": "F190",
-"driven_ports": [
-"F189"
-],
-"driving_port": "F188"
-},
-"closure": [
-{
-"axis": "Safety",
-"basis": "F197",
-"design": "Pass",
-"runtime": "DesignedNotBuilt",
-"subject": "F196"
-},
-{
-"axis": "Inhabitation",
-"basis": "F198",
-"design": "Pass",
-"runtime": "DesignedNotBuilt",
-"subject": "F196"
-},
-{
-"axis": "PublicReachability",
-"basis": "F199",
-"design": "Pass",
-"runtime": "DesignedNotBuilt",
-"subject": "F196"
-},
-{
-"axis": "Liveness",
-"basis": "F200",
-"design": "Pass",
-"runtime": "DesignedNotBuilt",
-"subject": "F196"
-}
-],
-"impact": [
-{
-"decision": "Changed",
-"kind": "page",
-"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:91",
-"reason": "F182"
-},
-{
-"decision": "UnchangedCompatible",
-"kind": "tests",
-"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx:1",
-"reason": "F183"
-}
-],
-"laws": [
-{
-"id": "L3",
-"kind": "Invariant",
-"layer": "Application",
-"owner": "PortfolioDetail",
-"statement": "F193",
-"treatment": {
-"cases": [
-"F194",
-"F195"
-],
-"kind": "Finite",
-"reason": "F154"
-}
-}
-],
-"not_applicable": [
-{
-"analysis": "architectural_tests",
-"reason": "F184"
-},
-{
-"analysis": "agreement",
-"reason": "F185"
-},
-{
-"analysis": "contract_tests",
-"reason": "F186"
-},
-{
-"analysis": "prefactoring",
-"reason": "F187"
-}
-],
-"observations": [
-{
-"cannot_distinguish": "F192",
-"description": "F191",
-"result_type": "DOM rows and number"
-}
-],
-"reuse": [
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.tsx:62",
-"reason": "F180",
-"symbol": "PortfolioFeatureList"
-},
-{
-"decision": "Extend",
-"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:124",
-"reason": "F181",
-"symbol": "fetchPortfolio"
-}
-]
-},
-"targets": [
-{
-"change": "Extend",
-"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx"
-}
-],
-"verification": [
-"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Portfolios/Detail/PortfolioDetail.teamSettings.test.tsx"
-]
-},
 "S5": {
 "oracle": "Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.updateCheck.test.tsx",
 "public_oracle": {
@@ -2540,14 +2408,6 @@
 "text": "F416"
 },
 {
-"id": "E10",
-"lacuna": "F419",
-"promises": [
-"P9"
-],
-"text": "F418"
-},
-{
 "id": "E11",
 "lacuna": "F421",
 "promises": [
@@ -2634,34 +2494,10 @@
 "F174": "A test that starts a host is a named skeleton or a wire contract; the new compression contract sits in Tests/Contracts on WireContractTest",
 "F175": "Browsers, proxies and the Standalone webview change apart from the server; the encoding negotiation is a wire contract",
 "F176": "Headers and decoded bytes per row",
-"F177": "Render PortfolioDetail on its Features tab for a portfolio with two involved Teams and three features",
-"F178": "The same feature rows and columns as today, and teamService.getTeamSettings not called",
-"F179": "Today’s fetchPortfolio calls getTeamSettings once per involved Team",
 "F18": "The lists of Teams and Portfolios and the licence status that the app shell and pages use are fetched once and shared, not once per component, measured with measure-calls.mjs before and after.",
-"F180": "Already renders from portfolio.involvedTeams",
-"F181": "Drop the unread per-Team settings fetch and the involvedTeams state",
-"F182": "State and fetch removed; rendered rows unchanged",
-"F183": "Tests that mock getTeamSettings keep passing; mocks become unused",
-"F184": "No dependency or ownership law changes",
-"F185": "No shared contract touched; GET teams/{id}/settings stays for its other readers",
-"F186": "No wire change",
-"F187": "PortfolioDetail.tsx holds one component; nothing moves",
-"F188": "PortfolioDetail page render (Features tab)",
-"F189": "portfolioService.getPortfolio, getPortfolioSettings",
 "F19": "The user's own change to a Team or Portfolio shows in the lists at once",
-"F190": "PortfolioDetail -> services; teamService.getTeamSettings only on a save",
-"F191": "Rendered feature rows and getTeamSettings call count",
-"F192": "Answer size",
-"F193": "Rendering a Portfolio tab never calls getTeamSettings; a save from the Portfolio still reads it once",
-"F194": "Features tab render -> 0 calls",
-"F195": "Team settings save from Portfolio -> 1 call",
-"F196": "Features tab without Team settings",
-"F197": "Removed state has no reader (grep of involvedTeams in PortfolioDetail.tsx)",
-"F198": "portfolio.involvedTeams already in the portfolio answer",
-"F199": "Route /portfolios/:id/features",
 "F2": "On a slow connection, Lighthouse pages show the same data sooner: less JavaScript and API bytes on the line and fewer repeated calls, with no change to what a page shows.",
 "F20": "A user creates, renames or deletes a Team or Portfolio",
-"F200": "No liveness claim: removal of a call, no waiting state",
 "F201": "Existing tests gain the QueryClient wrapper",
 "F205": "Owner of permission gating; keeps RbacState, swaps its useEffect fetch for the shared query",
 "F206": "Existing shared cache; no second cache",
@@ -2862,8 +2698,6 @@
 "F415": "A call count does not show the shared lists and licence status still render the same content everywhere.",
 "F416": "After the user creates, renames or deletes a Team or Portfolio, the menus, overview and lists show it at once, and a change by someone else shows on the next move to another page.",
 "F417": "The oracle does not see all surfaces showing the change or the other-user case in a real second session.",
-"F418": "A Features tab loads without the full Team settings (32 KB today) and shows the same rows and columns as today.",
-"F419": "A byte or call check does not show rows and columns are unchanged for all Team kinds and data.",
 "F42": "Changes to the Lighthouse-Clients CLI or MCP; they call only /version/current.",
 "F420": "On page load the update check carries only whether an update exists and the newest version, not the release notes (368 KB today); the footer's version checks run at the same time, and if any fails the footer shows its error as today.",
 "F421": "The oracle does not see real concurrency timing or each individual failure case in the footer.",
@@ -3090,7 +2924,6 @@
 "F657": "Someone else changes the Teams, then the user moves to another page",
 "F658": "The old list stays until the move, then the new list shows once after one ask for all",
 "F659": "A change by someone else shows on the next page move",
-"F66": "A Features tab shows the same list as today without loading full Team settings.",
 "F660": "the lists refresh on a timer or on every render instead of on the page move",
 "F661": "Read the lists on one page, move to a page with no list reader, then to a page where readers mount",
 "F662": "Nothing is asked on the page without readers; the readers on the third page ask once and show the list",
@@ -3101,7 +2934,6 @@
 "F667": "A failed load is shown to all readers and one retry fixes all",
 "F668": "each reader retries by itself or only the retrying reader recovers",
 "F669": "The user may not read the Teams list and has no Premium license",
-"F67": "32 KB less per Features tab.",
 "F670": "The Teams count as empty and creating a Team stays allowed, as today",
 "F671": "A user without the right to list Teams is not blocked by an unread list",
 "F672": "the gate stays loading or failed on a refused list",
@@ -3122,7 +2954,11 @@
 "F686": "Every component showing the lists shows the change without a page move, and Teams and Portfolios were each asked exactly once on opening and once after the change",
 "F687": "After creating, renaming, copying or deleting a Team or Portfolio, the menus, overview and lists show it at once",
 "F688": "A page that skips the refresh after its own change but whose navigation or another page move later refreshes the lists; the oracle opens each page without a page move so this is refused",
+"F689": "Maintainer, chat answer A on 2026-11-28",
 "F69": "368 KB less on every first visit when an update exists; a shorter footer chain.",
+"F690": "The per-Team settings the Portfolio page fetches feed the Feature WIP quick setting (featureWIP), so removing the fetch would show every Team as Not set. The saving is small; keeping today's fetch keeps the page unchanged.",
+"F691": "Removing the per-Team settings fetch on the Portfolio page. The Feature WIP quick setting reads each Team's feature WIP from it, so the fetch stays as today.",
+"F692": "S4 dropped (maintainer, 2026-11-28): the Portfolio page keeps its per-Team settings fetch, because the Feature WIP quick setting reads featureWIP from it. Loading it on dialog open or adding featureWIP to the portfolio answer would change the UI or a shared contract.",
 "F7": "A user has a page open and an administrator grants or removes one of their rights",
 "F70": "Paradigm object_oriented (settled by CLAUDE.md). Backend: ports-and-adapters, compression is a host (platform lane) concern owned by Program.cs as composition root plus one policy class. Frontend: React hooks over TanStack Query; each shared read has one owning hook module that holds its query key, and one page-move freshness owner.",
 "F73": "Open question 3 resolved (Features tab reads instead of full Team settings): it reads nothing extra. PortfolioDetail.fetchPortfolio calls teamService.getTeamSettings once per involved Team and stores the result in the involvedTeams state, which no code reads; the Features tab (PortfolioFeatureList) and the Deliveries tab already render from portfolio.involvedTeams, the entity references inside the portfolio answer. So the per-Team settings fetch and the dead state are removed; updateTeamSettingsFromPortfolio keeps its on-demand read before a save. Team pages do not load Team settings for their Features tab. Side effect: the Portfolio load chain loses one step; the rest of that chain stays out of scope.",
@@ -3210,6 +3046,12 @@
 "kind": "Proposed"
 },
 "text": "F52"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F692"
 }
 ],
 "journey": [
@@ -3292,11 +3134,6 @@
 "when": "F12"
 },
 {
-"id": "P9",
-"kind": "Outcome",
-"text": "F22"
-},
-{
 "id": "P10",
 "kind": "Outcome",
 "text": "F23"
@@ -3318,6 +3155,17 @@
 "when": "F26"
 }
 ],
+"retired": [
+{
+"amendment": {
+"authority": "F689",
+"reason": "F690"
+},
+"id": "P9",
+"kind": "Outcome",
+"text": "F22"
+}
+],
 "scope_in": [
 "F31",
 "F32",
@@ -3332,7 +3180,8 @@
 "F39",
 "F40",
 "F41",
-"F42"
+"F42",
+"F691"
 ],
 "slices": [
 {
@@ -3375,17 +3224,6 @@
 "work": {
 "size": "M",
 "value": "F65"
-}
-},
-{
-"id": "S4",
-"observation": "F66",
-"promises": [
-"P9"
-],
-"work": {
-"size": "S",
-"value": "F67"
 }
 },
 {

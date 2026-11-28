@@ -282,16 +282,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
-<h3>P9</h3>
-
-<p>Outcome</p>
-
-<p>A Features tab renders its list without loading the full Team settings (32 KB today) it does not show; it shows the same rows and columns as today.</p>
-
-<h4>Amendment</h4>
-
-<p>None.</p>
-
 <h3>P10</h3>
 
 <p>Outcome</p>
@@ -359,6 +349,8 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Any change to what a page shows, apart from the loading and failure looks of the new-version dialog.</p>
 
 <p>Changes to the Lighthouse-Clients CLI or MCP; they call only /version/current.</p>
+
+<p>Removing the per-Team settings fetch on the Portfolio page. The Feature WIP quick setting reads each Team&#x27;s feature WIP from it, so the fetch stays as today.</p>
 
 <h2>Decisions</h2>
 
@@ -433,6 +425,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h4>Status</h4>
 
 <p>Proposed</p>
+
+
+<p>S4 dropped (maintainer, 2026-11-28): the Portfolio page keeps its per-Team settings fetch, because the Feature WIP quick setting reads featureWIP from it. Loading it on dialog open or adding featureWIP to the portfolio answer would change the UI or a shared contract.</p>
+
+<h4>Status</h4>
+
+<p>Confirmed</p>
 
 
 <h2>Journey</h2>
@@ -536,28 +535,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>M</p>
 
 <p>Fewer repeated shell calls on every load.</p>
-
-<h5>Rework</h5>
-
-<p>None.</p>
-
-<h3>S4</h3>
-
-<p>A Features tab shows the same list as today without loading full Team settings.</p>
-
-<h4>Promises</h4>
-
-<p>P9</p>
-
-<h4>Depends on</h4>
-
-<p>None.</p>
-
-<h4>Slice work</h4>
-
-<p>S</p>
-
-<p>32 KB less per Features tab.</p>
 
 <h5>Rework</h5>
 

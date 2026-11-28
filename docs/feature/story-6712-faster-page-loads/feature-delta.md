@@ -104,6 +104,17 @@ Design facts live in `handoff.json` (rendered to `architecture.md`); the compres
   └────────────────────────────────────────┘
   ```
 
+## Maintainer decision (DELIVER, 2026-11-28): S4 dropped
+
+- **Found by the S4 acceptance designer:** the per-Team settings that `PortfolioDetail.fetchPortfolio` loads are not
+  unread, as D4 claimed. `PortfolioFeatureWipQuickSetting` (shown to every user on the Portfolio page) reads each
+  Team's `featureWIP` from them for its "Not set" / "N Teams" label, tooltip and dialog fields. The portfolio answer
+  carries only Team id and name.
+- **Options put to the maintainer:** A drop S4; B load Team settings only when the dialog opens (visible change);
+  C add `featureWIP` to the portfolio answer (shared API contract change).
+- **Answer: A.** The fetch and the page stay as today. S4 and its promise P9 are retired in nwdes, with a scope-out
+  line and a confirmed decision. Follow-up if the saving is wanted later: option C, as its own Story.
+
 ## DEVOPS (2026-11-28, AFK propose mode)
 
 Platform risk is material (compression in the host), so the platform lens ran. Findings, taken on the platform
