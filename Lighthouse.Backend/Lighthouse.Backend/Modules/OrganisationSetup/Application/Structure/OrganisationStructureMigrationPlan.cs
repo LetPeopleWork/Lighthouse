@@ -20,6 +20,14 @@ namespace Lighthouse.Backend.Modules.OrganisationSetup.Application.Structure
 
         public IReadOnlyList<PlannedMapping> Mappings { get; }
 
+        internal OrganisationStructure TheStructure()
+            => new([.. Levels.Select(level => new Level(level.Id, level.Ordinal, level.UnitName, level.ItemName))]);
+
+        internal IEnumerable<ConnectionMapping> TheConnectionMappings()
+            => Mappings
+                .GroupBy(mapping => mapping.ConnectionId)
+                .Select(connection => ConnectionMapping.From(connection.Key, connection.ToDictionary(mapping => mapping.Level, mapping => mapping.Types)));
+
         public static OrganisationStructureMigrationPlan From(
             IReadOnlyList<Team> teams,
             IReadOnlyList<Portfolio> portfolios,

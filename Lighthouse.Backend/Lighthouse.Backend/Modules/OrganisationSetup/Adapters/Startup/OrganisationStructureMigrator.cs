@@ -57,15 +57,11 @@ namespace Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Startup
 
             var plan = OrganisationStructureMigrationPlan.From(teams, portfolios, connections, TerminologyWords.From(terminology));
 
-            await structureStore.Save(
-                new OrganisationStructure([.. plan.Levels.Select(level => new Level(level.Id, level.Ordinal, level.UnitName, level.ItemName))]),
-                CancellationToken.None);
+            await structureStore.Save(plan.TheStructure(), CancellationToken.None);
 
-            foreach (var connection in plan.Mappings.GroupBy(mapping => mapping.ConnectionId))
+            foreach (var mapping in plan.TheConnectionMappings())
             {
-                await mappingStore.Save(
-                    ConnectionMapping.From(connection.Key, connection.ToDictionary(mapping => mapping.Level, mapping => mapping.Types)),
-                    CancellationToken.None);
+                await mappingStore.Save(mapping, CancellationToken.None);
             }
 
             var lost = TypesNoLevelLists([.. teams, .. portfolios], await mappingStore.All(CancellationToken.None));
@@ -90,10 +86,11 @@ namespace Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Startup
 
             return [.. units.SelectMany(unit =>
             {
-                var level = unit is Team ? LevelId.Team : LevelId.Portfolio;
-                var listed = byConnection.TryGetValue(unit.WorkTrackingSystemConnectionId, out var mapping) ? mapping.TypesOn(level) : [];
+                var level = LevelId.Of(unit);
+                var mapping = byConnection.GetValueOrDefault(unit.WorkTrackingSystemConnectionId)
+                    ?? ConnectionMapping.From(unit.WorkTrackingSystemConnectionId, new Dictionary<LevelId, IReadOnlyList<string>>());
                 return unit.WorkItemTypes
-                    .Where(type => !listed.Contains(type, StringComparer.OrdinalIgnoreCase))
+                    .Where(type => mapping.Resolve(level, [type]) is ResolveOutcome.TypeNotMapped)
                     .Select(type => $"{level.Key} {unit.Id} ({unit.Name}) reads {type}, which connection {unit.WorkTrackingSystemConnectionId} does not list on that level");
             })];
         }
