@@ -664,7 +664,7 @@
 "test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/NewestVersionWireContractTest.cs"
 },
 "expected": "F741",
-"stimulus": "F740",
+"stimulus": "F743",
 "user_result": "F735"
 },
 {
@@ -711,7 +711,7 @@
 "C": 3,
 "D": 13,
 "E": 13,
-"F": 742,
+"F": 743,
 "K": 13,
 "L": 7,
 "N": 16,
@@ -3168,9 +3168,9 @@
 "F737": "Scan every API action for a declared access rule, including the newest-version route once it exists",
 "F738": "No production action lacks an access declaration, so the new route cannot be left open or undeclared",
 "F739": "A route declared signed-in only where anonymous was meant, since the scan checks that a declaration exists and not which one is right",
-"F740": "Ask the newest-version route as a signed-in user when two newer releases exist and when none is newer, and as a signed-out caller on a host that requires sign-in, through both route versions",
 "F741": "A signed-in user gets the newest version number from the first newer release; with no newer release the answer is 404; a signed-out caller is refused with 401 or 403 and told no version",
 "F742": "A route that answers a different number than the first newer release fails; a route refused to signed-out callers by the host-wide sign-in rule rather than its own attribute would still pass, and the attribute scan covers that",
+"F743": "Ask the newest-version route as a signed-in user when two newer releases exist and when none is newer, and as a signed-out caller, through both route versions, on a host that requires sign-in and holds a valid premium licence",
 "F75": "S3: useUnitLists.ts owns the Teams and Portfolios keys (reusing the existing teams and portfolios keys of useLicenseRestrictions) with useTeamsQuery, usePortfoliosQuery and useUnitListsChanged; the licence keeps useLicenseStatusQuery (LICENSE_STATUS_KEY, its hourly refetch) and joins the page-move refresh. useLicenseRestrictions, OverviewDashboard, EditPortfolio, ApiKeysSettings and SurveyNudge read these hooks instead of calling the services. useUnitListsChanged is called after own create (EditTeam, EditPortfolio), rename (TeamDetail and PortfolioDetail settings saves, EditTeam/EditPortfolio updates) and delete (OverviewDashboard). useLicenseRestrictions keeps its 403-as-empty rule.",
 "F76": "S5: new route GET version/newest on VersionController (SignedInOnly, same reason as hasupdate) returns the newest release version string from a new LighthouseReleaseService.GetNewestReleaseVersion (the first of GetNewReleases, so the number equals today’s newReleases[0].version), 404 when there is none, as /version/new. GET version/new stays for the dialog. LighthouseVersion runs current, distribution and hasupdate together with Promise.all; when an update exists it runs newest and, for lighthouse-internal, updateSupported together; any rejection sets the footer error as today. Only data dependencies remain, no order between independent checks. LatestReleaseInformationDialog receives the newest version and reads the release notes with useQuery (key version, newReleases; enabled only while open) and has three states: loading (the dialog with the newest version and a CircularProgress where the notes go), loaded (today’s notes), failed (the newest version, the message Could not load the release notes. and a Retry button that refetches). Sketch at the start of DELIVER.",
 "F78": "Tests: Lighthouse test-writing skill wins over nWave test rules (nine-run timing, PBT density). Frontend rules on hooks in .test.ts/.test.tsx with renderWithQueryClient; backend S1 is a wire contract on WireContractTest because only a running host shows Content-Encoding and headers produced by middleware order; the policy rule itself is pinned by unit rows on BreachSafeResponseCompressionProvider over DefaultHttpContext. No nWave tags in test code.",

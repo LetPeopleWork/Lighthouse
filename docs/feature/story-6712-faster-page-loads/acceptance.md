@@ -1186,7 +1186,7 @@ Returns none for a development build
 P10
 
 ```text
-Ask the newest-version route as a signed-in user when two newer releases exist and when none is newer, and as a signed-out caller on a host that requires sign-in, through both route versions
+Ask the newest-version route as a signed-in user when two newer releases exist and when none is newer, and as a signed-out caller, through both route versions, on a host that requires sign-in and holds a valid premium licence
 ```
 
 ```text

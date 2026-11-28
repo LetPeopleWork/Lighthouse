@@ -1,5 +1,6 @@
 using System.Net;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Modules.Licensing.Contracts;
 using Lighthouse.Backend.Platform.Releases;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Hosting;
@@ -13,7 +14,7 @@ namespace Lighthouse.Backend.Tests.Contracts
     /// <summary>
     /// What the update pop-up reads on the wire to learn the newest version without the release notes: the route under
     /// both versions, the plain version number for a signed-in caller, a 404 when no newer release exists, and a refusal
-    /// for a caller who is signed out, on a host that requires sign-in. The release source is replaced at its port, so GitHub is never asked.
+    /// for a caller who is signed out, on a host that requires sign-in and has a valid premium licence. The release source is replaced at its port, so GitHub is never asked.
     /// </summary>
     public class NewestVersionWireContractTest : WireContractTest
     {
@@ -22,6 +23,8 @@ namespace Lighthouse.Backend.Tests.Contracts
         private readonly Mock<IGitHubService> releaseSource = new();
 
         private readonly Mock<IAssemblyService> installedVersion = new();
+
+        private readonly Mock<ILicenseService> licence = new();
 
         protected override WebApplicationFactory<Program> AdjustTheHost(TestWebApplicationFactory<Program> unchanged)
             => TestWebApplicationFactory<Program>.WithTestAuthentication(unchanged).WithWebHostBuilder(builder =>
@@ -34,8 +37,10 @@ namespace Lighthouse.Backend.Tests.Contracts
                 {
                     services.RemoveAll<IGitHubService>();
                     services.RemoveAll<IAssemblyService>();
+                    services.RemoveAll<ILicenseService>();
                     services.AddSingleton(releaseSource.Object);
                     services.AddSingleton(installedVersion.Object);
+                    services.AddScoped(_ => licence.Object);
                 });
             });
 
@@ -43,6 +48,7 @@ namespace Lighthouse.Backend.Tests.Contracts
         public void TheInstalledVersionIsKnown()
         {
             installedVersion.Setup(x => x.GetAssemblyVersion()).Returns(InstalledVersion);
+            licence.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
             releaseSource.Setup(x => x.GetLatestReleaseVersion()).ReturnsAsync("v18.8.6");
         }
 
