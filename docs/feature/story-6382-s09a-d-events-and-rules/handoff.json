@@ -462,7 +462,7 @@
 "C": 1,
 "D": 8,
 "E": 4,
-"F": 364,
+"F": 370,
 "K": 7,
 "L": 6,
 "P": 3,
@@ -3538,6 +3538,45 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F365",
+"F366"
+],
+"verdict": "met"
+},
+"E2": {
+"class": "observation_gap",
+"observations": [
+"F368",
+"F369",
+"F370"
+],
+"verdict": "unmet",
+"waiver": {
+"by": "F361",
+"coverage": "F364",
+"reason": "F363",
+"waived_at": "F362"
+}
+},
+"E3": {
+"observations": [
+"F367",
+"F365"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F368",
+"F369",
+"F366"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -3885,7 +3924,13 @@
 "F362": "2026-11-28T08:15:47Z",
 "F363": "No public probe can make a forecast round fail, be cancelled or be skipped, or make the refresh-log write throw; the compare probes against the parent 7bddf4ea4 show every answer identical (refresh 343/343, forecast 128/128, reactions 3/3).",
 "F364": "D2 oracle ForecastRoundsKeepTheirRefreshLogEntryTest drives the application-service port for succeeded, failed, cancelled and skipped rounds and a throwing refresh-log write (green in the full suite 15660/0 at cc508785b); Stryker killed 13 of 13 tested mutants of ForecastRoundFinishedRefreshLogHandler, 1 timeout, 0 survivors.",
+"F365": "architecture-rules probe on candidate 9d4e56772: exit=0, 2488 of 2488 Architecture tests passed. Includes EveryDomainEvent_LivesInTheContractsOfTheContextThatPublishesIt, 16 per-event TheEvent_ResolvesToExactlyOneTypeInTheContractsOfItsOwner rows (incl ForecastRoundFinished, PortfolioForecastsUpdated), TheKernelEventsNamespace_HoldsNothingButTheEventBase, AnEventFiledInAnotherContextsContracts_IsNamedWithItsPlaceItsOwnerAndTheWayOut (negative control), TheContextMap_NamesExactlyTheEventsTheCompiledCodeDeclares.",
+"F366": "backend-tests probe on candidate: exit=0, Total 15662, Passed 15650, Skipped 12, no failures.",
+"F367": "architecture-rules negative controls and law for E3: NoPerModuleBoundaryListNamesAnEdgeFromOneContextIntoAnother passed; AMadeUpListNamingAnEdgeFromRefinementIntoAccess_IsNamedWithItsListItsEntryAndTheContractsRuleAsOwner passed; AMadeUpListOfLegalEdgesNamingAnEdgeBehindTheTargetsContracts_... passed; TheListsLeftOutByName_StillExist... passed. Public projection of the workspace was empty so docs were read directly: ADR-270 line 219-221, 697, 1049-1060 describe R-C1 as sole owner of cross-context edges, per-module rules keep direction only; ARCHITECTURE.md lines 226-227 describe Context contracts and 'What the contracts buy CI' (test-selection payoff).",
+"F368": "Against feature parent 7bddf4ea4 (candidate 9d4e56772), run one at a time: refresh-answers-compare VERDICT IDENTICAL, all 343 refresh answers match; forecast-answers-compare VERDICT IDENTICAL, all 128 forecast answers match.",
+"F369": "refresh-reactions-compare 7bddf4ea4: IDENTICAL, all 3 observable reactions give same outcome on both sides (Team refresh recorded in refresh history; changed download refreshes Teams; deleted Team leaves refresh history). 4 blocked-period reactions NOT OBSERVABLE on either side. No probe shows the refresh-log row per forecast outcome (failed, cancelled, skipped) nor a throwing log write.",
 "F37": "The dispatcher's error log entry when a handler throws (handler type name, event type name)",
+"F370": "architecture-rules: HandlersOfAFinishedForecastRound_AreTheRefreshLogEntryAlone passed; OnlyTheForecastUpdater_ReachesForTheForecastService passed; registration entry ForecastRoundFinishedRefreshLogHandler in WorkItems passed. Round-outcome rows and throwing-write are not observable via public probes; no ForecastUpdater-names-no-IRefreshLogService rule line was identified in the log by name.",
 "F38": "a handler that threw before writing from one that threw after a partial write",
 "F39": "Two RefreshLog rows are equal when Type, EntityId, EntityName, ItemCount, Mode, RecordsScanned, RecordsFetched, Success, Cancelled and Skipped are equal and ExecutedAt equals the round's finish instant on the scenario's TimeProvider; Id is ignored and DurationMs is compared as non-negative and taken from the round.",
 "F4": "After every forecast round (succeeded, failed, cancelled or skipped) the refresh log holds the same entry as today, written by Work Items reacting to ForecastRoundFinished; ForecastUpdater no longer names the refresh-log service; a failing log write is logged and the round still completes.",

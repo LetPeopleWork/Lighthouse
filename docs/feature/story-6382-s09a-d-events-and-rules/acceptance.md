@@ -944,4 +944,86 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+architecture-rules probe on candidate 9d4e56772: exit=0, 2488 of 2488 Architecture tests passed. Includes EveryDomainEvent_LivesInTheContractsOfTheContextThatPublishesIt, 16 per-event TheEvent_ResolvesToExactlyOneTypeInTheContractsOfItsOwner rows (incl ForecastRoundFinished, PortfolioForecastsUpdated), TheKernelEventsNamespace_HoldsNothingButTheEventBase, AnEventFiledInAnotherContextsContracts_IsNamedWithItsPlaceItsOwnerAndTheWayOut (negative control), TheContextMap_NamesExactlyTheEventsTheCompiledCodeDeclares.
+```
+
+```text
+backend-tests probe on candidate: exit=0, Total 15662, Passed 15650, Skipped 12, no failures.
+```
+
+### E2
+
+unmet
+
+#### Observations
+
+```text
+Against feature parent 7bddf4ea4 (candidate 9d4e56772), run one at a time: refresh-answers-compare VERDICT IDENTICAL, all 343 refresh answers match; forecast-answers-compare VERDICT IDENTICAL, all 128 forecast answers match.
+```
+
+```text
+refresh-reactions-compare 7bddf4ea4: IDENTICAL, all 3 observable reactions give same outcome on both sides (Team refresh recorded in refresh history; changed download refreshes Teams; deleted Team leaves refresh history). 4 blocked-period reactions NOT OBSERVABLE on either side. No probe shows the refresh-log row per forecast outcome (failed, cancelled, skipped) nor a throwing log write.
+```
+
+```text
+architecture-rules: HandlersOfAFinishedForecastRound_AreTheRefreshLogEntryAlone passed; OnlyTheForecastUpdater_ReachesForTheForecastService passed; registration entry ForecastRoundFinishedRefreshLogHandler in WorkItems passed. Round-outcome rows and throwing-write are not observable via public probes; no ForecastUpdater-names-no-IRefreshLogService rule line was identified in the log by name.
+```
+
+observation_gap
+
+#### Waiver
+
+```text
+Benjamin Huser-Berta (maintainer), 2026-11-28 09:15
+```
+
+```text
+2026-11-28T08:15:47Z
+```
+
+```text
+No public probe can make a forecast round fail, be cancelled or be skipped, or make the refresh-log write throw; the compare probes against the parent 7bddf4ea4 show every answer identical (refresh 343/343, forecast 128/128, reactions 3/3).
+```
+
+```text
+D2 oracle ForecastRoundsKeepTheirRefreshLogEntryTest drives the application-service port for succeeded, failed, cancelled and skipped rounds and a throwing refresh-log write (green in the full suite 15660/0 at cc508785b); Stryker killed 13 of 13 tested mutants of ForecastRoundFinishedRefreshLogHandler, 1 timeout, 0 survivors.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+architecture-rules negative controls and law for E3: NoPerModuleBoundaryListNamesAnEdgeFromOneContextIntoAnother passed; AMadeUpListNamingAnEdgeFromRefinementIntoAccess_IsNamedWithItsListItsEntryAndTheContractsRuleAsOwner passed; AMadeUpListOfLegalEdgesNamingAnEdgeBehindTheTargetsContracts_... passed; TheListsLeftOutByName_StillExist... passed. Public projection of the workspace was empty so docs were read directly: ADR-270 line 219-221, 697, 1049-1060 describe R-C1 as sole owner of cross-context edges, per-module rules keep direction only; ARCHITECTURE.md lines 226-227 describe Context contracts and 'What the contracts buy CI' (test-selection payoff).
+```
+
+```text
+architecture-rules probe on candidate 9d4e56772: exit=0, 2488 of 2488 Architecture tests passed. Includes EveryDomainEvent_LivesInTheContractsOfTheContextThatPublishesIt, 16 per-event TheEvent_ResolvesToExactlyOneTypeInTheContractsOfItsOwner rows (incl ForecastRoundFinished, PortfolioForecastsUpdated), TheKernelEventsNamespace_HoldsNothingButTheEventBase, AnEventFiledInAnotherContextsContracts_IsNamedWithItsPlaceItsOwnerAndTheWayOut (negative control), TheContextMap_NamesExactlyTheEventsTheCompiledCodeDeclares.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+Against feature parent 7bddf4ea4 (candidate 9d4e56772), run one at a time: refresh-answers-compare VERDICT IDENTICAL, all 343 refresh answers match; forecast-answers-compare VERDICT IDENTICAL, all 128 forecast answers match.
+```
+
+```text
+refresh-reactions-compare 7bddf4ea4: IDENTICAL, all 3 observable reactions give same outcome on both sides (Team refresh recorded in refresh history; changed download refreshes Teams; deleted Team leaves refresh history). 4 blocked-period reactions NOT OBSERVABLE on either side. No probe shows the refresh-log row per forecast outcome (failed, cancelled, skipped) nor a throwing log write.
+```
+
+```text
+backend-tests probe on candidate: exit=0, Total 15662, Passed 15650, Skipped 12, no failures.
+```
