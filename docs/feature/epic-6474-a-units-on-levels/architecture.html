@@ -569,7 +569,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h3>Boundaries</h3>
 
-<pre><code>Application services of Organisation set-up (TerminologyService, unit create/delete and settings save services behind TeamController, PortfolioController, TeamsController, PortfoliosController, TerminologyController, UpdateController), plus the startup seeder entry SeedAsync
+<pre><code>Application services of Organisation set-up (TerminologyService, IUnitLifecycle and IUnitSettings behind TeamController, PortfolioController, TeamsController, PortfoliosController, TerminologyController), plus the startup seeder entry ISeeder.Seed
 </code></pre>
 
 <h4>Driven ports</h4>
@@ -586,7 +586,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Tracker connectors (unchanged, receive each unit&#x27;s effective types)
 </code></pre>
 
-<pre><code>Controllers -&gt; application services -&gt; domain (OrganisationStructure, ConnectionMapping, UnitId); adapters implement ports; other contexts reach Organisation set-up only through Modules/OrganisationSetup/Contracts and react to UnitCreated/UnitDeleted.
+<pre><code>Controllers -&gt; application services -&gt; domain (OrganisationStructure, ConnectionMapping, UnitId); adapters implement ports; DTO mapping stays in the API layer (controllers and API.Helpers), so Organisation set-up Application never reaches Lighthouse.Backend.API; other contexts reach Organisation set-up only through Modules/OrganisationSetup/Contracts and react to UnitCreated/UnitDeleted.
 </code></pre>
 
 <h4>Failures</h4>
@@ -2467,7 +2467,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <h5>Boundaries</h5>
 
-<pre><code>TerminologyService (get-all, update) and OrganisationStructureMigrator.SeedAsync
+<pre><code>TerminologyService (get-all, update) and OrganisationStructureMigrator through ISeeder.Seed
 </code></pre>
 
 <h6>Driven ports</h6>
@@ -3488,7 +3488,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <h4>Prefactoring</h4>
 
-<pre><code>Two commits before the oracle. (1) Behaviour-preserving move: TeamController.UpdateTeam and UpdateTeamData, PortfolioController&#x27;s update and refresh actions, and the DTO-to-entity create path of TeamsController and PortfoliosController move unchanged into Application/Units/UnitSettingsService.cs behind IUnitSettings.cs, with UnitSaveOutcome.cs and RefreshRequest.cs (only UnitSaved, RefreshQueued and the not-found variants produced yet). (2) Signature step, no behaviour: add ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten to Models/WorkTrackingSystemOptionsOwner.cs (unmapped until the migration), create Application/Structure/PlannedSubset.cs and Domain/UnitTypeLossNotice.cs, add Subsets (empty) to OrganisationStructureMigrationPlan. Per touched existing file: TeamController.cs, PortfolioController.cs, TeamsController.cs, PortfoliosController.cs and WorkTrackingSystemOptionsOwner.cs each hold one type, nothing moves. Follow-up change: resolve the subset and refuse unmapped types
+<pre><code>Two commits before the oracle. (1) Behaviour-preserving move: the load, save and refresh steps of TeamController.UpdateTeam and UpdateTeamData, PortfolioController&#x27;s update and refresh actions, and the create paths of TeamsController and PortfoliosController move unchanged into Application/Units/UnitSettingsService.cs behind IUnitSettings.cs, with UnitSaveOutcome.cs and RefreshRequest.cs (only UnitSaved, RefreshQueued and the not-found variants produced yet). The DTO-to-entity mapping stays in the controllers and API.Helpers and reaches the service as an Action&lt;Team&gt; or Action&lt;Portfolio&gt;, so OrganisationSetupModuleBoundariesArchUnitTest keeps its allow-list unchanged. (2) Signature step, no behaviour: add ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten to Models/WorkTrackingSystemOptionsOwner.cs (unmapped until the migration), create Application/Structure/PlannedSubset.cs and Domain/UnitTypeLossNotice.cs, add Subsets (empty) to OrganisationStructureMigrationPlan. Per touched existing file: TeamController.cs, PortfolioController.cs, TeamsController.cs, PortfoliosController.cs and WorkTrackingSystemOptionsOwner.cs each hold one type, nothing moves. Follow-up change: resolve the subset and refuse unmapped types
 </code></pre>
 
 <pre><code>Every save, create and manual refresh answer
@@ -3502,6 +3502,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamsControllerTest
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfoliosControllerTest
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~FetchFingerprintPinnedDigestTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupModuleBoundariesArchUnitTest
 </code></pre>
 
 <h4>Records</h4>
@@ -4029,7 +4030,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <p>IUnitSettings</p>
 
-<p>public interface IUnitSettings { Task&lt;UnitSaveOutcome&gt; SaveTeam(int teamId, TeamSettingDto settings, CancellationToken cancellationToken); Task&lt;UnitSaveOutcome&gt; SavePortfolio(int portfolioId, PortfolioSettingDto settings, CancellationToken cancellationToken); Task&lt;UnitSaveOutcome&gt; CreateTeam(TeamSettingDto settings, CancellationToken cancellationToken); Task&lt;UnitSaveOutcome&gt; CreatePortfolio(PortfolioSettingDto settings, CancellationToken cancellationToken); Task&lt;RefreshRequest&gt; RequestRefresh(UnitId unit, CancellationToken cancellationToken); }  (Application/Units)</p>
+<p>public interface IUnitSettings { Task&lt;UnitSaveOutcome&gt; SaveTeam(int teamId, Action&lt;Team&gt; applyRequestedSettings, CancellationToken cancellationToken); Task&lt;UnitSaveOutcome&gt; SavePortfolio(int portfolioId, Action&lt;Portfolio&gt; applyRequestedSettings, CancellationToken cancellationToken); Task&lt;UnitSaveOutcome&gt; CreateTeam(Action&lt;Team&gt; applyRequestedSettings, CancellationToken cancellationToken); Task&lt;UnitSaveOutcome&gt; CreatePortfolio(Action&lt;Portfolio&gt; applyRequestedSettings, CancellationToken cancellationToken); Task&lt;RefreshRequest&gt; RequestRefresh(UnitId unit, CancellationToken cancellationToken); }  (Application/Units; takes only Application and Models types: the controller passes the existing API.Helpers DTO-to-entity mapping as the delegate, so no Organisation set-up Application type reaches Lighthouse.Backend.API; the service loads or creates the entity, applies the delegate, resolves the requested item types against the connection mapping, and saves)</p>
 
 <p>UnitSaveOutcome</p>
 
@@ -4077,7 +4078,15 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <h5>Architectural tests</h5>
 
-<p>None.</p>
+<h6>T8</h6>
+
+<pre><code>Organisation set-up Application types never reach Lighthouse.Backend.API; the allow-list only shrinks
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupModuleBoundariesArchUnitTest
+</code></pre>
 
 <h5>Contract tests</h5>
 
@@ -4180,6 +4189,13 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <pre><code>GET settings logic moves into UnitSettingsService.ReadTeamSettings
 </code></pre>
 
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/TeamSettingsView.cs</p>
+
+<p>Create</p>
+
+<pre><code>Application-owned settings view the controller maps to TeamSettingDto
+</code></pre>
+
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/LeafCapacityInForecastingTest.cs</p>
 
 <h4>Verification</h4>
@@ -4215,7 +4231,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <h4>Prefactoring</h4>
 
-<pre><code>Two commits before the oracle. (1) Behaviour-preserving move: TeamController&#x27;s GET settings logic moves unchanged into UnitSettingsService.ReadTeamSettings (Modules/OrganisationSetup/Application/Units). (2) Signature step, no behaviour: create Modules/Forecasting/Contracts/LeafCapacityView.cs and ILeafCapacityStore.cs, Domain/LeafCapacity.cs, Adapters/Persistence/LeafCapacityStore.cs (All returns an empty list, Write throws NotImplementedException), Adapters/Startup/LeafCapacitySeeder.cs (Seed returns a completed task), and AddLeafCapacity in ForecastingModule.cs (not yet called by Program.cs). Per touched existing file: TeamController.cs and ForecastingModule.cs each hold one type, nothing moves. Follow-up change: copy and read capacity from LeafCapacity
+<pre><code>Two commits before the oracle. (1) Behaviour-preserving move: the load step of TeamController&#x27;s GET settings moves unchanged into UnitSettingsService.ReadTeamSettings, which returns Application/Units/TeamSettingsView.cs; the controller keeps mapping it to TeamSettingDto through API.Helpers. (2) Signature step, no behaviour: create Modules/Forecasting/Contracts/LeafCapacityView.cs and ILeafCapacityStore.cs, Domain/LeafCapacity.cs, Adapters/Persistence/LeafCapacityStore.cs (All returns an empty list, Write throws NotImplementedException), Adapters/Startup/LeafCapacitySeeder.cs (Seed returns a completed task), and AddLeafCapacity in ForecastingModule.cs (not yet called by Program.cs). Per touched existing file: TeamController.cs and ForecastingModule.cs each hold one type, nothing moves. Follow-up change: copy and read capacity from LeafCapacity
 </code></pre>
 
 <pre><code>Team settings payload and forecasts
@@ -4227,6 +4243,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <pre><code>dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamsControllerTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupModuleBoundariesArchUnitTest
 </code></pre>
 
 <h4>Records</h4>
@@ -4380,6 +4397,15 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <pre><code>Existing owner: GET settings logic moves into UnitSettingsService.ReadTeamSettings
 </code></pre>
 
+<p>TeamSettingsView</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/TeamSettingsView.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No Application-owned view of a Team&#x27;s settings exists; TeamSettingDto lives in API.DTO, which Organisation set-up Application must not reach
+</code></pre>
+
 <h5>Impact</h5>
 
 <p>wire</p>
@@ -4526,6 +4552,15 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <pre><code>GET settings logic moves into UnitSettingsService.ReadTeamSettings
 </code></pre>
 
+<p>public-signature</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/TeamSettingsView.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>New return type of ReadTeamSettings
+</code></pre>
+
 <h5>Agreement</h5>
 
 <p>Teams capacity columns</p>
@@ -4590,7 +4625,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <p>IUnitSettings.ReadTeamSettings</p>
 
-<p>Task&lt;TeamSettingDto&gt; ReadTeamSettings(int teamId, CancellationToken cancellationToken) added to IUnitSettings; the GET settings logic of TeamController moves into it</p>
+<p>Task&lt;TeamSettingsView&gt; ReadTeamSettings(int teamId, CancellationToken cancellationToken) added to IUnitSettings; public sealed record TeamSettingsView(Team Team, LeafCapacityView Capacity) in Application/Units; the controller maps it to TeamSettingDto through API.Helpers, so the payload stays byte-identical and no Application type reaches Lighthouse.Backend.API</p>
 
 <h5>Laws</h5>
 
