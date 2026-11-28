@@ -261,6 +261,11 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public static IReadOnlyList<TypeThatStays> TypesThatStay { get; } =
         [
+            .. Stays("Usage data", "Lighthouse.Backend.Platform.UsageData",
+                "UsageDataEmitPermit",
+                "UsageDataEventReported",
+                "UsageDataEventShapes",
+                "UsageDataSuppressionReason"),
             .. Stays("Organisation set-up", "Lighthouse.Backend.Services.Implementation",
                 "FeaturePositionMap"),
             .. Stays("Organisation set-up", "Lighthouse.Backend.Services.Interfaces",

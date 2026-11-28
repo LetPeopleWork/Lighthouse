@@ -51,6 +51,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["StalenessPolicyPurityArchUnitTest.ServicesPattern"] = PatternDeclaration.Context(Namespace, "the services the staleness policy must stay free of, which take in the platform"),
             ["RepositoryRecognition.PlatformPersistencePattern"] = PatternDeclaration.Context(Namespace, "the persistence code a repository is recognised by, wherever the database and seeding types live"),
             ["TrackerIntegrationApplicationLayoutArchUnitTest.AnImplementationNamespace"] = PatternDeclaration.Context(Namespace, "the implementation code the board port must not name; a platform implementation stays one after the move"),
+            ["PlatformOwnedModelsTypesLiveInPlatformArchUnitTest.TheLanesUsageDataNamespace"] = PatternDeclaration.Place(Namespace, "the platform lane's usage-data namespace, where the usage-data types that left the Models are looked up"),
             ["PlatformLaneMembershipArchUnitTest.PlatformLaneNamespaces"] = PatternDeclaration.Context(Namespace, "the namespaces the platform lane is measured in, old and new"),
 
             // Old locations: a rule asks whether a type is still left there, so they must not see the new place.
