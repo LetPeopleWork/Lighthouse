@@ -440,6 +440,38 @@ the declared list itself were widened with an ordinary type in the same change, 
 
 
 
+##### Covers
+
+P1
+
+```text
+Check made-up rows claiming that a type is reached from outside its module, for a record a made-up service outside the owner's module uses and for a record only its own module uses, and claiming that a constants-only type is held, for one a staying Models file names in its source and for one no Models file names
+```
+
+```text
+The reached record and the named constants type pass with their claims; the record only its own module uses and the constants type nobody names fail, each naming the type and the blocker it does not have
+```
+
+```text
+A type stays in the Models only while outside code would break its owner's module rules by the move, or while a staying Models type reads its constants; a row that claims either for a type that is free fails, naming the type and the reason
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelCatalogueArchUnitTest\.cs
+
+KernelCatalogueArchUnitTest\.TheBlockerCheck\_NamesARowClaimingABlockerTheTypeIsFreeOf
+
+```text
+the reached measurement counted a user inside the owner's module, or one that already reaches the owner's Domain, as outside; or the constants path also matched the constants type's own file
+```
+
+###### Obligations
+
+
+
 ### S2
 
 ##### Covers

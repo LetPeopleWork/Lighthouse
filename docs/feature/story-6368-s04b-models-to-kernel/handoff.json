@@ -241,6 +241,24 @@
 "expected": "F354",
 "stimulus": "F353",
 "user_result": "F355"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F233",
+"T3"
+],
+"still_passes_if": "F510",
+"test": "KernelCatalogueArchUnitTest.TheBlockerCheck_NamesARowClaimingABlockerTheTypeIsFreeOf",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs"
+},
+"expected": "F508",
+"stimulus": "F507",
+"user_result": "F509"
 }
 ],
 "S2": [
@@ -410,7 +428,7 @@
 "C": 1,
 "D": 20,
 "E": 9,
-"F": 506,
+"F": 510,
 "K": 10,
 "L": 9,
 "P": 5,
@@ -3173,7 +3191,11 @@
 "F504": "Each staying type has a row naming its owner and exactly its measured blocker: reached from outside its module (a type outside its owner's module reaches it without already reaching the owner's Domain, or a contracts type reaches it), held by a staying Models type, or sharing a file with one; a row claiming a blocker the type is free of, or missing one, is refused",
 "F505": "A maintainer sees which types stay in the Models and why, and the list stays true as the code changes",
 "F506": "A row that omits a true blocker, or claims one the type is free of, is refused in both directions; a blocker measured wrongly would pass here, which the planted reached and constants-only types in the same fixture refuse",
+"F507": "Check made-up rows claiming that a type is reached from outside its module, for a record a made-up service outside the owner's module uses and for a record only its own module uses, and claiming that a constants-only type is held, for one a staying Models file names in its source and for one no Models file names",
+"F508": "The reached record and the named constants type pass with their claims; the record only its own module uses and the constants type nobody names fail, each naming the type and the blocker it does not have",
+"F509": "A type stays in the Models only while outside code would break its owner's module rules by the move, or while a staying Models type reads its constants; a row that claims either for a type that is free fails, naming the type and the reason",
 "F51": "Decides cross-context references through Contracts; the catalogue decides only Models standing, so they do not decide the same fact; S1 checks the actual scope and records any overlap.",
+"F510": "the reached measurement counted a user inside the owner's module, or one that already reaches the owner's Domain, as outside; or the constants path also matched the constants type's own file",
 "F52": "No entity moves, so the model snapshot and migrations stay byte-identical.",
 "F53": "Reads Models/UsageData/UsageDataRouteKey.cs and UsageDataRoutePatterns.cs by path; both files stay.",
 "F55": "Names no mover; S1 re-greps it with .editorconfig, the Stryker config and appsettings files.",

@@ -107,6 +107,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         [TestCase(nameof(ANotStoredRecord), nameof(KernelBlocker.Entity))]
         [TestCase(nameof(ANotSentRecord), nameof(KernelBlocker.Wire))]
+        [TestCase(nameof(APlantedRecord), nameof(KernelBlocker.ReachedFromOutsideItsModule))]
+        [TestCase(nameof(AConstantsNobodyNames), nameof(KernelBlocker.HeldBy))]
         public void TheBlockerCheck_NamesARowClaimingABlockerTheTypeIsFreeOf(string type, string blocker)
         {
             var claimed = Enum.Parse<KernelBlocker>(blocker);
@@ -119,6 +121,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         [TestCase(nameof(AStoredRecord), nameof(KernelBlocker.Entity))]
         [TestCase(nameof(ASentAnswer), nameof(KernelBlocker.Wire))]
+        [TestCase(nameof(AReachedRecord), nameof(KernelBlocker.ReachedFromOutsideItsModule))]
+        [TestCase(nameof(AConstantsOnly), nameof(KernelBlocker.HeldBy))]
         public void TheBlockerCheck_AcceptsARowWhoseClaimIsTrue(string type, string blocker)
         {
             var claimed = Enum.Parse<KernelBlocker>(blocker);
@@ -239,7 +243,8 @@ namespace Lighthouse.Backend.Tests.Architecture
                 KernelCatalogue.TheKernelTypes,
                 ModelsMeasurement.FilesOfTheTypesIn(Path.Combine(backend, "Models"), KernelCatalogue.TheModelsRoot),
                 PathConsumersIn(root),
-                KernelCatalogue.OwnersByDesign);
+                KernelCatalogue.OwnersByDesign,
+                ModelsMeasurement.SourcesOfTheModels(Path.Combine(backend, "Models")));
         }
 
         private static HashSet<string> EntitiesOfTheDatabaseModel()
@@ -525,7 +530,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         IReadOnlyList<string> KernelTypes,
         IReadOnlyDictionary<string, string> FileOf,
         IReadOnlyList<PathConsumer> PathConsumers,
-        IReadOnlyDictionary<string, string> OwnersByDesign);
+        IReadOnlyDictionary<string, string> OwnersByDesign,
+        IReadOnlyDictionary<string, string> ModelsSources);
 
     /// <summary>One top-level Models type as measured: its blockers, the contexts that use it, and where it would move.</summary>
     internal sealed record MeasuredType(
@@ -565,6 +571,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 KernelBlocker.Wire => "no controller action signature or result, and no public property of an API DTO, reaches it, directly or through other types.",
                 KernelBlocker.HeldBy => "no Models type that stays references it.",
                 KernelBlocker.Shared => "types of fewer than two contexts use it.",
+                KernelBlocker.ReachedFromOutsideItsModule => "no type outside its owner's module and outside the Models reaches it without already reaching the owner's Domain, no contracts type reaches it, or another blocker already keeps it.",
                 KernelBlocker.InfraReached => "neither the data layer, nor a repository, nor the composition root names it.",
                 KernelBlocker.PathPinned => "no script, workflow or frontend file names its source file by path.",
                 KernelBlocker.Event => "it does not implement the domain-event base type.",
@@ -614,6 +621,18 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .GroupBy(dependent => TopLevel(dependent.TypeName), StringComparer.Ordinal)
                 .ToDictionary(group => group.Key, group => group.SelectMany(dependent => dependent.Targets).Select(TopLevel).Where(target => target != group.Key).ToHashSet(StringComparer.Ordinal), StringComparer.Ordinal);
 
+            foreach (var (holder, constants) in ConstantsNamedBySource(world, types, NameOf))
+            {
+                if (!references.TryGetValue(holder, out var held))
+                {
+                    held = new HashSet<string>(StringComparer.Ordinal);
+                    references[holder] = held;
+                }
+
+                held.UnionWith(constants);
+            }
+
+            var reachedFromOutside = ReachedFromOutsideTheirModule(world, types.Keys, contexts, IsAModelsType, NameOf);
             var baseBlockers = types.Keys.ToDictionary(
                 fullName => fullName,
                 fullName => BaseBlockersOf(world, types[fullName], NameOf(fullName), contexts, onTheWire, reachedByInfrastructure),
@@ -624,26 +643,37 @@ namespace Lighthouse.Backend.Tests.Architecture
             Dictionary<string, SortedSet<string>> holders;
             Dictionary<string, (string? Owner, string? Destination, string Why)> destinations;
             bool fileRuleGrew;
+            bool reachedGrew;
             do
             {
-                staying = types.Keys.Where(fullName => baseBlockers[fullName].Count > 0 || sharesAFile.Contains(fullName) || world.KernelTypes.Contains(NameOf(fullName))).ToHashSet(StringComparer.Ordinal);
-                holders = HeldByClosure(types, references, staying, NameOf);
-                var stayingNow = staying;
-                var destinationsNow = DestinationsOfTheFreeTypes(world, types.Keys.Where(fullName => !stayingNow.Contains(fullName)).ToList(), contexts, references, staying, NameOf);
-                destinations = destinationsNow;
-                fileRuleGrew = false;
-                foreach (var fullName in types.Keys.Where(fullName => !stayingNow.Contains(fullName)).ToList())
+                do
                 {
-                    var file = world.FileOf.GetValueOrDefault(NameOf(fullName));
-                    var mates = file is null ? [] : types.Keys.Where(other => other != fullName && world.FileOf.GetValueOrDefault(NameOf(other)) == file).ToList();
-                    var destination = destinationsNow.GetValueOrDefault(fullName).Destination;
-                    if (mates.Exists(mate => stayingNow.Contains(mate) || destinationsNow.GetValueOrDefault(mate).Destination != destination))
+                    staying = types.Keys.Where(fullName => baseBlockers[fullName].Count > 0 || sharesAFile.Contains(fullName) || world.KernelTypes.Contains(NameOf(fullName))).ToHashSet(StringComparer.Ordinal);
+                    holders = HeldByClosure(types, references, staying, NameOf);
+                    var stayingNow = staying;
+                    var destinationsNow = DestinationsOfTheFreeTypes(world, types.Keys.Where(fullName => !stayingNow.Contains(fullName)).ToList(), contexts, references, staying, NameOf);
+                    destinations = destinationsNow;
+                    fileRuleGrew = false;
+                    foreach (var fullName in types.Keys.Where(fullName => !stayingNow.Contains(fullName)).ToList())
                     {
-                        fileRuleGrew |= sharesAFile.Add(fullName);
+                        var file = world.FileOf.GetValueOrDefault(NameOf(fullName));
+                        var mates = file is null ? [] : types.Keys.Where(other => other != fullName && world.FileOf.GetValueOrDefault(NameOf(other)) == file).ToList();
+                        var destination = destinationsNow.GetValueOrDefault(fullName).Destination;
+                        if (mates.Exists(mate => stayingNow.Contains(mate) || destinationsNow.GetValueOrDefault(mate).Destination != destination))
+                        {
+                            fileRuleGrew |= sharesAFile.Add(fullName);
+                        }
                     }
                 }
+                while (fileRuleGrew);
+                reachedGrew = false;
+                foreach (var fullName in types.Keys.Where(fullName => !staying.Contains(fullName) && reachedFromOutside.Contains(fullName)).ToList())
+                {
+                    baseBlockers[fullName].Add(KernelBlocker.ReachedFromOutsideItsModule);
+                    reachedGrew = true;
+                }
             }
-            while (fileRuleGrew);
+            while (reachedGrew);
 
             return types.Keys.ToDictionary(
                 NameOf,
@@ -658,6 +688,11 @@ namespace Lighthouse.Backend.Tests.Architecture
                     if (sharesAFile.Contains(fullName))
                     {
                         blockers.Add(KernelBlocker.SharesAFile);
+                    }
+
+                    if (blockers.Contains(KernelBlocker.ReachedFromOutsideItsModule) && (blockers.Contains(KernelBlocker.HeldBy) || blockers.Contains(KernelBlocker.SharesAFile)))
+                    {
+                        blockers.Remove(KernelBlocker.ReachedFromOutsideItsModule);
                     }
 
                     var (owner, destination, why) = !sharesAFile.Contains(fullName) && destinations.TryGetValue(fullName, out var found) ? found : (null, null, string.Empty);
@@ -738,6 +773,88 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
 
             return blockers;
+        }
+
+        // Whether a type outside the Models would force its owner's inbound rules to grow: it reaches the type from outside
+        // the owner's module without already reaching the owner's Domain (a rule matches the code both ways, so reaching the
+        // Domain today means being on the list), or a contracts type of any context reaches it. The owner is the one context that
+        // uses the type, or else the context the design names for its area; a platform-owned type has no module.
+        private static HashSet<string> ReachedFromOutsideTheirModule(ModelsWorld world, IEnumerable<string> fullNames, Dictionary<string, HashSet<string>> contexts, Func<TypeReference, bool> isAModelsType, Func<string, string> nameOf)
+        {
+            var models = new Regex($@"^{Regex.Escape(world.ModelsRoot)}(\.|$)", RegexOptions.None, Timeout);
+            var users = IlDependencies.DependentsIn(world.Module, "^", isAModelsType)
+                .Select(dependent => (User: TopLevel(dependent.TypeName), dependent.Targets))
+                .Where(dependent => !dependent.User.StartsWith('<') && !models.IsMatch(dependent.User))
+                .SelectMany(dependent => dependent.Targets.Select(target => (Target: TopLevel(target), dependent.User)))
+                .ToLookup(pair => pair.Target, pair => pair.User, StringComparer.Ordinal);
+            var reachedByContracts = IlDependencies.DependentsIn(world.Module, @"(^|\.)Contracts(\.|$)", isAModelsType)
+                .SelectMany(dependent => dependent.Targets.Select(TopLevel))
+                .ToHashSet(StringComparer.Ordinal);
+            var domainReachers = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+            var reached = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (var fullName in fullNames)
+            {
+                var name = nameOf(fullName);
+                var area = name.Contains('.') ? name[..name.IndexOf('.')] : name;
+                var found = contexts.GetValueOrDefault(fullName, []);
+                var owner = found.Count == 1 ? found.Single() : world.OwnersByDesign.GetValueOrDefault(name) ?? world.OwnersByDesign.GetValueOrDefault(area);
+                if (owner is null or "Platform")
+                {
+                    continue;
+                }
+
+                if (!domainReachers.TryGetValue(owner, out var alreadyInDomain))
+                {
+                    var domain = $@"^{Regex.Escape(world.ModulesRoot)}\.{Regex.Escape(owner)}\.Domain(\.|$)";
+                    alreadyInDomain = IlDependencies.DependentsIn(world.Module, "^", target => IlDependencies.ResidesInNamespaceMatching(target, domain))
+                        .Select(dependent => TopLevel(dependent.TypeName))
+                        .ToHashSet(StringComparer.Ordinal);
+                    domainReachers[owner] = alreadyInDomain;
+                }
+
+                var inside = $"{world.ModulesRoot}.{owner}.";
+                if (reachedByContracts.Contains(fullName) || users[fullName].Any(user => !user.StartsWith(inside, StringComparison.Ordinal) && !alreadyInDomain.Contains(user)))
+                {
+                    reached.Add(fullName);
+                }
+            }
+
+            return reached;
+        }
+
+        // The compiler inlines a constant, so no IL edge shows who reads it. For a type whose members are all constants, a Models
+        // file that names it holds it: every type of that file is a holder.
+        private static Dictionary<string, HashSet<string>> ConstantsNamedBySource(ModelsWorld world, Dictionary<string, TypeDefinition> types, Func<string, string> nameOf)
+        {
+            var edges = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+            var typesOfFile = types.Keys.Where(fullName => world.FileOf.ContainsKey(nameOf(fullName))).GroupBy(fullName => world.FileOf[nameOf(fullName)], StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.ToList(), StringComparer.Ordinal);
+
+            foreach (var (constants, definition) in types.Where(pair => pair.Value.Fields.Count > 0 && pair.Value.Methods.Count == 0 && pair.Value.Properties.Count == 0 && pair.Value.Fields.All(field => field.IsLiteral)))
+            {
+                var ownFile = world.FileOf.GetValueOrDefault(nameOf(constants));
+                var named = new Regex($@"\b{Regex.Escape(definition.Name)}\b", RegexOptions.None, Timeout);
+                foreach (var holder in world.ModelsSources.Where(source => source.Key != ownFile && named.IsMatch(source.Value)).SelectMany(source => typesOfFile.GetValueOrDefault(source.Key, [])))
+                {
+                    if (!edges.TryGetValue(holder, out var targets))
+                    {
+                        targets = new HashSet<string>(StringComparer.Ordinal);
+                        edges[holder] = targets;
+                    }
+
+                    targets.Add(constants);
+                }
+            }
+
+            return edges;
+        }
+
+        public static Dictionary<string, string> SourcesOfTheModels(string modelsFolder)
+        {
+            var projectFolder = Directory.GetParent(modelsFolder)!.FullName;
+
+            return Directory.EnumerateFiles(modelsFolder, "*.cs", SearchOption.AllDirectories)
+                .ToDictionary(path => Path.GetRelativePath(projectFolder, path).Replace('\\', '/'), path => ProductionSource.WithoutComments(File.ReadAllText(path)), StringComparer.Ordinal);
         }
 
         // Contexts are the Modules.<X> namespaces only; the API, the data layer, the platform and the loose services are not.
@@ -1005,9 +1122,10 @@ namespace Lighthouse.Backend.Tests.Architecture.KernelCatalogueFixtures
                 $@"^{Regex.Escape(Root)}\.Infrastructure(\.|$)",
                 context.Model.GetEntityTypes().Select(entity => ModelsMeasurement.OutermostName(entity.ClrType)).ToHashSet(StringComparer.Ordinal),
                 TheKernelTypes,
-                new Dictionary<string, string>(StringComparer.Ordinal),
+                new Dictionary<string, string>(StringComparer.Ordinal) { ["AStoredRecord"] = "Models/AStoredRecord.cs", ["AConstantsOnly"] = "Models/AConstantsOnly.cs" },
                 [],
-                new Dictionary<string, string>(StringComparer.Ordinal));
+                new Dictionary<string, string>(StringComparer.Ordinal) { ["AConstantsNobodyNames"] = "Alpha" },
+                new Dictionary<string, string>(StringComparer.Ordinal) { ["Models/AStoredRecord.cs"] = "internal sealed record AStoredRecord(int Id) { public int Cap => AConstantsOnly.Limit; }", ["Models/AConstantsOnly.cs"] = "internal static class AConstantsOnly { public const int Limit = 3; }" });
         }
     }
 
@@ -1029,6 +1147,18 @@ namespace Lighthouse.Backend.Tests.Architecture.KernelCatalogueFixtures.Models
     internal sealed record ANotStoredRecord(int Value);
 
     internal sealed record ANotSentRecord(int Value);
+
+    internal sealed record AReachedRecord(int Value);
+
+    internal static class AConstantsOnly
+    {
+        public const int Limit = 3;
+    }
+
+    internal static class AConstantsNobodyNames
+    {
+        public const int Limit = 4;
+    }
 }
 
 namespace Lighthouse.Backend.Tests.Architecture.KernelCatalogueFixtures.Data
@@ -1064,6 +1194,18 @@ namespace Lighthouse.Backend.Tests.Architecture.KernelCatalogueFixtures.Modules.
         public static ANotStoredRecord NotStored(int value) => new(value);
 
         public static ANotSentRecord NotSent(int value) => new(value);
+
+        public static AReachedRecord Reached(int value) => new(value);
+    }
+}
+
+namespace Lighthouse.Backend.Tests.Architecture.KernelCatalogueFixtures.Services
+{
+    using Lighthouse.Backend.Tests.Architecture.KernelCatalogueFixtures.Models;
+
+    internal static class AMadeUpOutsideService
+    {
+        public static AReachedRecord Read(int value) => new(value);
     }
 }
 
