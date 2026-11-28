@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -144,7 +144,7 @@ const renderTeamDetail = () => {
 		updateSubscriptionService: mockUpdateSubscriptionService,
 	});
 
-	return render(
+	return renderWithQueryClient(
 		<BrowserRouter>
 			<ApiServiceContext.Provider value={mockApiContext}>
 				<TeamDetail />
@@ -268,7 +268,7 @@ describe("TeamDetail component", () => {
 			updateSubscriptionService: mockUpdateSubscriptionService,
 		});
 
-		render(
+		renderWithQueryClient(
 			<BrowserRouter>
 				<ApiServiceContext.Provider value={mockApiContext}>
 					<TeamDetail />
@@ -308,7 +308,7 @@ describe("TeamDetail component", () => {
 			updateSubscriptionService: mockUpdateSubscriptionService,
 		});
 
-		render(
+		renderWithQueryClient(
 			<BrowserRouter>
 				<ApiServiceContext.Provider value={mockApiContext}>
 					<TeamDetail />
@@ -350,7 +350,7 @@ describe("TeamDetail component", () => {
 
 		mockParams = { id: "1", tab: "features" }; // Try to navigate to features
 
-		render(
+		renderWithQueryClient(
 			<BrowserRouter>
 				<ApiServiceContext.Provider value={mockApiContext}>
 					<TeamDetail />
@@ -391,7 +391,7 @@ describe("TeamDetail component", () => {
 		// Simulate direct URL navigation to features tab
 		mockParams = { id: "1", tab: "features" };
 
-		render(
+		renderWithQueryClient(
 			<BrowserRouter>
 				<ApiServiceContext.Provider value={mockApiContext}>
 					<TeamDetail />
@@ -430,7 +430,7 @@ describe("TeamDetail component", () => {
 			updateSubscriptionService: mockUpdateSubscriptionService,
 		});
 
-		render(
+		renderWithQueryClient(
 			<BrowserRouter>
 				<ApiServiceContext.Provider value={mockApiContext}>
 					<TeamDetail />
@@ -497,7 +497,7 @@ describe("TeamDetail component", () => {
 			const { mockTeamService, mockApiContext, getCallback } =
 				buildSettingsTabContext();
 
-			render(
+			renderWithQueryClient(
 				<BrowserRouter>
 					<ApiServiceContext.Provider value={mockApiContext}>
 						<TeamDetail />
@@ -530,7 +530,7 @@ describe("TeamDetail component", () => {
 			const { mockTeamService, mockApiContext, getCallback } =
 				buildSettingsTabContext();
 
-			render(
+			renderWithQueryClient(
 				<BrowserRouter>
 					<ApiServiceContext.Provider value={mockApiContext}>
 						<TeamDetail />
@@ -585,7 +585,7 @@ describe("TeamDetail component", () => {
 				.fn()
 				.mockResolvedValue([{ id: 7, name: "Team Jira" }]);
 
-			render(
+			renderWithQueryClient(
 				<BrowserRouter>
 					<ApiServiceContext.Provider
 						value={createMockApiServiceContext({
@@ -679,7 +679,7 @@ describe("TeamDetail component", () => {
 		const renderWith = (
 			mockApiContext: ReturnType<typeof createMockApiServiceContext>,
 		) =>
-			render(
+			renderWithQueryClient(
 				<BrowserRouter>
 					<ApiServiceContext.Provider value={mockApiContext}>
 						<TeamDetail />
@@ -739,7 +739,7 @@ describe("TeamDetail component", () => {
 				const ctx = buildTeamPageContext();
 				const queryClient = new QueryClient();
 				const invalidate = vi.spyOn(queryClient, "invalidateQueries");
-				render(
+				renderWithQueryClient(
 					<QueryClientProvider client={queryClient}>
 						<BrowserRouter>
 							<ApiServiceContext.Provider value={ctx.mockApiContext}>
@@ -987,7 +987,7 @@ describe("TeamDetail - RBAC Access Tab and Write Controls Visibility", () => {
 			rbacService: mockRbacService,
 			updateSubscriptionService: mockUpdateSubscription,
 		});
-		render(
+		renderWithQueryClient(
 			<BrowserRouter>
 				<ApiServiceContext.Provider value={mockApiContext}>
 					<TeamDetail />
@@ -1092,7 +1092,7 @@ describe("TeamDetail - RBAC Access Tab and Write Controls Visibility", () => {
 			updateSubscriptionService: createMockUpdateSubscriptionService(),
 		});
 
-		render(
+		renderWithQueryClient(
 			<BrowserRouter>
 				<ApiServiceContext.Provider value={mockApiContext}>
 					<TeamDetail />
@@ -1215,7 +1215,7 @@ describe("TeamDetail - RBAC Access Tab and Write Controls Visibility", () => {
 			.fn()
 			.mockResolvedValue(statusOnArrival ?? null);
 
-		render(
+		renderWithQueryClient(
 			<BrowserRouter>
 				<ApiServiceContext.Provider
 					value={createMockApiServiceContext({

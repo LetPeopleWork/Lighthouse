@@ -1,10 +1,11 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { UsageDataConsentProvider } from "../../hooks/useUsageDataConsent";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import { createMockApiServiceContext } from "../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../tests/renderWithQueryClient";
 import Footer from "../App/Footer/Footer";
 import { UsageDataAsk } from "./UsageDataAsk";
 
@@ -36,7 +37,7 @@ const usageDataService = (state: {
 // stub - is the point of this file: the thing under test is that somebody ends up looking at the
 // dialog, and only the real Footer renders one.
 const renderAsk = (service: ReturnType<typeof usageDataService>) =>
-	render(
+	renderWithQueryClient(
 		<MemoryRouter>
 			<ApiServiceContext.Provider
 				value={createMockApiServiceContext({ usageDataService: service })}

@@ -1,10 +1,4 @@
-import {
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import type React from "react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { AuthMode } from "../../../models/Auth/AuthModels";
@@ -14,6 +8,7 @@ import {
 	createMockApiKeyService,
 	createMockApiServiceContext,
 } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import ApiKeysSettings from "./ApiKeysSettings";
 
 const ROADMAP_PORTFOLIO_ID = 7;
@@ -83,7 +78,11 @@ const buildContext = (
 };
 
 const openDialog = async (Wrapper: React.FC<{ children: React.ReactNode }>) => {
-	render(<ApiKeysSettings />, { wrapper: Wrapper });
+	renderWithQueryClient(
+		<Wrapper>
+			<ApiKeysSettings />
+		</Wrapper>,
+	);
 	await waitFor(() => {
 		expect(screen.getByTestId("create-api-key-button")).toBeEnabled();
 	});

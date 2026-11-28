@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { BrowserRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
@@ -6,6 +6,7 @@ import {
 	ApiServiceContext,
 	type IApiServiceContext,
 } from "../../../services/Api/ApiServiceContext";
+import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import EditTeamPage from "./EditTeam";
 
 const mockNavigate = vi.fn();
@@ -137,7 +138,7 @@ const renderEditTeamWithContext = () => {
 		suggestionService: mockSuggestionService,
 	} as unknown as IApiServiceContext;
 
-	return render(
+	return renderWithQueryClient(
 		<BrowserRouter>
 			<ApiServiceContext.Provider value={mockApiServiceContext}>
 				<EditTeamPage />

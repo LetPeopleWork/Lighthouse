@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	act,
 	type RenderResult,
-	render,
 	screen,
 	waitFor,
 	within,
@@ -61,6 +60,7 @@ import {
 	summaryFor,
 	type Viewer,
 } from "./ReportsTestKit";
+import { renderWithQueryClient } from "./renderWithQueryClient";
 
 /**
  * A report exported as a PDF, from the reader's side: the Export PDF action on the report view and on the
@@ -383,7 +383,7 @@ export const renderTheExportScene = (
 			</MemoryRouter>
 		</QueryClientProvider>
 	);
-	const rendered = render(
+	const rendered = renderWithQueryClient(
 		scene.strict === true ? <StrictMode>{tree}</StrictMode> : tree,
 	);
 

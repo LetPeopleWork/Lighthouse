@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
@@ -10,6 +10,7 @@ import {
 	createMockApiServiceContext,
 	createMockRbacService,
 } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import { formatLocalDate } from "../../../utils/date/localDate";
 import LicenseStatusPopover from "./LicenseStatusPopover";
 
@@ -69,7 +70,7 @@ describe("LicenseStatusPopover", () => {
 			rbacService: mockRbacService,
 		});
 
-		return render(
+		return renderWithQueryClient(
 			<ApiServiceContext.Provider value={mockApiContext}>
 				<LicenseStatusPopover
 					anchorEl={mockAnchorEl}
@@ -241,7 +242,7 @@ describe("LicenseStatusPopover", () => {
 			email: "john.doe@example.com",
 		};
 
-		render(
+		renderWithQueryClient(
 			<LicenseStatusPopover
 				anchorEl={mockAnchorEl}
 				onClose={mockOnClose}
@@ -275,7 +276,7 @@ describe("LicenseStatusPopover", () => {
 			expiryDate,
 		};
 
-		render(
+		renderWithQueryClient(
 			<LicenseStatusPopover
 				anchorEl={mockAnchorEl}
 				onClose={mockOnClose}
@@ -308,7 +309,7 @@ describe("LicenseStatusPopover", () => {
 			expiryDate,
 		};
 
-		render(
+		renderWithQueryClient(
 			<LicenseStatusPopover
 				anchorEl={mockAnchorEl}
 				onClose={mockOnClose}
@@ -336,7 +337,7 @@ describe("LicenseStatusPopover", () => {
 			canUsePremiumFeatures: false,
 		};
 
-		render(
+		renderWithQueryClient(
 			<LicenseStatusPopover
 				anchorEl={null}
 				onClose={mockOnClose}
@@ -513,7 +514,7 @@ describe("LicenseStatusPopover", () => {
 			validFrom: validFromDate,
 		};
 
-		render(
+		renderWithQueryClient(
 			<LicenseStatusPopover
 				anchorEl={mockAnchorEl}
 				onClose={mockOnClose}

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
@@ -8,6 +8,7 @@ import {
 	createMockApiServiceContext,
 	createMockRbacService,
 } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import LicenseStatusPopover from "./LicenseStatusPopover";
 
 const licenseStatus: ILicenseStatus = {
@@ -25,7 +26,7 @@ const renderWithLicensing = (licensingService: ILicensingService) => {
 		canCreateTeam: false,
 		canCreatePortfolio: false,
 	});
-	render(
+	renderWithQueryClient(
 		<ApiServiceContext.Provider
 			value={createMockApiServiceContext({ licensingService, rbacService })}
 		>

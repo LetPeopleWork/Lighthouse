@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import type React from "react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { IApiKeyInfo } from "../../../models/ApiKey/ApiKey";
@@ -9,6 +9,7 @@ import {
 	createMockApiKeyService,
 	createMockApiServiceContext,
 } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import ApiKeysSettings from "./ApiKeysSettings";
 
 const PLATFORM_TEAM_ID = 42;
@@ -167,7 +168,11 @@ describe("F-FE-2 — API Keys listing Scopes column", () => {
 			teamsResolution: [{ id: PLATFORM_TEAM_ID, name: PLATFORM_TEAM_NAME }],
 		});
 
-		render(<ApiKeysSettings />, { wrapper: Wrapper });
+		renderWithQueryClient(
+			<Wrapper>
+				<ApiKeysSettings />
+			</Wrapper>,
+		);
 
 		await waitForTableRow(1);
 		expect(
@@ -198,7 +203,11 @@ describe("F-FE-2 — API Keys listing Scopes column", () => {
 			authorizationSummary: buildSummary({ isRbacEnabled: false }),
 		});
 
-		render(<ApiKeysSettings />, { wrapper: Wrapper });
+		renderWithQueryClient(
+			<Wrapper>
+				<ApiKeysSettings />
+			</Wrapper>,
+		);
 
 		await waitForTableRow(1);
 		expect(
@@ -222,7 +231,11 @@ describe("F-FE-2 — API Keys listing Scopes column", () => {
 			authorizationSummary: buildSummary({ isRbacEnabled: true }),
 		});
 
-		render(<ApiKeysSettings />, { wrapper: Wrapper });
+		renderWithQueryClient(
+			<Wrapper>
+				<ApiKeysSettings />
+			</Wrapper>,
+		);
 
 		await waitForTableRow(1);
 		expect(
@@ -246,7 +259,11 @@ describe("F-FE-2 — API Keys listing Scopes column", () => {
 			authorizationSummary: buildSummary({ isRbacEnabled: false }),
 		});
 
-		render(<ApiKeysSettings />, { wrapper: Wrapper });
+		renderWithQueryClient(
+			<Wrapper>
+				<ApiKeysSettings />
+			</Wrapper>,
+		);
 
 		await waitForTableRow(1);
 		expect(
@@ -270,7 +287,11 @@ describe("F-FE-2 — API Keys listing Scopes column", () => {
 			authorizationSummary: buildSummary({ isRbacEnabled: true }),
 		});
 
-		render(<ApiKeysSettings />, { wrapper: Wrapper });
+		renderWithQueryClient(
+			<Wrapper>
+				<ApiKeysSettings />
+			</Wrapper>,
+		);
 
 		await waitForTableRow(9);
 		const row = screen.getByTestId("api-key-row-9");
@@ -294,7 +315,11 @@ describe("F-FE-2 — API Keys listing Scopes column", () => {
 			authorizationSummary: pendingSummary,
 		});
 
-		render(<ApiKeysSettings />, { wrapper: Wrapper });
+		renderWithQueryClient(
+			<Wrapper>
+				<ApiKeysSettings />
+			</Wrapper>,
+		);
 
 		await waitForTableRow(1);
 		expect(
@@ -327,7 +352,11 @@ describe("F-FE-2 — API Keys listing Scopes column", () => {
 			portfoliosRejects: true,
 		});
 
-		render(<ApiKeysSettings />, { wrapper: Wrapper });
+		renderWithQueryClient(
+			<Wrapper>
+				<ApiKeysSettings />
+			</Wrapper>,
+		);
 
 		await waitForTableRow(3);
 		const row = screen.getByTestId("api-key-row-3");

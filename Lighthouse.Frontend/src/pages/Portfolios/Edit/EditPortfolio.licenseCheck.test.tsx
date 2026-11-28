@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import SaveStateIndicator from "../../../components/Common/ValidationActions/SaveStateIndicator";
@@ -7,6 +7,7 @@ import {
 	ApiServiceContext,
 	type IApiServiceContext,
 } from "../../../services/Api/ApiServiceContext";
+import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import EditPortfolioPage from "./EditPortfolio";
 
 const COULD_NOT_CHECK =
@@ -105,7 +106,7 @@ const anAdminEditsHarbor = () => {
 };
 
 const openTheSettingsPage = async () => {
-	render(
+	renderWithQueryClient(
 		<MemoryRouter>
 			<ApiServiceContext.Provider value={{} as IApiServiceContext}>
 				<EditPortfolioPage />

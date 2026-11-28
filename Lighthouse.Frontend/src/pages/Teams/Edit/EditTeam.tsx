@@ -7,6 +7,7 @@ import CreateTeamWizard from "../../../components/Common/CreateWizards/CreateTea
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
+import { useRefreshPermissions } from "../../../hooks/useRbac";
 import { useRbacGate } from "../../../hooks/useRbacGate";
 import { useRefinementSetUpReporter } from "../../../hooks/useRefinementSetUpReporter";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
@@ -23,6 +24,7 @@ const EditTeamPage: React.FC = () => {
 	const navigate = useNavigate();
 	const gate = useRbacGate({ kind: "systemAdmin" });
 	const reportUsage = useUsageDataReporter();
+	const refreshPermissions = useRefreshPermissions();
 	const { settingsLoaded, settingsSaved } = useRefinementSetUpReporter();
 
 	const cloneFromId = Number.parseInt(
@@ -52,6 +54,7 @@ const EditTeamPage: React.FC = () => {
 			// A clone copies refinement states somebody already chose, so creating a Team never counts as setting it up.
 			newSettings = await teamService.createTeam(updatedSettings);
 			reportUsage({ name: UsageDataEventName.TeamCreated });
+			await refreshPermissions();
 			await teamService.updateTeamData(newSettings.id);
 			reportFailedNavigation(navigate(`/teams/${newSettings.id}/settings`));
 		} else {
@@ -91,6 +94,7 @@ const EditTeamPage: React.FC = () => {
 	const wizardSaveTeamSettings = async (updatedSettings: ITeamSettings) => {
 		const newSettings = await teamService.createTeam(updatedSettings);
 		reportUsage({ name: UsageDataEventName.TeamCreated });
+		await refreshPermissions();
 		await teamService.updateTeamData(newSettings.id);
 		reportFailedNavigation(navigate(`/teams/${newSettings.id}/metrics`));
 	};

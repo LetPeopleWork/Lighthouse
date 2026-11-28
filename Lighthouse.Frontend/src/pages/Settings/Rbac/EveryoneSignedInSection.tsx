@@ -13,6 +13,7 @@ import Typography from "@mui/material/Typography";
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 import { useContext, useState } from "react";
+import { useRefreshPermissions } from "../../../hooks/useRbac";
 import type { EveryoneSignedIn } from "../../../models/Authorization/RbacModels";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiError } from "../../../services/Api/ApiError";
@@ -38,6 +39,7 @@ const EveryoneSignedInSection: React.FC = () => {
 	const { rbacService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const reportUsage = useUsageDataReporter();
+	const refreshPermissions = useRefreshPermissions();
 	const [confirming, setConfirming] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [saveProblem, setSaveProblem] = useState<string>();
@@ -60,6 +62,7 @@ const EveryoneSignedInSection: React.FC = () => {
 				everyoneCanView,
 				concurrencyToken: current.concurrencyToken,
 			});
+			await refreshPermissions();
 			if (everyoneCanView) {
 				reportUsage({ name: UsageDataEventName.SystemWideAccessGranted });
 			}

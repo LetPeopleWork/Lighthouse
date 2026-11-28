@@ -13,6 +13,7 @@ import type {
 import { TERMINOLOGY_KEYS } from "../models/TerminologyKeys";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import { useTerminology } from "../services/TerminologyContext";
+import { useRefreshPermissions } from "./useRbac";
 
 export type ScopedAccessKind = "Team" | "Portfolio";
 
@@ -41,6 +42,7 @@ export const useScopedAccess = (
 ): ScopedAccess => {
 	const { rbacService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
+	const refreshPermissions = useRefreshPermissions();
 	// Read through a ref so a late terminology answer changes the next message,
 	// not the identity of the handlers a page effect depends on.
 	const scopeWordRef = useRef("");
@@ -85,14 +87,14 @@ export const useScopedAccess = (
 				await (scope === "Team"
 					? rbacService.upsertTeamMember(scopeId, userProfileId, role)
 					: rbacService.upsertPortfolioMember(scopeId, userProfileId, role));
-				await loadMembers();
+				await Promise.all([loadMembers(), refreshPermissions()]);
 			} catch {
 				setMembersError(
 					`Failed to update ${scopeWordRef.current} member role.`,
 				);
 			}
 		},
-		[rbacService, scope, scopeId, loadMembers],
+		[rbacService, scope, scopeId, loadMembers, refreshPermissions],
 	);
 
 	const removeMember = useCallback(
@@ -106,12 +108,12 @@ export const useScopedAccess = (
 				await (scope === "Team"
 					? rbacService.removeTeamMember(scopeId, userProfileId)
 					: rbacService.removePortfolioMember(scopeId, userProfileId));
-				await loadMembers();
+				await Promise.all([loadMembers(), refreshPermissions()]);
 			} catch {
 				setMembersError(`Failed to remove ${scopeWordRef.current} member.`);
 			}
 		},
-		[rbacService, scope, scopeId, loadMembers],
+		[rbacService, scope, scopeId, loadMembers, refreshPermissions],
 	);
 
 	const loadGroupMappings = useCallback(() => {
@@ -136,8 +138,9 @@ export const useScopedAccess = (
 				scopeType: scope,
 				scopeId,
 			});
+			await refreshPermissions();
 		},
-		[rbacService, scope, scopeId],
+		[rbacService, scope, scopeId, refreshPermissions],
 	);
 
 	const removeGroupMapping = useCallback(
@@ -147,8 +150,9 @@ export const useScopedAccess = (
 			}
 
 			await rbacService.removeGroupMapping(mappingId);
+			await refreshPermissions();
 		},
-		[rbacService, scopeId],
+		[rbacService, scopeId, refreshPermissions],
 	);
 
 	return {

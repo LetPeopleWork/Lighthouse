@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -6,6 +6,7 @@ import {
 	createMockApiServiceContext,
 	createMockRbacService,
 } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import { SettingsMenu } from "./SettingsMenu";
 
 const WhereWeAre = () => (
@@ -20,7 +21,7 @@ const renderMenuAt = (address: string) => {
 		canCreateTeam: true,
 		canCreatePortfolio: true,
 	});
-	return render(
+	return renderWithQueryClient(
 		<ApiServiceContext.Provider
 			value={createMockApiServiceContext({ rbacService })}
 		>

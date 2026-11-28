@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -26,6 +26,7 @@ import {
 	theButton,
 	theRowOf,
 } from "../../../../tests/RefinementTabTestKit";
+import { renderWithQueryClient } from "../../../../tests/renderWithQueryClient";
 import RefinementView from "./RefinementView";
 
 /**
@@ -315,7 +316,7 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 			</SnackbarErrorHandler>
 		);
 		const user = userEvent.setup();
-		const { rerender } = render(tabOf(GRAVITY_TEAM_ID));
+		const { rerender } = renderWithQueryClient(tabOf(GRAVITY_TEAM_ID));
 
 		await user.click(
 			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),

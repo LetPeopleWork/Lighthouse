@@ -7,6 +7,7 @@ import {
 	within,
 } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useRbac } from "../../../hooks/useRbac";
 import type { RbacUser } from "../../../models/Authorization/RbacModels";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IAuthService } from "../../../services/Api/AuthService";
@@ -15,6 +16,13 @@ import {
 	createMockLicensingService,
 } from "../../../tests/MockApiServiceProvider";
 import RbacSettings from "./RbacSettings";
+
+// In the app the header gates its menu on the user's permissions next to this page, so a change the user makes
+// here must ask them again for it.
+const TheHeadersPermissionGate = () => {
+	useRbac();
+	return null;
+};
 
 describe("RbacSettings", () => {
 	const mockRbacService = {
@@ -83,6 +91,7 @@ describe("RbacSettings", () => {
 		return render(
 			<QueryClientProvider client={queryClient}>
 				<ApiServiceContext.Provider value={mockContext}>
+					<TheHeadersPermissionGate />
 					<RbacSettings />
 				</ApiServiceContext.Provider>
 			</QueryClientProvider>,
@@ -272,12 +281,20 @@ describe("RbacSettings", () => {
 			expect(screen.getByTestId("rbac-user-row-2")).toBeInTheDocument();
 		});
 
-		fireEvent.click(screen.getByTestId("rbac-revoke-system-admin-1"));
-		fireEvent.click(screen.getByTestId("rbac-grant-system-admin-2"));
+		await waitFor(() =>
+			expect(mockRbacService.getAuthorizationSummary).toHaveBeenCalledTimes(1),
+		);
 
+		fireEvent.click(screen.getByTestId("rbac-revoke-system-admin-1"));
 		await waitFor(() => {
 			expect(mockRbacService.revokeSystemAdmin).toHaveBeenCalledWith(1);
+			expect(mockRbacService.getAuthorizationSummary).toHaveBeenCalledTimes(2);
+		});
+
+		fireEvent.click(screen.getByTestId("rbac-grant-system-admin-2"));
+		await waitFor(() => {
 			expect(mockRbacService.grantSystemAdmin).toHaveBeenCalledWith(2);
+			expect(mockRbacService.getAuthorizationSummary).toHaveBeenCalledTimes(3);
 		});
 	});
 

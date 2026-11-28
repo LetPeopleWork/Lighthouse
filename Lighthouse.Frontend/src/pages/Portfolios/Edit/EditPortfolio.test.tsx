@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { BrowserRouter } from "react-router";
 import type { MockedFunction } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,6 +7,7 @@ import {
 	ApiServiceContext,
 	type IApiServiceContext,
 } from "../../../services/Api/ApiServiceContext";
+import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import EditPortfolio from "./EditPortfolio";
 
 // Mock the router navigation
@@ -132,7 +133,7 @@ describe("EditPortfolio", () => {
 			teamService: mockTeamService,
 		} as unknown as IApiServiceContext;
 
-		return render(
+		return renderWithQueryClient(
 			<BrowserRouter>
 				<ApiServiceContext.Provider value={mockApiServiceContext}>
 					<EditPortfolio />

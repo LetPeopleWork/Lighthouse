@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import SnackbarErrorHandler from "../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
@@ -20,6 +20,7 @@ import {
 	createMockFeatureService,
 	createMockRbacService,
 } from "./MockApiServiceProvider";
+import { renderWithQueryClient } from "./renderWithQueryClient";
 
 /**
  * Team Gravity's Refinement tab with sizing votes, for the tab's acceptance tests. The tab is rendered
@@ -196,7 +197,7 @@ export const renderTheRefinementTab = (
 		</SnackbarErrorHandler>
 	);
 
-	const { rerender } = render(tabOf(teamGravity()));
+	const { rerender } = renderWithQueryClient(tabOf(teamGravity()));
 
 	// The Team page keeps the tab mounted when the address moves to another Team; only the Team changes.
 	const moveToTeam = (team: Team) => rerender(tabOf(team));

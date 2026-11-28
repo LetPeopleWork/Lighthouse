@@ -25,6 +25,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
+import { useRefreshPermissions } from "../../../hooks/useRbac";
 import {
 	type CreateRbacGroupMappingRequest,
 	type GroupMappingRole,
@@ -90,6 +91,7 @@ const RbacSettings: React.FC = () => {
 	const { rbacService, authService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const reportUsage = useUsageDataReporter();
+	const refreshPermissions = useRefreshPermissions();
 	const [status, setStatus] = useState<RbacStatus>();
 	const [users, setUsers] = useState<RbacUser[]>([]);
 	const [groupMappings, setGroupMappings] = useState<RbacGroupMapping[]>([]);
@@ -161,7 +163,7 @@ const RbacSettings: React.FC = () => {
 	const handleBootstrap = async () => {
 		try {
 			await rbacService.bootstrapCurrentUserAsSystemAdmin();
-			await load();
+			await Promise.all([load(), refreshPermissions()]);
 		} catch {
 			setError("Failed to bootstrap System Admin.");
 		}
@@ -170,7 +172,7 @@ const RbacSettings: React.FC = () => {
 	const handleGrantSystemAdmin = async (userId: number) => {
 		try {
 			await rbacService.grantSystemAdmin(userId);
-			await load();
+			await Promise.all([load(), refreshPermissions()]);
 		} catch {
 			setError("Failed to grant System Admin role.");
 		}
@@ -179,7 +181,7 @@ const RbacSettings: React.FC = () => {
 	const handleRevokeSystemAdmin = async (userId: number) => {
 		try {
 			await rbacService.revokeSystemAdmin(userId);
-			await load();
+			await Promise.all([load(), refreshPermissions()]);
 		} catch {
 			setError("Failed to revoke System Admin role.");
 		}
@@ -201,7 +203,7 @@ const RbacSettings: React.FC = () => {
 				reportUsage({ name: UsageDataEventName.SystemWideAccessGranted });
 			}
 			setGroupValueInput("");
-			await load();
+			await Promise.all([load(), refreshPermissions()]);
 		} catch {
 			setError("Failed to create group mapping.");
 		}
@@ -210,7 +212,7 @@ const RbacSettings: React.FC = () => {
 	const handleRemoveGroupMapping = async (mappingId: number) => {
 		try {
 			await rbacService.removeGroupMapping(mappingId);
-			await load();
+			await Promise.all([load(), refreshPermissions()]);
 		} catch {
 			setError("Failed to remove group mapping.");
 		}
@@ -222,7 +224,7 @@ const RbacSettings: React.FC = () => {
 		setRemoveDialogUserId(null);
 		try {
 			await rbacService.deleteUser(userId);
-			await load();
+			await Promise.all([load(), refreshPermissions()]);
 		} catch {
 			setError("Failed to remove user.");
 		}

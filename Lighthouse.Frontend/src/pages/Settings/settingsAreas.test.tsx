@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	act,
 	fireEvent,
-	render,
 	screen,
 	waitFor,
 	within,
@@ -393,7 +392,7 @@ const renderHeaderWithAccess = (
 	const queryClient = new QueryClient({
 		defaultOptions: { queries: { retry: false } },
 	});
-	render(
+	renderWithQueryClient(
 		<QueryClientProvider client={queryClient}>
 			<ApiServiceContext.Provider
 				value={createMockApiServiceContext({
@@ -1017,7 +1016,7 @@ describe("the header's Settings menu", () => {
 
 describe("links into settings from elsewhere in the app", () => {
 	it("the full log link in the task manager opens Logs", () => {
-		render(
+		renderWithQueryClient(
 			<MemoryRouter>
 				<RecentProblemsSection problems={[]} />
 				<WhereWeAre />

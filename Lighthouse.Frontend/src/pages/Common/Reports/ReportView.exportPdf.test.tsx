@@ -142,11 +142,14 @@ describe("Export PDF on the report view", () => {
 	it(`offers an editor Export PDF as the first outlined button, before Edit report and Delete`, async () => {
 		onTheReportAlone();
 
-		expect(await theHeaderActions()).toEqual([
-			EXPORT_PDF,
-			"Edit report",
-			"Delete",
-		]);
+		// The editor's actions join the row once the user's permissions have arrived.
+		await waitFor(async () =>
+			expect(await theHeaderActions()).toEqual([
+				EXPORT_PDF,
+				"Edit report",
+				"Delete",
+			]),
+		);
 		expect(await theExportButton()).toHaveClass(OUTLINED);
 		expect(await theExportButton()).toBeEnabled();
 	});

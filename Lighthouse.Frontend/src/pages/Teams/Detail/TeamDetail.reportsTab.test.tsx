@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,6 +10,7 @@ import {
 	createMockTeamService,
 	createMockUpdateSubscriptionService,
 } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import TeamDetail from "./TeamDetail";
 
 /**
@@ -140,7 +141,7 @@ const renderTheTeamPage = (viewer: "teamAdmin" | "reader") => {
 		.mockResolvedValue(undefined);
 	updateSubscriptionService.getUpdateStatus = vi.fn().mockResolvedValue(null);
 
-	render(
+	renderWithQueryClient(
 		<BrowserRouter>
 			<ApiServiceContext.Provider
 				value={createMockApiServiceContext({

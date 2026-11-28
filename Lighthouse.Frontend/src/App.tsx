@@ -19,6 +19,7 @@ import MisconfiguredPage from "./components/App/Auth/MisconfiguredPage";
 import SessionExpiredPage from "./components/App/Auth/SessionExpiredPage";
 import Footer from "./components/App/Footer/Footer";
 import Header from "./components/App/Header/Header";
+import PageMoveRefresh from "./components/App/PageMoveRefresh/PageMoveRefresh";
 import SplashScreen from "./components/App/SplashScreen/SplashScreen";
 import { UsageDataAsk } from "./components/UsageData/UsageDataAsk";
 import { useAuthGuard } from "./hooks/useAuthGuard";
@@ -234,53 +235,58 @@ const App: React.FC = () => {
 	return (
 		<QueryClientProvider client={queryClient}>
 			<Router>
-				<ApiServiceContext.Provider value={apiServices}>
-					<TerminologyProvider>
-						<UsageDataConsentProvider>
-							<CssBaseline />
-							<Routes>
-								<Route
-									element={
-										<AppShell
-											isAuthenticated={shell === "authenticated"}
-											currentUserDisplayName={currentUser?.displayName}
-											onLogout={logout}
-										/>
-									}
-								>
-									<Route path="/" element={<OverviewDashboard />} />
+				<PageMoveRefresh>
+					<ApiServiceContext.Provider value={apiServices}>
+						<TerminologyProvider>
+							<UsageDataConsentProvider>
+								<CssBaseline />
+								<Routes>
 									<Route
-										path="/oauth/popup-complete"
-										element={<OAuthPopupComplete />}
-									/>
-									<Route path="/teams">
-										<Route path=":id/:tab?" element={<TeamDetail />} />
-										<Route path=":id/:tab/:reportId" element={<TeamDetail />} />
-										<Route path="edit/:id" element={<TeamEditRedirect />} />
-										<Route path="new" element={<EditTeam />} />
-									</Route>
-									<Route path="/portfolios">
-										<Route path=":id/:tab?" element={<PortfolioDetail />} />
+										element={
+											<AppShell
+												isAuthenticated={shell === "authenticated"}
+												currentUserDisplayName={currentUser?.displayName}
+												onLogout={logout}
+											/>
+										}
+									>
+										<Route path="/" element={<OverviewDashboard />} />
 										<Route
-											path=":id/:tab/:reportId"
-											element={<PortfolioDetail />}
+											path="/oauth/popup-complete"
+											element={<OAuthPopupComplete />}
 										/>
-										<Route
-											path="edit/:id"
-											element={<PortfolioEditRedirect />}
-										/>
-										<Route path="new" element={<EditPortfolio />} />
+										<Route path="/teams">
+											<Route path=":id/:tab?" element={<TeamDetail />} />
+											<Route
+												path=":id/:tab/:reportId"
+												element={<TeamDetail />}
+											/>
+											<Route path="edit/:id" element={<TeamEditRedirect />} />
+											<Route path="new" element={<EditTeam />} />
+										</Route>
+										<Route path="/portfolios">
+											<Route path=":id/:tab?" element={<PortfolioDetail />} />
+											<Route
+												path=":id/:tab/:reportId"
+												element={<PortfolioDetail />}
+											/>
+											<Route
+												path="edit/:id"
+												element={<PortfolioEditRedirect />}
+											/>
+											<Route path="new" element={<EditPortfolio />} />
+										</Route>
+										<Route path="/features" element={<FeaturesView />} />
+										<Route path="/reports" element={<ReportsPage />} />
+										{settingsRoutes()}
 									</Route>
-									<Route path="/features" element={<FeaturesView />} />
-									<Route path="/reports" element={<ReportsPage />} />
-									{settingsRoutes()}
-								</Route>
-								{reportPrintRoutes()}
-							</Routes>
-							<UsageDataEventDetector />
-						</UsageDataConsentProvider>
-					</TerminologyProvider>
-				</ApiServiceContext.Provider>
+									{reportPrintRoutes()}
+								</Routes>
+								<UsageDataEventDetector />
+							</UsageDataConsentProvider>
+						</TerminologyProvider>
+					</ApiServiceContext.Provider>
+				</PageMoveRefresh>
 			</Router>
 		</QueryClientProvider>
 	);

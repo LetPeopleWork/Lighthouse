@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { BrowserRouter as Router } from "react-router";
 import {
 	type ILighthouseRelease,
@@ -10,6 +10,7 @@ import {
 	createMockApiServiceContext,
 	createMockRbacService,
 } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import LighthouseVersion from "./LighthouseVersion";
 
 const mockGetCurrentVersion = vi.fn();
@@ -93,7 +94,7 @@ describe("LighthouseVersion component", () => {
 	});
 
 	it("renders version button with fetched version number", async () => {
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<Router>
 					<LighthouseVersion />
@@ -116,7 +117,7 @@ describe("LighthouseVersion component", () => {
 	it("renders update button if newer version available", async () => {
 		mockIsUpdateAvailable.mockResolvedValue(true);
 
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<Router>
 					<LighthouseVersion />
@@ -133,7 +134,7 @@ describe("LighthouseVersion component", () => {
 	it("does not render update button if no newer version available", async () => {
 		mockIsUpdateAvailable.mockResolvedValue(false);
 
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<Router>
 					<LighthouseVersion />
@@ -150,7 +151,7 @@ describe("LighthouseVersion component", () => {
 	it("renders dialog after button was clicked", async () => {
 		mockIsUpdateAvailable.mockResolvedValue(true);
 
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<Router>
 					<LighthouseVersion />
@@ -185,7 +186,7 @@ describe("LighthouseVersion component", () => {
 		mockGetNewReleases.mockResolvedValue(releases);
 		mockIsUpdateSupported.mockResolvedValue(true);
 
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<Router>
 					<LighthouseVersion />
@@ -206,7 +207,7 @@ describe("LighthouseVersion component", () => {
 	});
 
 	it("renders About dialog when info icon is clicked", async () => {
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<Router>
 					<LighthouseVersion />
@@ -229,7 +230,7 @@ describe("LighthouseVersion component", () => {
 	});
 
 	it("displays CE marking information in About dialog", async () => {
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<Router>
 					<LighthouseVersion />
@@ -250,7 +251,7 @@ describe("LighthouseVersion component", () => {
 	});
 
 	it("displays compliance information with link to Declaration of Conformity in About dialog", async () => {
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<Router>
 					<LighthouseVersion />
@@ -282,7 +283,7 @@ describe("LighthouseVersion component", () => {
 	});
 
 	it("displays copyright information in About dialog", async () => {
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<Router>
 					<LighthouseVersion />
@@ -304,7 +305,7 @@ describe("LighthouseVersion component", () => {
 	});
 
 	it("closes About dialog when Close button is clicked", async () => {
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<Router>
 					<LighthouseVersion />
@@ -336,7 +337,7 @@ describe("LighthouseVersion component", () => {
 			updateOwner: "tauri",
 		});
 
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<Router>
 					<LighthouseVersion />
@@ -366,7 +367,7 @@ describe("LighthouseVersion component", () => {
 			},
 		});
 
-		return render(
+		return renderWithQueryClient(
 			<ApiServiceContext.Provider value={context}>
 				<Router>
 					<LighthouseVersion />
@@ -407,7 +408,7 @@ describe("LighthouseVersion component", () => {
 			updateOwner: "tauri",
 		});
 
-		render(
+		renderWithQueryClient(
 			<MockApiServiceProvider>
 				<Router>
 					<LighthouseVersion />

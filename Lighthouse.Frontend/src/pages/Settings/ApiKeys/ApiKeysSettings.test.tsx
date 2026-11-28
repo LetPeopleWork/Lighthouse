@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IApiKeyInfo } from "../../../models/ApiKey/ApiKey";
@@ -8,6 +8,7 @@ import {
 	createMockApiKeyService,
 	createMockApiServiceContext,
 } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import ApiKeysSettings from "./ApiKeysSettings";
 
 const buildWrapper = (
@@ -50,7 +51,11 @@ describe("ApiKeysSettings", () => {
 			getApiKeys: vi.fn().mockResolvedValue([]),
 		});
 
-		render(<ApiKeysSettings />, { wrapper: Wrapper });
+		renderWithQueryClient(
+			<Wrapper>
+				<ApiKeysSettings />
+			</Wrapper>,
+		);
 
 		await waitFor(() => {
 			expect(screen.getByTestId("no-api-keys-message")).toBeInTheDocument();
@@ -72,7 +77,11 @@ describe("ApiKeysSettings", () => {
 			getApiKeys: vi.fn().mockResolvedValue(keys),
 		});
 
-		render(<ApiKeysSettings />, { wrapper: Wrapper });
+		renderWithQueryClient(
+			<Wrapper>
+				<ApiKeysSettings />
+			</Wrapper>,
+		);
 
 		await waitFor(() => {
 			expect(screen.getByTestId("api-keys-table")).toBeInTheDocument();
@@ -96,7 +105,11 @@ describe("ApiKeysSettings", () => {
 			getApiKeys: vi.fn().mockResolvedValue(keys),
 		});
 
-		render(<ApiKeysSettings />, { wrapper: Wrapper });
+		renderWithQueryClient(
+			<Wrapper>
+				<ApiKeysSettings />
+			</Wrapper>,
+		);
 
 		await waitFor(() => {
 			expect(screen.getByText("Never")).toBeInTheDocument();
@@ -106,7 +119,11 @@ describe("ApiKeysSettings", () => {
 	it("renders create api key button", async () => {
 		const { Wrapper } = buildWrapper();
 
-		render(<ApiKeysSettings />, { wrapper: Wrapper });
+		renderWithQueryClient(
+			<Wrapper>
+				<ApiKeysSettings />
+			</Wrapper>,
+		);
 
 		await waitFor(() => {
 			expect(screen.getByTestId("create-api-key-button")).toBeEnabled();
@@ -124,7 +141,11 @@ describe("ApiKeysSettings", () => {
 			},
 		);
 
-		render(<ApiKeysSettings />, { wrapper: Wrapper });
+		renderWithQueryClient(
+			<Wrapper>
+				<ApiKeysSettings />
+			</Wrapper>,
+		);
 
 		await waitFor(() => {
 			expect(
@@ -141,7 +162,11 @@ describe("ApiKeysSettings", () => {
 	it("opens create dialog when create button is clicked", async () => {
 		const { Wrapper } = buildWrapper();
 
-		render(<ApiKeysSettings />, { wrapper: Wrapper });
+		renderWithQueryClient(
+			<Wrapper>
+				<ApiKeysSettings />
+			</Wrapper>,
+		);
 		await waitFor(() => {
 			expect(screen.getByTestId("create-api-key-button")).toBeEnabled();
 		});
@@ -170,7 +195,11 @@ describe("ApiKeysSettings", () => {
 			deleteApiKey: mockDeleteApiKey,
 		});
 
-		render(<ApiKeysSettings />, { wrapper: Wrapper });
+		renderWithQueryClient(
+			<Wrapper>
+				<ApiKeysSettings />
+			</Wrapper>,
+		);
 
 		await waitFor(() => {
 			expect(screen.getByTestId("delete-api-key-5")).toBeInTheDocument();
@@ -198,7 +227,11 @@ describe("ApiKeysSettings", () => {
 			getApiKeys: vi.fn().mockResolvedValue(keys),
 		});
 
-		render(<ApiKeysSettings />, { wrapper: Wrapper });
+		renderWithQueryClient(
+			<Wrapper>
+				<ApiKeysSettings />
+			</Wrapper>,
+		);
 
 		await waitFor(() => {
 			expect(screen.getByTestId("api-keys-table")).toBeInTheDocument();
@@ -224,7 +257,11 @@ describe("ApiKeysSettings", () => {
 			deleteApiKey: vi.fn().mockResolvedValue(undefined),
 		});
 
-		render(<ApiKeysSettings />, { wrapper: Wrapper });
+		renderWithQueryClient(
+			<Wrapper>
+				<ApiKeysSettings />
+			</Wrapper>,
+		);
 
 		await waitFor(() => {
 			expect(screen.getByTestId("api-key-row-5")).toBeInTheDocument();
@@ -246,7 +283,11 @@ describe("CreateApiKeyDialog (via ApiKeysSettings)", () => {
 	const openDialog = async (
 		Wrapper: React.FC<{ children: React.ReactNode }>,
 	) => {
-		render(<ApiKeysSettings />, { wrapper: Wrapper });
+		renderWithQueryClient(
+			<Wrapper>
+				<ApiKeysSettings />
+			</Wrapper>,
+		);
 		await waitFor(() => {
 			expect(screen.getByTestId("create-api-key-button")).toBeEnabled();
 		});

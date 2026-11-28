@@ -1,45 +1,33 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
+import { createElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { UserAuthorizationSummary } from "../models/Authorization/RbacModels";
-import { createMockApiServiceContext } from "../tests/MockApiServiceProvider";
+import { ApiServiceContext } from "../services/Api/ApiServiceContext";
+import {
+	createMockApiServiceContext,
+	createMockRbacService,
+} from "../tests/MockApiServiceProvider";
 import { useRbacGate } from "./useRbacGate";
 
-const mockGetAuthorizationSummary = vi.fn();
+const rbacService = createMockRbacService();
+const mockGetAuthorizationSummary = vi.mocked(
+	rbacService.getAuthorizationSummary,
+);
+const services = createMockApiServiceContext({ rbacService });
 
-const mockApiServiceContext = createMockApiServiceContext({
-	rbacService: {
-		getStatus: vi.fn(),
-		getUsers: vi.fn(),
-		getAuthorizationSummary: mockGetAuthorizationSummary,
-		bootstrapCurrentUserAsSystemAdmin: vi.fn(),
-		grantSystemAdmin: vi.fn(),
-		revokeSystemAdmin: vi.fn(),
-		getTeamMembers: vi.fn().mockResolvedValue([]),
-		upsertTeamMember: vi.fn(),
-		removeTeamMember: vi.fn(),
-		getPortfolioMembers: vi.fn().mockResolvedValue([]),
-		upsertPortfolioMember: vi.fn(),
-		removePortfolioMember: vi.fn(),
-		getGroupMappings: vi.fn().mockResolvedValue([]),
-		getTeamGroupMappings: vi.fn().mockResolvedValue([]),
-		getPortfolioGroupMappings: vi.fn().mockResolvedValue([]),
-		getTeamSystemWideRules: vi.fn().mockResolvedValue([]),
-		getPortfolioSystemWideRules: vi.fn().mockResolvedValue([]),
-		getEveryoneSignedIn: vi.fn(),
-		setEveryoneSignedIn: vi.fn(),
-		createGroupMapping: vi.fn(),
-		removeGroupMapping: vi.fn(),
-		deleteUser: vi.fn(),
-	},
-});
-
-vi.mock("react", async () => {
-	const actual = await vi.importActual("react");
-	return {
-		...actual,
-		useContext: () => mockApiServiceContext,
-	};
-});
+const renderGate = <T>(hook: () => T) => {
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	const wrapper = ({ children }: { children: ReactNode }) =>
+		createElement(
+			QueryClientProvider,
+			{ client: queryClient },
+			createElement(ApiServiceContext.Provider, { value: services }, children),
+		);
+	return renderHook(hook, { wrapper });
+};
 
 const makeSummary = (
 	overrides?: Partial<UserAuthorizationSummary>,
@@ -62,7 +50,7 @@ describe("useRbacGate", () => {
 		mockGetAuthorizationSummary.mockResolvedValue(
 			makeSummary({ isSystemAdmin: true }),
 		);
-		const { result } = renderHook(() => useRbacGate({ kind: "systemAdmin" }));
+		const { result } = renderGate(() => useRbacGate({ kind: "systemAdmin" }));
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
 		expect(result.current.allowed).toBe(true);
@@ -73,7 +61,7 @@ describe("useRbacGate", () => {
 		mockGetAuthorizationSummary.mockResolvedValue(
 			makeSummary({ isSystemAdmin: false }),
 		);
-		const { result } = renderHook(() => useRbacGate({ kind: "systemAdmin" }));
+		const { result } = renderGate(() => useRbacGate({ kind: "systemAdmin" }));
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
 		expect(result.current.allowed).toBe(false);
@@ -89,7 +77,7 @@ describe("useRbacGate", () => {
 			mockGetAuthorizationSummary.mockResolvedValue(
 				makeSummary({ isSystemAdmin: false, adminTeamIds }),
 			);
-			const { result } = renderHook(() =>
+			const { result } = renderGate(() =>
 				useRbacGate({ kind: "teamAdmin", teamId: 42 }),
 			);
 			await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -107,7 +95,7 @@ describe("useRbacGate", () => {
 			mockGetAuthorizationSummary.mockResolvedValue(
 				makeSummary({ isSystemAdmin: false, adminPortfolioIds }),
 			);
-			const { result } = renderHook(() =>
+			const { result } = renderGate(() =>
 				useRbacGate({ kind: "portfolioAdmin", portfolioId: 7 }),
 			);
 			await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -118,7 +106,7 @@ describe("useRbacGate", () => {
 
 	it("returns isLoading true while rbac is loading", () => {
 		mockGetAuthorizationSummary.mockReturnValue(new Promise(() => {}));
-		const { result } = renderHook(() => useRbacGate({ kind: "systemAdmin" }));
+		const { result } = renderGate(() => useRbacGate({ kind: "systemAdmin" }));
 
 		expect(result.current.isLoading).toBe(true);
 	});
@@ -131,7 +119,7 @@ describe("useRbacGate", () => {
 		mockGetAuthorizationSummary.mockResolvedValue(
 			makeSummary({ isRbacEnabled: false, isSystemAdmin: false }),
 		);
-		const { result } = renderHook(() => useRbacGate({ kind: "systemAdmin" }));
+		const { result } = renderGate(() => useRbacGate({ kind: "systemAdmin" }));
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
 		expect(result.current.allowed).toBe(false);

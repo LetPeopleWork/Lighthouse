@@ -1,6 +1,8 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useContext } from "react";
 import type { UserAuthorizationSummary } from "../models/Authorization/RbacModels";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
+import { pageFreshQueryKey, usePageFreshQuery } from "./usePageFreshQuery";
 
 const PERMISSIVE_SUMMARY: UserAuthorizationSummary = {
 	isRbacEnabled: false,
@@ -30,45 +32,33 @@ export interface RbacState {
 	summary: UserAuthorizationSummary;
 }
 
+const PERMISSIONS = ["authorization-summary"] as const;
+
+/** Asks the shared permissions again at once, for every component; call it after the user's own change of rights. */
+export function useRefreshPermissions(): () => Promise<void> {
+	const queryClient = useQueryClient();
+	return useCallback(
+		() =>
+			queryClient.invalidateQueries({
+				queryKey: pageFreshQueryKey(PERMISSIONS),
+				refetchType: "all",
+			}),
+		[queryClient],
+	);
+}
+
 export function useRbac(): RbacState {
 	const { rbacService } = useContext(ApiServiceContext);
-	const [isLoading, setIsLoading] = useState(true);
-	const [loadFailed, setLoadFailed] = useState(false);
-	const [summary, setSummary] =
-		useState<UserAuthorizationSummary>(PERMISSIVE_SUMMARY);
-
-	const retry = useCallback(() => {
-		setIsLoading(true);
-		setLoadFailed(false);
-	}, []);
-
-	useEffect(() => {
-		if (!isLoading) return;
-		let cancelled = false;
-
-		rbacService
-			.getAuthorizationSummary()
-			.then((data) => {
-				if (!cancelled) {
-					setSummary(data);
-				}
-			})
-			.catch(() => {
-				if (!cancelled) {
-					setSummary(PERMISSIVE_SUMMARY);
-					setLoadFailed(true);
-				}
-			})
-			.finally(() => {
-				if (!cancelled) {
-					setIsLoading(false);
-				}
-			});
-
-		return () => {
-			cancelled = true;
-		};
-	}, [rbacService, isLoading]);
+	const permissions = usePageFreshQuery(PERMISSIONS, () =>
+		rbacService.getAuthorizationSummary(),
+	);
+	const isLoading = permissions.isLoading;
+	const loadFailed = permissions.isFailed;
+	const retry = permissions.askAgain;
+	const summary =
+		loadFailed || permissions.answer === undefined
+			? PERMISSIVE_SUMMARY
+			: permissions.answer;
 
 	const isTeamAdmin = useCallback(
 		(teamId: number): boolean => {

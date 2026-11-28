@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import SnackbarErrorHandler from "../../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type { IFeature } from "../../../../models/Feature";
@@ -15,6 +15,7 @@ import {
 	createMockApiServiceContext,
 	createMockFeatureService,
 } from "../../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../../tests/renderWithQueryClient";
 import {
 	givenANarrowWindow,
 	givenTextIsWiderThanItsColumn,
@@ -132,7 +133,7 @@ const renderTheRefinementTab = (answer: IRefinementView | Error) => {
 		.fn()
 		.mockResolvedValue([payments]);
 
-	render(
+	renderWithQueryClient(
 		<SnackbarErrorHandler>
 			<ApiServiceContext.Provider
 				value={createMockApiServiceContext({
@@ -393,7 +394,7 @@ describe("The Refinement tab follows the Team it is showing", () => {
 			</SnackbarErrorHandler>
 		);
 
-		const { rerender } = render(tabFor(teamGravity()));
+		const { rerender } = renderWithQueryClient(tabFor(teamGravity()));
 		rerender(tabFor(teamOcean()));
 
 		return { refinementService, settleGravity };
@@ -454,7 +455,7 @@ describe("The Refinement tab follows the Team it is showing", () => {
 				</ApiServiceContext.Provider>
 			</SnackbarErrorHandler>
 		);
-		const { rerender } = render(tabFor(teamGravity()));
+		const { rerender } = renderWithQueryClient(tabFor(teamGravity()));
 		await within(await theRowOf("GR-051")).findByRole("link", {
 			name: "GR-010: Payments",
 		});
@@ -517,7 +518,7 @@ describe("the Refinement table fits its columns and says when some are out of si
 		featureService.getFeaturesByReferences = vi
 			.fn()
 			.mockResolvedValue([{ ...payments, name: LONG_PARENT }]);
-		const view = render(
+		const view = renderWithQueryClient(
 			<SnackbarErrorHandler>
 				<ApiServiceContext.Provider
 					value={createMockApiServiceContext({

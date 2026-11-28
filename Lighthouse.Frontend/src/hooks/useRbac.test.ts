@@ -1,46 +1,41 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, waitFor } from "@testing-library/react";
+import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { UserAuthorizationSummary } from "../models/Authorization/RbacModels";
-import { createMockApiServiceContext } from "../tests/MockApiServiceProvider";
-import { useRbac } from "./useRbac";
+import { ApiServiceContext } from "../services/Api/ApiServiceContext";
+import {
+	createMockApiServiceContext,
+	createMockRbacService,
+} from "../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../tests/renderWithQueryClient";
+import { type RbacState, useRbac } from "./useRbac";
 
-// Mock useContext to return our controlled context
-const mockGetAuthorizationSummary = vi.fn();
+const rbacService = createMockRbacService();
+const mockGetAuthorizationSummary = vi.mocked(
+	rbacService.getAuthorizationSummary,
+);
+const services = createMockApiServiceContext({ rbacService });
 
-const mockApiServiceContext = createMockApiServiceContext({
-	rbacService: {
-		getStatus: vi.fn(),
-		getUsers: vi.fn(),
-		getAuthorizationSummary: mockGetAuthorizationSummary,
-		bootstrapCurrentUserAsSystemAdmin: vi.fn(),
-		grantSystemAdmin: vi.fn(),
-		revokeSystemAdmin: vi.fn(),
-		getTeamMembers: vi.fn().mockResolvedValue([]),
-		upsertTeamMember: vi.fn(),
-		removeTeamMember: vi.fn(),
-		getPortfolioMembers: vi.fn().mockResolvedValue([]),
-		upsertPortfolioMember: vi.fn(),
-		removePortfolioMember: vi.fn(),
-		getGroupMappings: vi.fn().mockResolvedValue([]),
-		getTeamGroupMappings: vi.fn().mockResolvedValue([]),
-		getPortfolioGroupMappings: vi.fn().mockResolvedValue([]),
-		getTeamSystemWideRules: vi.fn().mockResolvedValue([]),
-		getPortfolioSystemWideRules: vi.fn().mockResolvedValue([]),
-		getEveryoneSignedIn: vi.fn(),
-		setEveryoneSignedIn: vi.fn(),
-		createGroupMapping: vi.fn(),
-		removeGroupMapping: vi.fn(),
-		deleteUser: vi.fn(),
-	},
-});
-
-vi.mock("react", async () => {
-	const actual = await vi.importActual("react");
-	return {
-		...actual,
-		useContext: () => mockApiServiceContext,
+const renderUseRbac = (): { readonly current: RbacState } => {
+	const seen: { current?: RbacState } = {};
+	const Reader = () => {
+		seen.current = useRbac();
+		return null;
 	};
-});
+	renderWithQueryClient(
+		createElement(
+			ApiServiceContext.Provider,
+			{ value: services },
+			createElement(Reader),
+		),
+	);
+	return {
+		get current() {
+			if (!seen.current) throw new Error("useRbac was never rendered");
+			return seen.current;
+		},
+	};
+};
 
 describe("useRbac", () => {
 	beforeEach(() => {
@@ -59,7 +54,7 @@ describe("useRbac", () => {
 
 	it("starts with permissive defaults while loading", () => {
 		mockGetAuthorizationSummary.mockReturnValue(new Promise(() => {})); // never resolves
-		const { result } = renderHook(() => useRbac());
+		const result = renderUseRbac();
 
 		expect(result.current.isLoading).toBe(true);
 		expect(result.current.isSystemAdmin).toBe(true);
@@ -70,7 +65,7 @@ describe("useRbac", () => {
 		mockGetAuthorizationSummary.mockResolvedValue(
 			makeSummary({ isSystemAdmin: true }),
 		);
-		const { result } = renderHook(() => useRbac());
+		const result = renderUseRbac();
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
 		expect(result.current.isSystemAdmin).toBe(true);
@@ -80,7 +75,7 @@ describe("useRbac", () => {
 		mockGetAuthorizationSummary.mockResolvedValue(
 			makeSummary({ isSystemAdmin: true }),
 		);
-		const { result } = renderHook(() => useRbac());
+		const result = renderUseRbac();
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
 		expect(result.current.isTeamAdmin(42)).toBe(true);
@@ -90,7 +85,7 @@ describe("useRbac", () => {
 		mockGetAuthorizationSummary.mockResolvedValue(
 			makeSummary({ isSystemAdmin: false, adminTeamIds: [1, 5, 10] }),
 		);
-		const { result } = renderHook(() => useRbac());
+		const result = renderUseRbac();
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
 		expect(result.current.isTeamAdmin(5)).toBe(true);
@@ -101,7 +96,7 @@ describe("useRbac", () => {
 		mockGetAuthorizationSummary.mockResolvedValue(
 			makeSummary({ isRbacEnabled: false }),
 		);
-		const { result } = renderHook(() => useRbac());
+		const result = renderUseRbac();
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
 		expect(result.current.isTeamAdmin(99)).toBe(true);
@@ -111,7 +106,7 @@ describe("useRbac", () => {
 		mockGetAuthorizationSummary.mockResolvedValue(
 			makeSummary({ isSystemAdmin: true }),
 		);
-		const { result } = renderHook(() => useRbac());
+		const result = renderUseRbac();
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
 		expect(result.current.isPortfolioAdmin(7)).toBe(true);
@@ -121,7 +116,7 @@ describe("useRbac", () => {
 		mockGetAuthorizationSummary.mockResolvedValue(
 			makeSummary({ isSystemAdmin: false, adminPortfolioIds: [3, 8] }),
 		);
-		const { result } = renderHook(() => useRbac());
+		const result = renderUseRbac();
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
 		expect(result.current.isPortfolioAdmin(8)).toBe(true);
@@ -132,7 +127,7 @@ describe("useRbac", () => {
 		mockGetAuthorizationSummary.mockResolvedValue(
 			makeSummary({ isRbacEnabled: false }),
 		);
-		const { result } = renderHook(() => useRbac());
+		const result = renderUseRbac();
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
 		expect(result.current.isPortfolioAdmin(99)).toBe(true);
@@ -140,7 +135,7 @@ describe("useRbac", () => {
 
 	it("defaults to permissive on fetch failure", async () => {
 		mockGetAuthorizationSummary.mockRejectedValue(new Error("network error"));
-		const { result } = renderHook(() => useRbac());
+		const result = renderUseRbac();
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
 		expect(result.current.isSystemAdmin).toBe(true);
@@ -152,7 +147,7 @@ describe("useRbac", () => {
 		mockGetAuthorizationSummary.mockResolvedValue(
 			makeSummary({ canCreateTeam: true, canCreatePortfolio: false }),
 		);
-		const { result } = renderHook(() => useRbac());
+		const result = renderUseRbac();
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
 		expect(result.current.canCreateTeam).toBe(true);
@@ -161,7 +156,7 @@ describe("useRbac", () => {
 
 	it("has not failed to load while loading or after a good answer", async () => {
 		mockGetAuthorizationSummary.mockResolvedValue(makeSummary());
-		const { result } = renderHook(() => useRbac());
+		const result = renderUseRbac();
 
 		expect(result.current.loadFailed).toBe(false);
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -170,7 +165,7 @@ describe("useRbac", () => {
 
 	it("says the load failed while still answering permissively", async () => {
 		mockGetAuthorizationSummary.mockRejectedValue(new Error("network error"));
-		const { result } = renderHook(() => useRbac());
+		const result = renderUseRbac();
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
 		expect(result.current.loadFailed).toBe(true);
@@ -182,7 +177,7 @@ describe("useRbac", () => {
 		mockGetAuthorizationSummary
 			.mockRejectedValueOnce(new Error("network error"))
 			.mockResolvedValue(makeSummary({ adminTeamIds: [3] }));
-		const { result } = renderHook(() => useRbac());
+		const result = renderUseRbac();
 		await waitFor(() => expect(result.current.loadFailed).toBe(true));
 
 		act(() => result.current.retry());

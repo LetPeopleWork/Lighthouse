@@ -7,6 +7,7 @@ import CreatePortfolioWizard from "../../../components/Common/CreateWizards/Crea
 import ModifyProjectSettings from "../../../components/Common/ProjectSettings/ModifyProjectSettings";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
+import { useRefreshPermissions } from "../../../hooks/useRbac";
 import { useRbacGate } from "../../../hooks/useRbacGate";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -21,6 +22,7 @@ const EditPortfolio: React.FC = () => {
 	const isNewPortfolio = id === undefined;
 	const gate = useRbacGate({ kind: "systemAdmin" });
 	const reportUsage = useUsageDataReporter();
+	const refreshPermissions = useRefreshPermissions();
 
 	const cloneFromId = Number.parseInt(
 		new URLSearchParams(globalThis.location.search).get("cloneFrom") ?? "",
@@ -77,6 +79,7 @@ const EditPortfolio: React.FC = () => {
 		if (isNewPortfolio) {
 			savedSettings = await portfolioService.createPortfolio(updatedSettings);
 			reportUsage({ name: UsageDataEventName.PortfolioCreated });
+			await refreshPermissions();
 			await portfolioService.refreshFeaturesForPortfolio(savedSettings.id);
 			reportFailedNavigation(
 				navigate(`/portfolios/${savedSettings.id}/settings`),
@@ -98,6 +101,7 @@ const EditPortfolio: React.FC = () => {
 		const savedSettings =
 			await portfolioService.createPortfolio(updatedSettings);
 		reportUsage({ name: UsageDataEventName.PortfolioCreated });
+		await refreshPermissions();
 		await portfolioService.refreshFeaturesForPortfolio(savedSettings.id);
 		reportFailedNavigation(navigate(`/portfolios/${savedSettings.id}/metrics`));
 	};
