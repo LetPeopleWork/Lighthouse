@@ -1,6 +1,10 @@
 using Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application.Structure;
+using Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Persistence;
+using Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Startup;
 using Lighthouse.Backend.Modules.OrganisationSetup.Contracts;
+using Lighthouse.Backend.Platform.Seeding;
 
 namespace Lighthouse.Backend.Modules.OrganisationSetup
 {
@@ -23,6 +27,16 @@ namespace Lighthouse.Backend.Modules.OrganisationSetup
             serviceCollection.AddScoped<IConnectionSaveService, Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections.ConnectionSaveService>();
 
             return serviceCollection;
+        }
+
+        public static IServiceCollection AddOrganisationStructure(this IServiceCollection services)
+        {
+            services.AddScoped<IOrganisationStructureStore, OrganisationStructureStore>();
+            services.AddScoped<IConnectionMappingStore, ConnectionMappingStore>();
+            services.AddScoped<IOrganisationStructureQuery, OrganisationStructureQuery>();
+            services.AddScoped<ISeeder, OrganisationStructureMigrator>();
+
+            return services;
         }
     }
 }
