@@ -2467,7 +2467,11 @@
 },
 "supports": [
 "Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts",
-"Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Releases/LighthouseReleaseServiceNewestVersionTest.cs"
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Releases/LighthouseReleaseServiceNewestVersionTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/NewestVersionWireContractTest.cs",
+"Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.test.tsx",
+"Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusPopover.test.tsx",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessHttpAdaptersLayoutArchUnitTest.cs"
 ],
 "targets": [
 {

@@ -68,11 +68,9 @@ namespace Lighthouse.Backend.Tests.Platform.Releases
                 releaseVersions.Select(version => new LighthouseRelease { Name = $"Release {version}", Version = version }).ToList());
         }
 
-        // Called through dynamic so that a missing member fails this test at run time instead of stopping the whole test project from compiling.
         private static async Task<string?> NewestVersionOf(LighthouseReleaseService subject)
         {
-            string? newest = await ((dynamic)subject).GetNewestReleaseVersion();
-            return newest;
+            return await subject.GetNewestReleaseVersion();
         }
 
         private LighthouseReleaseService CreateSubject()
