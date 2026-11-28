@@ -2176,3 +2176,14 @@ example tests on the pure planner.
   maintainer.
 - Units whose connection id points at no connection: the migrator plans them on an empty mapping and marks them; to
   confirm on a real upgrade fixture in slice 02. Owner: the architect, at slice 02's oracle review.
+
+**Revision after the design review (2026-11-28).**
+
+- A connection without a mapping row (added after the upgrade, by the previous release or by an import) gets one
+  with today's create defaults the first time it is needed (first `Resolve`, first unit create, or the start that
+  re-derives a unit on it), never derived from units' types. ADR-274 rule 13, ADR-275 decision 4 and the Quint model
+  say the same. `DemoDataFactory` writes `WorkItemTypes` at runtime and sets the subset through the same path.
+- ADR-274 rule 10 no longer subtracts a default the other level holds (P3).
+- **Maintainer decision, 2026-11-28: the 400 on an unmapped type starts with slice 04 (M1 kept, option a).** Between
+  slice 04 and slices 08 and 09 no one can add a type to a mapping, so a write naming a type the mapping does not hold
+  is refused until feature D. The maintainer accepted this because nothing is released before the whole Epic is done.

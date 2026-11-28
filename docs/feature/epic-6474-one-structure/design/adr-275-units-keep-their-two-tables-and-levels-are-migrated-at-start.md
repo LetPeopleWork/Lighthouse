@@ -41,7 +41,9 @@ lowest-number tie-break, first-appearance order, a union per level in which a ty
    old column as the recovery record (departure from ADR-274 rule 11, accepted by the maintainer).
 4. **Schema by EF migration, data by a startup migrator.** `Create-Migration.ps1` generates the additive schema for
    both providers. The data step is `OrganisationStructureMigrator`, an `ISeeder` registered after
-   `TerminologySeeder`. It runs only when no structure row exists, reads every Team, Portfolio and the eight
+   `TerminologySeeder`. Its first-upgrade step runs only when no structure row exists; later starts only re-derive the subsets the
+   previous release edited (ADR-274 rule 13), and a connection without a mapping row gets today's create defaults when
+   it is first needed, never a mapping derived from its units. The entry is `ISeeder.Seed`. The first-upgrade step reads every Team, Portfolio and the eight
    Terminology rows, asks a **pure planner** (`OrganisationStructureMigrationPlan.From(...)`, return-only) for the
    levels, subsets, flags and notices, applies the plan in one transaction, and then **checks its own result**
    (every subset within its connection's list for its level; unit counts unchanged; no unit gained or lost a type,

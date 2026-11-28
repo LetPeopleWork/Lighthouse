@@ -3,7 +3,7 @@
 **Status**: Proposed (Epic #6474 DESIGN, 2026-11-02; maintainer decisions MD3, MD4, MD6 applied). **Revised
 2026-11-06** with the maintainer's vision: the types moved from the level to the connection. This replaces the
 earlier "item types belong to the level". **Revised 2026-11-27**: a type may sit on several levels of one connection,
-with a warning (rules 2 and 10, first consequence). **Revised 2026-11-28** (feature A DESIGN refresh): rule 8 and rule 14 follow the removal of level 2 that replaces the switch, and rule 13 says how a start tells a previous release's edit apart. Promoted to `docs/product/architecture/` with slice 04.
+with a warning (rules 2 and 10, first consequence). **Revised 2026-11-28** (feature A DESIGN refresh): a connection without a mapping row starts from the create defaults when first needed (rule 13); rule 8 and rule 14 follow the removal of level 2 that replaces the switch, and rule 13 says how a start tells a previous release's edit apart. Promoted to `docs/product/architecture/` with slice 04.
 **Context map**: Organisation set-up (owner), Work Items (reacts), Tracker integration (receives each unit's types
 with the fetch, unchanged). Related: ADR-241, ADR-270 Decisions 2 and 4, ADR-271 Decision 4, ADR-273, 6455 DISCUSS
 D10, D12 and D22–D34, 6474 M1–M4, M6, M11, VR1–VR19.
@@ -72,8 +72,7 @@ a Portfolio counts Epic as its Feature type.
     - Spelling of a case-collapsed type: the one most units on that level and connection use; on a tie, the spelling
       of the unit with the lowest number. Order on the level: first appearance by unit number.
     - Each unit's subset is its old list in the mapping's spelling (MD4), minus any type its level does not list there.
-    - A connection with no units on a level gets today's create defaults for it, less any default the other level
-      already holds on that connection, or nothing on a connector that does not use types.
+    - A connection with no units on a level gets today's create defaults for it, or nothing on a connector that does not use types.
     - No unit gets a type ticked that it did not read.
     - Nothing else is restructured (D10): Change as a Feature type stays.
     - The migration records each type it put on both levels of a connection, so that the upgrade notice can name it
@@ -83,8 +82,10 @@ a Portfolio counts Epic as its Feature type.
 12. **The mapping is the home for what else depends on connection and level, later.** Parent sources, dependency
     fields and the shared defaults of #6349 belong there. #6474 does not move them: the connection's existing defaults
     stay as they are, and #6455 keys them by level when a third level needs it.
-13. **After a rollback, the mapping wins and nothing is lost silently.** At each start, a connection without a mapping
-    (created by the previous release, or by an import) gets one by rule 10, from its units' types. Then a subset whose
+13. **After a rollback, the mapping wins and nothing is lost silently.** A connection without a mapping row (added after the upgrade, by the previous
+    release or by an import) gets one with today's create defaults (rule 8) the first time it is needed, in the same
+    transaction: the first `Resolve` or the first unit created on it, or the start that re-derives a unit on it. It is
+    never derived from units' types after the first upgrade. Then a subset whose
     old `WorkItemTypes` column was changed by the previous release is derived again by rules 4 and 5, against the
     unit's current connection. A change is detected by comparing `WorkItemTypes` with `WorkItemTypesAsWritten`, the
     list this release last wrote there; comparing it with the subset would re-tick a removed and re-added type for a

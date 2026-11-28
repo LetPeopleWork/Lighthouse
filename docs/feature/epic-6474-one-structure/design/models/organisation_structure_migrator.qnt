@@ -1,7 +1,8 @@
 // The startup migrator that gives a connection its item-type mapping per level and every unit its subset, and
 // re-derives a subset after a rollback to the previous release. One connection, one Team (level 1), one
 // Portfolio (level 2), two server instances. Spellings are integers; Fold maps a spelling to its case-folded
-// identity (1 "Bug" and 2 "bug" are one type). Majority spelling and order are left to the planner's property
+// identity (1 "Bug" and 2 "bug" are one type). A second connection, added after the upgrade, has one
+// Team saved on it later. Majority spelling and order are left to the planner's property
 // tests; the model keeps folded identities only.
 module organisation_structure_migrator {
   pure val Units: Set[str] = Set("team", "portfolio")
@@ -31,10 +32,16 @@ module organisation_structure_migrator {
   var upgradeSubset: str -> Set[int]
   var reAdded: Set[(int, int)]
   var editedByPrevious: Set[str]
+  // the connection added after the upgrade
+  var lateRow: bool                   // its ConnectionMappings row exists
+  var lateMapping: Set[int]           // its level-1 list
+  var lateSubset: Set[int]            // the subset of the Team saved on it
+  var lateOutcome: str                // none | saved | refused
+  var lateRequested: Set[int]
 
   action unchangedGhosts = all {
     planned' = planned, upgradeOld' = upgradeOld, upgradeSubset' = upgradeSubset,
-    reAdded' = reAdded, editedByPrevious' = editedByPrevious,
+    reAdded' = reAdded, editedByPrevious' = editedByPrevious, lateRow' = lateRow, lateMapping' = lateMapping, lateSubset' = lateSubset, lateOutcome' = lateOutcome, lateRequested' = lateRequested,
   }
 
   action init = {
@@ -54,6 +61,7 @@ module organisation_structure_migrator {
       upgradeSubset' = Map("team" -> Set(), "portfolio" -> Set()),
       reAdded' = Set(),
       editedByPrevious' = Set(),
+      lateRow' = false, lateMapping' = Set(), lateSubset' = Set(), lateOutcome' = "none", lateRequested' = Set(),
     }
   }
 
@@ -82,7 +90,7 @@ module organisation_structure_migrator {
         asWritten' = asWritten, planned' = planned, upgradeOld' = upgradeOld, upgradeSubset' = upgradeSubset,
       },
       phase' = phase.set(i, "done"),
-      sawStructure' = sawStructure, oldTypes' = oldTypes, reAdded' = reAdded, editedByPrevious' = editedByPrevious,
+      sawStructure' = sawStructure, oldTypes' = oldTypes, reAdded' = reAdded, editedByPrevious' = editedByPrevious, lateRow' = lateRow, lateMapping' = lateMapping, lateSubset' = lateSubset, lateOutcome' = lateOutcome, lateRequested' = lateRequested,
     }
   }
 
@@ -118,7 +126,7 @@ module organisation_structure_migrator {
     editedByPrevious' = editedByPrevious.union(Set(u)),
     asWritten' = asWritten, structureRows' = structureRows, mapping' = mapping, unitSubset' = unitSubset,
     needsTypes' = needsTypes, planned' = planned, upgradeOld' = upgradeOld, upgradeSubset' = upgradeSubset,
-    reAdded' = reAdded,
+    reAdded' = reAdded, lateRow' = lateRow, lateMapping' = lateMapping, lateSubset' = lateSubset, lateOutcome' = lateOutcome, lateRequested' = lateRequested,
   }
 
   // A System Admin removes a mapped type (units that tick it are narrowed in the same transaction; the save
@@ -135,6 +143,24 @@ module organisation_structure_migrator {
       reAdded' = reAdded.union(Set((lvl, t))),
       mapping' = mapping, structureRows' = structureRows, phase' = phase, sawStructure' = sawStructure,
       planned' = planned, upgradeOld' = upgradeOld, upgradeSubset' = upgradeSubset,
+      editedByPrevious' = editedByPrevious, lateRow' = lateRow, lateMapping' = lateMapping, lateSubset' = lateSubset, lateOutcome' = lateOutcome, lateRequested' = lateRequested,
+    }
+  }
+
+  // ConnectionMapping.ForConnection: a connection with no mapping row gets one with today's create defaults the first
+  // time it is needed (first Resolve or first unit create on it), in the same transaction, never from the unit's types.
+  action saveTeamOnNewConnection(t: Set[int]): bool = {
+    val m = if (not(lateRow)) Defaults.get(1) else lateMapping
+    val ok = FoldAll(t).subseteq(m)
+    all {
+      structureRows > 0,
+      lateRow' = true, lateMapping' = m,
+      lateSubset' = if (ok) FoldAll(t) else lateSubset,
+      lateOutcome' = if (ok) "saved" else "refused",
+      lateRequested' = t,
+      oldTypes' = oldTypes, asWritten' = asWritten, structureRows' = structureRows, mapping' = mapping,
+      unitSubset' = unitSubset, needsTypes' = needsTypes, phase' = phase, sawStructure' = sawStructure,
+      planned' = planned, upgradeOld' = upgradeOld, upgradeSubset' = upgradeSubset, reAdded' = reAdded,
       editedByPrevious' = editedByPrevious,
     }
   }
@@ -145,7 +171,7 @@ module organisation_structure_migrator {
     nondet t = Spellings.powerset().oneOf()
     nondet lvl = Set(1, 2).oneOf()
     nondet t1 = Spellings.oneOf()
-    any { begin(i), commitFirstUpgrade(i), rederive(i), crash(i), previousReleaseEdits(u, t), removeThenReAdd(lvl, t1) }
+    any { begin(i), commitFirstUpgrade(i), rederive(i), crash(i), previousReleaseEdits(u, t), removeThenReAdd(lvl, t1), saveTeamOnNewConnection(t) }
   }
 
   // Two racing instances never both migrate.
@@ -160,4 +186,11 @@ module organisation_structure_migrator {
   val UpgradeKeepsEveryType = structureRows == 0 or Units.forall(u => upgradeSubset.get(u) == upgradeOld.get(u))
   // A type removed from a level and re-added there is ticked again for no unit on that level the previous release did not edit.
   val ReAddTicksNoUnit = Units.forall(u => editedByPrevious.contains(u) or reAdded.forall(e => e._1 != LevelOf.get(u) or not(unitSubset.get(u).contains(e._2))))
+
+  // A connection's mapping row, once created, holds today's create defaults (no type is added in feature A).
+  val LateMappingIsDefaults = not(lateRow) or lateMapping == Defaults.get(1)
+  // A Team on the new connection reads only what that connection maps.
+  val LateSubsetWithinMapping = lateSubset.subseteq(lateMapping)
+  // Saving a Team with today's defaults on a connection without a mapping row is accepted, as it is today.
+  val LateDefaultsAccepted = lateOutcome != "refused" or not(FoldAll(lateRequested).subseteq(Defaults.get(1)))
 }

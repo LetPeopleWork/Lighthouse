@@ -3,7 +3,7 @@
 **Status**: Proposed (Epic #6474 DESIGN, application part, 2026-11-02; maintainer decisions MA3, MA6, MA8 applied).
 Promoted to `docs/product/architecture/` with slice 12.
 **Context map**: Work Items (owner of the refresh), Forecasting (forecast after a Feature-level refresh), Organisation
-set-up (levels, units). Related: ADR-027, ADR-273, ADR-274, ADR-275, maintainer decisions M13, MD5, MD7.
+set-up (levels, units). Related: ADR-027, ADR-273, ADR-274, ADR-275, maintainer decision MD7.
 
 **Note 2026-11-28 (feature A DESIGN refresh; this ADR belongs to slice 12, feature B):** read "its level is switched
 off" as gone: level 2 is removed only while empty (2026-11-27), so `LevelSwitchedOff` is no skip reason. `UnitUpdater`,
@@ -18,13 +18,13 @@ loop, refresh settings (`GetTeamDataRefreshSettings`, the Feature refresh settin
 `UpdateType.Features`, `UpdateType.Forecasts`) and free-tier check (`TeamUpdater` skips when more than 3 Teams exist
 without Premium). The Portfolio pipeline calls the forecast directly. Every refresh change is made twice.
 
-This Epic adds two reasons not to refresh a unit: its level is switched off (M13) and the unit needs item types
+This Epic adds one reason not to refresh a unit: the unit needs item types
 (MD7). Without one place to decide, each would be checked in two updaters, the manual "Update" endpoints and the
 forecast triggers.
 
 ## Decision
 
-1. **One `UnitUpdater` hosted service** replaces the two schedule loops. It walks the units of every switched-on
+1. **One `UnitUpdater` hosted service** replaces the two schedule loops. It walks the units of every
    level and runs the **steps of the unit's level**: the leaf's (fetch Work Items, write-back staging, refresh log,
    `TeamDataRefreshed`) or the Feature level's (fetch Features, roll-up and default sizing, deliveries, refresh log,
    `PortfolioFeaturesRefreshed`, then the forecast). Steps are strategy objects chosen by `Level` role, not by
@@ -33,10 +33,9 @@ forecast triggers.
    refresh settings, the Feature level `UpdateType.Features` and the Feature refresh settings; the forecast stays on
    `UpdateType.Forecasts`. Coalescing (park and run once more) is the queue's, unchanged.
 3. **One pure rule decides whether a unit refreshes**: `UnitRefreshEligibility.For(unit, level, licence, counts)`
-   returns `Refresh` or `Skip(reason)` with reasons `LevelSwitchedOff`, `NeedsItemTypes`, `FreeTierExceeded`. The
+   returns `Refresh` or `Skip(reason)` with reasons `NeedsItemTypes`, `FreeTierExceeded`. The
    free-tier limits are a table per level (leaf 3, Feature level 1, each `count > limit`), today's two rules unchanged. The
-   schedule loop, the manual update endpoints (which answer 409 with the reason), the forecast triggers and the
-   catch-up after `LevelSwitchedOn` all ask it. A skipped unit keeps its data and its `UpdateTime`.
+   schedule loop, the manual update endpoints (which answer 409 with the reason), the forecast triggers and the catch-up all ask it. A skipped unit keeps its data and its `UpdateTime`.
 4. **`ITeamUpdater` and `IPortfolioUpdater` stay as thin facades** over `IUnitRefresh.TriggerUpdate(UnitId)` for
    their many callers in this Epic; a ratchet counts their callers so later work removes them.
 5. **The forecast after a Feature-level refresh moves to a handler of `PortfolioFeaturesRefreshed`** only if slice
@@ -51,10 +50,9 @@ forecast triggers.
 ## Consequences
 
 - #6455 adds a level by adding its steps, not a third updater.
-- The free-tier skip, the switched-off level and the paused unit are tested once, as a pure function, plus one
+- The free-tier skip and the paused unit are tested once, as a pure function, plus one
   wiring test per caller.
-- Units on a switched-off level still count towards the free tier (MD5) because the rule counts units, not refreshed
-  units.
+
 - One hosted service instead of two changes start-up timing slightly; the demo-data E2E, the only check that sees
   some refresh races, runs on 12a and 12b.
 
@@ -66,4 +64,4 @@ forecast triggers.
   pipeline.
 - **One `UnitDataRefreshed` event now.** Rejected for this Epic (domain part's recommendation): six handlers would
   move for no behaviour gain; #6455 takes it when a level-3 refresh needs it.
-- **Checking the switch and the flag inside each step.** Rejected: four callers would each have to remember them.
+- **Checking the flag inside each step.** Rejected: four callers would each have to remember them.

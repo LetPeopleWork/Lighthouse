@@ -29,7 +29,7 @@ OrganisationStructure (aggregate root, Modules/OrganisationSetup/Domain/Structur
 #### D4
 
 ```text
-ConnectionMapping (aggregate root per connection, Modules/OrganisationSetup/Domain/Mapping) lists per LevelId the item types of that connection, once per level ignoring case, in its own spelling. A type may sit on both levels of one connection (2026-11-27; MD6/VR3 dropped, no level wins); the overlap is recorded for the upgrade notice of feature C and blocks nothing. ConnectionMapping.Resolve(levelId, requested) is the single decider of a unit's subset: returns MappedSubset (mapping spelling, order of the mapping) or TypeNotMapped(type, level, connection).
+ConnectionMapping (aggregate root per connection, Modules/OrganisationSetup/Domain/Mapping) lists per LevelId the item types of that connection, once per level ignoring case, in its own spelling. A type may sit on both levels of one connection (2026-11-27; MD6/VR3 dropped, no level wins); the overlap is recorded for the upgrade notice of feature C and blocks nothing. A connection with no mapping row (added after the upgrade, by the previous release or by an import) gets one with today's create defaults (level 1 User Story, Bug; level 2 Epic; nothing on a connector without types) the first time it is needed: IConnectionMappingStore.ForConnection creates it inside the transaction of the first Resolve, the first unit create on that connection, or the start that re-derives a unit on it. It is never derived from units' types after the first upgrade (VR8, ADR-274 rules 8 and 13). ConnectionMapping.Resolve(levelId, requested) is the single decider of a unit's subset: returns MappedSubset (mapping spelling, order of the mapping) or TypeNotMapped(type, level, connection).
 ```
 
 #### D5
@@ -41,7 +41,7 @@ Persistence (ADR-275, revised): Team and Portfolio keep their tables, ids and se
 #### D6
 
 ```text
-Startup migrator (ADR-275 decision 4, kept): OrganisationStructureMigrator, an ISeeder registered after TerminologySeeder in Program.cs, reads Teams, Portfolios and the eight Terminology rows, asks the pure OrganisationStructureMigrationPlan.From (return-only) for levels, mappings and subsets, applies it in one transaction, then checks its own result (each unit's subset within its connection's level list, no unit gained or lost a type ignoring case, unit counts unchanged); a failed check rolls back and stops the start with a structured fatal message. Case is folded in C# with StringComparer.OrdinalIgnoreCase, never in SQL. A second instance loses on the fixed structure key and re-reads. Replaced: the Feature-level-wins rule, the self-check one-level-per-type and the upgrade lost-type record (2026-11-27).
+Startup migrator (ADR-275 decision 4, kept): OrganisationStructureMigrator implements ISeeder; its entry is ISeeder.Seed (Task Seed()), registered after TerminologySeeder in Program.cs. Its first-upgrade step runs only when no structure row exists: it reads Teams, Portfolios and the eight Terminology rows, asks the pure OrganisationStructureMigrationPlan.From (return-only) for levels, the mappings of connections that have units, and subsets, applies it in one transaction, then checks its own result (each unit's subset within its connection's level list, no unit gained or lost a type ignoring case, unit counts unchanged); a failed check rolls back and stops the start with a structured fatal message. Later starts only re-derive the subsets the previous release edited; a connection without a mapping row then gets the create defaults as in D4, never a mapping from its units. Case is folded in C# with StringComparer.OrdinalIgnoreCase, never in SQL. A second instance loses on the fixed structure key and re-reads. Replaced: the Feature-level-wins rule, the self-check one-level-per-type and the upgrade lost-type record (2026-11-27).
 ```
 
 #### D7
@@ -158,12 +158,12 @@ Startup steps already run as ordered seeders; the migrator and the LeafCapacity 
 
 IDomainEventDispatcher
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Program\.cs\:1467
+Lighthouse\.Backend\/Lighthouse\.Backend\/Program\.cs\:1419
 
 Reuse
 
 ```text
-After-commit in-process events (ADR-027) already carry TeamDeleted and PortfolioDeleted to their handlers; UnitCreated and UnitDeleted use the same dispatcher.
+After-commit in-process events (ADR-027): the dispatcher registered as a singleton already carries TeamDeleted and PortfolioDeleted to their handlers; UnitCreated and UnitDeleted use the same dispatcher.
 ```
 
 OrganisationStructure
@@ -306,6 +306,138 @@ Migrated
 
 ```text
 Re-subscribes to UnitDeleted
+```
+
+Teams\/Portfolios WorkItemTypes column
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/FlowMetrics\/Application\/TeamMetricsService\.cs\:1
+
+Consumer
+
+UnchangedCompatible
+
+```text
+Reads WorkItemTypes; the dual-write keeps it equal to the effective list (a marked unit keeps its last list), so its answers do not change. Same for ForecastController, SuggestionsController, DataRetrievalSchemaDto and BoardInformation, which read it the same way
+```
+
+Teams\/Portfolios WorkItemTypes column
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/ForecastController\.cs\:1
+
+Consumer
+
+UnchangedCompatible
+
+```text
+Unchanged by the dual-write invariant
+```
+
+Teams\/Portfolios WorkItemTypes column
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/SuggestionsController\.cs\:1
+
+Consumer
+
+UnchangedCompatible
+
+```text
+Unchanged by the dual-write invariant
+```
+
+Teams\/Portfolios WorkItemTypes column
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/DTO\/DataRetrievalSchemaDto\.cs\:1
+
+Consumer
+
+UnchangedCompatible
+
+```text
+Unchanged by the dual-write invariant
+```
+
+Teams\/Portfolios WorkItemTypes column
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/TrackerIntegration\/Application\/BoardInformation\.cs\:1
+
+Consumer
+
+UnchangedCompatible
+
+```text
+Unchanged by the dual-write invariant
+```
+
+Teams\/Portfolios WorkItemTypes column
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/TrackerIntegration\/Adapters\/Connectors\/Jira\/JiraWorkTrackingConnector\.cs\:1
+
+Consumer
+
+UnchangedCompatible
+
+```text
+Receives the effective list, equal to the dual-written column; matches types ignoring case as today
+```
+
+Teams\/Portfolios WorkItemTypes column
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/TrackerIntegration\/Adapters\/Connectors\/AzureDevOps\/AzureDevOpsWorkTrackingConnector\.cs\:1
+
+Consumer
+
+UnchangedCompatible
+
+```text
+Receives the effective list, equal to the dual-written column; matches types ignoring case as today
+```
+
+Teams\/Portfolios WorkItemTypes column
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/TrackerIntegration\/Adapters\/Connectors\/Linear\/LinearWorkTrackingConnector\.cs\:1
+
+Consumer
+
+UnchangedCompatible
+
+```text
+Receives the effective list, equal to the dual-written column; matches types ignoring case as today
+```
+
+Teams\/Portfolios WorkItemTypes column
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/TrackerIntegration\/Adapters\/Connectors\/ServiceNow\/ServiceNowWorkTrackingConnector\.cs\:1
+
+Consumer
+
+UnchangedCompatible
+
+```text
+Receives the effective list, equal to the dual-written column; matches types ignoring case as today
+```
+
+Teams\/Portfolios WorkItemTypes column
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/TrackerIntegration\/Adapters\/Connectors\/Csv\/CsvWorkTrackingConnector\.cs\:1
+
+Consumer
+
+UnchangedCompatible
+
+```text
+Receives the effective list, equal to the dual-written column; matches types ignoring case as today
+```
+
+Teams\/Portfolios WorkItemTypes column
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Factories\/DemoDataFactory\.cs\:40
+
+Producer
+
+Migrated
+
+```text
+Runtime writer of WorkItemTypes for demo Teams and Portfolios: it must set the subset through ConnectionMapping.Resolve and the dual-write, so demo units created after the upgrade on a connection without a mapping row get the create-defaults mapping
 ```
 
 ### Not applicable
@@ -616,6 +748,48 @@ Projection of the Quint model on the pure re-derivation rule plus one SQLite and
 
 docs\/feature\/epic\-6474\-one\-structure\/design\/models\/organisation\_structure\_migrator\.qnt
 
+#### L5
+
+```text
+A connection without a mapping row gets one with today's create defaults the first time it is needed and never one derived from units' types; a unit saved there with default types is accepted, as today
+```
+
+Invariant
+
+Application
+
+IConnectionMappingStore
+
+##### Treatment
+
+Finite
+
+###### Cases
+
+```text
+Jira connection added after the upgrade, POST team with User Story -> saved, mapping level 1 = User Story, Bug
+```
+
+```text
+same connection, second Team with Story -> 400 naming Story, the Team level and the connection (M1, maintainer 2026-11-28)
+```
+
+```text
+Linear connection added after the upgrade, Team with no types -> saved, empty mapping
+```
+
+```text
+demo data load after the upgrade -> every demo unit saved with its types
+```
+
+```text
+Finite cases at the service port; the Quint model covers the create-on-first-need rule
+```
+
+##### Evidence
+
+docs\/feature\/epic\-6474\-one\-structure\/design\/models\/organisation\_structure\_migrator\.qnt
+
 ### Refuted
 
 ```text
@@ -766,7 +940,7 @@ Invariant
 Two racing instances never both migrate
 ```
 
-OrganisationStructureMigrator\.SeedAsync
+Seed
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Adapters\/Startup\/OrganisationStructureMigrator\.cs
 
@@ -778,9 +952,9 @@ Invariant
 A unit reads only what its connection maps to its level
 ```
 
-ConnectionMapping\.Resolve
+Resolve
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Adapters\/Startup\/OrganisationStructureMigrator\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Domain\/Mapping\/ConnectionMapping\.cs
 
 MappingNeverGrowsFromUnits
 
@@ -790,7 +964,7 @@ Invariant
 After the first upgrade the migrator never changes a mapping
 ```
 
-OrganisationStructureMigrator
+Seed
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Adapters\/Startup\/OrganisationStructureMigrator\.cs
 
@@ -804,7 +978,7 @@ A unit is marked as needing item types exactly when it reads none
 
 NeedsItemTypes
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Adapters\/Startup\/OrganisationStructureMigrator\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/WorkTrackingSystemOptionsOwner\.cs
 
 UpgradeKeepsEveryType
 
@@ -814,9 +988,9 @@ Invariant
 At the first upgrade every unit keeps every type it read ignoring case
 ```
 
-OrganisationStructureMigrationPlan\.From
+From
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Adapters\/Startup\/OrganisationStructureMigrator\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/OrganisationStructureMigrationPlan\.cs
 
 ReAddTicksNoUnit
 
@@ -828,7 +1002,43 @@ A type removed from a level and re-added there is ticked again for no unit on th
 
 WorkItemTypesAsWritten
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Adapters\/Startup\/OrganisationStructureMigrator\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/WorkTrackingSystemOptionsOwner\.cs
+
+LateMappingIsDefaults
+
+Invariant
+
+```text
+A connection's mapping row, created when first needed, holds today's create defaults
+```
+
+ForConnection
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Adapters\/Persistence\/ConnectionMappingStore\.cs
+
+LateSubsetWithinMapping
+
+Invariant
+
+```text
+A unit on a connection added after the upgrade reads only what that connection maps
+```
+
+Resolve
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Domain\/Mapping\/ConnectionMapping\.cs
+
+LateDefaultsAccepted
+
+Invariant
+
+```text
+Saving a Team with today's defaults on a connection without a mapping row is accepted
+```
+
+ForConnection
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Adapters\/Persistence\/ConnectionMappingStore\.cs
 
 ##### Atoms
 
@@ -836,7 +1046,7 @@ Action
 
 commitFirstUpgrade
 
-OrganisationStructureMigrator\.SeedAsync
+Seed
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Adapters\/Startup\/OrganisationStructureMigrator\.cs
 
@@ -848,12 +1058,24 @@ Action
 
 rederive
 
-OrganisationStructureMigrator\.SeedAsync
+Seed
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Adapters\/Startup\/OrganisationStructureMigrator\.cs
 
 ```text
 one EF transaction
+```
+
+Action
+
+saveTeamOnNewConnection
+
+ForConnection
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Adapters\/Persistence\/ConnectionMappingStore\.cs
+
+```text
+inside the unit save's EF transaction
 ```
 
 State
@@ -870,7 +1092,7 @@ State
 
 mapping
 
-ConnectionLevelMapping\.ItemTypes
+ItemTypes
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Domain\/Mapping\/ConnectionMapping\.cs
 
@@ -889,16 +1111,20 @@ None.
 ##### Assumptions
 
 ```text
-One connection, one Team and one Portfolio, four spellings with one case pair
+Two connections: one migrated at the upgrade with one Team and one Portfolio, one added after the upgrade with one Team saved on it; four spellings with one case pair
 ```
 
 ```text
 Connector kind not modelled: every empty unit is marked; Linear and ServiceNow exemption tested by examples
 ```
 
+```text
+No admin adds a type in feature A; removeThenReAdd stands for slice 08 and is model-only
+```
+
 ##### Mutants
 
-###### N1
+###### N7
 
 ```text
 Commit inserts the structure row without the fixed-key check
@@ -908,7 +1134,7 @@ Commit inserts the structure row without the fixed-key check
 
 SingleStructure
 
-###### N2
+###### N8
 
 ```text
 Re-derivation adds the previous release's types to the mapping
@@ -918,7 +1144,7 @@ Re-derivation adds the previous release's types to the mapping
 
 MappingNeverGrowsFromUnits
 
-###### N3
+###### N9
 
 ```text
 Re-derivation copies the old list without intersecting the mapping
@@ -928,7 +1154,7 @@ Re-derivation copies the old list without intersecting the mapping
 
 SubsetWithinMapping
 
-###### N4
+###### N10
 
 ```text
 Re-derivation leaves the needs-item-types mark unchanged
@@ -938,7 +1164,7 @@ Re-derivation leaves the needs-item-types mark unchanged
 
 MarkMatchesEmptiness
 
-###### N5
+###### N11
 
 ```text
 Planner lets the Feature level win a contested type
@@ -948,7 +1174,7 @@ Planner lets the Feature level win a contested type
 
 UpgradeKeepsEveryType
 
-###### N6
+###### N12
 
 ```text
 Re-derivation compares WorkItemTypes with the subset
@@ -957,6 +1183,36 @@ Re-derivation compares WorkItemTypes with the subset
 ###### Kills
 
 ReAddTicksNoUnit
+
+###### N13
+
+```text
+A missing mapping row is derived from the saved unit's types
+```
+
+###### Kills
+
+LateMappingIsDefaults
+
+###### N14
+
+```text
+A missing mapping row refuses every type
+```
+
+###### Kills
+
+LateDefaultsAccepted
+
+###### N15
+
+```text
+The save stores the requested types without resolving them
+```
+
+###### Kills
+
+LateSubsetWithinMapping
 
 ### Closure
 
@@ -1573,11 +1829,11 @@ None.
 #### Public oracle
 
 ```text
-Run OrganisationStructureMigrator.SeedAsync on the upgrade fixture (SQLite and Postgres), then call TerminologyService get-all and update
+Run OrganisationStructureMigrator through ISeeder.Seed on the upgrade fixture (SQLite and Postgres), then call TerminologyService get-all and update
 ```
 
 ```text
-Two levels named Squad/Squads, Work Item/Work Items and Initiative/Initiatives, Feature/Features; per connection level 1 = union of its Teams' types once ignoring case, level 2 = union of its Portfolios' types, Epic on both levels of the connection that reads it twice, create defaults where a level has no units; get-all returns the same eight words; update renames the level; slice 01 numbers unchanged
+Two levels named Squad/Squads, Work Item/Work Items and Initiative/Initiatives, Feature/Features; per connection with units, level 1 = union of its Teams' types once ignoring case, level 2 = union of its Portfolios' types, Epic on both levels of the connection that reads it twice, create defaults where a level of such a connection has no units; get-all returns the same eight words; update renames the level; slice 01 numbers unchanged
 ```
 
 ```text
@@ -2630,6 +2886,22 @@ Create
 
 None.
 
+Lighthouse\.Backend\/Lighthouse\.Backend\/Factories\/DemoDataFactory\.cs
+
+Extend
+
+```text
+Runtime writer of WorkItemTypes; sets the subset
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Adapters\/Persistence\/ConnectionMappingStore\.cs
+
+Extend
+
+```text
+ForConnection creates the create-defaults row when first needed
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/UnitReadsItsSubsetTest\.cs
 
 #### Verification
@@ -2651,15 +2923,15 @@ None.
 #### Public oracle
 
 ```text
-Through the Team and Portfolio settings save services and the update service on the migrated upgrade fixture: read units, save a Team with Spike, save a Team with bug, request an update of the marked Jira Team; restart the migrator after editing a WorkItemTypes column
+Through the Team and Portfolio settings save services and the update service on the migrated upgrade fixture: read units, save a Team with Spike, save a Team with bug, request an update of the marked Jira Team; add a Jira connection after the upgrade and create a Team with User Story on it; load the demo data after the upgrade; restart the migrator after editing a WorkItemTypes column
 ```
 
 ```text
-Each unit reads its old list in mapping spelling; Spike refused with 400 naming Spike, the Squad level and the connection, nothing saved, also for a System Admin; bug stored as Bug; marked Jira Team refused with 409 unit-needs-item-types and skipped by the schedule, data kept; edited unit re-derived; only respelled units' fingerprints change; slice 01 numbers unchanged
+Each unit reads its old list in mapping spelling; Spike refused with 400 naming Spike, the Squad level and the connection, nothing saved, also for a System Admin; bug stored as Bug; marked Jira Team refused with 409 unit-needs-item-types and skipped by the schedule, data kept; the new connection gets the create-defaults mapping and the Team with User Story is saved; demo units load with their types; edited unit re-derived; only respelled units' fingerprints change; slice 01 numbers unchanged
 ```
 
 ```text
-Save accepting Epic on a Team of a connection that maps Epic only to level 2
+A connection with no mapping row refuses User Story with 400, or gets a mapping copied from the saved Team's types
 ```
 
 ##### Promises
@@ -2692,6 +2964,14 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 ```text
 Subset: Team and Portfolio gain ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten; the migrator's plan gains the subsets (old list in mapping spelling) and marks Jira, Azure DevOps and CSV units with no types. The settings save services call ConnectionMapping.Resolve: TypeNotMapped becomes ProblemDetails 400 team-item-type-not-on-level or portfolio-item-type-not-on-level with 'Spike is not on the Team level of <connection name>' (level word from the level's unit name), nothing saved, for every role. WorkItemService and FetchFingerprint read the effective list (subset intersected with the mapping). UpdateController returns 409 unit-needs-item-types for a marked unit, and the schedule skips it; its data stays. Reads return workItemTypes in mapping spelling and needsItemTypes.
+```
+
+```text
+Maintainer decision, 2026-11-28: the 400 on an unmapped type starts with slice 04 (M1 kept, option a). Between slice 04 and slices 08 and 09 nobody can add a type to a mapping, so a write naming a type its connection does not map to the unit's level (for example Story on a connection that holds only the create defaults) is refused until feature D. Accepted because nothing is released before the whole Epic is done. No switch for adding unmapped types is built.
+```
+
+```text
+DemoDataFactory writes Teams and Portfolios at runtime; it sets each unit's subset through ConnectionMapping.Resolve and the dual-write, so the demo connections get their mapping rows (create defaults when first needed) and the demo types resolve; a demo type outside the defaults is mapped by the migrator only for demo data present at the first upgrade.
 ```
 
 ##### Constraints
@@ -2838,6 +3118,26 @@ CreateNew
 
 ```text
 No existing type owns UnitTypeLossNotice's responsibility (searched the module and its Contracts); see the shared reuse rows
+```
+
+DemoDataFactory
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Factories\/DemoDataFactory\.cs\:40
+
+Extend
+
+```text
+Owner of demo units; its writes go through the same subset path instead of a second writer
+```
+
+ConnectionMappingStore
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Adapters\/Persistence\/ConnectionMappingStore\.cs\:1
+
+CreateNew
+
+```text
+Created by slice 02 as the only store of mapping rows; slice 04 gives it the create-on-first-need rule, so no second owner of mapping rows appears
 ```
 
 ##### Impact
@@ -3002,6 +3302,26 @@ Changed
 New domain for slice S4; consumers listed in the slice's agreements change in the same commit
 ```
 
+demo\-data
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Factories\/DemoDataFactory\.cs\:40
+
+Changed
+
+```text
+Sets ItemTypeSubset through Resolve and dual-writes WorkItemTypes
+```
+
+adapter
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Adapters\/Persistence\/ConnectionMappingStore\.cs\:1
+
+Changed
+
+```text
+Creates a missing mapping row with the create defaults inside the caller's transaction
+```
+
 ##### Agreement
 
 None.
@@ -3050,6 +3370,18 @@ Refusal
 
 ```text
 409 unit-needs-item-types; data kept
+```
+
+####### B5
+
+```text
+A unit save on a connection that has no mapping row
+```
+
+Retry
+
+```text
+The row is created with today's create defaults in the same transaction and the save resolves against it; nothing is refused for default types
 ```
 
 ##### Observations
