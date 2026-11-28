@@ -647,6 +647,256 @@ A page counter that advances twice but whose second invalidation is deduplicated
 ###### Obligations
 
 
+### S3
+
+##### Covers
+
+P7
+
+```text
+Open a page where the menus, the page body and the survey nudge all read the Teams, the Portfolios and the license
+```
+
+```text
+Each is asked once and every component shows the same lists
+```
+
+```text
+The page shows its data after one round of requests, not one per component
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/useUnitLists\.test\.tsx
+
+asks for each of them once when the menus\, the page and the nudge all need them
+
+```text
+the survey nudge or the create gates keep asking the license or the lists themselves while showing the same data
+```
+
+###### Obligations
+
+
+##### Covers
+
+P8
+
+```text
+The user creates, renames or deletes a Team without leaving the page
+```
+
+```text
+Menus, overview and the create gate show the new list at once, after one extra ask for all components
+```
+
+```text
+Their own change shows in the lists immediately
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/useUnitLists\.test\.tsx
+
+shows the lists at once\, without a page move\, when the user \$change
+
+```text
+each reader asks the service again on its own after the change
+```
+
+###### Obligations
+
+
+##### Covers
+
+P8
+
+```text
+Someone else changes the Teams, then the user moves to another page
+```
+
+```text
+The old list stays until the move, then the new list shows once after one ask for all
+```
+
+```text
+A change by someone else shows on the next page move
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/useUnitLists\.test\.tsx
+
+shows a change made by someone else on the user\'s next move to another page\, not before
+
+```text
+the lists refresh on a timer or on every render instead of on the page move
+```
+
+###### Obligations
+
+
+##### Covers
+
+P7
+
+```text
+Read the lists on one page, move to a page with no list reader, then to a page where readers mount
+```
+
+```text
+Nothing is asked on the page without readers; the readers on the third page ask once and show the list
+```
+
+```text
+A page after a quiet page shows its lists, never a lasting loading look
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/useUnitLists\.test\.tsx
+
+gives the reader on the third page its list after a page that had no reader\, asking once
+
+```text
+readers that mount after a quiet page reuse the old answer or wait for ever
+```
+
+###### Obligations
+
+
+##### Covers
+
+P7
+
+```text
+The Teams cannot be loaded; one reader retries
+```
+
+```text
+Every reader reports the failure after one ask; one retry asks once for all and every reader shows the list
+```
+
+```text
+A failed load is shown to all readers and one retry fixes all
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/useUnitLists\.test\.tsx
+
+tells every reader the Teams could not be loaded\, and one retry asks once for all of them
+
+```text
+each reader retries by itself or only the retrying reader recovers
+```
+
+###### Obligations
+
+
+##### Covers
+
+P7
+
+```text
+The user may not read the Teams list and has no Premium license
+```
+
+```text
+The Teams count as empty and creating a Team stays allowed, as today
+```
+
+```text
+A user without the right to list Teams is not blocked by an unread list
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/useUnitLists\.test\.tsx
+
+counts no Teams and still lets the user create one when the user may not read the Teams list
+
+```text
+the gate stays loading or failed on a refused list
+```
+
+###### Obligations
+
+
+##### Covers
+
+P7
+
+```text
+A settings editor asks for the Teams as a promise while a reader already loaded them
+```
+
+```text
+It receives the shared list and the service is not asked again
+```
+
+```text
+The Portfolio settings editor offers the Teams without another request
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/useUnitLists\.test\.tsx
+
+hands a caller that needs the Teams as a promise the list a reader already loaded\, without asking again
+
+```text
+the loader returns the right list by calling the service itself
+```
+
+###### Obligations
+
+
+##### Covers
+
+P7
+
+```text
+Scan all non-test frontend source for calls to the Teams, Portfolios and license services
+```
+
+```text
+Only the shared lists hook asks for Teams and Portfolios, and only the license hook asks for the license, aliases included
+```
+
+```text
+No page can quietly keep its own copy of the shared lists
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/sharedListOwners\.test\.ts
+
+lets only the shared lists hook ask for the Teams
+
+```text
+a file added later calls a service through a destructured alias
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

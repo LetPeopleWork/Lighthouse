@@ -362,6 +362,144 @@
 "stimulus": "F644",
 "user_result": "F646"
 }
+],
+"S3": [
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F342"
+],
+"still_passes_if": "F652",
+"test": "asks for each of them once when the menus, the page and the nudge all need them",
+"test_path": "Lighthouse.Frontend/src/hooks/useUnitLists.test.tsx"
+},
+"expected": "F650",
+"stimulus": "F649",
+"user_result": "F651"
+},
+{
+"covers": [
+"P8"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F343"
+],
+"still_passes_if": "F656",
+"test": "shows the lists at once, without a page move, when the user $change",
+"test_path": "Lighthouse.Frontend/src/hooks/useUnitLists.test.tsx"
+},
+"expected": "F654",
+"stimulus": "F653",
+"user_result": "F655"
+},
+{
+"covers": [
+"P8"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F344"
+],
+"still_passes_if": "F660",
+"test": "shows a change made by someone else on the user's next move to another page, not before",
+"test_path": "Lighthouse.Frontend/src/hooks/useUnitLists.test.tsx"
+},
+"expected": "F658",
+"stimulus": "F657",
+"user_result": "F659"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F623"
+],
+"still_passes_if": "F664",
+"test": "gives the reader on the third page its list after a page that had no reader, asking once",
+"test_path": "Lighthouse.Frontend/src/hooks/useUnitLists.test.tsx"
+},
+"expected": "F662",
+"stimulus": "F661",
+"user_result": "F663"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7"
+],
+"still_passes_if": "F668",
+"test": "tells every reader the Teams could not be loaded, and one retry asks once for all of them",
+"test_path": "Lighthouse.Frontend/src/hooks/useUnitLists.test.tsx"
+},
+"expected": "F666",
+"stimulus": "F665",
+"user_result": "F667"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F345"
+],
+"still_passes_if": "F672",
+"test": "counts no Teams and still lets the user create one when the user may not read the Teams list",
+"test_path": "Lighthouse.Frontend/src/hooks/useUnitLists.test.tsx"
+},
+"expected": "F670",
+"stimulus": "F669",
+"user_result": "F671"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7"
+],
+"still_passes_if": "F676",
+"test": "hands a caller that needs the Teams as a promise the list a reader already loaded, without asking again",
+"test_path": "Lighthouse.Frontend/src/hooks/useUnitLists.test.tsx"
+},
+"expected": "F674",
+"stimulus": "F673",
+"user_result": "F675"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T5"
+],
+"still_passes_if": "F680",
+"test": "lets only the shared lists hook ask for the Teams",
+"test_path": "Lighthouse.Frontend/src/hooks/sharedListOwners.test.ts"
+},
+"expected": "F678",
+"stimulus": "F677",
+"user_result": "F679"
+}
 ]
 },
 "counters": {
@@ -369,7 +507,7 @@
 "C": 3,
 "D": 13,
 "E": 13,
-"F": 648,
+"F": 680,
 "K": 13,
 "L": 7,
 "N": 16,
@@ -2905,10 +3043,42 @@
 "F646": "One page move asks for the user's permissions once, even when the app renders twice",
 "F647": "A page counter that advances twice but whose second invalidation is deduplicated into the first ask; the extra advance is not visible through the permissions",
 "F648": "Page-move freshness (S2, S3): one owner, usePageFreshQuery in src/hooks/usePageFreshQuery.ts, wraps useQuery with staleTime Infinity and retry false. Its queryFn returns the answer with the page it was asked on (carrier PageFreshAnswer of T: answer and askedOnPage) and on failure throws PageFreshFailure carrying askedOnPage; TanStack keeps the last good data when a later ask fails. refetchOnMount is a function: a mounting component asks only when no request is in flight and the latest settled ask (data or error) was asked on an earlier page than the current one, so a reader that mounts after a page with no reader asks once instead of waiting for ever; refetchType all was rejected because it would ask on pages that have no reader. PageMoveRefresh in src/components/App/PageMoveRefresh/PageMoveRefresh.tsx, mounted inside the Router in App.tsx, holds the page counter (per-process state, a React context) and the last pathname together in one useState value { lastPathname, page }, never in a ref or module variable. During render, only when location.pathname differs from lastPathname, it sets that value to { pathname, page + 1 } in one update, so a StrictMode double render or an abandoned concurrent render cannot advance one without the other or lose a move, and a component that first renders under the new path already reads the new page. In an effect keyed on page it invalidates the shared page reads once (invalidateQueries cancels a request still in flight and refetches the active queries). The own-change refresh (useRefreshPermissions, useUnitListsChanged) invalidates with refetchType all, so it asks once even when no reader is mounted. Each component records its mount page once, in a useState initializer, on its first render. React keeps a component of the same type in the same place mounted across a route change; such a component keeps its earlier mount page. Readiness per component: ready when the last good answer was asked on or after its mount page, whatever happened to later asks; failed when it has no such answer, nothing is in flight and the latest ask failed (the permissive fallback with loadFailed true); loading otherwise. Readiness is never decided by the page the user is on now. Consequences: a component that shows an answer and stays mounted keeps showing it, not loading and not the fallback, while a page-move or own-change ask runs and when that ask fails (today such a component never asked again, so a failure never touched it); it switches when a new good answer lands. A component that mounts on the new page is loading until the answer asked on that page arrives, as today a newly mounted component was loading until its own fetch answered: giving it the previous page's answer would show a right that may have been removed as current. If that ask fails it gets the fallback, and one retry asks once for every failed component. Components mounted later on the same page reuse that page's answer or failure and ask nothing. Model shared_page_reads.qnt checks this protocol; per-mutant receipts are in design/d10-receipts. The page of each shared read's latest ask, also while it is on its way, is kept in a module-level WeakMap<Query, number> in usePageFreshQuery.ts (pageOfTheLatestAsk), written only by the queryFn when a fetch actually starts. The page-move refresh cancels and then invalidates only the reads whose latest ask belongs to an earlier page (cancel first, because invalidating alone would join a first ask still on its way instead of replacing it); a component that mounted on the new page and already asked is left alone, so a move asks once. This map is allowed module state, unlike the page counter: it is keyed by the TanStack Query object, so it belongs to that cache and query, is collected with it, and cannot leak between QueryClients; it is never written during render, so a StrictMode double render, a StrictMode effect replay or an abandoned concurrent render cannot change it (a fetch that TanStack deduplicates runs the queryFn once). query.meta was rejected because it is static per options, not per fetch, and the query's state has no field the application may write before the answer lands.",
+"F649": "Open a page where the menus, the page body and the survey nudge all read the Teams, the Portfolios and the license",
 "F65": "Fewer repeated shell calls on every load.",
+"F650": "Each is asked once and every component shows the same lists",
+"F651": "The page shows its data after one round of requests, not one per component",
+"F652": "the survey nudge or the create gates keep asking the license or the lists themselves while showing the same data",
+"F653": "The user creates, renames or deletes a Team without leaving the page",
+"F654": "Menus, overview and the create gate show the new list at once, after one extra ask for all components",
+"F655": "Their own change shows in the lists immediately",
+"F656": "each reader asks the service again on its own after the change",
+"F657": "Someone else changes the Teams, then the user moves to another page",
+"F658": "The old list stays until the move, then the new list shows once after one ask for all",
+"F659": "A change by someone else shows on the next page move",
 "F66": "A Features tab shows the same list as today without loading full Team settings.",
+"F660": "the lists refresh on a timer or on every render instead of on the page move",
+"F661": "Read the lists on one page, move to a page with no list reader, then to a page where readers mount",
+"F662": "Nothing is asked on the page without readers; the readers on the third page ask once and show the list",
+"F663": "A page after a quiet page shows its lists, never a lasting loading look",
+"F664": "readers that mount after a quiet page reuse the old answer or wait for ever",
+"F665": "The Teams cannot be loaded; one reader retries",
+"F666": "Every reader reports the failure after one ask; one retry asks once for all and every reader shows the list",
+"F667": "A failed load is shown to all readers and one retry fixes all",
+"F668": "each reader retries by itself or only the retrying reader recovers",
+"F669": "The user may not read the Teams list and has no Premium license",
 "F67": "32 KB less per Features tab.",
+"F670": "The Teams count as empty and creating a Team stays allowed, as today",
+"F671": "A user without the right to list Teams is not blocked by an unread list",
+"F672": "the gate stays loading or failed on a refused list",
+"F673": "A settings editor asks for the Teams as a promise while a reader already loaded them",
+"F674": "It receives the shared list and the service is not asked again",
+"F675": "The Portfolio settings editor offers the Teams without another request",
+"F676": "the loader returns the right list by calling the service itself",
+"F677": "Scan all non-test frontend source for calls to the Teams, Portfolios and license services",
+"F678": "Only the shared lists hook asks for Teams and Portfolios, and only the license hook asks for the license, aliases included",
+"F679": "No page can quietly keep its own copy of the shared lists",
 "F68": "On page load the update check sends no release notes and the footer's checks run at the same time; the new-version dialog loads the notes when opened, with a loading look and a could-not-load message with Retry.",
+"F680": "a file added later calls a service through a destructured alias",
 "F69": "368 KB less on every first visit when an update exists; a shorter footer chain.",
 "F7": "A user has a page open and an administrator grants or removes one of their rights",
 "F70": "Paradigm object_oriented (settled by CLAUDE.md). Backend: ports-and-adapters, compression is a host (platform lane) concern owned by Program.cs as composition root plus one policy class. Frontend: React hooks over TanStack Query; each shared read has one owning hook module that holds its query key, and one page-move freshness owner.",

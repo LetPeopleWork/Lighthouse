@@ -721,6 +721,224 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>Open a page where the menus, the page body and the survey nudge all read the Teams, the Portfolios and the license
+</code></pre>
+
+<pre><code>Each is asked once and every component shows the same lists
+</code></pre>
+
+<pre><code>The page shows its data after one round of requests, not one per component
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/useUnitLists.test.tsx</p>
+
+<p>asks for each of them once when the menus, the page and the nudge all need them</p>
+
+<pre><code>the survey nudge or the create gates keep asking the license or the lists themselves while showing the same data
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P8</p>
+
+<pre><code>The user creates, renames or deletes a Team without leaving the page
+</code></pre>
+
+<pre><code>Menus, overview and the create gate show the new list at once, after one extra ask for all components
+</code></pre>
+
+<pre><code>Their own change shows in the lists immediately
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/useUnitLists.test.tsx</p>
+
+<p>shows the lists at once, without a page move, when the user $change</p>
+
+<pre><code>each reader asks the service again on its own after the change
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P8</p>
+
+<pre><code>Someone else changes the Teams, then the user moves to another page
+</code></pre>
+
+<pre><code>The old list stays until the move, then the new list shows once after one ask for all
+</code></pre>
+
+<pre><code>A change by someone else shows on the next page move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/useUnitLists.test.tsx</p>
+
+<p>shows a change made by someone else on the user&#x27;s next move to another page, not before</p>
+
+<pre><code>the lists refresh on a timer or on every render instead of on the page move
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>Read the lists on one page, move to a page with no list reader, then to a page where readers mount
+</code></pre>
+
+<pre><code>Nothing is asked on the page without readers; the readers on the third page ask once and show the list
+</code></pre>
+
+<pre><code>A page after a quiet page shows its lists, never a lasting loading look
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/useUnitLists.test.tsx</p>
+
+<p>gives the reader on the third page its list after a page that had no reader, asking once</p>
+
+<pre><code>readers that mount after a quiet page reuse the old answer or wait for ever
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>The Teams cannot be loaded; one reader retries
+</code></pre>
+
+<pre><code>Every reader reports the failure after one ask; one retry asks once for all and every reader shows the list
+</code></pre>
+
+<pre><code>A failed load is shown to all readers and one retry fixes all
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/useUnitLists.test.tsx</p>
+
+<p>tells every reader the Teams could not be loaded, and one retry asks once for all of them</p>
+
+<pre><code>each reader retries by itself or only the retrying reader recovers
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>The user may not read the Teams list and has no Premium license
+</code></pre>
+
+<pre><code>The Teams count as empty and creating a Team stays allowed, as today
+</code></pre>
+
+<pre><code>A user without the right to list Teams is not blocked by an unread list
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/useUnitLists.test.tsx</p>
+
+<p>counts no Teams and still lets the user create one when the user may not read the Teams list</p>
+
+<pre><code>the gate stays loading or failed on a refused list
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>A settings editor asks for the Teams as a promise while a reader already loaded them
+</code></pre>
+
+<pre><code>It receives the shared list and the service is not asked again
+</code></pre>
+
+<pre><code>The Portfolio settings editor offers the Teams without another request
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/useUnitLists.test.tsx</p>
+
+<p>hands a caller that needs the Teams as a promise the list a reader already loaded, without asking again</p>
+
+<pre><code>the loader returns the right list by calling the service itself
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>Scan all non-test frontend source for calls to the Teams, Portfolios and license services
+</code></pre>
+
+<pre><code>Only the shared lists hook asks for Teams and Portfolios, and only the license hook asks for the license, aliases included
+</code></pre>
+
+<pre><code>No page can quietly keep its own copy of the shared lists
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/sharedListOwners.test.ts</p>
+
+<p>lets only the shared lists hook ask for the Teams</p>
+
+<pre><code>a file added later calls a service through a destructured alias
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
