@@ -317,9 +317,9 @@
 "counters": {
 "B": 5,
 "C": 2,
-"D": 17,
+"D": 18,
 "E": 6,
-"F": 540,
+"F": 558,
 "K": 6,
 "L": 5,
 "N": 15,
@@ -687,6 +687,10 @@
 {
 "id": "D17",
 "text": "F455"
+},
+{
+"id": "D18",
+"text": "F541"
 }
 ],
 "equality": [
@@ -1863,14 +1867,16 @@
 "S3": {
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/UnitsOnLevelsTest.cs",
 "prefactoring": {
-"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs",
-"move": "F457",
-"preserved": "F407",
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamDeletionIntegrationTest.cs",
+"move": "F547",
+"preserved": "F548",
 "verification": [
 "dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj",
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamsControllerTest",
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfoliosControllerTest",
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamDeletedRefreshLogCleanupHandlerTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamDeletionIntegrationTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamDeleteSerialisationTests",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfolioDeleteSerialisationTests",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamsControllerAuthorizationTests",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.NumbersStayTheSame",
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Architecture.OrganisationSetup"
 ]
 },
@@ -1916,7 +1922,8 @@
 ],
 "decisions": [
 "F197",
-"F408"
+"F408",
+"F549"
 ],
 "impact": [
 {
@@ -2056,6 +2063,42 @@
 "kind": "public-signature",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/UnitSaveOutcome.cs:1",
 "reason": "F459"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs:1",
+"reason": "F542"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfoliosControllerTest.cs:1",
+"reason": "F542"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs:1",
+"reason": "F543"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs:1",
+"reason": "F544"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Units/UnitLifecycleServiceTest.cs:1",
+"reason": "F545"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs:1",
+"reason": "F546"
 }
 ],
 "not_applicable": [
@@ -2196,6 +2239,42 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/UnitSaveOutcome.cs:1",
 "reason": "F458",
 "symbol": "UnitSaveOutcome"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs:1",
+"reason": "F542",
+"symbol": "TeamsControllerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfoliosControllerTest.cs:1",
+"reason": "F542",
+"symbol": "PortfoliosControllerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs:1",
+"reason": "F543",
+"symbol": "TeamControllerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs:1",
+"reason": "F544",
+"symbol": "PortfolioControllerTest"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Units/UnitLifecycleServiceTest.cs:1",
+"reason": "F545",
+"symbol": "UnitLifecycleServiceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs:1",
+"reason": "F546",
+"symbol": "OrganisationSetupIsAnOpenHostArchUnitTest"
 }
 ]
 },
@@ -2291,6 +2370,36 @@
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/UnitSaveOutcome.cs",
 "reason": "F456"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs",
+"reason": "F542"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfoliosControllerTest.cs",
+"reason": "F542"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs",
+"reason": "F543"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs",
+"reason": "F544"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Units/UnitLifecycleServiceTest.cs",
+"reason": "F545"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs",
+"reason": "F546"
 }
 ],
 "verification": [
@@ -2302,14 +2411,18 @@
 "S4": {
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/UnitReadsItsSubsetTest.cs",
 "prefactoring": {
-"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs",
-"move": "F465",
-"preserved": "F415",
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamConcurrencyTokenIntegrationTest.cs",
+"move": "F553",
+"preserved": "F554",
 "verification": [
 "dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj",
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamsControllerTest",
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfoliosControllerTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamConcurrencyTokenIntegrationTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfolioConcurrencyTokenIntegrationTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfolioOwningTeamSaveIntegrationTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamStalenessThresholdSettingsIntegrationTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfolioStalenessThresholdSettingsIntegrationTest",
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~FetchFingerprintPinnedDigestTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.NumbersStayTheSame",
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Architecture.OrganisationSetup"
 ]
 },
@@ -2546,6 +2659,24 @@
 "kind": "application",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/UnitLifecycleService.cs:1",
 "reason": "F469"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs:1",
+"reason": "F550"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs:1",
+"reason": "F551"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Units/UnitSettingsServiceTest.cs:1",
+"reason": "F552"
 }
 ],
 "reuse": [
@@ -2692,6 +2823,24 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/UnitLifecycleService.cs:1",
 "reason": "F468",
 "symbol": "UnitLifecycleService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs:1",
+"reason": "F550",
+"symbol": "TeamControllerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs:1",
+"reason": "F551",
+"symbol": "PortfolioControllerTest"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Units/UnitSettingsServiceTest.cs:1",
+"reason": "F552",
+"symbol": "UnitSettingsServiceTest"
 }
 ]
 },
@@ -2808,6 +2957,21 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Units/UnitLifecycleService.cs",
 "reason": "F461"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs",
+"reason": "F550"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs",
+"reason": "F551"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Units/UnitSettingsServiceTest.cs",
+"reason": "F552"
 }
 ],
 "verification": [
@@ -2819,12 +2983,15 @@
 "S5": {
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/LeafCapacityInForecastingTest.cs",
 "prefactoring": {
-"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs",
-"move": "F445",
-"preserved": "F227",
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastFilterTeamSettingsIntegrationTest.cs",
+"move": "F557",
+"preserved": "F558",
 "verification": [
 "dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj",
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamsControllerTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ForecastFilterTeamSettingsIntegrationTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamThroughputHistoryValidationIntegrationTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamStalenessThresholdSettingsIntegrationTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.NumbersStayTheSame",
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Architecture.OrganisationSetup"
 ]
 },
@@ -3016,6 +3183,18 @@
 "kind": "public-signature",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/LeafCapacityValues.cs:1",
 "reason": "F454"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs:1",
+"reason": "F555"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Units/UnitSettingsServiceTest.cs:1",
+"reason": "F556"
 }
 ],
 "reuse": [
@@ -3120,6 +3299,18 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/LeafCapacityValues.cs:1",
 "reason": "F453",
 "symbol": "LeafCapacityValues"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs:1",
+"reason": "F555",
+"symbol": "TeamControllerTest"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Units/UnitSettingsServiceTest.cs:1",
+"reason": "F556",
+"symbol": "UnitSettingsServiceTest"
 }
 ]
 },
@@ -3196,6 +3387,16 @@
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Contracts/LeafCapacityValues.cs",
 "reason": "F449"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs",
+"reason": "F555"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Units/UnitSettingsServiceTest.cs",
+"reason": "F556"
 }
 ],
 "verification": [
@@ -3398,7 +3599,6 @@
 "F220": "Extended composition-root for slice S3; consumers listed in the slice's agreements change in the same commit",
 "F221": "Extended test for slice S3; consumers listed in the slice's agreements change in the same commit",
 "F222": "Publishers and handlers live in one deployable and change in the same commit; events are in-process and never persisted",
-"F227": "Team settings payload and forecasts",
 "F229": "Throughput window moves to LeafCapacity, which owns the decision; Team keeps the columns read-only for rollback",
 "F230": "Owner of forecast filter rules; reads them from LeafCapacity",
 "F231": "No existing type owns LeafCapacity's responsibility (searched the module and its Contracts); see the shared reuse rows",
@@ -3577,7 +3777,6 @@
 "F403": "declared public signature of slice 03",
 "F404": "AddOrganisationSetup registers IUnitLifecycle and IUnitDirectory",
 "F405": "create logic moves into UnitLifecycleService",
-"F407": "Create and delete answers and clean-up",
 "F408": "Read side and composition for slice 03: the oracle drives IUnitLifecycle and reads IUnitDirectory, both registered by AddOrganisationSetup; it observes the clean-up through the existing repositories and the refresh log service, and UnitCreated and UnitDeleted through a recording IDomainEventHandler it registers itself. Today the create and delete logic sits in TeamsController, TeamController, PortfoliosController and PortfolioController; the prefactoring step moves it unchanged into UnitLifecycleService, so the controllers call the port.",
 "F409": "No existing type declares this: declared public signature of slice 03",
 "F41": "Startup steps already run as ordered seeders; the migrator and the LeafCapacity copy are two more.",
@@ -3585,7 +3784,6 @@
 "F411": "Existing owner: create logic moves into UnitLifecycleService",
 "F412": "declared public signature of slice 04",
 "F413": "update and manual refresh logic move into UnitSettingsService; maps outcomes to 400 and 409",
-"F415": "Every save, create and manual refresh answer",
 "F417": "No existing type declares this: declared public signature of slice 04",
 "F418": "Existing owner: update and manual refresh logic move into UnitSettingsService; maps outcomes to 400 and 409",
 "F419": "declared public signature of slice 07",
@@ -3610,7 +3808,6 @@
 "F440": "Signature step, no behaviour, its own commit before the oracle: create Domain/Structure/LevelId.cs, TermPair.cs, OrganisationStructure.cs, Level.cs, RenameOutcome.cs; Domain/Mapping/ConnectionMapping.cs, ResolveOutcome.cs (Domain reaches only its own Domain, Models and the base library); Contracts/LevelView.cs, OrganisationStructureView.cs, StructureRead.cs, ConnectionMappingView.cs, IOrganisationStructureQuery.cs (primitives only); Application/Structure/IOrganisationStructureStore.cs, IConnectionMappingStore.cs, OrganisationStructureQuery.cs, TerminologyWords.cs, OrganisationStructureMigrationPlan.cs, PlannedLevel.cs, PlannedMapping.cs; Adapters/Startup/OrganisationStructureMigrator.cs; Adapters/Persistence/OrganisationStructureStore.cs, ConnectionMappingStore.cs (all under Modules/OrganisationSetup); add AddOrganisationStructure to OrganisationSetupModule.cs registering them (not yet called by Program.cs). Bodies: Seed returns a completed task, Structure returns StructureRead.NotMigrated, Mappings and All return empty lists, the rest throw NotImplementedException. Per touched existing file: OrganisationSetupModule.cs holds one type, nothing moves. Follow-up change: the migrator, the stores and the level-backed terminology",
 "F441": "Domain-owned value type; Contracts carry the stored key and names as primitives",
 "F442": "New Domain value type",
-"F445": "Two commits before the oracle. (1) Behaviour-preserving move: the load step of TeamController's GET settings moves unchanged into UnitSettingsService.ReadTeamSettings, which returns Application/Units/TeamSettingsView.cs (closed abstract record: Found(Team) or TeamNotFound); the controller keeps mapping to TeamSettingDto through API.Helpers. (2) Signature step, no behaviour: create Modules/Forecasting/Contracts/LeafCapacityView.cs and ILeafCapacityStore.cs, Domain/LeafCapacity.cs (no Contracts type), Adapters/Persistence/LeafCapacityStore.cs (All returns an empty list, ForTeam and Stage throw NotImplementedException), Adapters/Startup/LeafCapacitySeeder.cs (Seed returns a completed task), and AddLeafCapacity in ForecastingModule.cs (not yet called by Program.cs). Per touched existing file: TeamController.cs and ForecastingModule.cs each hold one type, nothing moves. Follow-up change: the controllers stage the capacity and read it from LeafCapacity",
 "F446": "LeafCapacity (Forecasting Domain) holds Feature WIP, automatically adjust Feature WIP, fixed-dates flag, throughput start/end and days, forecast filter rule set; table LeafCapacities keyed by Team id with cascading FK; ILeafCapacityStore in Forecasting Contracts; LeafCapacitySeeder copies today's Team values at start where no row exists or where the Team columns differ (rollback). The Team settings save is composed in the API layer: the controller stages the capacity with ILeafCapacityStore.Stage and calls IUnitSettings.SaveTeam, which dual-writes the old columns and commits both in one unit of work under the Team's concurrency token. Forecast reads (Team.GetThroughputSettings callers, ForecastFilterRuleService, Feature WIP readers) read LeafCapacity.",
 "F447": "Organisation set-up's Application never reaches Forecasting (a context that builds on it); its Domain never reaches its Contracts; Forecasting's Domain never reaches Contracts",
 "F449": "Capacity values without a Team id, so a create can stage them before the id exists",
@@ -3620,7 +3817,6 @@
 "F454": "New Contracts record staged by create and update",
 "F455": "Organisation set-up's Application never reaches a context that builds on it (OrganisationSetupModuleBoundariesArchUnitTest), so the Team settings save does not call Forecasting. The API layer composes the two owners on the request's scoped LighthouseAppContext. There is one create path per unit: the controller builds the entity through its API.Helpers mapping and calls IUnitLifecycle.CreateTeam(Team) or CreatePortfolio(Portfolio), which resolves the item types (from slice 04), commits, and is the single publisher of UnitCreated. Team create: TeamsController builds the Team, stages its capacity with ILeafCapacityStore.StageForNewTeam(Team, LeafCapacityValues), then calls IUnitLifecycle.CreateTeam; the staged LeafCapacities row's Team navigation points at that entity, so EF keys it to the database-generated id in the same SaveChanges. Team update: TeamController stages with ILeafCapacityStore.Stage(UnitId, LeafCapacityValues), then calls IUnitSettings.SaveTeam. Either commit writes both rows or neither under the Team's concurrency token. A refused save or create (400, 409, not found, concurrency) never calls SaveChanges, so the staged row is dropped when the request scope disposes the context. Reads: the controller reads the Team through IUnitSettings.ReadTeamSettings and the capacity through ILeafCapacityStore.ForTeam, and maps both to TeamSettingDto through API.Helpers; every Team has a row, from the seeder for existing Teams and from StageForNewTeam for new ones.",
 "F456": "Outcome of the single create port, extended in slice 04",
-"F457": "Two commits before the oracle. (1) Behaviour-preserving move: the create logic of TeamsController.CreateTeam and PortfoliosController's create and the delete logic of TeamController.DeleteTeam and PortfolioController move unchanged into Application/Units/UnitLifecycleService.cs behind IUnitLifecycle.cs, with UnitSaveOutcome.cs (UnitSaved only) and DeletionOutcome.cs (closed abstract records, nested cases); the controllers keep the DTO-to-entity mapping in API.Helpers, pass the built entity to the port, and still publish TeamDeleted and PortfolioDeleted through it. (2) Signature step, no behaviour: create Contracts/UnitId.cs, UnitCreated.cs, UnitDeleted.cs, UnitView.cs, IUnitDirectory.cs (Contracts carry the level as the stored key string) and Application/Units/UnitDirectory.cs (UnitsOn returns an empty list); AddOrganisationSetup registers both. Per touched existing file: each controller and OrganisationSetupModule.cs holds one type, nothing moves. Follow-up change: publish UnitCreated and UnitDeleted",
 "F458": "No outcome type for a unit create or save exists; today the controllers return ActionResults",
 "F459": "New outcome sum returned by IUnitLifecycle creates",
 "F46": "One Postgres per test run for the migrator's provider check.",
@@ -3629,7 +3825,6 @@
 "F462": "Through IUnitSettings and IUnitLifecycle on the migrated upgrade fixture: read units, save a Team with Spike, save a Team with bug, create a Team with Spike, request a refresh of the marked Jira Team; add a Jira connection after the upgrade and create a Team with User Story on it through IUnitLifecycle.CreateTeam; load the demo data after the upgrade; restart the migrator after editing a WorkItemTypes column",
 "F463": "Each unit reads its old list in mapping spelling; Spike refused on save and on create with ItemTypeNotMapped naming Spike, the Squad level and the connection, nothing saved and no UnitCreated published, also for a System Admin; bug stored as Bug; marked Jira Team gets UnitNeedsItemTypes and is skipped by the schedule, data kept; the new connection gets the create-defaults mapping and the Team with User Story is created; demo units load with their types; edited unit re-derived; only respelled units' fingerprints change; slice 01 numbers unchanged",
 "F464": "A connection with no mapping row refuses User Story, or gets a mapping copied from the saved Team's types; or a create accepts a type its connection does not map",
-"F465": "Two commits before the oracle. (1) Behaviour-preserving move: the load, save and refresh steps of TeamController.UpdateTeam and UpdateTeamData and PortfolioController's update and refresh actions move unchanged into Application/Units/UnitSettingsService.cs behind IUnitSettings.cs, with RefreshRequest.cs (closed abstract record; only RefreshQueued and the not-found case produced yet). Creates already go through IUnitLifecycle (slice 03) and are not moved again. The DTO-to-entity mapping stays in the controllers and API.Helpers and reaches the service as an Action<Team> or Action<Portfolio>, so OrganisationSetupModuleBoundariesArchUnitTest keeps its allow-list unchanged. (2) Signature step, no behaviour: add ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten to Models/WorkTrackingSystemOptionsOwner.cs (unmapped until the migration), add the ItemTypeNotMapped and UnitToSaveNotFound cases to Application/Units/UnitSaveOutcome.cs, create Application/Structure/PlannedSubset.cs and Domain/UnitTypeLossNotice.cs, add Subsets (empty) to OrganisationStructureMigrationPlan. Per touched existing file: TeamController.cs, PortfolioController.cs, TeamsController.cs, PortfoliosController.cs and WorkTrackingSystemOptionsOwner.cs each hold one type, nothing moves. Follow-up change: resolve the subset in saves and creates and refuse unmapped types",
 "F466": "Read side and composition for slice 04: the oracle drives IUnitSettings (registered by AddOrganisationSetup) for saves and the manual refresh request, and IUnitLifecycle.CreateTeam and CreatePortfolio for creates (the single create path; slice 04 adds no create method). UnitLifecycleService resolves a create's item types with the same IConnectionMappingStore.ForConnection and ConnectionMapping.Resolve that UnitSettingsService uses for a save, before it commits and publishes UnitCreated; an unmapped type returns UnitSaveOutcome.ItemTypeNotMapped and nothing is saved or published. The oracle reads the effective types through today's Team and Portfolio repositories (WorkItemTypes, ItemTypeSubset, NeedsItemTypes), the mappings through IOrganisationStructureQuery.Mappings, and fingerprints through FetchFingerprint.For. The manual refresh is TeamController.UpdateTeamData and PortfolioController's refresh action (POST /teams/{id} and /portfolios/{id}); UpdateController is not involved. The wire contract test covers the 400 and 409 codes on the host.",
 "F467": "Created by slice 03 as the outcome of the single create port; slice 04 adds its refusal cases, so no second outcome type appears",
 "F468": "Created by slice 03 as the single create path; slice 04 adds the subset resolution there instead of a second create",
@@ -3708,7 +3903,25 @@
 "F539": "Renaming through Terminology renames the level, and the Terminology settings show what they showed before plus the rename",
 "F54": "IOrganisationStructureStore and IConnectionMappingStore (EF, Organisation set-up)",
 "F540": "A rename written to the Terminology rows only would leave the level names unchanged and fail; answering an untouched word's default as its value fails too",
+"F541": "Preservation across the controller-to-service moves (S3, S4, S5): the controller unit tests construct the controllers with their repositories and assert on those mocks, so they cannot stay unchanged across a move and are not the preservation observation. The observation is what survives the move: the host-level integration tests that drive the same routes through DI (TeamDeletionIntegrationTest, TeamDeleteSerialisationTests, PortfolioDeleteSerialisationTests, TeamsControllerAuthorizationTests, TeamConcurrencyTokenIntegrationTest, PortfolioConcurrencyTokenIntegrationTest, PortfolioOwningTeamSaveIntegrationTest, TeamStalenessThresholdSettingsIntegrationTest, PortfolioStalenessThresholdSettingsIntegrationTest, TeamThroughputHistoryValidationIntegrationTest, ForecastFilterTeamSettingsIntegrationTest), slice 01's NumbersStayTheSame, and the architecture rules, all observed GREEN before and after each move with their bytes unchanged. The four controller test classes are targets of the move: their rows for the moved logic move down to the service-port test classes UnitLifecycleServiceTest and UnitSettingsServiceTest under Tests/Modules/OrganisationSetup/Application/Units (improve the tests you touch), and the controller tests keep only controller-level rows (DTO mapping, status codes) with IUnitLifecycle or IUnitSettings mocked.",
+"F542": "Create rows move down to UnitLifecycleServiceTest; the class keeps mapping and status rows with IUnitLifecycle mocked",
+"F543": "Delete rows move down to UnitLifecycleServiceTest; the class keeps status rows with IUnitLifecycle mocked",
+"F544": "Delete rows move down to UnitLifecycleServiceTest; the inline refresh-log row stays until the behaviour commit",
+"F545": "Receives the moved create and delete rows at the application port",
+"F546": "Its exact list loses TeamController -> TeamDeleted in the move commit",
+"F547": "Two commits before the oracle. (1) Signature step, no behaviour: create Contracts/UnitId.cs, UnitCreated.cs, UnitDeleted.cs, UnitView.cs, IUnitDirectory.cs (Contracts carry the level as the stored key string), Application/Units/IUnitLifecycle.cs, UnitSaveOutcome.cs (UnitSaved only), DeletionOutcome.cs (closed abstract records, nested cases), UnitDirectory.cs (UnitsOn returns an empty list) and an empty UnitLifecycleService.cs; AddOrganisationSetup registers them. (2) Behaviour-preserving move: the create logic of TeamsController.CreateTeam and PortfoliosController's create and the delete logic of TeamController.DeleteTeam and PortfolioController.DeletePortfolio move unchanged into UnitLifecycleService; the controllers take IUnitLifecycle by constructor, keep the DTO-to-entity mapping in API.Helpers and pass the built entity; TeamDeleted and PortfolioDeleted are still published, now from the service; PortfolioController keeps its inline refresh-log removal. In the same commit the create and delete rows of TeamsControllerTest, PortfoliosControllerTest, TeamControllerTest and PortfolioControllerTest move down to Tests/Modules/OrganisationSetup/Application/Units/UnitLifecycleServiceTest.cs, those classes keep mapping and status rows with IUnitLifecycle mocked, and OrganisationSetupIsAnOpenHostArchUnitTest loses TeamController -> TeamDeleted. Per touched existing file: each controller, each test class and OrganisationSetupModule.cs holds one type, nothing moves. Follow-up change: publish UnitCreated and UnitDeleted",
+"F548": "Create and delete answers and clean-up over the host, slice 01 numbers, architecture rules",
+"F549": "PortfolioController.DeletePortfolio removes refresh logs inline through WorkItems.Contracts.IRefreshLogService. The move leaves that call in the controller (the API layer may reach Work Items), so Organisation set-up's Application gains no edge into Work Items; slice 03's behaviour commit then removes it from the controller and TeamDeletedRefreshLogCleanupHandler, re-subscribed to UnitDeleted, clears the refresh log of a deleted unit on either level. OrganisationSetupIsAnOpenHostArchUnitTest's exact list of set-up events constructed outside set-up's Application shrinks in the move commit: TeamController -> TeamDeleted leaves it, because UnitLifecycleService now constructs the event.",
 "F55": "ILeafCapacityStore (Forecasting Contracts, EF adapter in Forecasting)",
+"F550": "Update and manual-refresh rows move down to UnitSettingsServiceTest; the class keeps mapping and status rows with IUnitSettings mocked",
+"F551": "Update and refresh rows move down to UnitSettingsServiceTest; the class keeps mapping and status rows with IUnitSettings mocked",
+"F552": "Receives the moved update and refresh rows at the application port",
+"F553": "Two commits before the oracle. (1) Signature step, no behaviour: create Application/Units/IUnitSettings.cs, RefreshRequest.cs (closed abstract record) and an empty UnitSettingsService.cs; add the ItemTypeNotMapped and UnitToSaveNotFound cases to UnitSaveOutcome.cs; add ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten to Models/WorkTrackingSystemOptionsOwner.cs (unmapped until the migration); create Application/Structure/PlannedSubset.cs and Domain/UnitTypeLossNotice.cs; add Subsets (empty) to OrganisationStructureMigrationPlan; AddOrganisationSetup registers IUnitSettings. (2) Behaviour-preserving move: the load, save and refresh steps of TeamController.UpdateTeam and UpdateTeamData and PortfolioController's update and refresh actions move unchanged into UnitSettingsService; the controllers take IUnitSettings by constructor and pass the API.Helpers DTO-to-entity mapping as an Action<Team> or Action<Portfolio>, so OrganisationSetupModuleBoundariesArchUnitTest keeps its allow-list. Creates already go through IUnitLifecycle. In the same commit the update and refresh rows of TeamControllerTest and PortfolioControllerTest move down to Tests/Modules/OrganisationSetup/Application/Units/UnitSettingsServiceTest.cs and those classes keep mapping and status rows with IUnitSettings mocked. Per touched existing file: TeamController.cs, PortfolioController.cs, both test classes and WorkTrackingSystemOptionsOwner.cs each hold one type, nothing moves. Follow-up change: resolve the subset in saves and creates and refuse unmapped types",
+"F554": "Save and manual refresh answers over the host, fingerprints, slice 01 numbers, architecture rules",
+"F555": "GET settings rows move down to UnitSettingsServiceTest; the class keeps mapping rows with IUnitSettings and ILeafCapacityStore mocked",
+"F556": "Receives the moved GET settings rows",
+"F557": "Two commits before the oracle. (1) Signature step, no behaviour: create Modules/Forecasting/Contracts/LeafCapacityView.cs, LeafCapacityValues.cs and ILeafCapacityStore.cs, Domain/LeafCapacity.cs (no Contracts type), Adapters/Persistence/LeafCapacityStore.cs (All returns an empty list, ForTeam, Stage and StageForNewTeam throw NotImplementedException), Adapters/Startup/LeafCapacitySeeder.cs (Seed returns a completed task), AddLeafCapacity in ForecastingModule.cs (not yet called by Program.cs), and Application/Units/TeamSettingsView.cs with ReadTeamSettings on IUnitSettings. (2) Behaviour-preserving move: the load step of TeamController's GET settings moves unchanged into UnitSettingsService.ReadTeamSettings; the controller keeps mapping to TeamSettingDto through API.Helpers. In the same commit the GET settings rows of TeamControllerTest move down to UnitSettingsServiceTest and TeamControllerTest keeps its mapping rows with IUnitSettings mocked. Per touched existing file: TeamController.cs, TeamControllerTest.cs, UnitSettingsServiceTest.cs and ForecastingModule.cs each hold one type, nothing moves. Follow-up change: the controllers stage the capacity and read it from LeafCapacity",
+"F558": "Team settings payload and validation over the host, forecasts, slice 01 numbers, architecture rules",
 "F56": "IDomainEventDispatcher",
 "F57": "Tracker connectors (unchanged, receive each unit's effective types)",
 "F59": "Per unit: item counts by type, 90-day throughput, Work Item Age, every Feature's When-forecast percentiles 50/70/85/95 on pinned draws",

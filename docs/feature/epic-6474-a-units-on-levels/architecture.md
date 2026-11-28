@@ -110,6 +110,12 @@ Test composition: every new service is registered by a module extension that Pro
 Organisation set-up's Application never reaches a context that builds on it (OrganisationSetupModuleBoundariesArchUnitTest), so the Team settings save does not call Forecasting. The API layer composes the two owners on the request's scoped LighthouseAppContext. There is one create path per unit: the controller builds the entity through its API.Helpers mapping and calls IUnitLifecycle.CreateTeam(Team) or CreatePortfolio(Portfolio), which resolves the item types (from slice 04), commits, and is the single publisher of UnitCreated. Team create: TeamsController builds the Team, stages its capacity with ILeafCapacityStore.StageForNewTeam(Team, LeafCapacityValues), then calls IUnitLifecycle.CreateTeam; the staged LeafCapacities row's Team navigation points at that entity, so EF keys it to the database-generated id in the same SaveChanges. Team update: TeamController stages with ILeafCapacityStore.Stage(UnitId, LeafCapacityValues), then calls IUnitSettings.SaveTeam. Either commit writes both rows or neither under the Team's concurrency token. A refused save or create (400, 409, not found, concurrency) never calls SaveChanges, so the staged row is dropped when the request scope disposes the context. Reads: the controller reads the Team through IUnitSettings.ReadTeamSettings and the capacity through ILeafCapacityStore.ForTeam, and maps both to TeamSettingDto through API.Helpers; every Team has a row, from the seeder for existing Teams and from StageForNewTeam for new ones.
 ```
 
+#### D18
+
+```text
+Preservation across the controller-to-service moves (S3, S4, S5): the controller unit tests construct the controllers with their repositories and assert on those mocks, so they cannot stay unchanged across a move and are not the preservation observation. The observation is what survives the move: the host-level integration tests that drive the same routes through DI (TeamDeletionIntegrationTest, TeamDeleteSerialisationTests, PortfolioDeleteSerialisationTests, TeamsControllerAuthorizationTests, TeamConcurrencyTokenIntegrationTest, PortfolioConcurrencyTokenIntegrationTest, PortfolioOwningTeamSaveIntegrationTest, TeamStalenessThresholdSettingsIntegrationTest, PortfolioStalenessThresholdSettingsIntegrationTest, TeamThroughputHistoryValidationIntegrationTest, ForecastFilterTeamSettingsIntegrationTest), slice 01's NumbersStayTheSame, and the architecture rules, all observed GREEN before and after each move with their bytes unchanged. The four controller test classes are targets of the move: their rows for the moved logic move down to the service-port test classes UnitLifecycleServiceTest and UnitSettingsServiceTest under Tests/Modules/OrganisationSetup/Application/Units (improve the tests you touch), and the controller tests keep only controller-level rows (DTO mapping, status codes) with IUnitLifecycle or IUnitSettings mocked.
+```
+
 ### Constraints
 
 #### K1
@@ -2928,6 +2934,54 @@ Create
 Outcome of the single create port, extended in slice 04
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamsControllerTest\.cs
+
+Extend
+
+```text
+Create rows move down to UnitLifecycleServiceTest; the class keeps mapping and status rows with IUnitLifecycle mocked
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/PortfoliosControllerTest\.cs
+
+Extend
+
+```text
+Create rows move down to UnitLifecycleServiceTest; the class keeps mapping and status rows with IUnitLifecycle mocked
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamControllerTest\.cs
+
+Extend
+
+```text
+Delete rows move down to UnitLifecycleServiceTest; the class keeps status rows with IUnitLifecycle mocked
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/PortfolioControllerTest\.cs
+
+Extend
+
+```text
+Delete rows move down to UnitLifecycleServiceTest; the inline refresh-log row stays until the behaviour commit
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/OrganisationSetup\/Application\/Units\/UnitLifecycleServiceTest\.cs
+
+Create
+
+```text
+Receives the moved create and delete rows at the application port
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupIsAnOpenHostArchUnitTest\.cs
+
+Extend
+
+```text
+Its exact list loses TeamController -> TeamDeleted in the move commit
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/UnitsOnLevelsTest\.cs
 
 #### Verification
@@ -2969,22 +3023,24 @@ P1
 #### Prefactoring
 
 ```text
-Two commits before the oracle. (1) Behaviour-preserving move: the create logic of TeamsController.CreateTeam and PortfoliosController's create and the delete logic of TeamController.DeleteTeam and PortfolioController move unchanged into Application/Units/UnitLifecycleService.cs behind IUnitLifecycle.cs, with UnitSaveOutcome.cs (UnitSaved only) and DeletionOutcome.cs (closed abstract records, nested cases); the controllers keep the DTO-to-entity mapping in API.Helpers, pass the built entity to the port, and still publish TeamDeleted and PortfolioDeleted through it. (2) Signature step, no behaviour: create Contracts/UnitId.cs, UnitCreated.cs, UnitDeleted.cs, UnitView.cs, IUnitDirectory.cs (Contracts carry the level as the stored key string) and Application/Units/UnitDirectory.cs (UnitsOn returns an empty list); AddOrganisationSetup registers both. Per touched existing file: each controller and OrganisationSetupModule.cs holds one type, nothing moves. Follow-up change: publish UnitCreated and UnitDeleted
+Two commits before the oracle. (1) Signature step, no behaviour: create Contracts/UnitId.cs, UnitCreated.cs, UnitDeleted.cs, UnitView.cs, IUnitDirectory.cs (Contracts carry the level as the stored key string), Application/Units/IUnitLifecycle.cs, UnitSaveOutcome.cs (UnitSaved only), DeletionOutcome.cs (closed abstract records, nested cases), UnitDirectory.cs (UnitsOn returns an empty list) and an empty UnitLifecycleService.cs; AddOrganisationSetup registers them. (2) Behaviour-preserving move: the create logic of TeamsController.CreateTeam and PortfoliosController's create and the delete logic of TeamController.DeleteTeam and PortfolioController.DeletePortfolio move unchanged into UnitLifecycleService; the controllers take IUnitLifecycle by constructor, keep the DTO-to-entity mapping in API.Helpers and pass the built entity; TeamDeleted and PortfolioDeleted are still published, now from the service; PortfolioController keeps its inline refresh-log removal. In the same commit the create and delete rows of TeamsControllerTest, PortfoliosControllerTest, TeamControllerTest and PortfolioControllerTest move down to Tests/Modules/OrganisationSetup/Application/Units/UnitLifecycleServiceTest.cs, those classes keep mapping and status rows with IUnitLifecycle mocked, and OrganisationSetupIsAnOpenHostArchUnitTest loses TeamController -> TeamDeleted. Per touched existing file: each controller, each test class and OrganisationSetupModule.cs holds one type, nothing moves. Follow-up change: publish UnitCreated and UnitDeleted
 ```
 
 ```text
-Create and delete answers and clean-up
+Create and delete answers and clean-up over the host, slice 01 numbers, architecture rules
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamsControllerTest\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/TeamDeletionIntegrationTest\.cs
 
 ##### Verification
 
 ```text
 dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj
-dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamsControllerTest
-dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfoliosControllerTest
-dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamDeletedRefreshLogCleanupHandlerTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamDeletionIntegrationTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamDeleteSerialisationTests
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfolioDeleteSerialisationTests
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamsControllerAuthorizationTests
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.NumbersStayTheSame
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Architecture.OrganisationSetup
 ```
 
@@ -2998,6 +3054,10 @@ Unit lifecycle: TeamController and PortfolioController create and delete through
 
 ```text
 Read side and composition for slice 03: the oracle drives IUnitLifecycle and reads IUnitDirectory, both registered by AddOrganisationSetup; it observes the clean-up through the existing repositories and the refresh log service, and UnitCreated and UnitDeleted through a recording IDomainEventHandler it registers itself. Today the create and delete logic sits in TeamsController, TeamController, PortfoliosController and PortfolioController; the prefactoring step moves it unchanged into UnitLifecycleService, so the controllers call the port.
+```
+
+```text
+PortfolioController.DeletePortfolio removes refresh logs inline through WorkItems.Contracts.IRefreshLogService. The move leaves that call in the controller (the API layer may reach Work Items), so Organisation set-up's Application gains no edge into Work Items; slice 03's behaviour commit then removes it from the controller and TeamDeletedRefreshLogCleanupHandler, re-subscribed to UnitDeleted, clears the refresh log of a deleted unit on either level. OrganisationSetupIsAnOpenHostArchUnitTest's exact list of set-up events constructed outside set-up's Application shrinks in the move commit: TeamController -> TeamDeleted leaves it, because UnitLifecycleService now constructs the event.
 ```
 
 ##### Constraints
@@ -3224,6 +3284,66 @@ CreateNew
 
 ```text
 No outcome type for a unit create or save exists; today the controllers return ActionResults
+```
+
+TeamsControllerTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamsControllerTest\.cs\:1
+
+Extend
+
+```text
+Create rows move down to UnitLifecycleServiceTest; the class keeps mapping and status rows with IUnitLifecycle mocked
+```
+
+PortfoliosControllerTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/PortfoliosControllerTest\.cs\:1
+
+Extend
+
+```text
+Create rows move down to UnitLifecycleServiceTest; the class keeps mapping and status rows with IUnitLifecycle mocked
+```
+
+TeamControllerTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamControllerTest\.cs\:1
+
+Extend
+
+```text
+Delete rows move down to UnitLifecycleServiceTest; the class keeps status rows with IUnitLifecycle mocked
+```
+
+PortfolioControllerTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/PortfolioControllerTest\.cs\:1
+
+Extend
+
+```text
+Delete rows move down to UnitLifecycleServiceTest; the inline refresh-log row stays until the behaviour commit
+```
+
+UnitLifecycleServiceTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/OrganisationSetup\/Application\/Units\/UnitLifecycleServiceTest\.cs\:1
+
+CreateNew
+
+```text
+Receives the moved create and delete rows at the application port
+```
+
+OrganisationSetupIsAnOpenHostArchUnitTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupIsAnOpenHostArchUnitTest\.cs\:1
+
+Extend
+
+```text
+Its exact list loses TeamController -> TeamDeleted in the move commit
 ```
 
 ##### Impact
@@ -3456,6 +3576,66 @@ Changed
 
 ```text
 New outcome sum returned by IUnitLifecycle creates
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamsControllerTest\.cs\:1
+
+Changed
+
+```text
+Create rows move down to UnitLifecycleServiceTest; the class keeps mapping and status rows with IUnitLifecycle mocked
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/PortfoliosControllerTest\.cs\:1
+
+Changed
+
+```text
+Create rows move down to UnitLifecycleServiceTest; the class keeps mapping and status rows with IUnitLifecycle mocked
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamControllerTest\.cs\:1
+
+Changed
+
+```text
+Delete rows move down to UnitLifecycleServiceTest; the class keeps status rows with IUnitLifecycle mocked
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/PortfolioControllerTest\.cs\:1
+
+Changed
+
+```text
+Delete rows move down to UnitLifecycleServiceTest; the inline refresh-log row stays until the behaviour commit
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/OrganisationSetup\/Application\/Units\/UnitLifecycleServiceTest\.cs\:1
+
+Changed
+
+```text
+Receives the moved create and delete rows at the application port
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupIsAnOpenHostArchUnitTest\.cs\:1
+
+Changed
+
+```text
+Its exact list loses TeamController -> TeamDeleted in the move commit
 ```
 
 ##### Agreement
@@ -3722,6 +3902,30 @@ Extend
 Creates resolve the item types before commit
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamControllerTest\.cs
+
+Extend
+
+```text
+Update and manual-refresh rows move down to UnitSettingsServiceTest; the class keeps mapping and status rows with IUnitSettings mocked
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/PortfolioControllerTest\.cs
+
+Extend
+
+```text
+Update and refresh rows move down to UnitSettingsServiceTest; the class keeps mapping and status rows with IUnitSettings mocked
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/OrganisationSetup\/Application\/Units\/UnitSettingsServiceTest\.cs
+
+Create
+
+```text
+Receives the moved update and refresh rows at the application port
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/UnitReadsItsSubsetTest\.cs
 
 #### Verification
@@ -3763,22 +3967,26 @@ P1
 #### Prefactoring
 
 ```text
-Two commits before the oracle. (1) Behaviour-preserving move: the load, save and refresh steps of TeamController.UpdateTeam and UpdateTeamData and PortfolioController's update and refresh actions move unchanged into Application/Units/UnitSettingsService.cs behind IUnitSettings.cs, with RefreshRequest.cs (closed abstract record; only RefreshQueued and the not-found case produced yet). Creates already go through IUnitLifecycle (slice 03) and are not moved again. The DTO-to-entity mapping stays in the controllers and API.Helpers and reaches the service as an Action<Team> or Action<Portfolio>, so OrganisationSetupModuleBoundariesArchUnitTest keeps its allow-list unchanged. (2) Signature step, no behaviour: add ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten to Models/WorkTrackingSystemOptionsOwner.cs (unmapped until the migration), add the ItemTypeNotMapped and UnitToSaveNotFound cases to Application/Units/UnitSaveOutcome.cs, create Application/Structure/PlannedSubset.cs and Domain/UnitTypeLossNotice.cs, add Subsets (empty) to OrganisationStructureMigrationPlan. Per touched existing file: TeamController.cs, PortfolioController.cs, TeamsController.cs, PortfoliosController.cs and WorkTrackingSystemOptionsOwner.cs each hold one type, nothing moves. Follow-up change: resolve the subset in saves and creates and refuse unmapped types
+Two commits before the oracle. (1) Signature step, no behaviour: create Application/Units/IUnitSettings.cs, RefreshRequest.cs (closed abstract record) and an empty UnitSettingsService.cs; add the ItemTypeNotMapped and UnitToSaveNotFound cases to UnitSaveOutcome.cs; add ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten to Models/WorkTrackingSystemOptionsOwner.cs (unmapped until the migration); create Application/Structure/PlannedSubset.cs and Domain/UnitTypeLossNotice.cs; add Subsets (empty) to OrganisationStructureMigrationPlan; AddOrganisationSetup registers IUnitSettings. (2) Behaviour-preserving move: the load, save and refresh steps of TeamController.UpdateTeam and UpdateTeamData and PortfolioController's update and refresh actions move unchanged into UnitSettingsService; the controllers take IUnitSettings by constructor and pass the API.Helpers DTO-to-entity mapping as an Action<Team> or Action<Portfolio>, so OrganisationSetupModuleBoundariesArchUnitTest keeps its allow-list. Creates already go through IUnitLifecycle. In the same commit the update and refresh rows of TeamControllerTest and PortfolioControllerTest move down to Tests/Modules/OrganisationSetup/Application/Units/UnitSettingsServiceTest.cs and those classes keep mapping and status rows with IUnitSettings mocked. Per touched existing file: TeamController.cs, PortfolioController.cs, both test classes and WorkTrackingSystemOptionsOwner.cs each hold one type, nothing moves. Follow-up change: resolve the subset in saves and creates and refuse unmapped types
 ```
 
 ```text
-Every save, create and manual refresh answer
+Save and manual refresh answers over the host, fingerprints, slice 01 numbers, architecture rules
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamsControllerTest\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/TeamConcurrencyTokenIntegrationTest\.cs
 
 ##### Verification
 
 ```text
 dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj
-dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamsControllerTest
-dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfoliosControllerTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamConcurrencyTokenIntegrationTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfolioConcurrencyTokenIntegrationTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfolioOwningTeamSaveIntegrationTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamStalenessThresholdSettingsIntegrationTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfolioStalenessThresholdSettingsIntegrationTest
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~FetchFingerprintPinnedDigestTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.NumbersStayTheSame
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Architecture.OrganisationSetup
 ```
 
@@ -4048,6 +4256,36 @@ CreateNew
 Created by slice 03 as the single create path; slice 04 adds the subset resolution there instead of a second create
 ```
 
+TeamControllerTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamControllerTest\.cs\:1
+
+Extend
+
+```text
+Update and manual-refresh rows move down to UnitSettingsServiceTest; the class keeps mapping and status rows with IUnitSettings mocked
+```
+
+PortfolioControllerTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/PortfolioControllerTest\.cs\:1
+
+Extend
+
+```text
+Update and refresh rows move down to UnitSettingsServiceTest; the class keeps mapping and status rows with IUnitSettings mocked
+```
+
+UnitSettingsServiceTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/OrganisationSetup\/Application\/Units\/UnitSettingsServiceTest\.cs\:1
+
+CreateNew
+
+```text
+Receives the moved update and refresh rows at the application port
+```
+
 ##### Impact
 
 wire
@@ -4310,6 +4548,36 @@ Changed
 Create resolves item types and refuses unmapped ones
 ```
 
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamControllerTest\.cs\:1
+
+Changed
+
+```text
+Update and manual-refresh rows move down to UnitSettingsServiceTest; the class keeps mapping and status rows with IUnitSettings mocked
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/PortfolioControllerTest\.cs\:1
+
+Changed
+
+```text
+Update and refresh rows move down to UnitSettingsServiceTest; the class keeps mapping and status rows with IUnitSettings mocked
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/OrganisationSetup\/Application\/Units\/UnitSettingsServiceTest\.cs\:1
+
+Changed
+
+```text
+Receives the moved update and refresh rows at the application port
+```
+
 ##### Agreement
 
 None.
@@ -4568,6 +4836,22 @@ Create
 Capacity values without a Team id, so a create can stage them before the id exists
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamControllerTest\.cs
+
+Extend
+
+```text
+GET settings rows move down to UnitSettingsServiceTest; the class keeps mapping rows with IUnitSettings and ILeafCapacityStore mocked
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/OrganisationSetup\/Application\/Units\/UnitSettingsServiceTest\.cs
+
+Extend
+
+```text
+Receives the moved GET settings rows
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/LeafCapacityInForecastingTest\.cs
 
 #### Verification
@@ -4608,20 +4892,23 @@ P1
 #### Prefactoring
 
 ```text
-Two commits before the oracle. (1) Behaviour-preserving move: the load step of TeamController's GET settings moves unchanged into UnitSettingsService.ReadTeamSettings, which returns Application/Units/TeamSettingsView.cs (closed abstract record: Found(Team) or TeamNotFound); the controller keeps mapping to TeamSettingDto through API.Helpers. (2) Signature step, no behaviour: create Modules/Forecasting/Contracts/LeafCapacityView.cs and ILeafCapacityStore.cs, Domain/LeafCapacity.cs (no Contracts type), Adapters/Persistence/LeafCapacityStore.cs (All returns an empty list, ForTeam and Stage throw NotImplementedException), Adapters/Startup/LeafCapacitySeeder.cs (Seed returns a completed task), and AddLeafCapacity in ForecastingModule.cs (not yet called by Program.cs). Per touched existing file: TeamController.cs and ForecastingModule.cs each hold one type, nothing moves. Follow-up change: the controllers stage the capacity and read it from LeafCapacity
+Two commits before the oracle. (1) Signature step, no behaviour: create Modules/Forecasting/Contracts/LeafCapacityView.cs, LeafCapacityValues.cs and ILeafCapacityStore.cs, Domain/LeafCapacity.cs (no Contracts type), Adapters/Persistence/LeafCapacityStore.cs (All returns an empty list, ForTeam, Stage and StageForNewTeam throw NotImplementedException), Adapters/Startup/LeafCapacitySeeder.cs (Seed returns a completed task), AddLeafCapacity in ForecastingModule.cs (not yet called by Program.cs), and Application/Units/TeamSettingsView.cs with ReadTeamSettings on IUnitSettings. (2) Behaviour-preserving move: the load step of TeamController's GET settings moves unchanged into UnitSettingsService.ReadTeamSettings; the controller keeps mapping to TeamSettingDto through API.Helpers. In the same commit the GET settings rows of TeamControllerTest move down to UnitSettingsServiceTest and TeamControllerTest keeps its mapping rows with IUnitSettings mocked. Per touched existing file: TeamController.cs, TeamControllerTest.cs, UnitSettingsServiceTest.cs and ForecastingModule.cs each hold one type, nothing moves. Follow-up change: the controllers stage the capacity and read it from LeafCapacity
 ```
 
 ```text
-Team settings payload and forecasts
+Team settings payload and validation over the host, forecasts, slice 01 numbers, architecture rules
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamsControllerTest\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/ForecastFilterTeamSettingsIntegrationTest\.cs
 
 ##### Verification
 
 ```text
 dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj
-dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamsControllerTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ForecastFilterTeamSettingsIntegrationTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamThroughputHistoryValidationIntegrationTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamStalenessThresholdSettingsIntegrationTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.OneStructure.NumbersStayTheSame
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Architecture.OrganisationSetup
 ```
 
@@ -4813,6 +5100,26 @@ CreateNew
 LeafCapacityView carries the Team id, which a new Team does not have yet
 ```
 
+TeamControllerTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamControllerTest\.cs\:1
+
+Extend
+
+```text
+GET settings rows move down to UnitSettingsServiceTest; the class keeps mapping rows with IUnitSettings and ILeafCapacityStore mocked
+```
+
+UnitSettingsServiceTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/OrganisationSetup\/Application\/Units\/UnitSettingsServiceTest\.cs\:1
+
+CreateNew
+
+```text
+Receives the moved GET settings rows
+```
+
 ##### Impact
 
 wire
@@ -4993,6 +5300,26 @@ Changed
 
 ```text
 New Contracts record staged by create and update
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamControllerTest\.cs\:1
+
+Changed
+
+```text
+GET settings rows move down to UnitSettingsServiceTest; the class keeps mapping rows with IUnitSettings and ILeafCapacityStore mocked
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/OrganisationSetup\/Application\/Units\/UnitSettingsServiceTest\.cs\:1
+
+Changed
+
+```text
+Receives the moved GET settings rows
 ```
 
 ##### Agreement
