@@ -526,37 +526,6 @@ A component that reads the service through destructuring or a renamed alias, whi
 ###### Obligations
 
 
-##### Covers
-
-P3
-
-```text
-The product source, every non-test frontend file including files added later, is scanned for direct calls to the Teams and Portfolios list services
-```
-
-```text
-Only the unit lists hook calls them
-```
-
-```text
-Every page reads one shared Teams list and one shared Portfolios list
-```
-
-##### Disposition
-
-Tested
-
-Lighthouse\.Frontend\/src\/hooks\/sharedReadOwners\.test\.ts
-
-lets only the unit lists hook ask for the Teams and the Portfolios
-
-```text
-A caller through destructuring or an alias, which the scan does not see
-```
-
-###### Obligations
-
-
 ## Expectations
 
 ### Rows

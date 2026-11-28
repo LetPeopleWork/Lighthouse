@@ -616,33 +616,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
-<h5>Covers</h5>
-
-<p>P3</p>
-
-<pre><code>The product source, every non-test frontend file including files added later, is scanned for direct calls to the Teams and Portfolios list services
-</code></pre>
-
-<pre><code>Only the unit lists hook calls them
-</code></pre>
-
-<pre><code>Every page reads one shared Teams list and one shared Portfolios list
-</code></pre>
-
-<h5>Disposition</h5>
-
-<p>Tested</p>
-
-<p>Lighthouse.Frontend/src/hooks/sharedReadOwners.test.ts</p>
-
-<p>lets only the unit lists hook ask for the Teams and the Portfolios</p>
-
-<pre><code>A caller through destructuring or an alias, which the scan does not see
-</code></pre>
-
-<h6>Obligations</h6>
-
-
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

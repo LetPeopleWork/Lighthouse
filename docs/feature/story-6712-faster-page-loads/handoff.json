@@ -297,23 +297,6 @@
 "expected": "F487",
 "stimulus": "F486",
 "user_result": "F488"
-},
-{
-"covers": [
-"P3"
-],
-"disposition": {
-"kind": "Tested",
-"obligations": [
-"T3"
-],
-"still_passes_if": "F493",
-"test": "lets only the unit lists hook ask for the Teams and the Portfolios",
-"test_path": "Lighthouse.Frontend/src/hooks/sharedReadOwners.test.ts"
-},
-"expected": "F491",
-"stimulus": "F490",
-"user_result": "F492"
 }
 ]
 },
@@ -2663,10 +2646,6 @@
 "F488": "Every component gates on the one shared permissions answer behind useRbac()",
 "F489": "A component that reads the service through destructuring or a renamed alias, which the scan does not see",
 "F49": "The Story says the build already makes .gz files; no compression step was found in vite.config.ts or the pipeline. DESIGN decides how the files get compressed (at build or at serve time) and how they are served (MapStaticAssets, or a provider beside UseStaticFiles), keeping index.html uncacheable (Bug #5732).",
-"F490": "The product source, every non-test frontend file including files added later, is scanned for direct calls to the Teams and Portfolios list services",
-"F491": "Only the unit lists hook calls them",
-"F492": "Every page reads one shared Teams list and one shared Portfolios list",
-"F493": "A caller through destructuring or an alias, which the scan does not see",
 "F494": "The answers that are never compressed are chosen by an endpoint marker, NeverCompressResponseAttribute on LogsController, EmbedHandshakeController and UpdateNotificationHub, instead of a list of path literals in BreachSafeResponseCompressionProvider.",
 "F495": "The maintainer asked, 2026-11-28: could we NOT use literal paths and have something smarter instead? A renamed controller route silently drops its exclusion from a hand-typed path list.",
 "F496": "Open question 2 resolved (BREACH): an answer is compressed only when ResponseCompression:Enabled is true, the request method is GET or HEAD, the response MIME type is in ResponseCompressionDefaults.MimeTypes, the client sent Accept-Encoding with br or gzip, and the endpoint that answers carries no NeverCompressResponseAttribute in its metadata. Marked, on the class, so every action and route of it is covered whatever its route is called: the SignalR hub UpdateNotificationHub (negotiate and transports); LogsController (tail, download, problems, level), because its answers hold log text an attacker can reach (logged paths, failed sign-ins, tracker queries) next to exception text from third-party libraries that this design cannot show is free of secrets, and an administrator can raise the log level at run time; and EmbedHandshakeController, whose one GET is the one GET whose body carries a secret (the single-use embed session token). The handshake body reflects no attacker text and its nonce is spent on first read, so it is not exploitable today; it is marked so the rule stays simple: no compressed answer carries a secret, and the answer is a few hundred bytes. Every other GET carries no secret: connection options blank secret values (WorkTrackingSystemConnectionOptionDto sets Value empty when IsSecret), GET api-keys never returns the plaintext (ApiKeyController.GetApiKeys), the OAuth callback answers a redirect with a connection id, session and embed cookies travel in headers, which ResponseCompression never compresses; the plain-text API key of ApiKeyCreationResult answers a POST. The embed cookie is SameSite=None, so cross-site GETs carry it; no GET in embed scope other than the marked handshake returns a token. EnableForHttps is true because the rule, not the scheme, is the mitigation, so TLS at a proxy does not change the answer. Owner in code: BreachSafeResponseCompressionProvider in Platform/Host, a subclass of ResponseCompressionProvider overriding ShouldCompressResponse; the marker is NeverCompressResponseAttribute in Platform/Host. Static files and the SPA fallback answer without a marked endpoint, so they stay compressible. Platform facts (DEVOPS): the Docker image serves HTTPS 443 with nothing in front; the Helm chart plain Ingress (ingress-nginx, Traefik) does not compress by default and passes an already encoded answer through; a proxy that strips Accept-Encoding gets identity answers; the Standalone webview loads its UI from the app bundle and only its loopback API answers are compressed, about 1 ms each; one behaviour everywhere.",
