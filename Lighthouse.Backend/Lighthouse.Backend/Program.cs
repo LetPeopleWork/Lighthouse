@@ -1333,6 +1333,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ISeeder, InstallTimestampSeeder>();
             builder.Services.AddScoped<ISeeder, OptionalFeatureSeeder>();
             builder.Services.AddScoped<ISeeder, TerminologySeeder>();
+            builder.Services.AddOrganisationStructure();
             builder.Services.AddScoped<ISeeder, RefreshLogSeeder>();
             builder.Services.AddScoped<ISeeder, ApiKeyOwnerReconciliationSeeder>();
             builder.Services.AddForecasting();

@@ -17,5 +17,7 @@ namespace Lighthouse.Backend.Modules.OrganisationSetup.Domain.Structure
         public TermPair UnitName { get; }
 
         public TermPair ItemName { get; }
+
+        internal Level Named(TermPair unitName, TermPair itemName) => new(Id, Ordinal, unitName, itemName);
     }
 }

@@ -13,6 +13,7 @@ using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Models.UsageData;
+using Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Persistence;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -103,6 +104,14 @@ namespace Lighthouse.Backend.Data
         public DbSet<Report> Reports { get; set; } = null!;
 
         public DbSet<ReportNote> ReportNotes { get; set; } = null!;
+
+        public DbSet<OrganisationStructureRecord> OrganisationStructures { get; set; } = null!;
+
+        public DbSet<LevelRecord> Levels { get; set; } = null!;
+
+        public DbSet<ConnectionMappingRecord> ConnectionMappings { get; set; } = null!;
+
+        public DbSet<ConnectionLevelMappingRecord> ConnectionLevelMappings { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -703,6 +712,53 @@ namespace Lighthouse.Backend.Data
             ConfigureReports(modelBuilder);
             ConfigureReportNotes(modelBuilder);
             ConfigureRefreshFindings(modelBuilder);
+            ConfigureOrganisationStructure(modelBuilder);
+        }
+
+        private static void ConfigureOrganisationStructure(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<OrganisationStructureRecord>(entity =>
+            {
+                entity.ToTable("OrganisationStructures");
+                entity.HasKey(structure => structure.Id);
+                entity.Property(structure => structure.Id).ValueGeneratedNever();
+                entity.Property(structure => structure.ConcurrencyToken).IsConcurrencyToken();
+                entity.HasMany(structure => structure.Levels)
+                    .WithOne()
+                    .HasForeignKey(level => level.OrganisationStructureId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<LevelRecord>(entity =>
+            {
+                entity.ToTable("Levels");
+                entity.HasKey(level => level.Key);
+                entity.Property(level => level.UnitSingular).IsRequired();
+                entity.Property(level => level.UnitPlural).IsRequired();
+                entity.Property(level => level.ItemSingular).IsRequired();
+                entity.Property(level => level.ItemPlural).IsRequired();
+            });
+
+            modelBuilder.Entity<ConnectionMappingRecord>(entity =>
+            {
+                entity.ToTable("ConnectionMappings");
+                entity.HasKey(mapping => mapping.ConnectionId);
+                entity.Property(mapping => mapping.ConnectionId).ValueGeneratedNever();
+                entity.HasOne<WorkTrackingSystemConnection>()
+                    .WithMany()
+                    .HasForeignKey(mapping => mapping.ConnectionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasMany(mapping => mapping.Levels)
+                    .WithOne()
+                    .HasForeignKey(level => level.ConnectionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<ConnectionLevelMappingRecord>(entity =>
+            {
+                entity.ToTable("ConnectionLevelMappings");
+                entity.HasKey(level => new { level.ConnectionId, level.LevelKey });
+            });
         }
 
         // NULL means the owner follows, so it must stay NULL: read as an empty list it would turn "follow the

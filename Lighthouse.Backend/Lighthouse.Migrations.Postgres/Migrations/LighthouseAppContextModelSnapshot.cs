@@ -17,7 +17,7 @@ partial class LighthouseAppContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20261127160359_AddWithinSleSnapshots";
+    public override string LastMigrationId => "20261128175250_AddOrganisationStructure";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -2046,6 +2046,81 @@ partial class LighthouseAppContextModelSnapshot : ModelSnapshot
                 b.ToTable("WriteBackMappingDefinition");
             });
 
+        modelBuilder.Entity("Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Persistence.ConnectionLevelMappingRecord", b =>
+            {
+                b.Property<int>("ConnectionId")
+                    .HasColumnType("integer");
+
+                b.Property<string>("LevelKey")
+                    .HasColumnType("text");
+
+                b.PrimitiveCollection<List<string>>("ItemTypes")
+                    .IsRequired()
+                    .HasColumnType("text[]");
+
+                b.HasKey("ConnectionId", "LevelKey");
+
+                b.ToTable("ConnectionLevelMappings");
+            });
+
+        modelBuilder.Entity("Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Persistence.ConnectionMappingRecord", b =>
+            {
+                b.Property<int>("ConnectionId")
+                    .HasColumnType("integer");
+
+                b.HasKey("ConnectionId");
+
+                b.ToTable("ConnectionMappings");
+            });
+
+        modelBuilder.Entity("Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Persistence.LevelRecord", b =>
+            {
+                b.Property<string>("Key")
+                    .HasColumnType("text");
+
+                b.Property<string>("ItemPlural")
+                    .IsRequired()
+                    .HasColumnType("text");
+
+                b.Property<string>("ItemSingular")
+                    .IsRequired()
+                    .HasColumnType("text");
+
+                b.Property<int>("Ordinal")
+                    .HasColumnType("integer");
+
+                b.Property<int>("OrganisationStructureId")
+                    .HasColumnType("integer");
+
+                b.Property<string>("UnitPlural")
+                    .IsRequired()
+                    .HasColumnType("text");
+
+                b.Property<string>("UnitSingular")
+                    .IsRequired()
+                    .HasColumnType("text");
+
+                b.HasKey("Key");
+
+                b.HasIndex("OrganisationStructureId");
+
+                b.ToTable("Levels");
+            });
+
+        modelBuilder.Entity("Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Persistence.OrganisationStructureRecord", b =>
+            {
+                b.Property<int>("Id")
+                    .HasColumnType("integer");
+
+                b.Property<Guid>("ConcurrencyToken")
+                    .IsConcurrencyToken()
+                    .HasColumnType("uuid");
+
+                b.HasKey("Id");
+
+                b.ToTable("OrganisationStructures");
+            });
+
         modelBuilder.Entity("Lighthouse.Backend.Models.Forecast.StartForecast", b =>
             {
                 b.HasBaseType("Lighthouse.Backend.Models.Forecast.ForecastBase");
@@ -2421,6 +2496,33 @@ partial class LighthouseAppContextModelSnapshot : ModelSnapshot
                 b.Navigation("WorkTrackingSystemConnection");
             });
 
+        modelBuilder.Entity("Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Persistence.ConnectionLevelMappingRecord", b =>
+            {
+                b.HasOne("Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Persistence.ConnectionMappingRecord", null)
+                    .WithMany("Levels")
+                    .HasForeignKey("ConnectionId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+            });
+
+        modelBuilder.Entity("Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Persistence.ConnectionMappingRecord", b =>
+            {
+                b.HasOne("Lighthouse.Backend.Models.WorkTrackingSystemConnection", null)
+                    .WithMany()
+                    .HasForeignKey("ConnectionId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+            });
+
+        modelBuilder.Entity("Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Persistence.LevelRecord", b =>
+            {
+                b.HasOne("Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Persistence.OrganisationStructureRecord", null)
+                    .WithMany("Levels")
+                    .HasForeignKey("OrganisationStructureId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+            });
+
         modelBuilder.Entity("Lighthouse.Backend.Models.Forecast.StartForecast", b =>
             {
                 b.HasOne("Lighthouse.Backend.Models.Feature", "Feature")
@@ -2485,6 +2587,16 @@ partial class LighthouseAppContextModelSnapshot : ModelSnapshot
                 b.Navigation("Options");
 
                 b.Navigation("WriteBackMappingDefinitions");
+            });
+
+        modelBuilder.Entity("Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Persistence.ConnectionMappingRecord", b =>
+            {
+                b.Navigation("Levels");
+            });
+
+        modelBuilder.Entity("Lighthouse.Backend.Modules.OrganisationSetup.Adapters.Persistence.OrganisationStructureRecord", b =>
+            {
+                b.Navigation("Levels");
             });
 #pragma warning restore 612, 618
     }
