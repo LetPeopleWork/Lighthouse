@@ -31,21 +31,6 @@
     },
     "allowlist": [
       {
-        "unit": "Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest",
-        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
-        "ceiling_seconds": 229
-      },
-      {
-        "unit": "Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice05ReconstructCycleTimeHistoryTest",
-        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
-        "ceiling_seconds": 214
-      },
-      {
-        "unit": "Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice06EveryPercentileTabSpansTheSamePeriodTest",
-        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
-        "ceiling_seconds": 121
-      },
-      {
         "unit": "Lighthouse.Backend.Tests.Platform.Encryption.SecretCustodyServiceTests",
         "reason": "works against a real SQLite database for every test, because what it checks lives in the stored values",
         "ceiling_seconds": 111
@@ -79,6 +64,11 @@
         "unit": "Lighthouse.Backend.Tests.Integration.Containers.BlockedCountSnapshotMigrationTests",
         "reason": "starts a fresh Postgres container and applies every migration to prove the table on a real provider",
         "ceiling_seconds": 53
+      },
+      {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice05ReconstructCycleTimeHistoryTest",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario",
+        "ceiling_seconds": 50
       },
       {
         "unit": "Lighthouse.Backend.Tests.Platform.Encryption.ReadableSecretsNotOnTheActiveKeyTests",

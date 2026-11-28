@@ -26,9 +26,6 @@ def breach_phrase(seconds, limit, kind="budget"):
 SHIPPED_FRONTEND_BUDGET = 54
 SHIPPED_BACKEND_BUDGET = 34
 SHIPPED_BACKEND_CEILINGS = {
-    "API.Integration.PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest": 229,
-    "API.Integration.PercentilesOverTime.Slice05ReconstructCycleTimeHistoryTest": 214,
-    "API.Integration.PercentilesOverTime.Slice06EveryPercentileTabSpansTheSamePeriodTest": 121,
     "Platform.Encryption.SecretCustodyServiceTests": 111,
     "API.Integration.FasterUpdates.Slice05FetchFingerprintTest": 91,
     "Modules.TrackerIntegration.Adapters.Connectors.AzureDevOps.AzureDevOpsWorkTrackingConnectorTest": 83,
@@ -36,6 +33,7 @@ SHIPPED_BACKEND_CEILINGS = {
     "Platform.Encryption.PublishedKeySecretCountTests": 64,
     "Platform.Encryption.ReferencedKeyIdsTests": 57,
     "Integration.Containers.BlockedCountSnapshotMigrationTests": 53,
+    "API.Integration.PercentilesOverTime.Slice05ReconstructCycleTimeHistoryTest": 50,
     "Platform.Encryption.ReadableSecretsNotOnTheActiveKeyTests": 46,
     "Integration.Containers.BlockedDurationMigrationTests": 45,
     "API.Integration.FasterUpdates.Slice03JiraCloudPortfolioDeltaTest": 40,
