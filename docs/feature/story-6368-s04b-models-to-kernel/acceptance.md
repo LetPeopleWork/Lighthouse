@@ -577,7 +577,7 @@ A member added to, renamed in or removed from a moved type; only member names ar
 P2
 
 ```text
-Run the Architecture tests after the context-owned types left the Models: for each of the 36 context movers, search the catalogue rows and the movers list for its name
+Run the Architecture tests after the 13 free context-owned files moved: for each of the 18 types in them, search the catalogue rows and the movers list for its name
 ```
 
 ```text
@@ -610,7 +610,7 @@ P2
 P4
 
 ```text
-Run the Architecture tests after the move: look up each of the 36 context movers by name among the top-level types of the compiled backend
+Run the Architecture tests after the move: look up each of the 18 types of the 13 free files by name among the top-level types of the compiled backend
 ```
 
 ```text
@@ -643,7 +643,7 @@ A type moved to the Application layer of the right owner, or only copied to the 
 P2
 
 ```text
-Run the Architecture tests after the move: look up each of the 7 unit tests of moved types by name among the top-level types of the compiled test assembly
+Run the Architecture tests after the move: look up each of the 5 unit tests of moved types by name among the top-level types of the compiled test assembly
 ```
 
 ```text
@@ -701,6 +701,38 @@ A moved type that quietly gained or lost a public member still passes the rules;
 
 ###### Obligations
 
+
+##### Covers
+
+P2
+
+```text
+Run the Architecture tests with the 14 context-owned files still in the Models: check each type's catalogue row against what the compiled code shows
+```
+
+```text
+Each staying type has a row naming its owner and exactly its measured blocker: reached from outside its module (a type outside its owner's module reaches it without already reaching the owner's Domain, or a contracts type reaches it), held by a staying Models type, or sharing a file with one; a row claiming a blocker the type is free of, or missing one, is refused
+```
+
+```text
+A maintainer sees which types stay in the Models and why, and the list stays true as the code changes
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelCatalogueArchUnitTest\.cs
+
+KernelCatalogueArchUnitTest\.EveryOwnedRow\_ClaimsExactlyTheBlockersMeasuredFromTheCompiledCodeAndTheDatabaseModel
+
+```text
+A row that omits a true blocker, or claims one the type is free of, is refused in both directions; a blocker measured wrongly would pass here, which the planted reached and constants-only types in the same fixture refuse
+```
+
+###### Obligations
+
+None.
 
 ## Expectations
 

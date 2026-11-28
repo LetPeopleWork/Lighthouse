@@ -25,6 +25,12 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// <summary>Types of two or more contexts use it.</summary>
         Shared,
 
+        /// <summary>
+        /// A type outside its owner's module and outside the Models reaches it without already reaching the owner's Domain, or a
+        /// contracts type reaches it, and no other blocker keeps it: it moves once its owner publishes it in its contracts.
+        /// </summary>
+        ReachedFromOutsideItsModule,
+
         /// <summary>The data layer, a repository or the composition root names it.</summary>
         InfraReached,
 
@@ -72,6 +78,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string Shared = "S12c puts it in its owner's contract";
 
+        private const string Reached = "S12c lets the owner publish it in its contracts";
+
         private const string Infra = "S05 or S10 move the data layer and the composition root";
 
         private const string Pinned = "the consumer that reads its path changes first";
@@ -117,6 +125,9 @@ namespace Lighthouse.Backend.Tests.Architecture
             CatalogueRow.Owned("Authorization.RbacGroupMappingRequest", "Access", Wire, KernelBlocker.Wire),
             CatalogueRow.Owned("Authorization.RbacGroupMappingRoleUpdateRequest", "Access", Wire, KernelBlocker.Wire),
             CatalogueRow.Owned("Authorization.RbacGroupMappingSummary", "Access", Wire, KernelBlocker.Wire),
+            CatalogueRow.Owned("Authorization.RbacGuardRequirement", "Access", Reached, KernelBlocker.ReachedFromOutsideItsModule),
+            CatalogueRow.Owned("Authorization.RbacOperationErrorCodes", "Access", MovesWithItsFile, KernelBlocker.SharesAFile),
+            CatalogueRow.Owned("Authorization.RbacOperationResult", "Access", Reached, KernelBlocker.ReachedFromOutsideItsModule),
             CatalogueRow.Owned("Authorization.RbacScopedMemberSummary", "Access", Wire, KernelBlocker.Wire),
             CatalogueRow.Owned("Authorization.RbacStatus", "Access", Wire, KernelBlocker.Wire),
             CatalogueRow.Owned("Authorization.RbacUserSummary", "Access", Wire, KernelBlocker.Wire),
@@ -146,11 +157,13 @@ namespace Lighthouse.Backend.Tests.Architecture
             CatalogueRow.Owned("DeliverySources.DeliveryForecastPublication", "TrackerIntegration", Shared, KernelBlocker.Shared),
             CatalogueRow.Owned("DeliverySources.DeliveryForecastPublishResult", "TrackerIntegration", Shared, KernelBlocker.Shared),
             CatalogueRow.Owned("DeliverySources.DeliverySourceDescriptor", "TrackerIntegration", Shared, KernelBlocker.Shared),
+            CatalogueRow.Owned("DeliverySources.DeliverySourceOption", "TrackerIntegration", Reached, KernelBlocker.ReachedFromOutsideItsModule),
+            CatalogueRow.Owned("DeliverySources.DeliverySourceProject", "TrackerIntegration", Held, KernelBlocker.HeldBy),
             CatalogueRow.Owned("DeliverySources.DeliverySourceResolution", "TrackerIntegration", Shared, KernelBlocker.Shared),
             CatalogueRow.Owned("DeliverySources.DeliverySourceSnapshot", "TrackerIntegration", Shared, KernelBlocker.HeldBy, KernelBlocker.Shared),
             CatalogueRow.Owned("DeliverySources.DeliverySourceSweepPurpose", "TrackerIntegration", Shared, KernelBlocker.Shared),
             CatalogueRow.Owned("DeliverySources.DeliverySourceUnavailableReason", "TrackerIntegration", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy, KernelBlocker.Shared),
-            CatalogueRow.Owned("DeliverySources.SourceOptionBlockReason", "TrackerIntegration", Wire, KernelBlocker.Wire),
+            CatalogueRow.Owned("DeliverySources.SourceOptionBlockReason", "TrackerIntegration", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy),
             CatalogueRow.Owned("DeliveryWhenPercentile", "Promises", Held, KernelBlocker.HeldBy),
             CatalogueRow.Owned("DemoData.DemoDataScenario", "Platform", Wire, KernelBlocker.Wire),
             CatalogueRow.Owned("Dependencies.DependencySource", "WorkItems", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy, KernelBlocker.Shared, KernelBlocker.InfraReached),
@@ -174,6 +187,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             CatalogueRow.Owned("FeatureBlockedTransition", "WorkItems", Entity, KernelBlocker.Entity, KernelBlocker.Wire, KernelBlocker.Shared, KernelBlocker.InfraReached),
             CatalogueRow.Owned("FeatureComparer", "OrganisationSetup", Shared, KernelBlocker.Shared),
             CatalogueRow.Owned("FeatureDependencyReference", "WorkItems", Entity, KernelBlocker.Entity, KernelBlocker.Wire, KernelBlocker.HeldBy, KernelBlocker.Shared, KernelBlocker.InfraReached),
+            CatalogueRow.Owned("FeatureMoveVerdict", "Access", Reached, KernelBlocker.ReachedFromOutsideItsModule),
+            CatalogueRow.Owned("FeatureOrderKey", "OrganisationSetup", Reached, KernelBlocker.ReachedFromOutsideItsModule),
             CatalogueRow.Owned("FeatureOrderingPolicy", "OrganisationSetup", Wire, KernelBlocker.Wire),
             CatalogueRow.Owned("FeatureStateTransition", "WorkItems", Entity, KernelBlocker.Entity, KernelBlocker.Wire, KernelBlocker.Shared, KernelBlocker.InfraReached),
             CatalogueRow.Owned("FeatureWork", "WorkItems", Entity, KernelBlocker.Entity, KernelBlocker.Wire, KernelBlocker.HeldBy, KernelBlocker.Shared, KernelBlocker.InfraReached),
@@ -189,6 +204,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             CatalogueRow.Owned("Forecast.FeatureForecastWindow", "Forecasting", Shared, KernelBlocker.Shared),
             CatalogueRow.Owned("Forecast.FeatureStart", "Forecasting", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy),
             CatalogueRow.Owned("Forecast.ForecastBase", "Forecasting", Entity, KernelBlocker.Entity, KernelBlocker.HeldBy, KernelBlocker.Shared, KernelBlocker.InfraReached),
+            CatalogueRow.Owned("Forecast.ForecastHorizon", "Forecasting", Held, KernelBlocker.HeldBy),
             CatalogueRow.Owned("Forecast.ForecastInputCandidatesDto", "Forecasting", Wire, KernelBlocker.Wire),
             CatalogueRow.Owned("Forecast.ForecastPercentile", "Forecasting", Held, KernelBlocker.HeldBy),
             CatalogueRow.Owned("Forecast.ForecastPredictabilityScore", "Forecasting", Wire, KernelBlocker.Wire),
@@ -233,6 +249,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             CatalogueRow.Owned("Metrics.CumulativeStateTimeItemsDto", "FlowMetrics", Wire, KernelBlocker.Wire),
             CatalogueRow.Owned("Metrics.CumulativeStateTimeStateRowDto", "FlowMetrics", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy),
             CatalogueRow.Owned("Metrics.CycleTimePercentilesInfoDto", "FlowMetrics", Wire, KernelBlocker.Wire),
+            CatalogueRow.Owned("Metrics.EstimateNormalizationStatus", "FlowMetrics", Reached, KernelBlocker.ReachedFromOutsideItsModule),
             CatalogueRow.Owned("Metrics.EstimationVsCycleTimeDataPoint", "FlowMetrics", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy),
             CatalogueRow.Owned("Metrics.EstimationVsCycleTimeDiagnostics", "FlowMetrics", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy),
             CatalogueRow.Owned("Metrics.EstimationVsCycleTimeResponse", "FlowMetrics", Wire, KernelBlocker.Wire),
@@ -252,7 +269,9 @@ namespace Lighthouse.Backend.Tests.Architecture
             CatalogueRow.Owned("Metrics.RunChartData", "FlowMetrics", Shared, KernelBlocker.Shared),
             CatalogueRow.Owned("Metrics.SleRiskDto", "FlowMetrics", Wire, KernelBlocker.Wire, KernelBlocker.Shared),
             CatalogueRow.Owned("Metrics.SpecialCauseType", "FlowMetrics", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy),
-            CatalogueRow.Owned("Metrics.ThroughputFilterMode", "FlowMetrics", Shared, KernelBlocker.Shared),
+            CatalogueRow.Owned("Metrics.StateAsOf", "FlowMetrics", Reached, KernelBlocker.ReachedFromOutsideItsModule),
+            CatalogueRow.Owned("Metrics.ThroughputFilterMode", "FlowMetrics", Shared, KernelBlocker.Shared, KernelBlocker.HeldBy),
+            CatalogueRow.Owned("Metrics.ThroughputFilterOverride", "FlowMetrics", Reached, KernelBlocker.ReachedFromOutsideItsModule),
             CatalogueRow.Owned("Metrics.ThroughputInfoDto", "FlowMetrics", Wire, KernelBlocker.Wire),
             CatalogueRow.Owned("Metrics.TotalWorkItemAgeInfoDto", "FlowMetrics", Wire, KernelBlocker.Wire),
             CatalogueRow.Owned("Metrics.TrendDetailRowDto", "FlowMetrics", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy),
@@ -334,6 +353,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             CatalogueRow.Owned("Reports.ReportOwnerKind", "Reports", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy, KernelBlocker.InfraReached),
             CatalogueRow.Owned("Reports.ReportOwnerOutcome", "Reports", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy),
             CatalogueRow.Owned("Reports.ReportRead", "Reports", Wire, KernelBlocker.Wire),
+            CatalogueRow.Owned("Reports.ReportRefusalCodes", "Reports", Reached, KernelBlocker.ReachedFromOutsideItsModule),
             CatalogueRow.Owned("Reports.ReportRemovalOutcome", "Reports", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy),
             CatalogueRow.Owned("Reports.ReportRemovalStatus", "Reports", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy),
             CatalogueRow.Owned("Reports.ReportSummary", "Reports", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy),
@@ -347,7 +367,11 @@ namespace Lighthouse.Backend.Tests.Architecture
             CatalogueRow.Owned("Reports.ThenAndNowSummary", "Reports", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy),
             CatalogueRow.Owned("SettingSource", "OrganisationSetup", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy, KernelBlocker.InfraReached),
             CatalogueRow.Owned("SimulationResult", "Forecasting", Held, KernelBlocker.HeldBy),
-            CatalogueRow.Owned("Staleness.StaleReasonKind", "WorkItems", Wire, KernelBlocker.Wire),
+            CatalogueRow.Owned("Staleness.StaleReason", "WorkItems", Held, KernelBlocker.HeldBy),
+            CatalogueRow.Owned("Staleness.StaleReasonKind", "WorkItems", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy),
+            CatalogueRow.Owned("Staleness.StalenessCandidate", "WorkItems", Held, KernelBlocker.HeldBy),
+            CatalogueRow.Owned("Staleness.StalenessPolicy", "WorkItems", Reached, KernelBlocker.ReachedFromOutsideItsModule),
+            CatalogueRow.Owned("Staleness.StalenessVerdict", "WorkItems", Held, KernelBlocker.HeldBy),
             CatalogueRow.Owned("StateCategories", "OrganisationSetup", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy, KernelBlocker.Shared, KernelBlocker.InfraReached),
             CatalogueRow.Owned("StateCategoryLists", "OrganisationSetup", Shared, KernelBlocker.HeldBy, KernelBlocker.Shared),
             CatalogueRow.Owned("StateMapping", "WorkItems", Infra, KernelBlocker.HeldBy, KernelBlocker.InfraReached),
@@ -356,6 +380,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             CatalogueRow.Owned("StoredSetting", "OrganisationSetup", Held, KernelBlocker.HeldBy),
             CatalogueRow.Owned("SupportedConnectionDefaults", "OrganisationSetup", MovesWithItsFile, KernelBlocker.SharesAFile),
             CatalogueRow.Owned("SyncMode", "WorkItems", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy),
+            CatalogueRow.Owned("SyncOutcome", "WorkItems", Reached, KernelBlocker.ReachedFromOutsideItsModule),
             CatalogueRow.Owned("SystemInfo", "Platform", Wire, KernelBlocker.Wire),
             CatalogueRow.Owned("Team", "OrganisationSetup", Entity, KernelBlocker.Entity, KernelBlocker.Wire, KernelBlocker.HeldBy, KernelBlocker.Shared, KernelBlocker.InfraReached),
             CatalogueRow.Owned("TerminologyEntry", "OrganisationSetup", Entity, KernelBlocker.Entity, KernelBlocker.Wire, KernelBlocker.InfraReached),
@@ -401,6 +426,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             CatalogueRow.Owned("WriteBack.WriteBackResult", "Forecasting", Shared, KernelBlocker.Shared),
             CatalogueRow.Owned("WriteBack.WriteBackTargetValueType", "Forecasting", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy),
             CatalogueRow.Owned("WriteBack.WriteBackValueSource", "Forecasting", Wire, KernelBlocker.Wire, KernelBlocker.HeldBy),
+            CatalogueRow.Owned("WriteBack.WriteBackValueSources", "Forecasting", Reached, KernelBlocker.ReachedFromOutsideItsModule),
         ];
 
         /// <summary>
@@ -431,6 +457,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             => blockers.Contains(KernelBlocker.Entity) ? Entity
                 : blockers.Contains(KernelBlocker.Wire) ? Wire
                 : blockers.Contains(KernelBlocker.Shared) ? Shared
+                : blockers.Contains(KernelBlocker.ReachedFromOutsideItsModule) ? Reached
                 : blockers.Contains(KernelBlocker.InfraReached) ? Infra
                 : blockers.Contains(KernelBlocker.PathPinned) ? Pinned
                 : blockers.Contains(KernelBlocker.HeldBy) ? Held

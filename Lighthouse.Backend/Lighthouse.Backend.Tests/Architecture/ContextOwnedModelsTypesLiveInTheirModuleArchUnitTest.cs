@@ -23,34 +23,16 @@ namespace Lighthouse.Backend.Tests.Architecture
             ("DefaultHeldFor", "OrganisationSetup"),
             ("DefaultNamingAField", "OrganisationSetup"),
             ("DeliverySourceBindability", "TrackerIntegration"),
-            ("DeliverySourceOption", "TrackerIntegration"),
-            ("DeliverySourceProject", "TrackerIntegration"),
             ("EmbedSessionTokenRedemption", "Access"),
-            ("EstimateNormalizationStatus", "FlowMetrics"),
-            ("FeatureMoveVerdict", "Access"),
-            ("FeatureOrderKey", "OrganisationSetup"),
-            ("ForecastHorizon", "Forecasting"),
             ("ManualRankComparer", "OrganisationSetup"),
             ("OptionalFeatureKeys", "OrganisationSetup"),
             ("OwnerNamingFields", "OrganisationSetup"),
             ("OwnerTerms", "OrganisationSetup"),
             ("OwnersWhoseFetchMoved", "OrganisationSetup"),
             ("PortfolioSize", "OrganisationSetup"),
-            ("RbacGuardRequirement", "Access"),
-            ("RbacOperationErrorCodes", "Access"),
-            ("RbacOperationResult", "Access"),
             ("RemovedAdditionalField", "OrganisationSetup"),
             ("ReportOwnerGoneException", "Reports"),
-            ("ReportRefusalCodes", "Reports"),
             ("RuleSetSemantics", "WorkItems"),
-            ("StaleReason", "WorkItems"),
-            ("StalenessCandidate", "WorkItems"),
-            ("StalenessPolicy", "WorkItems"),
-            ("StalenessVerdict", "WorkItems"),
-            ("StateAsOf", "FlowMetrics"),
-            ("SyncOutcome", "WorkItems"),
-            ("ThroughputFilterOverride", "FlowMetrics"),
-            ("WriteBackValueSources", "Forecasting"),
         ];
 
         private static readonly (string Name, string Owner)[] TheUnitTestsThatMovedWithTheirType =
@@ -60,8 +42,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ("ManualRankComparerTest", "OrganisationSetup"),
             ("OwnersWhoseFetchMovedTest", "OrganisationSetup"),
             ("PortfolioSizeTest", "OrganisationSetup"),
-            ("StalenessPolicyTest", "WorkItems"),
-            ("ThroughputFilterOverrideTest", "FlowMetrics"),
         ];
 
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(LighthouseAppContext).Assembly));

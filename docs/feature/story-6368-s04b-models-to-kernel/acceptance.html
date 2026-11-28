@@ -658,7 +658,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>Run the Architecture tests after the context-owned types left the Models: for each of the 36 context movers, search the catalogue rows and the movers list for its name
+<pre><code>Run the Architecture tests after the 13 free context-owned files moved: for each of the 18 types in them, search the catalogue rows and the movers list for its name
 </code></pre>
 
 <pre><code>No catalogue row and no movers entry names the type, because the catalogue lists only what is still under the Models
@@ -687,7 +687,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P4</p>
 
-<pre><code>Run the Architecture tests after the move: look up each of the 36 context movers by name among the top-level types of the compiled backend
+<pre><code>Run the Architecture tests after the move: look up each of the 18 types of the 13 free files by name among the top-level types of the compiled backend
 </code></pre>
 
 <pre><code>Each type is found exactly once, in Lighthouse.Backend.Modules.&lt;Owner&gt;.Domain of its owner; none stays under the Models, none sits in another module or layer
@@ -716,7 +716,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>Run the Architecture tests after the move: look up each of the 7 unit tests of moved types by name among the top-level types of the compiled test assembly
+<pre><code>Run the Architecture tests after the move: look up each of the 5 unit tests of moved types by name among the top-level types of the compiled test assembly
 </code></pre>
 
 <pre><code>Each unit test is found exactly once, in Lighthouse.Backend.Tests.Modules.&lt;Owner&gt;.Domain beside its type; none stays under Tests/Models or Tests/Services
@@ -767,6 +767,34 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h6>Obligations</h6>
 
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the Architecture tests with the 14 context-owned files still in the Models: check each type&#x27;s catalogue row against what the compiled code shows
+</code></pre>
+
+<pre><code>Each staying type has a row naming its owner and exactly its measured blocker: reached from outside its module (a type outside its owner&#x27;s module reaches it without already reaching the owner&#x27;s Domain, or a contracts type reaches it), held by a staying Models type, or sharing a file with one; a row claiming a blocker the type is free of, or missing one, is refused
+</code></pre>
+
+<pre><code>A maintainer sees which types stay in the Models and why, and the list stays true as the code changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs</p>
+
+<p>KernelCatalogueArchUnitTest.EveryOwnedRow_ClaimsExactlyTheBlockersMeasuredFromTheCompiledCodeAndTheDatabaseModel</p>
+
+<pre><code>A row that omits a true blocker, or claims one the type is free of, is refused in both directions; a blocker measured wrongly would pass here, which the planted reached and constants-only types in the same fixture refuse
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
 
 <h2>Expectations</h2>
 
