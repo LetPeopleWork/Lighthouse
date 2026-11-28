@@ -276,6 +276,12 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 </code></pre>
 <p>Governed slices: S2, S3</p>
 
+<h4>D20</h4>
+
+<pre><code>S3 moves only the 13 free context-owned files: types that no type outside their own module reaches and no staying Models type references. The other 14 context-owned files stay in Models as Owned catalogue rows and leave the movers list: FeatureMoveVerdict, RbacGuardRequirement, RbacOperationResult, EstimateNormalizationStatus, StateAsOf, ThroughputFilterOverride, WriteBackValueSources, FeatureOrderKey, DeliverySourceOption, StalenessPolicy, StalenessVerdict and SyncOutcome carry the Shared blocker measured as reached from outside the owning module, freed when the owner publishes them in Contracts (S12c); ForecastHorizon and ReportRefusalCodes carry HeldBy because staying Models types (Delivery, FeatureForecastWindow, ForecastPercentile, ForecastSimulationLimits, ReportNote) reference them. Nothing routes to Contracts and no boundary allow-list grows. Owner of the catalogue rows, the widened Shared measurement and the oracle revision: S3 acceptance designer, with KernelCatalogue.cs as its support.
+</code></pre>
+<p>Governed slices: S3, S4</p>
+
 <h3>Constraints</h3>
 
 <h4>K1</h4>
@@ -331,6 +337,12 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Comments are rare and written for a stranger; no internal id (decision, slice or ADR number) is the only reason in a comment.
 </code></pre>
 <p>Governed slices: S1, S2, S3, S4</p>
+
+<h4>K10</h4>
+
+<pre><code>S3 sanctions edits to the test-support literal maps for the free movers only: membership maps and ModelsTypesThatDoNotMove naming the Models namespace for staying lists, the TheRetiredFillKey, EveryStayingSetUpFile and AdditionalFieldInUseRulePurity path literals, the Promises and Tracker Delivery candidate rows and the ModelsStringsTheMoveRenames entries. No literal for a staying Models type changes.
+</code></pre>
+<p>Governed slices: S3</p>
 
 <h3>Reuse</h3>
 
@@ -1465,7 +1477,7 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Run the Architecture tests after the Platform-owned movers moved: the oracle reads each Platform mover&#x27;s catalogue row and looks the type up in the compiled assembly.
 </code></pre>
 
-<pre><code>Each Platform mover exists only under Lighthouse.Backend.Platform.&lt;Area&gt; with the same public members, its row names that namespace, and the Platform lane rules pass. RED before the move (the type is still under Models); GREEN after; the unchanged backend suites pass.
+<pre><code>Each Platform mover exists only under Lighthouse.Backend.Platform.&lt;Area&gt; with the same public members, no catalogue row or movers entry names the type, and the Platform lane rules pass. RED before the move (the type is still under Models); GREEN after; the unchanged backend suites pass.
 </code></pre>
 
 <pre><code>Leaving a mover under Models, or moving it into a module instead of Platform/&lt;Area&gt;, fails naming the type and its expected namespace.
@@ -1803,7 +1815,7 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 
 <h6>L2</h6>
 
-<pre><code>Each Platform mover exists only under its Platform.&lt;Area&gt; namespace and its catalogue row names that namespace.
+<pre><code>Each Platform mover exists only under its Platform.&lt;Area&gt; namespace and no catalogue row or movers entry names the type.
 </code></pre>
 
 <p>Invariant</p>
@@ -1934,34 +1946,6 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Removed by the move with git mv; the file is the mover S1 measured free.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs</p>
-
-<p>Create</p>
-
-<pre><code>Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacGuardRequirement.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Removed by the move with git mv; the file is the mover S1 measured free.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs</p>
-
-<p>Create</p>
-
-<pre><code>Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacOperationResult.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Removed by the move with git mv; the file is the mover S1 measured free.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ConnectionFieldDefaults.cs</p>
 
 <p>Create</p>
@@ -1990,62 +1974,6 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Removed by the move with git mv; the file is the mover S1 measured free.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceOption.cs</p>
-
-<p>Create</p>
-
-<pre><code>Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceOption.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Removed by the move with git mv; the file is the mover S1 measured free.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/FeatureMoveVerdict.cs</p>
-
-<p>Create</p>
-
-<pre><code>Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/FeatureMoveVerdict.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Removed by the move with git mv; the file is the mover S1 measured free.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/FeatureOrderKey.cs</p>
-
-<p>Create</p>
-
-<pre><code>Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/FeatureOrderKey.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Removed by the move with git mv; the file is the mover S1 measured free.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastHorizon.cs</p>
-
-<p>Create</p>
-
-<pre><code>Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastHorizon.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Removed by the move with git mv; the file is the mover S1 measured free.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ManualRankComparer.cs</p>
 
 <p>Create</p>
@@ -2054,48 +1982,6 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend/Models/ManualRankComparer.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Removed by the move with git mv; the file is the mover S1 measured free.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/EstimateNormalizationStatus.cs</p>
-
-<p>Create</p>
-
-<pre><code>Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/EstimateNormalizationStatus.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Removed by the move with git mv; the file is the mover S1 measured free.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/StateAsOf.cs</p>
-
-<p>Create</p>
-
-<pre><code>Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/StateAsOf.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Removed by the move with git mv; the file is the mover S1 measured free.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ThroughputFilterOverride.cs</p>
-
-<p>Create</p>
-
-<pre><code>Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/ThroughputFilterOverride.cs</p>
 
 <p>Extend</p>
 
@@ -2172,62 +2058,6 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Removed by the move with git mv; the file is the mover S1 measured free.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportRefusalCodes.cs</p>
-
-<p>Create</p>
-
-<pre><code>Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportRefusalCodes.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Removed by the move with git mv; the file is the mover S1 measured free.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessVerdict.cs</p>
-
-<p>Create</p>
-
-<pre><code>Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Staleness/StalenessVerdict.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Removed by the move with git mv; the file is the mover S1 measured free.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessPolicy.cs</p>
-
-<p>Create</p>
-
-<pre><code>Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Staleness/StalenessPolicy.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Removed by the move with git mv; the file is the mover S1 measured free.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/SyncOutcome.cs</p>
-
-<p>Create</p>
-
-<pre><code>Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/SyncOutcome.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Removed by the move with git mv; the file is the mover S1 measured free.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs</p>
 
 <p>Create</p>
@@ -2236,20 +2066,6 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemRules/RuleSetSemantics.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Removed by the move with git mv; the file is the mover S1 measured free.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/WriteBackValueSources.cs</p>
-
-<p>Create</p>
-
-<pre><code>Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/WriteBack/WriteBackValueSources.cs</p>
 
 <p>Extend</p>
 
@@ -2312,34 +2128,6 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Removed by the move with git mv; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/PortfolioSizeTest.cs with only namespace and using lines changed.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/ThroughputFilterOverrideTest.cs</p>
-
-<p>Create</p>
-
-<pre><code>Unit test moves beside its production type; namespace equal to folder.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Metrics/ThroughputFilterOverrideTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Removed by the move with git mv; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/ThroughputFilterOverrideTest.cs with only namespace and using lines changed.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Domain/StalenessPolicyTest.cs</p>
-
-<p>Create</p>
-
-<pre><code>Unit test moves beside its production type; namespace equal to folder.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Staleness/StalenessPolicyTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Removed by the move with git mv; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Domain/StalenessPolicyTest.cs with only namespace and using lines changed.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/DeliverySourceBindabilityTest.cs</p>
 
 <p>Create</p>
@@ -2361,13 +2149,6 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Rule file that names a mover or its Models namespace or path by literal or by type; renamed to the new place.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Rule file that names a mover or its Models namespace or path by literal or by type; renamed to the new place.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AdditionalFieldInUseRulePurityArchUnitTest.cs</p>
 
 <p>Extend</p>
@@ -2375,21 +2156,7 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Rule file that names a mover or its Models namespace or path by literal or by type; renamed to the new place.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Rule file that names a mover or its Models namespace or path by literal or by type; renamed to the new place.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureOrderingSingleSourceArchUnitTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Rule file that names a mover or its Models namespace or path by literal or by type; renamed to the new place.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs</p>
 
 <p>Extend</p>
 
@@ -2424,13 +2191,6 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Rule file that names a mover or its Models namespace or path by literal or by type; renamed to the new place.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Rule file that names a mover or its Models namespace or path by literal or by type; renamed to the new place.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs</p>
 
 <p>Extend</p>
@@ -2439,13 +2199,6 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Rule file that names a mover or its Models namespace or path by literal or by type; renamed to the new place.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs</p>
 
 <p>Extend</p>
 
@@ -2466,140 +2219,7 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Rule file that names a mover or its Models namespace or path by literal or by type; renamed to the new place.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembership.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Rule file that names a mover or its Models namespace or path by literal or by type; renamed to the new place.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/ApiKeyControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/AppSettingsControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/AuthControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/AuthorizationControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/BlackoutPeriodsControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/CreateRightsControllerGuardTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkItemDtoTests.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DatabaseManagementControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerArchiveTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerUtcTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryNoteAuthorshipTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryNotesControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryRulesControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliverySourcesControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DemoControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeatureListRowsTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeaturesControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs</p>
 
 <p>Extend</p>
 
@@ -2620,238 +2240,7 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/DeliverySourceRefreshAcceptanceTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/DeliverySourcesAcceptanceTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/Slice01aDeliverySourcePreviewSpecifications.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioDeleteSerialisationTests.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice05CancelAllScenarios.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice06TheWarningsWithoutTheLogSpecifications.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHostPerFixtureAcceptanceTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamDeleteSerialisationTests.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/LicenseControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/OptionalFeaturesControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioMetricsControllerTests.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfoliosControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/S4_DeliveriesDeleteGuardInversionTests.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/W1_VersionEndpointAuthorizationTests.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/SystemInfoControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamMetricsControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamReportsControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TerminologyControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/WizardsControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/CreateReportWithEqualNowScenarios.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllSystemOnlyRefusalsTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/SystemWideAccessScenario.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Reports/ReportNotesWireContractTest.cs</p>
 
 <p>Extend</p>
 
@@ -2879,42 +2268,7 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Forecast/FeatureForecastWindowTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ParentSourcesBridgeTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Access/Adapters/Http/RbacGuardAttributeTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Access/Application/CreateRightsAcceptanceTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Access/Application/FeatureMoveAuthorizationTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Access/Application/RbacAdministrationServiceTest.cs</p>
 
 <p>Extend</p>
 
@@ -2949,112 +2303,7 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportBulkRemoverTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportCommandsTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportLoggingTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/TeamReportMetricSeriesTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ThenAndNowTemplateEditTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Domain/ReportWindowPolicyTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDeliverySourceProviderTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/IncrementalSourceCapabilityTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UpdateQueue/RefreshRoundSummaryLineSkippedForecastTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/Slice01SkippedEntityLogTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/EstimateNormalizerEstimateOfTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/EstimateNormalizerTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/FeatureListServiceTest.cs</p>
 
 <p>Extend</p>
 
@@ -3082,42 +2331,7 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ClaimsDrivenRbacAdministrationService.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/ApiKeyController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/API/AuthController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/BlackoutPeriodsController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/ConnectionHealthController.cs</p>
 
 <p>Extend</p>
 
@@ -3131,105 +2345,7 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/FeatureDto.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioSizeDto.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/StaleReasonDto.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/WhenForecastDto.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemDto.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemEstimateDto.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DeliveriesController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DeliveryNotesController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DeliveryRulesController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DeliverySourcesController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/EncryptionController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/FeatureListController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/FeaturesController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/ForecastController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/ForecastRealityCheckController.cs</p>
 
 <p>Extend</p>
 
@@ -3243,189 +2359,7 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/API/Helpers/RbacAdministrationServiceExtensions.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/Helpers/WriteBackMappingValidator.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/LicenseController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/LogsController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/OAuthController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/OptionalFeaturesController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioReportNotesController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioReportsController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/RecurringBlackoutRulesController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/RefinementController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/RefinementVotesController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/ReportNotesControllerBase.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/ReportsControllerBase.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/SystemInfoController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamFeatureSizeMetricsController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamReportNotesController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamReportsController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/TerminologyController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/UpdateController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/VersionController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/WizardsController.cs</p>
 
 <p>Extend</p>
 
@@ -3439,55 +2373,6 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Delivery.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/FeatureForecastWindow.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastPercentile.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastSimulationLimits.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportNote.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Adapters/Http/RbacGuardAttribute.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/EmbedSessionTokenService.cs</p>
 
 <p>Extend</p>
@@ -3495,70 +2380,7 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/FeatureMoveAuthorization.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/IEmbedSessionTokenService.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/IFeatureMoveAuthorization.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/RbacAdministrationService.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Contracts/IRbacAdministrationService.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BaseMetricsService.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PortfolioMetricsService.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Contracts/IPortfolioMetricsService.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackTriggerService.cs</p>
 
 <p>Extend</p>
 
@@ -3614,35 +2436,7 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankSeeder.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankingService.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/FeatureOrderingApplier.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/IFeatureOrdering.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryForecastBlockRenderer.cs</p>
 
 <p>Extend</p>
 
@@ -3663,34 +2457,6 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportBulkRemover.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportCommands.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportNoteCommands.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportQueries.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/TeamReportMetricSeries.cs</p>
 
 <p>Extend</p>
@@ -3698,77 +2464,7 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ThenAndNowTemplate.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportWindowPolicy.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraReleaseVersionReader.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Contracts/IDeliverySourceProvider.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/ITeamDataService.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/IWorkItemService.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ForecastRoundFinishedRefreshLogHandler.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/TeamDataService.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/RefreshRoundSummary.cs</p>
 
 <p>Extend</p>
 
@@ -3789,34 +2485,6 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/EstimateNormalizer.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeaturePositionMap.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/AppSettingSeeder.cs</p>
 
 <p>Extend</p>
@@ -3825,13 +2493,6 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/OptionalFeatureSeeder.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Consumer found by text search for a mover name together with its old namespace; only using lines change.
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IFeatureListService.cs</p>
 
 <p>Extend</p>
 
@@ -3968,42 +2629,6 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>production-move</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Pure move of the whole file to its owner module Domain; its catalogue row names the new namespace. Consumers change only using lines.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacGuardRequirement.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Pure move of the whole file to its owner module Domain; its catalogue row names the new namespace. Consumers change only using lines.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacOperationResult.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>production-move</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ConnectionFieldDefaults.cs:1</p>
 
 <p>Migrated</p>
@@ -4040,78 +2665,6 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>production-move</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceOption.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Pure move of the whole file to its owner module Domain; its catalogue row names the new namespace. Consumers change only using lines.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceOption.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceOption.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/FeatureMoveVerdict.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Pure move of the whole file to its owner module Domain; its catalogue row names the new namespace. Consumers change only using lines.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/FeatureMoveVerdict.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/FeatureMoveVerdict.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/FeatureOrderKey.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Pure move of the whole file to its owner module Domain; its catalogue row names the new namespace. Consumers change only using lines.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/FeatureOrderKey.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/FeatureOrderKey.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastHorizon.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Pure move of the whole file to its owner module Domain; its catalogue row names the new namespace. Consumers change only using lines.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastHorizon.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastHorizon.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>production-move</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ManualRankComparer.cs:1</p>
 
 <p>Migrated</p>
@@ -4126,60 +2679,6 @@ bash Scripts/test-selection/test-path-classifier.sh
 <p>Migrated</p>
 
 <pre><code>Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ManualRankComparer.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/EstimateNormalizationStatus.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Pure move of the whole file to its owner module Domain; its catalogue row names the new namespace. Consumers change only using lines.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/EstimateNormalizationStatus.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/EstimateNormalizationStatus.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/StateAsOf.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Pure move of the whole file to its owner module Domain; its catalogue row names the new namespace. Consumers change only using lines.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/StateAsOf.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/StateAsOf.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ThroughputFilterOverride.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Pure move of the whole file to its owner module Domain; its catalogue row names the new namespace. Consumers change only using lines.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/ThroughputFilterOverride.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ThroughputFilterOverride.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 </code></pre>
 
 <p>production-move</p>
@@ -4274,78 +2773,6 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>production-move</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportRefusalCodes.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Pure move of the whole file to its owner module Domain; its catalogue row names the new namespace. Consumers change only using lines.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportRefusalCodes.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportRefusalCodes.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessVerdict.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Pure move of the whole file to its owner module Domain; its catalogue row names the new namespace. Consumers change only using lines.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Staleness/StalenessVerdict.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessVerdict.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessPolicy.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Pure move of the whole file to its owner module Domain; its catalogue row names the new namespace. Consumers change only using lines.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Staleness/StalenessPolicy.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessPolicy.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/SyncOutcome.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Pure move of the whole file to its owner module Domain; its catalogue row names the new namespace. Consumers change only using lines.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/SyncOutcome.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/SyncOutcome.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>production-move</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs:1</p>
 
 <p>Migrated</p>
@@ -4360,24 +2787,6 @@ bash Scripts/test-selection/test-path-classifier.sh
 <p>Migrated</p>
 
 <pre><code>Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/WriteBackValueSources.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Pure move of the whole file to its owner module Domain; its catalogue row names the new namespace. Consumers change only using lines.
-</code></pre>
-
-<p>production-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/WriteBack/WriteBackValueSources.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/WriteBackValueSources.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 </code></pre>
 
 <p>test-move</p>
@@ -4454,42 +2863,6 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>test-move</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/ThroughputFilterOverrideTest.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Unit test of a mover, moved with it; same assertions.
-</code></pre>
-
-<p>test-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Metrics/ThroughputFilterOverrideTest.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/ThroughputFilterOverrideTest.cs.
-</code></pre>
-
-<p>test-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Domain/StalenessPolicyTest.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Unit test of a mover, moved with it; same assertions.
-</code></pre>
-
-<p>test-move</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Staleness/StalenessPolicyTest.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Domain/StalenessPolicyTest.cs.
-</code></pre>
-
-<p>test-move</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/DeliverySourceBindabilityTest.cs:1</p>
 
 <p>Migrated</p>
@@ -4517,15 +2890,6 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>architecture-rule</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Literal or using line naming a mover is renamed to its new namespace; no rule is weakened.
-</code></pre>
-
-<p>architecture-rule</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AdditionalFieldInUseRulePurityArchUnitTest.cs:1</p>
 
 <p>Changed</p>
@@ -4535,25 +2899,7 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>architecture-rule</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Literal or using line naming a mover is renamed to its new namespace; no rule is weakened.
-</code></pre>
-
-<p>architecture-rule</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureOrderingSingleSourceArchUnitTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Literal or using line naming a mover is renamed to its new namespace; no rule is weakened.
-</code></pre>
-
-<p>architecture-rule</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs:1</p>
 
 <p>Changed</p>
 
@@ -4598,15 +2944,6 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>architecture-rule</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Literal or using line naming a mover is renamed to its new namespace; no rule is weakened.
-</code></pre>
-
-<p>architecture-rule</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs:1</p>
 
 <p>Changed</p>
@@ -4617,15 +2954,6 @@ bash Scripts/test-selection/test-path-classifier.sh
 <p>architecture-rule</p>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Literal or using line naming a mover is renamed to its new namespace; no rule is weakened.
-</code></pre>
-
-<p>architecture-rule</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs:1</p>
 
 <p>Changed</p>
 
@@ -4650,180 +2978,9 @@ bash Scripts/test-selection/test-path-classifier.sh
 <pre><code>Literal or using line naming a mover is renamed to its new namespace; no rule is weakened.
 </code></pre>
 
-<p>architecture-rule</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembership.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Literal or using line naming a mover is renamed to its new namespace; no rule is weakened.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/ApiKeyControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/AppSettingsControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
 <p>consumer</p>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/AuthControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/AuthorizationControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/BlackoutPeriodsControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/CreateRightsControllerGuardTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkItemDtoTests.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DatabaseManagementControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerArchiveTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerUtcTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryNoteAuthorshipTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryNotesControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryRulesControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliverySourcesControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DemoControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeatureListRowsTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeaturesControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs:1</p>
 
 <p>Changed</p>
 
@@ -4850,304 +3007,7 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>consumer</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/DeliverySourceRefreshAcceptanceTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/DeliverySourcesAcceptanceTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/Slice01aDeliverySourcePreviewSpecifications.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioDeleteSerialisationTests.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice05CancelAllScenarios.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice06TheWarningsWithoutTheLogSpecifications.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHostPerFixtureAcceptanceTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamDeleteSerialisationTests.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/LicenseControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/OptionalFeaturesControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioMetricsControllerTests.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfoliosControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/S4_DeliveriesDeleteGuardInversionTests.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/W1_VersionEndpointAuthorizationTests.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/SystemInfoControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamMetricsControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamReportsControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TerminologyControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/WizardsControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/CreateReportWithEqualNowScenarios.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllSystemOnlyRefusalsTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/SystemWideAccessScenario.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Reports/ReportNotesWireContractTest.cs:1</p>
 
 <p>Changed</p>
 
@@ -5183,52 +3043,7 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>consumer</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Forecast/FeatureForecastWindowTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ParentSourcesBridgeTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Access/Adapters/Http/RbacGuardAttributeTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Access/Application/CreateRightsAcceptanceTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Access/Application/FeatureMoveAuthorizationTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Access/Application/RbacAdministrationServiceTest.cs:1</p>
 
 <p>Changed</p>
 
@@ -5273,142 +3088,7 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>consumer</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportBulkRemoverTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportCommandsTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportLoggingTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/TeamReportMetricSeriesTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ThenAndNowTemplateEditTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Domain/ReportWindowPolicyTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDeliverySourceProviderTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/IncrementalSourceCapabilityTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UpdateQueue/RefreshRoundSummaryLineSkippedForecastTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/Slice01SkippedEntityLogTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/EstimateNormalizerEstimateOfTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/EstimateNormalizerTest.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/FeatureListServiceTest.cs:1</p>
 
 <p>Changed</p>
 
@@ -5444,52 +3124,7 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>consumer</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ClaimsDrivenRbacAdministrationService.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/ApiKeyController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/API/AuthController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/BlackoutPeriodsController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/ConnectionHealthController.cs:1</p>
 
 <p>Changed</p>
 
@@ -5507,133 +3142,7 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>consumer</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/FeatureDto.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioSizeDto.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/StaleReasonDto.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/WhenForecastDto.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemDto.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemEstimateDto.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DeliveriesController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DeliveryNotesController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DeliveryRulesController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DeliverySourcesController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/EncryptionController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/FeatureListController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/FeaturesController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/ForecastController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/ForecastRealityCheckController.cs:1</p>
 
 <p>Changed</p>
 
@@ -5651,241 +3160,7 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>consumer</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/API/Helpers/RbacAdministrationServiceExtensions.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/Helpers/WriteBackMappingValidator.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/LicenseController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/LogsController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/OAuthController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/OptionalFeaturesController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioReportNotesController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfolioReportsController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/RecurringBlackoutRulesController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/RefinementController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/RefinementVotesController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/ReportNotesControllerBase.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/ReportsControllerBase.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/SystemInfoController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamFeatureSizeMetricsController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamReportNotesController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamReportsController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/TerminologyController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/UpdateController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/VersionController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/WizardsController.cs:1</p>
 
 <p>Changed</p>
 
@@ -5903,69 +3178,6 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>consumer</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Delivery.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/FeatureForecastWindow.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastPercentile.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastSimulationLimits.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportNote.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Adapters/Http/RbacGuardAttribute.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/EmbedSessionTokenService.cs:1</p>
 
 <p>Changed</p>
@@ -5975,88 +3187,7 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>consumer</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/FeatureMoveAuthorization.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/IEmbedSessionTokenService.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/IFeatureMoveAuthorization.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/RbacAdministrationService.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Contracts/IRbacAdministrationService.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BaseMetricsService.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PortfolioMetricsService.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Contracts/IPortfolioMetricsService.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackTriggerService.cs:1</p>
 
 <p>Changed</p>
 
@@ -6128,43 +3259,7 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>consumer</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankSeeder.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankingService.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/FeatureOrderingApplier.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/IFeatureOrdering.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryForecastBlockRenderer.cs:1</p>
 
 <p>Changed</p>
 
@@ -6191,42 +3286,6 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>consumer</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportBulkRemover.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportCommands.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportNoteCommands.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportQueries.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/TeamReportMetricSeries.cs:1</p>
 
 <p>Changed</p>
@@ -6236,97 +3295,7 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>consumer</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ThenAndNowTemplate.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportWindowPolicy.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraReleaseVersionReader.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Contracts/IDeliverySourceProvider.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/ITeamDataService.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/IWorkItemService.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ForecastRoundFinishedRefreshLogHandler.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/TeamDataService.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/RefreshRoundSummary.cs:1</p>
 
 <p>Changed</p>
 
@@ -6353,42 +3322,6 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>consumer</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/EstimateNormalizer.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeaturePositionMap.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/AppSettingSeeder.cs:1</p>
 
 <p>Changed</p>
@@ -6399,15 +3332,6 @@ bash Scripts/test-selection/test-path-classifier.sh
 <p>consumer</p>
 
 <p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/OptionalFeatureSeeder.cs:1</p>
-
-<p>Changed</p>
-
-<pre><code>Using line for the old namespace is replaced by the mover&#x27;s new namespace; no behaviour changes.
-</code></pre>
-
-<p>consumer</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IFeatureListService.cs:1</p>
 
 <p>Changed</p>
 
@@ -6427,7 +3351,7 @@ bash Scripts/test-selection/test-path-classifier.sh
 
 <p>prefactoring</p>
 
-<pre><code>Per touched file. Movers that hold several types move whole, because the accepted design keeps every commit a pure move and their split waits for S12c: AdditionalFieldInUse.cs (4 types), RbacOperationResult.cs (2), ConnectionFieldDefaults.cs (3), DeliverySourceOption.cs (2), StalenessPolicy.cs (2), StalenessVerdict.cs (2). All other movers hold one type and move whole, as do the seven moved unit tests. Rule files holding several types are not-applicable in this slice, because it changes only literal strings in them; a split is offered to the improvement backlog. Consumer files change only using lines and are not moved.
+<pre><code>Per touched file. Movers that hold several types move whole, because the accepted design keeps every commit a pure move and their split waits for S12c: AdditionalFieldInUse.cs (4 types) and ConnectionFieldDefaults.cs (3 types). All other movers hold one type and move whole, as do the five moved unit tests. Rule files holding several types are not-applicable in this slice, because it changes only literal strings in them; a split is offered to the improvement backlog. Consumer files change only using lines and are not moved.
 </code></pre>
 
 <h5>Boundaries</h5>
