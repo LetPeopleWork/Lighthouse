@@ -315,6 +315,80 @@
 "stimulus": "F444",
 "user_result": "F446"
 }
+],
+"S3": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F156"
+],
+"still_passes_if": "F483",
+"test": "ContextOwnedModelsTypesLiveInTheirModuleArchUnitTest.TheContextType_IsNoLongerOnTheModelsCatalogueOrItsMoversList",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextOwnedModelsTypesLiveInTheirModuleArchUnitTest.cs"
+},
+"expected": "F481",
+"stimulus": "F480",
+"user_result": "F482"
+},
+{
+"covers": [
+"P2",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F209",
+"L3/F210",
+"L3/F156"
+],
+"still_passes_if": "F487",
+"test": "ContextOwnedModelsTypesLiveInTheirModuleArchUnitTest.TheContextType_IsFoundOnlyInTheDomainOfItsOwner",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextOwnedModelsTypesLiveInTheirModuleArchUnitTest.cs"
+},
+"expected": "F485",
+"stimulus": "F484",
+"user_result": "F486"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F211"
+],
+"still_passes_if": "F491",
+"test": "ContextOwnedModelsTypesLiveInTheirModuleArchUnitTest.TheUnitTestOfAMovedType_IsFoundOnlyBesideItsTypeInTheOwnersDomainTests",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextOwnedModelsTypesLiveInTheirModuleArchUnitTest.cs"
+},
+"expected": "F489",
+"stimulus": "F488",
+"user_result": "F490"
+},
+{
+"covers": [
+"P2",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F494",
+"test": "ModuleBoundariesArchUnitTest",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs"
+},
+"expected": "F493",
+"stimulus": "F492",
+"user_result": "F351"
+}
 ]
 },
 "counters": {
@@ -322,7 +396,7 @@
 "C": 1,
 "D": 19,
 "E": 9,
-"F": 479,
+"F": 494,
 "K": 9,
 "L": 9,
 "P": 5,
@@ -5187,7 +5261,22 @@
 "F478": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
 "F479": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/WriteBackValueSources.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
 "F48": "Owns IL edge reading through Mono.Cecil, async bodies included; HeldBy, Shared, Wire and InfraReached are measured with it.",
+"F480": "Run the Architecture tests after the context-owned types left the Models: for each of the 36 context movers, search the catalogue rows and the movers list for its name",
+"F481": "No catalogue row and no movers entry names the type, because the catalogue lists only what is still under the Models",
+"F482": "The catalogue keeps matching the Models: each context keeps its own types and the Models list shrinks",
+"F483": "A mover that was never moved but whose row was deleted still passes this check alone; the placement check below fails it",
+"F484": "Run the Architecture tests after the move: look up each of the 36 context movers by name among the top-level types of the compiled backend",
+"F485": "Each type is found exactly once, in Lighthouse.Backend.Modules.<Owner>.Domain of its owner; none stays under the Models, none sits in another module or layer",
+"F486": "Each context holds its own types; nothing a user sees changes because only the namespace moved",
+"F487": "A type moved to the Application layer of the right owner, or only copied to the owner while the Models copy is deleted elsewhere, is refused; a move that keeps every public member but changes behaviour is accepted by this check and caught by the unchanged suites",
+"F488": "Run the Architecture tests after the move: look up each of the 7 unit tests of moved types by name among the top-level types of the compiled test assembly",
+"F489": "Each unit test is found exactly once, in Lighthouse.Backend.Tests.Modules.<Owner>.Domain beside its type; none stays under Tests/Models or Tests/Services",
 "F49": "Already generic over a NamespaceMove and a PatternRoleMap and used by several moves; the Models move adds a role map and a rename list, not a second law.",
+"F490": "A maintainer finds each type's tests next to the type in its context",
+"F491": "A test class renamed rather than moved is refused by name; a test file moved to the right folder with a stale namespace is refused",
+"F492": "Build the backend and run every module's boundary, layout and unit-test placement rules with the movers inside their modules",
+"F493": "The build succeeds with no source change beyond namespace and using lines, and every existing module rule stays green",
+"F494": "A moved type that quietly gained or lost a public member still passes the rules; the compile of the unchanged consumer suites is what shows it",
 "F5": "A type added to Models that is not on the catalogue, or a catalogue row whose claim is false, fails the architecture rules and names itself and the fix; the rules name the moved types by their new namespace only, with no old-path allowance left.",
 "F50": "Namespace-agnostic membership shape copied for the catalogue; its lane rules keep the Platform movers in the lane.",
 "F51": "Decides cross-context references through Contracts; the catalogue decides only Models standing, so they do not decide the same fact; S1 checks the actual scope and records any overlap.",

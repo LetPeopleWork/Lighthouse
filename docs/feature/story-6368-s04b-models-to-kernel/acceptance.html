@@ -652,6 +652,122 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the Architecture tests after the context-owned types left the Models: for each of the 36 context movers, search the catalogue rows and the movers list for its name
+</code></pre>
+
+<pre><code>No catalogue row and no movers entry names the type, because the catalogue lists only what is still under the Models
+</code></pre>
+
+<pre><code>The catalogue keeps matching the Models: each context keeps its own types and the Models list shrinks
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextOwnedModelsTypesLiveInTheirModuleArchUnitTest.cs</p>
+
+<p>ContextOwnedModelsTypesLiveInTheirModuleArchUnitTest.TheContextType_IsNoLongerOnTheModelsCatalogueOrItsMoversList</p>
+
+<pre><code>A mover that was never moved but whose row was deleted still passes this check alone; the placement check below fails it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<p>P4</p>
+
+<pre><code>Run the Architecture tests after the move: look up each of the 36 context movers by name among the top-level types of the compiled backend
+</code></pre>
+
+<pre><code>Each type is found exactly once, in Lighthouse.Backend.Modules.&lt;Owner&gt;.Domain of its owner; none stays under the Models, none sits in another module or layer
+</code></pre>
+
+<pre><code>Each context holds its own types; nothing a user sees changes because only the namespace moved
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextOwnedModelsTypesLiveInTheirModuleArchUnitTest.cs</p>
+
+<p>ContextOwnedModelsTypesLiveInTheirModuleArchUnitTest.TheContextType_IsFoundOnlyInTheDomainOfItsOwner</p>
+
+<pre><code>A type moved to the Application layer of the right owner, or only copied to the owner while the Models copy is deleted elsewhere, is refused; a move that keeps every public member but changes behaviour is accepted by this check and caught by the unchanged suites
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the Architecture tests after the move: look up each of the 7 unit tests of moved types by name among the top-level types of the compiled test assembly
+</code></pre>
+
+<pre><code>Each unit test is found exactly once, in Lighthouse.Backend.Tests.Modules.&lt;Owner&gt;.Domain beside its type; none stays under Tests/Models or Tests/Services
+</code></pre>
+
+<pre><code>A maintainer finds each type&#x27;s tests next to the type in its context
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextOwnedModelsTypesLiveInTheirModuleArchUnitTest.cs</p>
+
+<p>ContextOwnedModelsTypesLiveInTheirModuleArchUnitTest.TheUnitTestOfAMovedType_IsFoundOnlyBesideItsTypeInTheOwnersDomainTests</p>
+
+<pre><code>A test class renamed rather than moved is refused by name; a test file moved to the right folder with a stale namespace is refused
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<p>P4</p>
+
+<pre><code>Build the backend and run every module&#x27;s boundary, layout and unit-test placement rules with the movers inside their modules
+</code></pre>
+
+<pre><code>The build succeeds with no source change beyond namespace and using lines, and every existing module rule stays green
+</code></pre>
+
+<pre><code>Nothing a user or a client sees changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs</p>
+
+<p>ModuleBoundariesArchUnitTest</p>
+
+<pre><code>A moved type that quietly gained or lost a public member still passes the rules; the compile of the unchanged consumer suites is what shows it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
