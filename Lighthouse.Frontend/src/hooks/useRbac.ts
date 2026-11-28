@@ -2,7 +2,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useContext } from "react";
 import type { UserAuthorizationSummary } from "../models/Authorization/RbacModels";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
-import { pageFreshQueryKey, usePageFreshQuery } from "./usePageFreshQuery";
+import { pageFreshQueryKey } from "./pageFreshQueryKey";
+import { usePageFreshQuery } from "./usePageFreshQuery";
 
 const PERMISSIVE_SUMMARY: UserAuthorizationSummary = {
 	isRbacEnabled: false,

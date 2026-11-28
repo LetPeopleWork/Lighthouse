@@ -2,10 +2,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { type ReactNode, useEffect, useState } from "react";
 import { useLocation } from "react-router";
-import {
-	askSharedReadsAgainFor,
-	PageMovesContext,
-} from "../../../hooks/usePageFreshQuery";
+import { askSharedReadsAgainFor } from "../../../hooks/askSharedReadsAgainFor";
+import { PageMovesContext } from "../../../hooks/PageMovesContext";
 import { fireAndForget } from "../../../utils/fireAndForget";
 
 interface PageSeen {
