@@ -160,6 +160,118 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>On the seeded demo data, every Team&#x27;s and Portfolio&#x27;s item counts by type, 90-day throughput, Work Item Age and every Feature&#x27;s When-forecast percentiles (50/70/85/95) are identical before and after the restructuring.
+</code></pre>
+
+<pre><code>Oracle sees only the seeded demo data, not an upgrade fixture shaped like a real install, nor custom Terminology or odd type spellings; a deliberate number change being caught by name is not shown.
+</code></pre>
+
+<p>yes</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>A user sees the same unit and item words (singular and plural, eight Terminology entries) on every screen and API as before, custom or seeded, and renaming a term in Terminology shows up on its level.
+</code></pre>
+
+<pre><code>Oracle cannot see every screen and API surface or a rename round trip from the user&#x27;s view; custom (non-seeded) terminology installs may be unobserved.
+</code></pre>
+
+<p>yes</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>For each connection, level 1 lists exactly the item types its Teams read and level 2 those its Portfolios read, each once ignoring case; a type read on both levels sits on both without blocking; a connection with no units on a level shows User Story and Bug (level 1) or Epic (level 2).
+</code></pre>
+
+<pre><code>Oracle may not cover mixed-case duplicates, same-type-on-both-levels, or connections that have no units on one level across several connection kinds.
+</code></pre>
+
+<p>yes</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>Every existing Team and Portfolio is a unit with the same id, /teams/{id} or /portfolios/{id} route and payload; creating one creates its unit, and deleting one removes members, reports, snapshots and refresh log as today.
+</code></pre>
+
+<pre><code>Oracle may not observe each clean-up artifact (members, reports, snapshots, refresh log) after delete, nor payload byte-equality for existing records.
+</code></pre>
+
+<p>yes</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P5</p>
+
+<pre><code>After upgrade each unit reads the same item types as its old list ignoring case; a write naming a type its connection does not map to the unit&#x27;s level is refused with 400 naming type, level and connection (even for System Admins) and saves nothing; a Jira, Azure DevOps or CSV unit left with no types is marked as needing item types and not refreshed while keeping its data.
+</code></pre>
+
+<pre><code>Oracle may not exercise the System Admin refusal, the exact message wording, the nothing-saved check, or the no-refresh and data-kept behaviour for each connector kind.
+</code></pre>
+
+<p>yes</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P6</p>
+
+<pre><code>Each Team&#x27;s Feature WIP, automatic WIP adjustment, throughput window (days or fixed dates) and forecast filter rules keep today&#x27;s values, the Team settings payloads are unchanged, and manual and automatic forecasts give the same answers as before.
+</code></pre>
+
+<pre><code>Oracle cannot see the ownership by Forecasting or the one-record-per-unit keying from the user&#x27;s view; it sees values and forecasts only, and may not cover fixed-date windows or filter rules.
+</code></pre>
+
+<p>yes</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h3>Waivers</h3>
+
 <p>None.</p>
 
 <h2>Charter</h2>

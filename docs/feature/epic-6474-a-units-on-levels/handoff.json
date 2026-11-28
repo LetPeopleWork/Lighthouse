@@ -3,7 +3,8 @@
 "B": 5,
 "C": 2,
 "D": 13,
-"F": 368,
+"E": 6,
+"F": 380,
 "K": 6,
 "L": 5,
 "N": 15,
@@ -2078,6 +2079,64 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"blocking": "yes",
+"id": "E1",
+"lacuna": "F370",
+"promises": [
+"P1"
+],
+"text": "F369"
+},
+{
+"blocking": "yes",
+"id": "E2",
+"lacuna": "F372",
+"promises": [
+"P2"
+],
+"text": "F371"
+},
+{
+"blocking": "yes",
+"id": "E3",
+"lacuna": "F374",
+"promises": [
+"P3"
+],
+"text": "F373"
+},
+{
+"blocking": "yes",
+"id": "E4",
+"lacuna": "F376",
+"promises": [
+"P4"
+],
+"text": "F375"
+},
+{
+"blocking": "yes",
+"id": "E5",
+"lacuna": "F378",
+"promises": [
+"P5"
+],
+"text": "F377"
+},
+{
+"blocking": "yes",
+"id": "E6",
+"lacuna": "F380",
+"promises": [
+"P6"
+],
+"text": "F379"
+}
+]
+},
 "facts": {
 "F1": "Epic 6474 One structure, feature A of four: Teams and Portfolios become units on two seeded levels (slices 01, 02, 03, 04, 07 of docs/feature/epic-6474-one-structure), with nobody's numbers changing. Product authority: docs/feature/epic-6474-one-structure/feature-delta.md (DISCUSS, DESIGN, DEVOPS and the maintainer decisions of 2026-11-06, 2026-11-27 and 2026-11-28, which win over the slice files), the slice files and design/upstream-changes.md.",
 "F10": "Slice 01 (Story 6483): a characterisation check records every unit's numbers for the demo data and an upgrade fixture (Jira, Azure DevOps, Linear, ServiceNow and CSV Teams, a Portfolio reading Epic and Change, custom Terminology Squad and Initiative, a Jira Team and an Azure DevOps Portfolio both reading Epic, a Team reading bug while others read Bug, a Linear Team with no types), agrees with itself on unchanged code and fails naming the unit and the number when a Team stops reading a type. Test only, no production change.",
@@ -2370,8 +2429,20 @@
 "F366": "Creates a missing mapping row with the create defaults inside the caller's transaction",
 "F367": "A unit save on a connection that has no mapping row",
 "F368": "The row is created with today's create defaults in the same transaction and the save resolves against it; nothing is refused for default types",
+"F369": "On the seeded demo data, every Team's and Portfolio's item counts by type, 90-day throughput, Work Item Age and every Feature's When-forecast percentiles (50/70/85/95) are identical before and after the restructuring.",
 "F37": "Backend acceptance scenarios drive the application-service port through ServicePortHarness under Tests/Acceptance/OneStructure/; real storage (SQLite and the SharedPostgres container) only for the migrator scenarios; a host only for the wire contract of the 400 and 409 in Tests/Contracts. Test rules of .claude/skills/test-writing win over nWave's nine-run timing and PBT density. FakeLighthouseClock for time; no live connector categories.",
+"F370": "Oracle sees only the seeded demo data, not an upgrade fixture shaped like a real install, nor custom Terminology or odd type spellings; a deliberate number change being caught by name is not shown.",
+"F371": "A user sees the same unit and item words (singular and plural, eight Terminology entries) on every screen and API as before, custom or seeded, and renaming a term in Terminology shows up on its level.",
+"F372": "Oracle cannot see every screen and API surface or a rename round trip from the user's view; custom (non-seeded) terminology installs may be unobserved.",
+"F373": "For each connection, level 1 lists exactly the item types its Teams read and level 2 those its Portfolios read, each once ignoring case; a type read on both levels sits on both without blocking; a connection with no units on a level shows User Story and Bug (level 1) or Epic (level 2).",
+"F374": "Oracle may not cover mixed-case duplicates, same-type-on-both-levels, or connections that have no units on one level across several connection kinds.",
+"F375": "Every existing Team and Portfolio is a unit with the same id, /teams/{id} or /portfolios/{id} route and payload; creating one creates its unit, and deleting one removes members, reports, snapshots and refresh log as today.",
+"F376": "Oracle may not observe each clean-up artifact (members, reports, snapshots, refresh log) after delete, nor payload byte-equality for existing records.",
+"F377": "After upgrade each unit reads the same item types as its old list ignoring case; a write naming a type its connection does not map to the unit's level is refused with 400 naming type, level and connection (even for System Admins) and saves nothing; a Jira, Azure DevOps or CSV unit left with no types is marked as needing item types and not refreshed while keeping its data.",
+"F378": "Oracle may not exercise the System Admin refusal, the exact message wording, the nothing-saved check, or the no-refresh and data-kept behaviour for each connector kind.",
+"F379": "Each Team's Feature WIP, automatic WIP adjustment, throughput window (days or fixed dates) and forecast filter rules keep today's values, the Team settings payloads are unchanged, and manual and automatic forecasts give the same answers as before.",
 "F38": "Comments carry no internal ids; no nWave scenario tags in code; each slice owns its own oracle files and never edits an earlier slice's oracle or support files.",
+"F380": "Oracle cannot see the ownership by Forecasting or the one-record-per-unit keying from the user's view; it sees values and forecasts only, and may not cover fixed-date windows or filter rules.",
 "F39": "Already the shared base of Team and Portfolio; gains ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten instead of a parallel Unit entity.",
 "F4": "An installation has exactly two levels: level 1 where the work is done (Teams, Work Items) and level 2 that groups the level below (Portfolios, Features). Their unit and item names (singular and plural) come from today's Terminology, custom or seeded, and every screen and API that shows those eight Terminology entries shows the same words as before; renaming through Terminology lands on the level.",
 "F40": "Sole owner of Terminology reads and writes; it serves the eight level entries from the levels, so no second terminology reader exists.",
