@@ -1069,6 +1069,8 @@ Only:
 Nothing else. Each event type lives with the context that publishes it. Entities, DTOs and settings live in the
 context that owns them. Today's `Models` folder is far wider and shrinks one packaged context at a time.
 
+**Status (2026-11-28, Story 6368).** The kernel is three base types today: `IDomainEvent`, `IEntity` and `IConcurrencyTokenEntity`. Lighthouse has no shared id or shared value object type (ids are plain integers), so none is listed. Every other `Models` type is a row in the kernel catalogue (`Lighthouse.Backend.Tests/Architecture/KernelCatalogue.cs`) with its owner and a blocker measured from the compiled code. Today the catalogue has 331 rows: 3 kernel and 328 owned. A row can carry more than one blocker. The rows by blocker are: 223 reachable from the wire (a controller action or a DTO), 193 held by a type that stays in `Models`, 75 reached by the data layer, a repository or the composition root, 73 shared by two or more contexts, 46 entities, 22 whose file is read by path, 12 reached from outside their owning module and 9 that share a file with a type that cannot move yet. The 12 reached types wait for their owner to publish them in its `Contracts` namespace. Two tests keep the catalogue true and shrinking: one compares it with the compiled code both ways, and one requires that every kernel row is used by two or more contexts. A type joins `Models` only when it is one of the three base types or has a catalogue row.
+
 ## Decision 8: who owns which data
 
 The rule of source data plus per-context extension tables keyed by item id was raised by the maintainer in the

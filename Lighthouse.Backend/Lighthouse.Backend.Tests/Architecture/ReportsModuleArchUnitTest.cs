@@ -40,8 +40,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         // Reports starts itself up, so its own start-up module registers the repository beside the composition root.
         private const string TheReportsStartUp = @"^Lighthouse\.Backend\.Modules\.Reports\.ReportsModule$";
 
-        // The Reports records still in the Models move into the module's Domain; the pattern sees them in either place.
-        private const string ReportModelsPattern = @"^Lighthouse\.Backend\.(Models\.Reports|Modules\.Reports\.Domain)($|\..*)";
+        // The Reports records that still sit in the Models, named by full name. The module's own namespaces are
+        // covered by the module pattern, and a namespace match here would also see types that have left.
+        private static readonly string ReportModelsPattern = StayingReportModelsPattern();
 
         private const string RepositoryPortPattern = @"^Lighthouse\.Backend\.Services\.Interfaces\.Repositories\.IRepository`1$";
 
@@ -72,7 +73,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             // The module's own records and its one repository sit outside its namespaces but belong to it.
             Types().That().DoNotResideInNamespaceMatching(ModuleBoundariesArchUnitTest.ReportsPattern)
-                .And().DoNotResideInNamespaceMatching(ReportModelsPattern)
+                .And().DoNotHaveFullNameMatching(ReportModelsPattern)
                 .And().DoNotHaveFullNameMatching(NameAndNestedTypesOf(typeof(ReportRepository)))
                 .And().DoNotResideInNamespaceMatching(ApiLayerPattern)
                 .And().DoNotHaveFullNameMatching(CompositionRootPattern)
@@ -88,7 +89,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void The_Reports_module_does_not_use_the_process_behaviour_chart_or_its_baseline()
         {
             Types().That().ResideInNamespaceMatching(ModuleBoundariesArchUnitTest.ReportsPattern)
-                .Or().ResideInNamespaceMatching(ReportModelsPattern)
+                .Or().HaveFullNameMatching(ReportModelsPattern)
                 .Should().NotDependOnAny(typeof(ProcessBehaviourChart), typeof(XmRResult), typeof(XmRCalculator), typeof(BaselineValidationService))
                 .Because("a report keeps its own windows and its own rules; the chart's baseline answers a different question.")
                 .Check(Architecture);
@@ -271,7 +272,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void The_Reports_module_never_sees_who_is_asking()
         {
             Types().That().ResideInNamespaceMatching(ModuleBoundariesArchUnitTest.ReportsPattern)
-                .Or().ResideInNamespaceMatching(ReportModelsPattern)
+                .Or().HaveFullNameMatching(ReportModelsPattern)
                 .Should().NotDependOnAny(typeof(ClaimsPrincipal), typeof(HttpContext), typeof(IRbacAdministrationService))
                 .Because("who may read which owner is decided once, in the API layer, and handed in as the owners to read; the module only ever receives those owners.")
                 .Check(Architecture);
@@ -357,8 +358,14 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static List<ArchUnitNET.Domain.IType> ReportsModuleTypes()
             => [.. Types().That().ResideInNamespaceMatching(ModuleBoundariesArchUnitTest.ReportsPattern)
-                .Or().ResideInNamespaceMatching(ReportModelsPattern)
+                .Or().HaveFullNameMatching(ReportModelsPattern)
                 .GetObjects(Architecture)];
+
+        private static string StayingReportModelsPattern()
+            => "^(" + string.Join("|", typeof(Lighthouse.Backend.Models.Reports.Report).Assembly.GetTypes()
+                .Where(type => !type.IsNested && type.Namespace == typeof(Lighthouse.Backend.Models.Reports.Report).Namespace)
+                .Select(type => Regex.Escape(type.FullName!))
+                .Order(StringComparer.Ordinal)) + ")($|\\+.*)";
 
         private static string NameAndNestedTypesOf(Type type) => $"^{Regex.Escape(type.FullName!)}($|\\+.*)";
 
