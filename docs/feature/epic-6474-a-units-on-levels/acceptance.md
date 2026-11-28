@@ -118,7 +118,7 @@ Tested
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/TwoLevelsFromTerminologyTest\.cs
 
-Lighthouse\.Backend\.Tests\.Acceptance\.OneStructure\.TwoLevelsFromTerminologyTest\.The\_upgrade\_gives\_two\_levels\_named\_in\_the\_organisations\_own\_words
+Lighthouse\.Backend\.Tests\.Integration\.Containers\.Acceptance\.OneStructure\.TwoLevelsFromTerminologyTest\.The\_upgrade\_gives\_two\_levels\_named\_in\_the\_organisations\_own\_words
 
 ```text
 The levels were built from the seeded words while the Terminology rows kept the custom ones; tightened by the custom-words fixture, which seeded words cannot satisfy
@@ -149,7 +149,7 @@ Tested
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/TwoLevelsFromTerminologyTest\.cs
 
-Lighthouse\.Backend\.Tests\.Acceptance\.OneStructure\.TwoLevelsFromTerminologyTest\.A\_type\_a\_Team\_and\_a\_Portfolio\_of\_one\_connection\_both\_read\_sits\_on\_both\_levels
+Lighthouse\.Backend\.Tests\.Integration\.Containers\.Acceptance\.OneStructure\.TwoLevelsFromTerminologyTest\.A\_type\_a\_Team\_and\_a\_Portfolio\_of\_one\_connection\_both\_read\_sits\_on\_both\_levels
 
 ```text
 The Feature level winning would drop Epic from the Jira Team level and fail both this and the per-connection test
@@ -167,11 +167,11 @@ The eight Terminology words are read before the upgrade, the application starts,
 ```
 
 ```text
-The same eight words as before: Squad, Squads, Initiative, Initiatives, Work Item, Work Items, Feature, Features
+Each of the eight entries answers the same value and the same default as before; a word nobody changed keeps its empty value with its default
 ```
 
 ```text
-Every screen and API that shows these words shows the same words after the upgrade
+Every screen and API that shows these words, the Terminology settings included, shows the same words after the upgrade
 ```
 
 ##### Disposition
@@ -180,7 +180,7 @@ Tested
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/TwoLevelsFromTerminologyTest\.cs
 
-Lighthouse\.Backend\.Tests\.Acceptance\.OneStructure\.TwoLevelsFromTerminologyTest\.The\_eight\_words\_of\_Terminology\_read\_the\_same\_after\_the\_upgrade
+Lighthouse\.Backend\.Tests\.Integration\.Containers\.Acceptance\.OneStructure\.TwoLevelsFromTerminologyTest\.The\_eight\_words\_of\_Terminology\_read\_the\_same\_after\_the\_upgrade
 
 ```text
 Words served from the old Terminology rows instead of the levels; the rename test catches that, as a rename must land on the level
@@ -198,11 +198,11 @@ After the upgrade, Terminology is updated: team Crew, teams Crews, feature Outco
 ```
 
 ```text
-Level 1 is named Crew/Crews, level 2 keeps Initiative/Initiatives and its items become Outcome/Outcomes; Terminology answers the new eight words
+Level 1 is named Crew/Crews with Work Item/Work Items, level 2 keeps Initiative/Initiatives and its items become Outcome/Outcomes; Terminology answers the four new values and every other entry exactly as before, an untouched word with its empty value and its default
 ```
 
 ```text
-Renaming through Terminology renames the level
+Renaming through Terminology renames the level, and the Terminology settings show what they showed before plus the rename
 ```
 
 ##### Disposition
@@ -211,10 +211,10 @@ Tested
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/TwoLevelsFromTerminologyTest\.cs
 
-Lighthouse\.Backend\.Tests\.Acceptance\.OneStructure\.TwoLevelsFromTerminologyTest\.Renaming\_through\_Terminology\_after\_the\_upgrade\_lands\_on\_the\_level
+Lighthouse\.Backend\.Tests\.Integration\.Containers\.Acceptance\.OneStructure\.TwoLevelsFromTerminologyTest\.Renaming\_through\_Terminology\_after\_the\_upgrade\_lands\_on\_the\_level
 
 ```text
-A rename written to the Terminology rows only would leave the level names unchanged and fail
+A rename written to the Terminology rows only would leave the level names unchanged and fail; answering an untouched word's default as its value fails too
 ```
 
 ###### Obligations
@@ -242,7 +242,7 @@ Tested
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/TwoLevelsFromTerminologyTest\.cs
 
-Lighthouse\.Backend\.Tests\.Acceptance\.OneStructure\.TwoLevelsFromTerminologyTest\.A\_second\_start\_leaves\_the\_levels\_and\_the\_mappings\_as\_the\_first\_start\_left\_them
+Lighthouse\.Backend\.Tests\.Integration\.Containers\.Acceptance\.OneStructure\.TwoLevelsFromTerminologyTest\.A\_second\_start\_leaves\_the\_levels\_and\_the\_mappings\_as\_the\_first\_start\_left\_them
 
 ```text
 A second start that rewrites the same values; accepted, since what is read is identical
@@ -525,7 +525,7 @@ Tested
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/TwoLevelsFromTerminologyTest\.cs
 
-Lighthouse\.Backend\.Tests\.Acceptance\.OneStructure\.TwoLevelsFromTerminologyTest\.A\_fresh\_install\_gets\_two\_levels\_with\_the\_seeded\_words\_and\_no\_connection\_mappings
+Lighthouse\.Backend\.Tests\.Integration\.Containers\.Acceptance\.OneStructure\.TwoLevelsFromTerminologyTest\.A\_fresh\_install\_gets\_two\_levels\_with\_the\_seeded\_words\_and\_no\_connection\_mappings
 
 ```text
 Mappings invented for connections that do not exist would fail; levels built only when Teams exist fail the level assertion
@@ -556,7 +556,7 @@ Tested
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/TwoLevelsFromTerminologyTest\.cs
 
-Lighthouse\.Backend\.Tests\.Acceptance\.OneStructure\.TwoLevelsFromTerminologyTest\.Each\_connection\_lists\_on\_each\_level\_the\_types\_its\_units\_there\_read\_once\_whatever\_the\_case
+Lighthouse\.Backend\.Tests\.Integration\.Containers\.Acceptance\.OneStructure\.TwoLevelsFromTerminologyTest\.Each\_connection\_lists\_on\_each\_level\_the\_types\_its\_units\_there\_read\_once\_whatever\_the\_case
 
 ```text
 A level listing the right types in another spelling or order; accepted, since spelling and order are pinned by the planner cases

@@ -54,7 +54,7 @@
 "L1"
 ],
 "still_passes_if": "F475",
-"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.The_upgrade_gives_two_levels_named_in_the_organisations_own_words",
+"test": "Lighthouse.Backend.Tests.Integration.Containers.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.The_upgrade_gives_two_levels_named_in_the_organisations_own_words",
 "test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs"
 },
 "expected": "F473",
@@ -71,7 +71,7 @@
 "L1"
 ],
 "still_passes_if": "F479",
-"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.A_type_a_Team_and_a_Portfolio_of_one_connection_both_read_sits_on_both_levels",
+"test": "Lighthouse.Backend.Tests.Integration.Containers.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.A_type_a_Team_and_a_Portfolio_of_one_connection_both_read_sits_on_both_levels",
 "test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs"
 },
 "expected": "F477",
@@ -88,12 +88,12 @@
 "L1"
 ],
 "still_passes_if": "F483",
-"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.The_eight_words_of_Terminology_read_the_same_after_the_upgrade",
+"test": "Lighthouse.Backend.Tests.Integration.Containers.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.The_eight_words_of_Terminology_read_the_same_after_the_upgrade",
 "test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs"
 },
-"expected": "F481",
+"expected": "F536",
 "stimulus": "F480",
-"user_result": "F482"
+"user_result": "F537"
 },
 {
 "covers": [
@@ -104,13 +104,13 @@
 "obligations": [
 "L1"
 ],
-"still_passes_if": "F487",
-"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.Renaming_through_Terminology_after_the_upgrade_lands_on_the_level",
+"still_passes_if": "F540",
+"test": "Lighthouse.Backend.Tests.Integration.Containers.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.Renaming_through_Terminology_after_the_upgrade_lands_on_the_level",
 "test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs"
 },
-"expected": "F485",
+"expected": "F538",
 "stimulus": "F484",
-"user_result": "F486"
+"user_result": "F539"
 },
 {
 "covers": [
@@ -122,7 +122,7 @@
 "L4"
 ],
 "still_passes_if": "F491",
-"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.A_second_start_leaves_the_levels_and_the_mappings_as_the_first_start_left_them",
+"test": "Lighthouse.Backend.Tests.Integration.Containers.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.A_second_start_leaves_the_levels_and_the_mappings_as_the_first_start_left_them",
 "test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs"
 },
 "expected": "F489",
@@ -270,7 +270,7 @@
 "L2"
 ],
 "still_passes_if": "F527",
-"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.A_fresh_install_gets_two_levels_with_the_seeded_words_and_no_connection_mappings",
+"test": "Lighthouse.Backend.Tests.Integration.Containers.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.A_fresh_install_gets_two_levels_with_the_seeded_words_and_no_connection_mappings",
 "test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs"
 },
 "expected": "F525",
@@ -288,7 +288,7 @@
 "L2"
 ],
 "still_passes_if": "F531",
-"test": "Lighthouse.Backend.Tests.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.Each_connection_lists_on_each_level_the_types_its_units_there_read_once_whatever_the_case",
+"test": "Lighthouse.Backend.Tests.Integration.Containers.Acceptance.OneStructure.TwoLevelsFromTerminologyTest.Each_connection_lists_on_each_level_the_types_its_units_there_read_once_whatever_the_case",
 "test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs"
 },
 "expected": "F529",
@@ -319,7 +319,7 @@
 "C": 2,
 "D": 17,
 "E": 6,
-"F": 535,
+"F": 540,
 "K": 6,
 "L": 5,
 "N": 15,
@@ -3647,13 +3647,8 @@
 "F479": "The Feature level winning would drop Epic from the Jira Team level and fail both this and the per-connection test",
 "F48": "Fingerprint now renders the effective list in mapping spelling; respelled units refetch once",
 "F480": "The eight Terminology words are read before the upgrade, the application starts, and they are read again",
-"F481": "The same eight words as before: Squad, Squads, Initiative, Initiatives, Work Item, Work Items, Feature, Features",
-"F482": "Every screen and API that shows these words shows the same words after the upgrade",
 "F483": "Words served from the old Terminology rows instead of the levels; the rename test catches that, as a rename must land on the level",
 "F484": "After the upgrade, Terminology is updated: team Crew, teams Crews, feature Outcome, features Outcomes",
-"F485": "Level 1 is named Crew/Crews, level 2 keeps Initiative/Initiatives and its items become Outcome/Outcomes; Terminology answers the new eight words",
-"F486": "Renaming through Terminology renames the level",
-"F487": "A rename written to the Terminology rows only would leave the level names unchanged and fail",
 "F488": "An upgraded installation is started a second time",
 "F489": "The levels and every connection's mapping read exactly as after the first start",
 "F49": "Same eight keys and words, now served from the levels",
@@ -3707,7 +3702,12 @@
 "F533": "The planner depends on no database, clock or input/output type",
 "F534": "The upgrade's mapping decision is the same every time it is planned, whatever the database or the hour",
 "F535": "A planner reading the database through an interface the rule does not list; the rule must name every EF, clock and I/O type it forbids",
+"F536": "Each of the eight entries answers the same value and the same default as before; a word nobody changed keeps its empty value with its default",
+"F537": "Every screen and API that shows these words, the Terminology settings included, shows the same words after the upgrade",
+"F538": "Level 1 is named Crew/Crews with Work Item/Work Items, level 2 keeps Initiative/Initiatives and its items become Outcome/Outcomes; Terminology answers the four new values and every other entry exactly as before, an untouched word with its empty value and its default",
+"F539": "Renaming through Terminology renames the level, and the Terminology settings show what they showed before plus the rename",
 "F54": "IOrganisationStructureStore and IConnectionMappingStore (EF, Organisation set-up)",
+"F540": "A rename written to the Terminology rows only would leave the level names unchanged and fail; answering an untouched word's default as its value fails too",
 "F55": "ILeafCapacityStore (Forecasting Contracts, EF adapter in Forecasting)",
 "F56": "IDomainEventDispatcher",
 "F57": "Tracker connectors (unchanged, receive each unit's effective types)",

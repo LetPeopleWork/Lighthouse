@@ -9,13 +9,16 @@ using Lighthouse.Backend.Platform.Seeding;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.Seeding;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.Acceptance.OneStructure;
 using Lighthouse.Backend.Tests.Integration.Containers;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Lighthouse.Backend.Tests.Acceptance.OneStructure
+// The upgrade runs here on Postgres as well, in a container. The test tier guard knows a container fixture by this
+// namespace, so the fast loop leaves it out; the folder keeps it beside the other scenarios of the restructuring.
+namespace Lighthouse.Backend.Tests.Integration.Containers.Acceptance.OneStructure
 {
     /// <summary>
     /// After the upgrade an installation has two levels: the one where the work is done, named after its Teams and
@@ -115,17 +118,14 @@ namespace Lighthouse.Backend.Tests.Acceptance.OneStructure
         public async Task Renaming_through_Terminology_after_the_upgrade_lands_on_the_level([Values] Database database)
         {
             await using var installation = await GivenAnUpgradedInstallation(database);
+            var before = TheEightWordsAsTerminologyAnswers(installation);
 
             await WhenTerminologyIsUpdated(installation, ("team", "Crew"), ("teams", "Crews"), ("feature", "Outcome"), ("features", "Outcomes"));
 
             await ThenTheLevelsAre(installation,
                 new LevelView("Team", 1, "Crew", "Crews", "Work Item", "Work Items"),
                 new LevelView("Portfolio", 2, "Initiative", "Initiatives", "Outcome", "Outcomes"));
-            ThenTheEightWordsAre(installation, new Dictionary<string, string>
-            {
-                ["team"] = "Crew", ["teams"] = "Crews", ["portfolio"] = "Initiative", ["portfolios"] = "Initiatives",
-                ["workItem"] = "Work Item", ["workItems"] = "Work Items", ["feature"] = "Outcome", ["features"] = "Outcomes",
-            });
+            ThenTheEightWordsAre(installation, WithValues(before, ("team", "Crew"), ("teams", "Crews"), ("feature", "Outcome"), ("features", "Outcomes")));
         }
 
         [Test]
@@ -223,12 +223,12 @@ namespace Lighthouse.Backend.Tests.Acceptance.OneStructure
                 $"On {installation.Database} {connection} reports [{string.Join(", ", onBoth)}] on both levels, expected [{string.Join(", ", expected)}]. A type a Team and a Portfolio of one connection both read stays on both levels and blocks nothing; neither level takes it from the other.");
         }
 
-        private static void ThenTheEightWordsAre(Installation installation, IReadOnlyDictionary<string, string> expected)
+        private static void ThenTheEightWordsAre(Installation installation, IReadOnlyDictionary<string, TerminologyAnswer> expected)
         {
             var answered = TheEightWordsAsTerminologyAnswers(installation);
 
             Assert.That(answered, Is.EquivalentTo(expected),
-                $"On {installation.Database} Terminology answers [{string.Join(", ", answered.Select(word => $"{word.Key}={word.Value}"))}], expected [{string.Join(", ", expected.Select(word => $"{word.Key}={word.Value}"))}]. Every screen and API that shows these eight words must show the same words as before, now read from the levels.");
+                $"On {installation.Database} Terminology answers [{string.Join(", ", answered.Select(word => $"{word.Key}={word.Value}"))}], expected [{string.Join(", ", expected.Select(word => $"{word.Key}={word.Value}"))}]. Every screen and API that shows these eight words must get the same answer as before, value and default alike: a word nobody changed still answers an empty value with its default, and a renamed word answers its new value.");
         }
 
         private static async Task ThenTheStructureStillReads(Installation installation, StructureSnapshot afterTheFirstStart)
@@ -242,12 +242,23 @@ namespace Lighthouse.Backend.Tests.Acceptance.OneStructure
                 $"On {installation.Database} a second start changed the structure from {afterTheFirstStart} to {now}. The upgrade runs once; a later start must leave the levels and every connection's mapping as they are.");
         }
 
-        private static Dictionary<string, string> TheEightWordsAsTerminologyAnswers(Installation installation)
+        private static Dictionary<string, TerminologyAnswer> WithValues(IReadOnlyDictionary<string, TerminologyAnswer> answers, params (string Key, string Value)[] renamed)
+        {
+            var expected = answers.ToDictionary(answer => answer.Key, answer => answer.Value);
+            foreach (var (key, value) in renamed)
+            {
+                expected[key] = expected[key] with { Value = value };
+            }
+
+            return expected;
+        }
+
+        private static Dictionary<string, TerminologyAnswer> TheEightWordsAsTerminologyAnswers(Installation installation)
         {
             using var scope = installation.Services.CreateScope();
             return scope.ServiceProvider.GetRequiredService<ITerminologyService>().GetAll()
                 .Where(entry => TheEightWords.Contains(entry.Key))
-                .ToDictionary(entry => entry.Key, entry => entry.Value);
+                .ToDictionary(entry => entry.Key, entry => new TerminologyAnswer(entry.Value, entry.DefaultValue));
         }
 
         private static async Task<StructureRead> TheStructure(Installation installation)
@@ -302,6 +313,9 @@ namespace Lighthouse.Backend.Tests.Acceptance.OneStructure
         }
 
         private sealed record StructureSnapshot(string Levels, string Mappings);
+
+        /// <summary>What Terminology answers for one word: the organisation's value, empty when never changed, and its default.</summary>
+        private sealed record TerminologyAnswer(string Value, string DefaultValue);
 
         /// <summary>
         /// One database at the latest schema, with what the start reads to build the levels: Terminology, the
