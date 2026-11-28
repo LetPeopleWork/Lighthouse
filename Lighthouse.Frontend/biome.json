@@ -170,6 +170,7 @@
 			"suspicious": {
 				"noArrayIndexKey": "error",
 				"noAsyncPromiseExecutor": "error",
+				"noDeprecatedImports": "error",
 				"noCommentText": "error",
 				"noConstantBinaryExpressions": "error",
 				"noDuplicateClassMembers": "error",
