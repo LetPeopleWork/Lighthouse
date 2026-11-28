@@ -42,7 +42,7 @@ these rules any more: each connection's mapping guards them (ADR-274).
    `UnitDeleted(UnitId, LevelId, UnitsThatReferencedIt)` (replaces `TeamDeleted` and Portfolio deletion's inline
    clean-up), `LevelRenamed`, `ConnectionItemTypesChanged` and, with slice 15, `LevelRemoved` (and the event of adding a level above, if DEVOPS gives it one). Feature A builds only `UnitCreated` and `UnitDeleted`; the others come with the slices that first publish them. The refresh events
    (`TeamDataRefreshed`, `PortfolioFeaturesRefreshed`, `PortfolioForecastsUpdated`) keep their names in this Epic.
-7. `UnitId` and `LevelId` are cross-context identifiers (ADR-270 Decision 7) published in `Modules/OrganisationSetup/Contracts`, because their only owner is Organisation set-up and the contracts-only rule (S09a) already lets every context read a `Contracts` namespace. They do not join the `Models` kernel, which S04b reduced to types two or more contexts own together.
+7. `LevelId` (and the `TermPair` names) belong to Organisation set-up's Domain, because its Domain may reach only its own Domain, Models and the base library. The published identifier is `UnitId(string Level, int Number)` in `Modules/OrganisationSetup/Contracts`, carrying the stored level key as a string, because a Contracts type may reach only the kernel, the base library and other Contracts. The Application query maps one to the other. Neither joins the `Models` kernel, which S04b reduced to types two or more contexts own together.
 
 ## Consequences
 

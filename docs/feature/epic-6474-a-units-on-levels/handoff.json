@@ -47,15 +47,15 @@
 "counters": {
 "B": 5,
 "C": 2,
-"D": 16,
+"D": 17,
 "E": 6,
-"F": 435,
+"F": 447,
 "K": 6,
 "L": 5,
 "N": 15,
 "P": 6,
 "S": 5,
-"T": 8,
+"T": 9,
 "Y": 7
 },
 "design": {
@@ -318,7 +318,7 @@
 "constructors": [
 {
 "name": "UnitId",
-"signature": "UnitId(LevelId level, int number)"
+"signature": "public readonly record struct UnitId(string Level, int Number); static UnitId ForTeam(int number); static UnitId ForPortfolio(int number)  (Contracts; Level is the stored level key)"
 },
 {
 "name": "ConnectionMapping.Resolve",
@@ -330,11 +330,11 @@
 },
 {
 "name": "LevelId",
-"signature": "public readonly record struct LevelId(string Key); static LevelId Team; static LevelId Portfolio"
+"signature": "public readonly record struct LevelId(string Key); static LevelId Team; static LevelId Portfolio  (Domain/Structure)"
 },
 {
 "name": "TermPair",
-"signature": "public sealed record TermPair(string Singular, string Plural)  (Modules/OrganisationSetup/Contracts)"
+"signature": "public sealed record TermPair(string Singular, string Plural)  (Domain/Structure)"
 }
 ],
 "contract_tests": [
@@ -356,7 +356,7 @@
 },
 {
 "id": "D2",
-"text": "F21"
+"text": "F436"
 },
 {
 "id": "D3",
@@ -404,7 +404,7 @@
 },
 {
 "id": "D14",
-"text": "F393"
+"text": "F437"
 },
 {
 "id": "D15",
@@ -413,6 +413,10 @@
 {
 "id": "D16",
 "text": "F395"
+},
+{
+"id": "D17",
+"text": "F438"
 }
 ],
 "equality": [
@@ -965,11 +969,12 @@
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/TwoLevelsFromTerminologyTest.cs",
 "prefactoring": {
 "existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TerminologyControllerTest.cs",
-"move": "F398",
+"move": "F440",
 "preserved": "F399",
 "verification": [
 "dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj",
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TerminologyControllerTest"
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TerminologyControllerTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Architecture.OrganisationSetup"
 ]
 },
 "public_oracle": {
@@ -1015,7 +1020,7 @@
 "constructors": [
 {
 "name": "LevelView",
-"signature": "public sealed record LevelView(LevelId Id, int Ordinal, TermPair UnitName, TermPair ItemName)  (Contracts; read model)"
+"signature": "public sealed record LevelView(string Level, int Ordinal, string UnitSingular, string UnitPlural, string ItemSingular, string ItemPlural)  (Contracts; primitives mapped by the query)"
 },
 {
 "name": "OrganisationStructureView",
@@ -1023,11 +1028,11 @@
 },
 {
 "name": "StructureRead",
-"signature": "public abstract record StructureRead; sealed record NotMigrated() : StructureRead; sealed record Migrated(OrganisationStructureView Structure) : StructureRead  (Contracts, one file)"
+"signature": "public abstract record StructureRead { private StructureRead() {} public sealed record NotMigrated : StructureRead; public sealed record Migrated(OrganisationStructureView Structure) : StructureRead; }  (Contracts)"
 },
 {
 "name": "ConnectionMappingView",
-"signature": "public sealed record ConnectionMappingView(int ConnectionId, IReadOnlyDictionary<LevelId, IReadOnlyList<string>> TypesByLevel, IReadOnlyList<string> TypesOnBothLevels)  (Contracts; a level without a row is absent from TypesByLevel)"
+"signature": "public sealed record ConnectionMappingView(int ConnectionId, IReadOnlyDictionary<string, IReadOnlyList<string>> TypesByLevel, IReadOnlyList<string> TypesOnBothLevels)  (Contracts; keyed by the stored level key; a level without a row is absent)"
 },
 {
 "name": "IOrganisationStructureQuery",
@@ -1035,19 +1040,19 @@
 },
 {
 "name": "OrganisationStructure",
-"signature": "public sealed class OrganisationStructure { static OrganisationStructure Seed(TermPair teamUnit, TermPair workItem, TermPair portfolioUnit, TermPair feature); RenameOutcome Rename(LevelId level, TermPair unitName, TermPair itemName); OrganisationStructureView ToView(); }  (Domain/Structure)"
+"signature": "public sealed class OrganisationStructure { internal constructor; static OrganisationStructure Seed(TermPair teamUnit, TermPair workItem, TermPair portfolioUnit, TermPair feature); RenameOutcome Rename(LevelId level, TermPair unitName, TermPair itemName); IReadOnlyList<Level> Levels { get; } }  (Domain/Structure; Levels is the read side the query maps; a stated break of the no-getters rule for a read model)"
 },
 {
 "name": "Level",
-"signature": "public sealed class Level { Level(LevelId id, int ordinal, TermPair unitName, TermPair itemName); LevelView ToView(); }  (Domain/Structure)"
+"signature": "public sealed class Level { internal Level(LevelId id, int ordinal, TermPair unitName, TermPair itemName); LevelId Id { get; } int Ordinal { get; } TermPair UnitName { get; } TermPair ItemName { get; } }  (Domain/Structure)"
 },
 {
 "name": "ConnectionMapping",
-"signature": "public sealed class ConnectionMapping { static ConnectionMapping WithCreateDefaults(int connectionId, bool connectorUsesItemTypes); static ConnectionMapping From(int connectionId, IReadOnlyDictionary<LevelId, IReadOnlyList<string>> typesByLevel); ResolveOutcome Resolve(LevelId level, IEnumerable<string> requested); ConnectionMappingView ToView(); }  (Domain/Mapping)"
+"signature": "public sealed class ConnectionMapping { internal constructor; static ConnectionMapping WithCreateDefaults(int connectionId, bool connectorUsesItemTypes); static ConnectionMapping From(int connectionId, IReadOnlyDictionary<LevelId, IReadOnlyList<string>> typesByLevel); int ConnectionId { get; } ResolveOutcome Resolve(LevelId level, IEnumerable<string> requested); IReadOnlyList<string> TypesOn(LevelId level); IReadOnlyList<string> TypesOnBothLevels(); }  (Domain/Mapping; no Contracts type)"
 },
 {
 "name": "ResolveOutcome",
-"signature": "public abstract record ResolveOutcome; sealed record MappedSubset(IReadOnlyList<string> Types) : ResolveOutcome; sealed record TypeNotMapped(string Type, LevelId Level, int ConnectionId) : ResolveOutcome  (Domain/Mapping, one file)"
+"signature": "public abstract record ResolveOutcome { private ResolveOutcome() {} public sealed record MappedSubset(IReadOnlyList<string> Types) : ResolveOutcome; public sealed record TypeNotMapped(string Type, LevelId Level, int ConnectionId) : ResolveOutcome; }  (Domain/Mapping)"
 },
 {
 "name": "IOrganisationStructureStore",
@@ -1063,7 +1068,7 @@
 },
 {
 "name": "OrganisationStructureMigrationPlan",
-"signature": "public sealed class OrganisationStructureMigrationPlan { static OrganisationStructureMigrationPlan From(IReadOnlyList<Team> teams, IReadOnlyList<Portfolio> portfolios, IReadOnlyList<WorkTrackingSystemConnection> connections, TerminologyWords words); IReadOnlyList<PlannedLevel> Levels; IReadOnlyList<PlannedMapping> Mappings; }  (Application/Structure; pure)"
+"signature": "public sealed class OrganisationStructureMigrationPlan { internal constructor; static OrganisationStructureMigrationPlan From(IReadOnlyList<Team> teams, IReadOnlyList<Portfolio> portfolios, IReadOnlyList<WorkTrackingSystemConnection> connections, TerminologyWords words); IReadOnlyList<PlannedLevel> Levels { get; } IReadOnlyList<PlannedMapping> Mappings { get; } }  (Application/Structure; pure)"
 },
 {
 "name": "PlannedLevel",
@@ -1080,6 +1085,10 @@
 {
 "name": "AddOrganisationStructure",
 "signature": "public static IServiceCollection AddOrganisationStructure(this IServiceCollection services)  (OrganisationSetupModule)"
+},
+{
+"name": "RenameOutcome",
+"signature": "public abstract record RenameOutcome { private RenameOutcome() {} public sealed record Renamed(LevelId Level) : RenameOutcome; public sealed record LevelNotFound(LevelId Level) : RenameOutcome; public sealed record NameMissing(LevelId Level, string Field) : RenameOutcome; }  (Domain/Structure; Field names which of the four names is empty)"
 }
 ],
 "decisions": [
@@ -1130,12 +1139,6 @@
 },
 {
 "decision": "Changed",
-"kind": "contract",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/LevelId.cs:1",
-"reason": "F282"
-},
-{
-"decision": "Changed",
 "kind": "domain",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Mapping/ConnectionMapping.cs:1",
 "reason": "F281"
@@ -1181,12 +1184,6 @@
 "kind": "test",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationStructurePlanPurityArchUnitTest.cs:1",
 "reason": "F286"
-},
-{
-"decision": "Changed",
-"kind": "public-signature",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/TermPair.cs:1",
-"reason": "F402"
 },
 {
 "decision": "Changed",
@@ -1265,6 +1262,18 @@
 "kind": "public-signature",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/OrganisationSetupModule.cs:1",
 "reason": "F397"
+},
+{
+"decision": "Changed",
+"kind": "public-signature",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Structure/LevelId.cs:1",
+"reason": "F442"
+},
+{
+"decision": "Changed",
+"kind": "public-signature",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Structure/TermPair.cs:1",
+"reason": "F442"
 }
 ],
 "not_applicable": [
@@ -1285,12 +1294,6 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Structure/Level.cs:1",
 "reason": "F264",
 "symbol": "Level"
-},
-{
-"decision": "CreateNew",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/LevelId.cs:1",
-"reason": "F265",
-"symbol": "LevelId"
 },
 {
 "decision": "CreateNew",
@@ -1351,12 +1354,6 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationStructurePlanPurityArchUnitTest.cs:1",
 "reason": "F274",
 "symbol": "OrganisationStructurePlanPurityArchUnitTest"
-},
-{
-"decision": "CreateNew",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/TermPair.cs:1",
-"reason": "F400",
-"symbol": "TermPair"
 },
 {
 "decision": "CreateNew",
@@ -1435,6 +1432,18 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/OrganisationSetupModule.cs:1",
 "reason": "F401",
 "symbol": "OrganisationSetupModule"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Structure/LevelId.cs:1",
+"reason": "F441",
+"symbol": "LevelId"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Structure/TermPair.cs:1",
+"reason": "F441",
+"symbol": "TermPair"
 }
 ]
 },
@@ -1452,7 +1461,8 @@
 },
 {
 "change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/LevelId.cs"
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Structure/LevelId.cs",
+"reason": "F439"
 },
 {
 "change": "Create",
@@ -1505,8 +1515,8 @@
 },
 {
 "change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/TermPair.cs",
-"reason": "F396"
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/Structure/TermPair.cs",
+"reason": "F439"
 },
 {
 "change": "Create",
@@ -1584,13 +1594,14 @@
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/UnitsOnLevelsTest.cs",
 "prefactoring": {
 "existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs",
-"move": "F406",
+"move": "F443",
 "preserved": "F407",
 "verification": [
 "dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj",
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamsControllerTest",
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfoliosControllerTest",
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamDeletedRefreshLogCleanupHandlerTest"
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamDeletedRefreshLogCleanupHandlerTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Architecture.OrganisationSetup"
 ]
 },
 "public_oracle": {
@@ -1618,7 +1629,7 @@
 },
 {
 "name": "IUnitDirectory",
-"signature": "public interface IUnitDirectory { Task<IReadOnlyList<UnitView>> UnitsOn(LevelId level, CancellationToken cancellationToken); }  (Contracts; ordered by number)"
+"signature": "public interface IUnitDirectory { Task<IReadOnlyList<UnitView>> UnitsOn(string level, CancellationToken cancellationToken); }  (Contracts; level is the stored level key; ordered by number)"
 },
 {
 "name": "IUnitLifecycle",
@@ -2001,14 +2012,14 @@
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/UnitReadsItsSubsetTest.cs",
 "prefactoring": {
 "existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs",
-"move": "F434",
+"move": "F444",
 "preserved": "F415",
 "verification": [
 "dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj",
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamsControllerTest",
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfoliosControllerTest",
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~FetchFingerprintPinnedDigestTest",
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupModuleBoundariesArchUnitTest"
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Architecture.OrganisationSetup"
 ]
 },
 "public_oracle": {
@@ -2501,12 +2512,12 @@
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/OneStructure/LeafCapacityInForecastingTest.cs",
 "prefactoring": {
 "existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs",
-"move": "F431",
+"move": "F445",
 "preserved": "F227",
 "verification": [
 "dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj",
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamsControllerTest",
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrganisationSetupModuleBoundariesArchUnitTest"
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Architecture.OrganisationSetup"
 ]
 },
 "public_oracle": {
@@ -2535,6 +2546,14 @@
 "reason": "F253"
 }
 ],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Architecture.OrganisationSetup",
+"id": "T9",
+"obligation": "F447",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs"
+}
+],
 "constructors": [
 {
 "name": "LeafCapacityView",
@@ -2542,11 +2561,11 @@
 },
 {
 "name": "ILeafCapacityStore",
-"signature": "public interface ILeafCapacityStore { Task<IReadOnlyList<LeafCapacityView>> All(CancellationToken cancellationToken); Task Write(LeafCapacityView capacity, CancellationToken cancellationToken); }  (Forecasting/Contracts; Write joins the caller's unit of work)"
+"signature": "public interface ILeafCapacityStore { Task<IReadOnlyList<LeafCapacityView>> All(CancellationToken cancellationToken); Task<LeafCapacityView> ForTeam(UnitId team, CancellationToken cancellationToken); Task Stage(LeafCapacityView capacity, CancellationToken cancellationToken); }  (Forecasting/Contracts; Stage adds to the scoped unit of work that the unit save commits; ForTeam throws for a Team without a row, which seeding excludes)"
 },
 {
 "name": "LeafCapacity",
-"signature": "public sealed class LeafCapacity { static LeafCapacity From(LeafCapacityView view); ThroughputSettings ThroughputSettings(DateOnly today); LeafCapacityView ToView(); }  (Forecasting/Domain; EF entity keyed by TeamId)"
+"signature": "public sealed class LeafCapacity { static LeafCapacity Create(int teamId, int featureWip, bool automaticallyAdjustFeatureWip, bool useFixedDatesForThroughput, int throughputHistoryDays, DateTime? throughputHistoryStartDate, DateTime? throughputHistoryEndDate, string? forecastFilterRuleSetJson); ThroughputSettings ThroughputSettings(DateOnly today); }  (Forecasting/Domain; no Contracts type; the store maps it to LeafCapacityView)"
 },
 {
 "name": "LeafCapacitySeeder",
@@ -2558,7 +2577,7 @@
 },
 {
 "name": "IUnitSettings.ReadTeamSettings",
-"signature": "Task<TeamSettingsView> ReadTeamSettings(int teamId, CancellationToken cancellationToken) added to IUnitSettings; public sealed record TeamSettingsView(Team Team, LeafCapacityView Capacity) in Application/Units; the controller maps it to TeamSettingDto through API.Helpers, so the payload stays byte-identical and no Application type reaches Lighthouse.Backend.API"
+"signature": "Task<TeamSettingsView> ReadTeamSettings(int teamId, CancellationToken cancellationToken) added to IUnitSettings; public abstract record TeamSettingsView { private TeamSettingsView() {} public sealed record Found(Team Team) : TeamSettingsView; public sealed record TeamNotFound(int TeamId) : TeamSettingsView; } in Application/Units; it holds no Forecasting type; the controller adds ILeafCapacityStore.ForTeam and maps both to TeamSettingDto through API.Helpers"
 }
 ],
 "contract_tests": [
@@ -2574,7 +2593,7 @@
 }
 ],
 "decisions": [
-"F228",
+"F446",
 "F423"
 ],
 "impact": [
@@ -3036,7 +3055,6 @@
 "F207": "TeamDeletedRefreshLogCleanupHandler already owns this responsibility in slice S3; extended in place, no parallel owner",
 "F208": "TeamDeletedForecastRetriggerHandler already owns this responsibility in slice S3; extended in place, no parallel owner",
 "F209": "PortfolioDeletedOrphanedFeatureCleanupHandler already owns this responsibility in slice S3; extended in place, no parallel owner",
-"F21": "Kept ADR-273 decisions 1-3: UnitId is a value object (LevelId, number); level 1 continues Team numbers, level 2 Portfolio numbers; the five stored discriminators (OwnerType, PermissionScopeType, ReportOwnerKind, RefreshType, UpdateType) are read as the level key and never rewritten. Moved: UnitId and LevelId live in Modules/OrganisationSetup/Contracts (the contracts-only cross-context rule of S09a), not in the Models kernel, because their single owner is Organisation set-up.",
 "F210": "DomainEventHandlerOrderPinTest already owns this responsibility in slice S3; extended in place, no parallel owner",
 "F211": "EventTypesTheCompositionRootNames already owns this responsibility in slice S3; extended in place, no parallel owner",
 "F212": "Publishers and three handlers move to UnitDeleted in the same commit",
@@ -3055,7 +3073,6 @@
 "F224": "One LeafCapacity per Team with today's values; settings payload byte-identical before and after; a save changes the record and the old columns together; forecasts and slice 01 numbers unchanged",
 "F225": "Forecast reading Team.FeatureWIP after a save changed only LeafCapacity",
 "F227": "Team settings payload and forecasts",
-"F228": "LeafCapacity (Forecasting Domain) holds Feature WIP, automatically adjust Feature WIP, fixed-dates flag, throughput start/end and days, forecast filter rule set; table LeafCapacities keyed by Team id with cascading FK; ILeafCapacityStore in Forecasting Contracts; LeafCapacitySeeder copies today's Team values at start where no row exists or where the Team columns differ (rollback); the Team settings save writes the record through the Forecasting contract and dual-writes the old columns in one unit of work under the Team's concurrency token. Forecast reads (Team.GetThroughputSettings callers, ForecastFilterRuleService, Feature WIP readers) read LeafCapacity.",
 "F229": "Throughput window moves to LeafCapacity, which owns the decision; Team keeps the columns read-only for rollback",
 "F230": "Owner of forecast filter rules; reads them from LeafCapacity",
 "F231": "No existing type owns LeafCapacity's responsibility (searched the module and its Contracts); see the shared reuse rows",
@@ -3090,7 +3107,6 @@
 "F262": "Slice 02 builds OrganisationStructure, Level, LevelId, ConnectionMapping, OrganisationStructureMigrationPlan and OrganisationStructureMigrator, the EF stores and the four tables, and routes the eight Terminology entries through the levels. Units are not touched yet: subsets come in slice 04, so the migrator here plans mappings only and the subset part of the plan is added in slice 04.",
 "F263": "No owner of levels exists (shared reuse row)",
 "F264": "No existing type owns Level's responsibility (searched the module and its Contracts); see the shared reuse rows",
-"F265": "No existing type owns LevelId's responsibility (searched the module and its Contracts); see the shared reuse rows",
 "F266": "No existing type owns ConnectionMapping's responsibility (searched the module and its Contracts); see the shared reuse rows",
 "F267": "No existing type owns ResolveOutcome's responsibility (searched the module and its Contracts); see the shared reuse rows",
 "F268": "No existing type owns OrganisationStructureMigrationPlan's responsibility (searched the module and its Contracts); see the shared reuse rows",
@@ -3109,7 +3125,6 @@
 "F28": "Terminology split (slice 02): the eight entries team, teams, portfolio, portfolios, workItem, workItems, feature, features are read from and written to the two Levels by TerminologyService; the other Terminology rows stay where they are. The old eight rows are kept (expand-only) and dual-written so the previous release shows the same words after a rollback. PUT /terminology keeps today's Premium and System Admin guard (level rename stays Premium: 2026-11-27 reverses M7).",
 "F280": "New aggregate",
 "F281": "New domain for slice S2; consumers listed in the slice's agreements change in the same commit",
-"F282": "New contract for slice S2; consumers listed in the slice's agreements change in the same commit",
 "F283": "New application for slice S2; consumers listed in the slice's agreements change in the same commit",
 "F284": "New adapter for slice S2; consumers listed in the slice's agreements change in the same commit",
 "F285": "Additive migration for both providers generated by Create-Migration.ps1 (slice S2)",
@@ -3226,12 +3241,10 @@
 "F390": "Each is observed by the oracle of the slice that builds it, and this recording stays green after each of those slices",
 "F391": "Not shown by this slice: it adds only the check that numbers stay the same, and changes no production code",
 "F392": "Slice 01 has no production target; the planner, the connection mapping, the migrator and the dual-write these laws govern do not exist until slices 02 to 07, and the architecture and contract tests are declared at their own locators",
-"F393": "LevelId is the stored level key, not a database number: public readonly record struct LevelId(string Key) in Modules/OrganisationSetup/Contracts, with LevelId.Team (\"Team\") and LevelId.Portfolio (\"Portfolio\"), the values the five stored discriminators already hold (ADR-273 decision 2). It is stable and distinct from the ordinal; a level added later (#6455) gets a new key. A test builds a LevelId with LevelId.Team or LevelId.Portfolio; no lookup is needed.",
 "F394": "A compile-safe RED in C#: each slice starts with a prefactoring step that adds the public signatures its oracle names (types, interfaces, members, the DI registration extension) with no behaviour: an empty answer where one is safe, NotImplementedException otherwise. The oracle then compiles and fails on its assertions. The signatures are declared per slice as constructor records and named file by file in the slice's prefactoring move.",
 "F395": "Test composition: every new service is registered by a module extension that Program.cs and the tests both call: OrganisationSetupModule.AddOrganisationSetup (existing; gains IUnitLifecycle in S3 and IUnitSettings in S4), OrganisationSetupModule.AddOrganisationStructure (new in S2: IOrganisationStructureStore, IConnectionMappingStore, IOrganisationStructureQuery, and OrganisationStructureMigrator as an ISeeder; Program.cs calls it right after registering TerminologySeeder) and ForecastingModule.AddLeafCapacity (new in S5: ILeafCapacityStore, and LeafCapacitySeeder as an ISeeder after the structure migrator). A port scenario passes services => services.AddOrganisationSetup().AddOrganisationStructure() (plus TerminologySeeder and AddLeafCapacity where needed) to ServicePortHarness and runs the resolved ISeeder instances in registration order. The Postgres scenarios build LighthouseAppContext on SharedPostgresContainer's connection string and register the same extensions.",
 "F396": "declared public signature of slice 02",
 "F397": "gains AddOrganisationStructure, called by Program.cs and the tests",
-"F398": "Signature step, no behaviour, its own commit before the oracle: create Contracts/TermPair.cs, LevelId.cs, LevelView.cs, OrganisationStructureView.cs, StructureRead.cs, ConnectionMappingView.cs, IOrganisationStructureQuery.cs; Domain/Structure/OrganisationStructure.cs, Level.cs, RenameOutcome.cs; Domain/Mapping/ConnectionMapping.cs, ResolveOutcome.cs; Application/Structure/IOrganisationStructureStore.cs, IConnectionMappingStore.cs, OrganisationStructureQuery.cs, TerminologyWords.cs, OrganisationStructureMigrationPlan.cs, PlannedLevel.cs, PlannedMapping.cs; Adapters/Startup/OrganisationStructureMigrator.cs; Adapters/Persistence/OrganisationStructureStore.cs, ConnectionMappingStore.cs (all under Modules/OrganisationSetup); add AddOrganisationStructure to OrganisationSetupModule.cs registering them (not yet called by Program.cs). Bodies: Seed returns a completed task, Structure returns NotMigrated, Mappings and All return empty lists, the rest throw NotImplementedException. Per touched existing file: OrganisationSetupModule.cs holds one type, nothing moves. Follow-up change: the migrator, the stores and the level-backed terminology",
 "F399": "Every existing answer: nothing calls the new types yet",
 "F4": "An installation has exactly two levels: level 1 where the work is done (Teams, Work Items) and level 2 that groups the level below (Portfolios, Features). Their unit and item names (singular and plural) come from today's Terminology, custom or seeded, and every screen and API that shows those eight Terminology entries shows the same words as before; renaming through Terminology lands on the level.",
 "F40": "Sole owner of Terminology reads and writes; it serves the eight level entries from the levels, so no second terminology reader exists.",
@@ -3241,7 +3254,6 @@
 "F403": "declared public signature of slice 03",
 "F404": "AddOrganisationSetup registers IUnitLifecycle and IUnitDirectory",
 "F405": "create logic moves into UnitLifecycleService",
-"F406": "Two commits before the oracle. (1) Behaviour-preserving move: the create logic of TeamsController.CreateTeam and PortfoliosController and the delete logic of TeamController.DeleteTeam and PortfolioController move unchanged into Application/Units/UnitLifecycleService.cs behind IUnitLifecycle.cs, with DeletionOutcome.cs; the controllers call the port and still publish TeamDeleted and PortfolioDeleted through it. (2) Signature step, no behaviour: create Contracts/UnitId.cs, UnitCreated.cs, UnitDeleted.cs, UnitView.cs, IUnitDirectory.cs and Application/Units/UnitDirectory.cs (UnitsOn returns an empty list); AddOrganisationSetup registers both. Per touched existing file: each controller and OrganisationSetupModule.cs holds one type, nothing moves. Follow-up change: publish UnitCreated and UnitDeleted",
 "F407": "Create and delete answers and clean-up",
 "F408": "Read side and composition for slice 03: the oracle drives IUnitLifecycle and reads IUnitDirectory, both registered by AddOrganisationSetup; it observes the clean-up through the existing repositories and the refresh log service, and UnitCreated and UnitDeleted through a recording IDomainEventHandler it registers itself. Today the create and delete logic sits in TeamsController, TeamController, PortfoliosController and PortfolioController; the prefactoring step moves it unchanged into UnitLifecycleService, so the controllers call the port.",
 "F409": "No existing type declares this: declared public signature of slice 03",
@@ -3266,12 +3278,22 @@
 "F429": "TerminologyService (get-all, update) and OrganisationStructureMigrator through ISeeder.Seed",
 "F43": "No owner of levels exists: OwnerTerms only names Team and Portfolio words; the cross-level rules need one aggregate.",
 "F430": "Application-owned settings view the controller maps to TeamSettingDto",
-"F431": "Two commits before the oracle. (1) Behaviour-preserving move: the load step of TeamController's GET settings moves unchanged into UnitSettingsService.ReadTeamSettings, which returns Application/Units/TeamSettingsView.cs; the controller keeps mapping it to TeamSettingDto through API.Helpers. (2) Signature step, no behaviour: create Modules/Forecasting/Contracts/LeafCapacityView.cs and ILeafCapacityStore.cs, Domain/LeafCapacity.cs, Adapters/Persistence/LeafCapacityStore.cs (All returns an empty list, Write throws NotImplementedException), Adapters/Startup/LeafCapacitySeeder.cs (Seed returns a completed task), and AddLeafCapacity in ForecastingModule.cs (not yet called by Program.cs). Per touched existing file: TeamController.cs and ForecastingModule.cs each hold one type, nothing moves. Follow-up change: copy and read capacity from LeafCapacity",
 "F432": "No Application-owned view of a Team's settings exists; TeamSettingDto lives in API.DTO, which Organisation set-up Application must not reach",
 "F433": "New return type of ReadTeamSettings",
-"F434": "Two commits before the oracle. (1) Behaviour-preserving move: the load, save and refresh steps of TeamController.UpdateTeam and UpdateTeamData, PortfolioController's update and refresh actions, and the create paths of TeamsController and PortfoliosController move unchanged into Application/Units/UnitSettingsService.cs behind IUnitSettings.cs, with UnitSaveOutcome.cs and RefreshRequest.cs (only UnitSaved, RefreshQueued and the not-found variants produced yet). The DTO-to-entity mapping stays in the controllers and API.Helpers and reaches the service as an Action<Team> or Action<Portfolio>, so OrganisationSetupModuleBoundariesArchUnitTest keeps its allow-list unchanged. (2) Signature step, no behaviour: add ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten to Models/WorkTrackingSystemOptionsOwner.cs (unmapped until the migration), create Application/Structure/PlannedSubset.cs and Domain/UnitTypeLossNotice.cs, add Subsets (empty) to OrganisationStructureMigrationPlan. Per touched existing file: TeamController.cs, PortfolioController.cs, TeamsController.cs, PortfoliosController.cs and WorkTrackingSystemOptionsOwner.cs each hold one type, nothing moves. Follow-up change: resolve the subset and refuse unmapped types",
 "F435": "Organisation set-up Application types never reach Lighthouse.Backend.API; the allow-list only shrinks",
+"F436": "Kept ADR-273 decisions 1-3: a unit is identified by its level and its number on that level; level 1 continues Team numbers, level 2 Portfolio numbers; the five stored discriminators (OwnerType, PermissionScopeType, ReportOwnerKind, RefreshType, UpdateType) are read as the level key and never rewritten. Placement follows the two module rules: Organisation set-up's Domain reaches only its own Domain, Models and the base library, and a Contracts type reaches only the kernel, the base library, Microsoft.Extensions and other Contracts. So the Domain owns LevelId and TermPair (Domain/Structure), and the published Contracts carry the level as the stored key string: UnitId(string Level, int Number) with UnitId.ForTeam and UnitId.ForPortfolio, the views with primitive fields. The Application query maps Domain to Contracts. Rejected: putting LevelId and UnitId in the Models kernel (the kernel only holds types two or more contexts own together, and S04b just shrank it); Contracts carrying Domain types (forbidden for Contracts by ContextContractsArchUnitTest).",
+"F437": "LevelId is the stored level key, not a database number: public readonly record struct LevelId(string Key) in Modules/OrganisationSetup/Domain/Structure, with LevelId.Team (\"Team\") and LevelId.Portfolio (\"Portfolio\"), the values the five stored discriminators hold (ADR-273 decision 2). It is stable and distinct from the ordinal; a level added later (#6455) gets a new key. Contracts carry the same key as a string; a unit test pins that LevelId.Team.Key equals UnitId.ForTeam(1).Level, so the literal cannot drift between the two. Outcome sums are closed abstract records with nested sealed cases and a private constructor (as ForecastRunOutcome does); aggregate and planner constructors are internal, built through their static factories.",
+"F438": "Organisation set-up's Application never reaches a context that builds on it (OrganisationSetupModuleBoundariesArchUnitTest), so the Team settings save does not call Forecasting. The API layer composes the two owners: TeamsController and TeamController stage the capacity with ILeafCapacityStore.Stage and then call IUnitSettings.SaveTeam, whose commit of the shared scoped LighthouseAppContext writes both under the Team's concurrency token; a refused save (400, 409, concurrency) commits neither. Reads likewise: the controller reads the Team through IUnitSettings.ReadTeamSettings and the capacity through ILeafCapacityStore.ForTeam, and maps both to TeamSettingDto through API.Helpers.",
+"F439": "Domain value type: the Domain may not reach Contracts",
 "F44": "ConnectionFieldDefaults owns per-connection field defaults, not item types per level; a type list per connection and level has no owner today (each unit holds its own free text).",
+"F440": "Signature step, no behaviour, its own commit before the oracle: create Domain/Structure/LevelId.cs, TermPair.cs, OrganisationStructure.cs, Level.cs, RenameOutcome.cs; Domain/Mapping/ConnectionMapping.cs, ResolveOutcome.cs (Domain reaches only its own Domain, Models and the base library); Contracts/LevelView.cs, OrganisationStructureView.cs, StructureRead.cs, ConnectionMappingView.cs, IOrganisationStructureQuery.cs (primitives only); Application/Structure/IOrganisationStructureStore.cs, IConnectionMappingStore.cs, OrganisationStructureQuery.cs, TerminologyWords.cs, OrganisationStructureMigrationPlan.cs, PlannedLevel.cs, PlannedMapping.cs; Adapters/Startup/OrganisationStructureMigrator.cs; Adapters/Persistence/OrganisationStructureStore.cs, ConnectionMappingStore.cs (all under Modules/OrganisationSetup); add AddOrganisationStructure to OrganisationSetupModule.cs registering them (not yet called by Program.cs). Bodies: Seed returns a completed task, Structure returns StructureRead.NotMigrated, Mappings and All return empty lists, the rest throw NotImplementedException. Per touched existing file: OrganisationSetupModule.cs holds one type, nothing moves. Follow-up change: the migrator, the stores and the level-backed terminology",
+"F441": "Domain-owned value type; Contracts carry the stored key and names as primitives",
+"F442": "New Domain value type",
+"F443": "Two commits before the oracle. (1) Behaviour-preserving move: the create logic of TeamsController.CreateTeam and PortfoliosController and the delete logic of TeamController.DeleteTeam and PortfolioController move unchanged into Application/Units/UnitLifecycleService.cs behind IUnitLifecycle.cs, with DeletionOutcome.cs (closed abstract record, nested cases); the controllers call the port and still publish TeamDeleted and PortfolioDeleted through it. (2) Signature step, no behaviour: create Contracts/UnitId.cs, UnitCreated.cs, UnitDeleted.cs, UnitView.cs, IUnitDirectory.cs (Contracts carry the level as the stored key string) and Application/Units/UnitDirectory.cs (UnitsOn returns an empty list); AddOrganisationSetup registers both. Per touched existing file: each controller and OrganisationSetupModule.cs holds one type, nothing moves. Follow-up change: publish UnitCreated and UnitDeleted",
+"F444": "Two commits before the oracle. (1) Behaviour-preserving move: the load, save and refresh steps of TeamController.UpdateTeam and UpdateTeamData, PortfolioController's update and refresh actions, and the create paths of TeamsController and PortfoliosController move unchanged into Application/Units/UnitSettingsService.cs behind IUnitSettings.cs, with UnitSaveOutcome.cs and RefreshRequest.cs (closed abstract records; only UnitSaved, RefreshQueued and the not-found cases produced yet). The DTO-to-entity mapping stays in the controllers and API.Helpers and reaches the service as an Action<Team> or Action<Portfolio>, so OrganisationSetupModuleBoundariesArchUnitTest keeps its allow-list unchanged. (2) Signature step, no behaviour: add ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten to Models/WorkTrackingSystemOptionsOwner.cs (unmapped until the migration), create Application/Structure/PlannedSubset.cs and Domain/UnitTypeLossNotice.cs, add Subsets (empty) to OrganisationStructureMigrationPlan. Per touched existing file: TeamController.cs, PortfolioController.cs, TeamsController.cs, PortfoliosController.cs and WorkTrackingSystemOptionsOwner.cs each hold one type, nothing moves. Follow-up change: resolve the subset and refuse unmapped types",
+"F445": "Two commits before the oracle. (1) Behaviour-preserving move: the load step of TeamController's GET settings moves unchanged into UnitSettingsService.ReadTeamSettings, which returns Application/Units/TeamSettingsView.cs (closed abstract record: Found(Team) or TeamNotFound); the controller keeps mapping to TeamSettingDto through API.Helpers. (2) Signature step, no behaviour: create Modules/Forecasting/Contracts/LeafCapacityView.cs and ILeafCapacityStore.cs, Domain/LeafCapacity.cs (no Contracts type), Adapters/Persistence/LeafCapacityStore.cs (All returns an empty list, ForTeam and Stage throw NotImplementedException), Adapters/Startup/LeafCapacitySeeder.cs (Seed returns a completed task), and AddLeafCapacity in ForecastingModule.cs (not yet called by Program.cs). Per touched existing file: TeamController.cs and ForecastingModule.cs each hold one type, nothing moves. Follow-up change: the controllers stage the capacity and read it from LeafCapacity",
+"F446": "LeafCapacity (Forecasting Domain) holds Feature WIP, automatically adjust Feature WIP, fixed-dates flag, throughput start/end and days, forecast filter rule set; table LeafCapacities keyed by Team id with cascading FK; ILeafCapacityStore in Forecasting Contracts; LeafCapacitySeeder copies today's Team values at start where no row exists or where the Team columns differ (rollback). The Team settings save is composed in the API layer: the controller stages the capacity with ILeafCapacityStore.Stage and calls IUnitSettings.SaveTeam, which dual-writes the old columns and commits both in one unit of work under the Team's concurrency token. Forecast reads (Team.GetThroughputSettings callers, ForecastFilterRuleService, Feature WIP readers) read LeafCapacity.",
+"F447": "Organisation set-up's Application never reaches Forecasting (a context that builds on it); its Domain never reaches its Contracts; Forecasting's Domain never reaches Contracts",
 "F45": "The port test substrate with a database per scenario.",
 "F46": "One Postgres per test run for the migrator's provider check.",
 "F47": "Dual-written with the effective list",

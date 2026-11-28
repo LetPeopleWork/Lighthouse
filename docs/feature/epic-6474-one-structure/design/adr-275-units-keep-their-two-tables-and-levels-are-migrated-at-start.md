@@ -74,8 +74,8 @@ lowest-number tie-break, first-appearance order, a union per level in which a ty
    unit deletes it (slices 07 and 10). The level is implied by the table, as for every other side table (ADR-273).
    Each is filled by its own idempotent startup step on the same pattern; old columns are kept, mapped read-only.
 7. **Where the code lives (MA1, as S03i left it).** The structure, levels, mappings, use cases, migrator, ports and
-   their adapters are written in the existing `Modules/OrganisationSetup/{Domain, Application, Adapters}`; `UnitId`,
-   `LevelId`, `UnitCreated`, `UnitDeleted` and the unit directory in its `Contracts`. The EF entities `Team`,
+   their adapters are written in the existing `Modules/OrganisationSetup/{Domain, Application, Adapters}`; `LevelId` and
+   `TermPair` in its `Domain`; `UnitId`, `UnitCreated`, `UnitDeleted`, the views and the unit directory in its `Contracts`. The EF entities `Team`,
    `Portfolio` and `WorkTrackingSystemOptionsOwner` stay in `Models` (catalogued as Organisation set-up's), mapped by
    `LighthouseAppContext`. `LeafCapacity` and its store are Forecasting's (`Modules/Forecasting`).
 
