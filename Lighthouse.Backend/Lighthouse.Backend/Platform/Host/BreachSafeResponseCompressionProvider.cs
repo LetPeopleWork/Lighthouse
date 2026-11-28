@@ -12,21 +12,13 @@ namespace Lighthouse.Backend.Platform.Host
     /// </summary>
     public class BreachSafeResponseCompressionProvider : ResponseCompressionProvider
     {
-        public const string LogsV1Route = "/api/v1/logs";
-
-        public const string LogsLatestRoute = "/api/latest/logs";
-
-        public const string EmbedHandshakeV1Route = "/api/v1/embed/handshake";
-
-        public const string EmbedHandshakeLatestRoute = "/api/latest/embed/handshake";
-
         private static readonly PathString[] ExcludedRoutes =
         [
             new("/" + UpdateNotificationHub.Route),
-            new(LogsV1Route),
-            new(LogsLatestRoute),
-            new(EmbedHandshakeV1Route),
-            new(EmbedHandshakeLatestRoute),
+            new("/api/v1/logs"),
+            new("/api/latest/logs"),
+            new("/api/v1/embed/handshake"),
+            new("/api/latest/embed/handshake"),
         ];
 
         private readonly ResponseCompressionConfiguration configuration;

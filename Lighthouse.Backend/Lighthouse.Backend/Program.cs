@@ -1070,7 +1070,7 @@ namespace Lighthouse.Backend
                 options.Providers.Add<GzipCompressionProvider>();
             });
 
-            // SmallestSize is Brotli quality 11, about 140 times slower than Optimal for barely smaller files.
+            // SmallestSize (Brotli quality 11) costs far more time per answer than Optimal for files that are barely smaller.
             builder.Services.Configure<BrotliCompressionProviderOptions>(options => options.Level = CompressionLevel.Optimal);
             builder.Services.Configure<GzipCompressionProviderOptions>(options => options.Level = CompressionLevel.Optimal);
 
