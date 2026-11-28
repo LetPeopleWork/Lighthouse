@@ -3,7 +3,8 @@
 "B": 5,
 "C": 3,
 "D": 13,
-"F": 399,
+"E": 13,
+"F": 425,
 "K": 13,
 "L": 7,
 "N": 4,
@@ -1747,6 +1748,114 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"lacuna": "F401",
+"promises": [
+"P1"
+],
+"text": "F400"
+},
+{
+"id": "E2",
+"lacuna": "F403",
+"promises": [
+"P1"
+],
+"text": "F402"
+},
+{
+"id": "E3",
+"lacuna": "F405",
+"promises": [
+"P2"
+],
+"text": "F404"
+},
+{
+"id": "E4",
+"lacuna": "F407",
+"promises": [
+"P3"
+],
+"text": "F406"
+},
+{
+"id": "E5",
+"lacuna": "F409",
+"promises": [
+"P4"
+],
+"text": "F408"
+},
+{
+"id": "E6",
+"lacuna": "F411",
+"promises": [
+"P5"
+],
+"text": "F410"
+},
+{
+"id": "E7",
+"lacuna": "F413",
+"promises": [
+"P6"
+],
+"text": "F412"
+},
+{
+"id": "E8",
+"lacuna": "F415",
+"promises": [
+"P7"
+],
+"text": "F414"
+},
+{
+"id": "E9",
+"lacuna": "F417",
+"promises": [
+"P8"
+],
+"text": "F416"
+},
+{
+"id": "E10",
+"lacuna": "F419",
+"promises": [
+"P9"
+],
+"text": "F418"
+},
+{
+"id": "E11",
+"lacuna": "F421",
+"promises": [
+"P10"
+],
+"text": "F420"
+},
+{
+"id": "E12",
+"lacuna": "F423",
+"promises": [
+"P11"
+],
+"text": "F422"
+},
+{
+"id": "E13",
+"lacuna": "F425",
+"promises": [
+"P12"
+],
+"text": "F424"
+}
+]
+},
 "facts": {
 "F1": "ADO User Story 6712 \"Faster page loads on slow connections: compression, shared cache, smaller update check\", as written on the board:\n\nOn a slow connection, Lighthouse pages take 8–20 s to show their data on a first visit, and 5–9 s when you click to a Team or Portfolio page. A measuring spike (2026-11-27, docs/feature/api-shape-evaluation/spike/findings.md) found that most of that time is spent sending uncompressed JavaScript, not on the number of API calls.\n\nFixes found by the spike\n- Compression. The frontend is served with UseStaticFiles, which ignores the .gz files the build already makes, and API answers are not compressed. JavaScript: 3.4 MB raw vs 1.0 MB compressed. Expected gain on slow 4G: about 4–10 s per page.\n- One shared cache for data every page uses. useRbac fetches the user's permissions once per component that uses it (72 repeated calls over 16 pages). Teams, portfolios, licence and Team settings repeat for similar reasons.\n- A smaller update check. GET /version/new sends 368 KB of release notes on every first visit, only to show whether an update exists.\n- Parallel version checks. The version footer runs 5 independent checks one after another.\n\nNo visible UI change; pages show the same data, sooner. Measure before and after with the spike's probe (measure-calls.mjs, measure-bytes.mjs).\n\nSeparate from the GraphQL / API-shape evaluation, which continues on its own and ends in an ADR.",
 "F10": "The user's own change of rights shows at once",
@@ -2072,8 +2181,34 @@
 "F399": "A future GET answer carrying a secret on a route not in the excluded prefixes",
 "F4": "API answers that the design judges safe to compress reach a browser that accepts compression compressed, so large answers (metrics, feature lists, settings) take fewer bytes on the line. Which answers are safe is a DESIGN and DEVOPS decision.",
 "F40": "Fewer metrics calls (one composite read per page) and any API-shape change; ADR-288 keeps REST.",
+"F400": "With a browser that accepts compression, a cold load of the spike's pages transfers the frontend JavaScript at about a third of today's bytes (about 1 MB instead of 3.4 MB).",
+"F401": "A byte measure on one page set does not show every JS file is compressed or that the figure holds on other pages.",
+"F402": "A browser that does not accept compression still loads the same files, and the pages work.",
+"F403": "A bytes-on-the-line oracle does not see that the uncompressed path still serves complete, working files.",
+"F404": "A browser that accepts compression receives the large API answers judged safe (metrics, feature lists, settings) compressed, in fewer bytes than today.",
+"F405": "The oracle does not see which answers were judged safe or whether any large safe answer was left uncompressed.",
+"F406": "A page load or move to another page asks GET my-summary once in total, not once per gating component, and every gate still shows the right actions.",
+"F407": "A call count does not show that gating results are unchanged or that nothing reads my-summary outside useRbac().",
+"F408": "When an administrator grants or removes the user's right while a page is open, the next page the user moves to shows the new actions and hides lost ones, without a reload.",
+"F409": "A single-user simulation does not see a real second session or the timing of when the change is picked up.",
 "F41": "Any change to what a page shows, apart from the loading and failure looks of the new-version dialog.",
+"F410": "After the user creates a Team or Portfolio or changes a grant, the follow-on actions (such as admin actions on the new Team) show at once, without a reload.",
+"F411": "The oracle does not see every kind of own change or a stale gate shown briefly before the refresh.",
+"F412": "When the permissions answer cannot be loaded, every gating component shows the same could-not-load state and fallback as today, and one Retry asks again once for all of them.",
+"F413": "Failure observed on one page does not show all components agree, or that Retry asks exactly once and recovers every component.",
+"F414": "The Team list, Portfolio list and licence status used by the app shell and pages are each fetched once per load or move, not once per component.",
+"F415": "A call count does not show the shared lists and licence status still render the same content everywhere.",
+"F416": "After the user creates, renames or deletes a Team or Portfolio, the menus, overview and lists show it at once, and a change by someone else shows on the next move to another page.",
+"F417": "The oracle does not see all surfaces showing the change or the other-user case in a real second session.",
+"F418": "A Features tab loads without the full Team settings (32 KB today) and shows the same rows and columns as today.",
+"F419": "A byte or call check does not show rows and columns are unchanged for all Team kinds and data.",
 "F42": "Changes to the Lighthouse-Clients CLI or MCP; they call only /version/current.",
+"F420": "On page load the update check carries only whether an update exists and the newest version, not the release notes (368 KB today); the footer's version checks run at the same time, and if any fails the footer shows its error as today.",
+"F421": "The oracle does not see real concurrency timing or each individual failure case in the footer.",
+"F422": "When the user opens the new-version dialog with an update available, it shows a loading look and then the same release notes as today.",
+"F423": "The oracle does not see the loading look on a slow connection or that the notes are identical to today's.",
+"F424": "When release notes cannot load, the dialog still shows the newest version number, says the notes could not be loaded, and its Retry button asks again and shows the notes on success.",
+"F425": "The oracle does not see repeated failures or Retry after a recovered connection.",
 "F43": "Faster is proven by bytes and calls, measured with the spike's probes (measure-bytes.mjs, measure-calls.mjs) before and after; slow-4G times are reported as evidence, not promised, because emulated timings are noisy. (Maintainer, 2026-11-28)",
 "F44": "Permission freshness stays as today: shared cache, asked again when the user moves to another page, and at once after the user's own create or grant actions. (Maintainer, 2026-11-28)",
 "F45": "Team, Portfolio and licence lists follow the same rule: the user's own change shows at once, others' changes on the next page move. (Maintainer, 2026-11-28)",

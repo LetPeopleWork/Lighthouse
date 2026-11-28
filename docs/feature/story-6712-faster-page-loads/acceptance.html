@@ -160,6 +160,244 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>With a browser that accepts compression, a cold load of the spike&#x27;s pages transfers the frontend JavaScript at about a third of today&#x27;s bytes (about 1 MB instead of 3.4 MB).
+</code></pre>
+
+<pre><code>A byte measure on one page set does not show every JS file is compressed or that the figure holds on other pages.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>A browser that does not accept compression still loads the same files, and the pages work.
+</code></pre>
+
+<pre><code>A bytes-on-the-line oracle does not see that the uncompressed path still serves complete, working files.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>A browser that accepts compression receives the large API answers judged safe (metrics, feature lists, settings) compressed, in fewer bytes than today.
+</code></pre>
+
+<pre><code>The oracle does not see which answers were judged safe or whether any large safe answer was left uncompressed.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>A page load or move to another page asks GET my-summary once in total, not once per gating component, and every gate still shows the right actions.
+</code></pre>
+
+<pre><code>A call count does not show that gating results are unchanged or that nothing reads my-summary outside useRbac().
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>When an administrator grants or removes the user&#x27;s right while a page is open, the next page the user moves to shows the new actions and hides lost ones, without a reload.
+</code></pre>
+
+<pre><code>A single-user simulation does not see a real second session or the timing of when the change is picked up.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P5</p>
+
+<pre><code>After the user creates a Team or Portfolio or changes a grant, the follow-on actions (such as admin actions on the new Team) show at once, without a reload.
+</code></pre>
+
+<pre><code>The oracle does not see every kind of own change or a stale gate shown briefly before the refresh.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E7</h4>
+
+<h5>Promises</h5>
+
+<p>P6</p>
+
+<pre><code>When the permissions answer cannot be loaded, every gating component shows the same could-not-load state and fallback as today, and one Retry asks again once for all of them.
+</code></pre>
+
+<pre><code>Failure observed on one page does not show all components agree, or that Retry asks exactly once and recovers every component.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E8</h4>
+
+<h5>Promises</h5>
+
+<p>P7</p>
+
+<pre><code>The Team list, Portfolio list and licence status used by the app shell and pages are each fetched once per load or move, not once per component.
+</code></pre>
+
+<pre><code>A call count does not show the shared lists and licence status still render the same content everywhere.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E9</h4>
+
+<h5>Promises</h5>
+
+<p>P8</p>
+
+<pre><code>After the user creates, renames or deletes a Team or Portfolio, the menus, overview and lists show it at once, and a change by someone else shows on the next move to another page.
+</code></pre>
+
+<pre><code>The oracle does not see all surfaces showing the change or the other-user case in a real second session.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E10</h4>
+
+<h5>Promises</h5>
+
+<p>P9</p>
+
+<pre><code>A Features tab loads without the full Team settings (32 KB today) and shows the same rows and columns as today.
+</code></pre>
+
+<pre><code>A byte or call check does not show rows and columns are unchanged for all Team kinds and data.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E11</h4>
+
+<h5>Promises</h5>
+
+<p>P10</p>
+
+<pre><code>On page load the update check carries only whether an update exists and the newest version, not the release notes (368 KB today); the footer&#x27;s version checks run at the same time, and if any fails the footer shows its error as today.
+</code></pre>
+
+<pre><code>The oracle does not see real concurrency timing or each individual failure case in the footer.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E12</h4>
+
+<h5>Promises</h5>
+
+<p>P11</p>
+
+<pre><code>When the user opens the new-version dialog with an update available, it shows a loading look and then the same release notes as today.
+</code></pre>
+
+<pre><code>The oracle does not see the loading look on a slow connection or that the notes are identical to today&#x27;s.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h4>E13</h4>
+
+<h5>Promises</h5>
+
+<p>P12</p>
+
+<pre><code>When release notes cannot load, the dialog still shows the newest version number, says the notes could not be loaded, and its Retry button asks again and shows the notes on success.
+</code></pre>
+
+<pre><code>The oracle does not see repeated failures or Retry after a recovered connection.
+</code></pre>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<p>None.</p>
+
+<h3>Waivers</h3>
+
 <p>None.</p>
 
 <h2>Charter</h2>
