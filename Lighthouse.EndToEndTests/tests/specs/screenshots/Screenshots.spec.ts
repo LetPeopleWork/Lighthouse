@@ -378,6 +378,24 @@ testWithDemo(
 	},
 );
 
+testWithDemo(
+	"Take @screenshot of a Portfolio's default Feature sizing switch",
+	async ({ testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+		const portfolioDetailPage = await overviewPage.goToPortfolio(
+			testData.portfolios[0].name,
+		);
+		const settings = await portfolioDetailPage.editPortfolio();
+		await settings.toggleDefaultFeatureSizeConfiguration();
+		await expect(settings.inferSizeSwitch).toBeVisible();
+
+		await takeElementScreenshot(
+			settings.defaultFeatureSizeSection,
+			"features/portfolio_default_sizing.png",
+		);
+	},
+);
+
 // The populated overview, illustrating docs/teams/teams.md and docs/portfolios/portfolios.md.
 // "installation/landingpage.png" is the same page before any data exists. The Team gets three reports
 // so its Reports cell shows what the docs describe: two chips, then "+1 more".
@@ -909,6 +927,26 @@ testWithOldItems(
 		const list = await report.backToReports();
 		await expect(list.reportLink(name)).toBeVisible();
 		await takePageScreenshot(teamDetail.page, "features/reports.png", 3);
+	},
+);
+
+testWithOldItems(
+	"Take @screenshot of a report's notes",
+	async ({ testData, overviewPage }) => {
+		expect(testData.teams.map((team) => team.name)).toContain(REPORTING_TEAM);
+
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetail = await overviewPage.goToTeam(REPORTING_TEAM);
+		const reports = await teamDetail.goToReports();
+		const report = await reports.createReport({
+			thenEndsOn: new Date(Date.now() - 45 * DAY_IN_MILLISECONDS),
+			thenDays: 30,
+		});
+		await report.addNote(
+			"Two people joined the Team on 3 November, so it grew from five to seven.",
+		);
+
+		await takeElementScreenshot(report.notes, "features/report_notes.png");
 	},
 );
 

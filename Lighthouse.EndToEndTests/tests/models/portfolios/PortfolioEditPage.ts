@@ -28,6 +28,22 @@ export class PortfolioEditPage extends BaseEditPage<PortfolioDetailPage> {
 			.click();
 	}
 
+	/** The innermost card titled "Default Feature Size"; the advanced settings card around it holds the title too. */
+	get defaultFeatureSizeSection(): Locator {
+		return this.page
+			.locator(".MuiCard-root")
+			.filter({
+				has: this.page.getByText("Default Feature Size", { exact: true }),
+			})
+			.last();
+	}
+
+	get inferSizeSwitch(): Locator {
+		return this.page.getByLabel(
+			"Infer a size for Features without child Work Items",
+		);
+	}
+
 	async useHistoricalFeatureSize(): Promise<void> {
 		await this.useHistoricalFeatureSizeToggle.check();
 	}

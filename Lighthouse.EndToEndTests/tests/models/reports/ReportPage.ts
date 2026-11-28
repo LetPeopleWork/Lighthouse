@@ -49,6 +49,18 @@ export class ReportPage {
 		return this.page.getByRole("region", { name: title });
 	}
 
+	get notes(): Locator {
+		return this.page.getByTestId("report-notes");
+	}
+
+	/** The notes start closed; a writer opens them, types the note and adds it on top of the list. */
+	async addNote(text: string): Promise<void> {
+		await this.page.getByTestId("report-notes-toggle").click();
+		await this.page.getByTestId("report-note-input").fill(text);
+		await this.page.getByTestId("save-report-note-button").click();
+		await this.notes.getByText(text).waitFor();
+	}
+
 	/** How many entries the tab's history holds, which an export must leave as it found them. */
 	async historyLength(): Promise<number> {
 		return this.page.evaluate(() => globalThis.history.length);
