@@ -363,9 +363,12 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static string StayingReportModelsPattern()
             => "^(" + string.Join("|", typeof(Lighthouse.Backend.Models.Reports.Report).Assembly.GetTypes()
-                .Where(type => !type.IsNested && type.Namespace == typeof(Lighthouse.Backend.Models.Reports.Report).Namespace)
+                .Where(type => !type.IsNested && IsInOrBelow(type.Namespace, typeof(Lighthouse.Backend.Models.Reports.Report).Namespace!))
                 .Select(type => Regex.Escape(type.FullName!))
                 .Order(StringComparer.Ordinal)) + ")($|\\+.*)";
+
+        private static bool IsInOrBelow(string? candidate, string root)
+            => candidate == root || (candidate?.StartsWith(root + ".", StringComparison.Ordinal) ?? false);
 
         private static string NameAndNestedTypesOf(Type type) => $"^{Regex.Escape(type.FullName!)}($|\\+.*)";
 

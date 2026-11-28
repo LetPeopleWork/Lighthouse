@@ -5,8 +5,8 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// same lists hold before and after the move into Modules/Access and Modules/Licensing. Each list is the layer the type
     /// goes to: Domain reaches only the shared Models and the base library, Adapters.Http holds the ASP.NET pieces, and
     /// Application holds the rest, the interfaces included. ModelsTypesThatMoveIntoAccess holds the shared Models types Access
-    /// may take with it. A name the code holds twice is written with its namespace. Access holds 30 types from 29 files,
-    /// because the embed-session file also declares EmbedHandshakeOutcome as a second top-level type.
+    /// may take with it. A name the code holds twice is written with its namespace. The embed-session file declares
+    /// EmbedHandshakeOutcome as a second top-level type, so Access lists one type more than it has files.
     /// </summary>
     internal static class AccessAndLicensingMembership
     {

@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 
-﻿namespace Lighthouse.Backend.Modules.OrganisationSetup.Domain
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Domain
 {
     public static class OptionalFeatureKeys
     {
