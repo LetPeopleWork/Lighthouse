@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Modules.OrganisationSetup.Application.Structure
                 .ToList();
 
             var mappings = connections
-                .Where(connection => OnConnection(teams, connection).Any() || OnConnection(portfolios, connection).Any())
+                .Where(connection => OnConnection(teams, connection).Count != 0 || OnConnection(portfolios, connection).Count != 0)
                 .SelectMany(connection => new[]
                 {
                     MappingOf(connection, LevelId.Team, OnConnection(teams, connection)),
