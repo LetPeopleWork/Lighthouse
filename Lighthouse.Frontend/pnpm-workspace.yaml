@@ -11,7 +11,7 @@ overrides:
   minimatch@>=7.0.0 <11.0.1: ^11.0.9
   postcss: ^8.5.33
   qs@>=6.7.0 <6.16.1: ^6.17.1
-  undici: ^8.13.0
+  undici: ^8.13.1
   # Mutation testing's runner accepts any vitest from 2 upward, so the resolver was free to keep an
   # older copy for it while the suite moved on. It then drove one version of the test framework while
   # every test was written for another, and said nothing was covered rather than failing.
