@@ -45,6 +45,8 @@ OAuth lets you authorise Lighthouse as an application in your Atlassian tenant, 
 
     All seven must be granted. `offline_access` is what lets Atlassian return a `refresh_token` so Lighthouse can keep the connection alive after the access token expires; without it the consent dance succeeds once and then the connection breaks at the first refresh.
 
+    **For write-back**: if the connection will have [write-back mappings](#write-back-rights), also add the classic scope `write:jira-work`. Atlassian grants only the scopes the app lists.
+
 5. Copy the **Client ID** and **Client Secret** from the **Settings** page. Treat the Client Secret like a password.
 
 #### Configure the connection in Lighthouse
@@ -54,6 +56,14 @@ OAuth lets you authorise Lighthouse as an application in your Atlassian tenant, 
 3. Paste the **Client ID** and **Client Secret** from the Atlassian developer console.
 4. Verify the read-only **Callback URL** field. It MUST match exactly what you registered with Atlassian — scheme, host, and `/api/oauth/callback` path. If it shows a warning, set `Lighthouse:BaseUrl` on the server first and reload the page.
 5. Click **Connect**. You are redirected to Atlassian; sign in, **Accept** the requested scopes, and you are sent back to Lighthouse. On success the connection's status moves to **Connected**.
+
+Lighthouse asks Atlassian only for the rights the connection needs. A connection without write-back mappings asks to read work items; once it has a write-back mapping, a sign-in also asks to write them. After you sign in, the **Authentication** section of the connection shows what the sign-in allows: *Rights: Read work items* or *Rights: Read and write work items*.
+
+#### Write-back rights
+
+When a connection whose sign-in may only read has a write-back mapping, a yellow warning appears above the write-back mappings and on the connection's card in the connections list: Lighthouse can only read from Jira with this sign-in. Click **Sign in again** and accept in Atlassian to give Lighthouse the right to write. Until then, Lighthouse writes nothing to Jira for that connection and notes in the log, once per write-back run, that it skipped the write.
+
+A Jira sign-in made before Lighthouse recorded rights counts as read-only, because those sign-ins never asked for write rights. If such a connection writes back, sign in again once.
 
 #### Silent refresh and reconnect
 

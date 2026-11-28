@@ -52,6 +52,8 @@ The [notes](#notes) of a report are deleted with the report.
 
 The numbers of a report do not say why they moved. A note does: "The team grew from 6 to 9 people", "Two weeks of training in March". Notes are short texts that you and others write on a report, so that whoever reads it later knows what happened in the meantime.
 
+![The notes of a report](../assets/features/report_notes.png)
+
 ## Reading the Notes
 
 The notes sit under the report's name, above the numbers, in a row that starts closed: **Notes (2)** tells you that the report has two notes. Click the row to open it. A report without notes shows **Notes (0)**.

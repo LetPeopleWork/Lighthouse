@@ -141,6 +141,8 @@ If no child items are defined, it will fall back to the estimation. If no field 
 ## Switching default Feature sizing on and off
 Some teams would rather see a Feature as empty than give it a size nobody counted. The switch **Infer a size for Features without child Work Items** sits at the top of this group.
 
+![The default Feature sizing switch](../assets/features/portfolio_default_sizing.png)
+
 - A **new** Portfolio starts with the switch **off**.
 - If its connection names a **Size Estimate Field** for Portfolios when you create it, the new Portfolio starts with the switch **on**, so its Features read the size the field holds.
 - A cloned Portfolio keeps the setting of the Portfolio it copies.
