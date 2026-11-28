@@ -327,6 +327,20 @@ describe("EditTeam", () => {
 			expect(reportsOfRefinementSetUp()).toHaveLength(1);
 		});
 
+		it("shows an edited Team's change in the shared lists without a page move", async () => {
+			mockParams = { id: "7" };
+			mockTeamService.getTeamSettings.mockResolvedValue(storedSettings);
+			mockTeamService.updateTeam.mockImplementation(
+				async (settings: ITeamSettings) => settings,
+			);
+
+			renderEditTeamWithContext();
+			await saveBacklogThroughForm();
+
+			expect(mockTeamService.updateTeam).toHaveBeenCalledTimes(1);
+			expect(unitListsChanged).toHaveBeenCalledTimes(1);
+		});
+
 		// Copying a Team that has refinement states copies a choice somebody already made.
 		it("reports nothing when a clone is created with refinement states", async () => {
 			globalThis.location.search = "?cloneFrom=7";

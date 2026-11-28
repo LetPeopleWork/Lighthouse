@@ -16,13 +16,16 @@ interface UnitListOptions {
 	enabled?: boolean;
 }
 
+const useAskTeams = (): (() => Promise<Team[]>) => {
+	const { teamService } = useContext(ApiServiceContext);
+	return useCallback(() => teamService.getTeams(), [teamService]);
+};
+
 /** The Teams every component on the page shares, asked once per page and once per own change. */
 export function useTeamsQuery(
 	options?: UnitListOptions,
 ): PageFreshRead<Team[]> {
-	const { teamService } = useContext(ApiServiceContext);
-	const ask = useCallback(() => teamService.getTeams(), [teamService]);
-	return usePageFreshQuery(TEAMS, ask, options);
+	return usePageFreshQuery(TEAMS, useAskTeams(), options);
 }
 
 /** The Portfolios every component on the page shares, asked once per page and once per own change. */
@@ -39,9 +42,7 @@ export function usePortfoliosQuery(
 
 /** The shared Teams for a caller that needs them as a promise, such as a settings editor's callback. */
 export function useTeamsLoader(): () => Promise<Team[]> {
-	const { teamService } = useContext(ApiServiceContext);
-	const ask = useCallback(() => teamService.getTeams(), [teamService]);
-	return usePageFreshLoader(TEAMS, ask);
+	return usePageFreshLoader(TEAMS, useAskTeams());
 }
 
 /**
