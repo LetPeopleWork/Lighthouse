@@ -156,7 +156,359 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Compare the catalogue with every top-level type the compiled backend has in the Models namespaces
+</code></pre>
+
+<pre><code>Each Models type has exactly one row and every row names a type that exists; a missing type is named with its measured row
+</code></pre>
+
+<pre><code>A maintainer sees every Models type with one standing, and a new Models type fails naming itself
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs</p>
+
+<p>KernelCatalogueArchUnitTest.EveryModelsType_HasExactlyOneCatalogueRow_AndEveryRowNamesAModelsType</p>
+
+<pre><code>the catalogue matched the compiled types by short name only, so two same-named types in different Models namespaces would share one row
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Compare a made-up catalogue that misses a planted Models type used by one context and holds a row for a type nobody wrote
+</code></pre>
+
+<pre><code>The check fails naming the planted type and the row for the missing type
+</code></pre>
+
+<pre><code>A type added to the Models without a row, or a row left after its type is gone, is named in the failure
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs</p>
+
+<p>KernelCatalogueArchUnitTest.TheCatalogueCheck_NamesAPlantedTypeMissingFromTheCatalogue_AndARowForATypeThatDoesNotExist</p>
+
+<pre><code>the comparison named only the first difference of each direction when several types are missing
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Measure every owned row&#x27;s blockers from the compiled code and the database model and compare them with the row
+</code></pre>
+
+<pre><code>Every claimed blocker is true and every measured blocker is claimed; a free row names the one context that uses it as owner
+</code></pre>
+
+<pre><code>Each row&#x27;s reason to stay in the Models is true today, so no type stays without cause
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs</p>
+
+<p>KernelCatalogueArchUnitTest.EveryOwnedRow_ClaimsExactlyTheBlockersMeasuredFromTheCompiledCodeAndTheDatabaseModel</p>
+
+<pre><code>a wire type was reached only through a controller helper the controller does not call directly, which the measurement cannot see
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Check made-up rows claiming Entity for a type the database does not store and Wire for a type no controller sends, and rows whose claims are true
+</code></pre>
+
+<pre><code>The false claims fail naming the type and the blocker; the true claims pass
+</code></pre>
+
+<pre><code>A row that keeps a type in the Models for a false reason fails, naming the type and the reason
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs</p>
+
+<p>KernelCatalogueArchUnitTest.TheBlockerCheck_AcceptsARowWhoseClaimIsTrue</p>
+
+<pre><code>the check accepted any row whose claims are a superset of the measured blockers in one direction only
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Compare the movers list with every Models type that has no measured blocker
+</code></pre>
+
+<pre><code>Each free type is on the list with its owner and the namespace it moves to (the owner&#x27;s Domain or Application, or Platform for the platform lane), and nothing else is
+</code></pre>
+
+<pre><code>The maintainer sees which Models types are free to move now and where each one goes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs</p>
+
+<p>KernelCatalogueArchUnitTest.EveryFreeType_IsOnTheMoversList_WithItsOwnerAndTheNamespaceItMovesTo</p>
+
+<pre><code>the destination layer were chosen Domain for a type whose only non-kernel reference is to a mover bound for Application of another owner
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Compare an empty movers list with a made-up backend whose planted type is used by one context only
+</code></pre>
+
+<pre><code>The check fails naming the planted type and the namespace it moves to
+</code></pre>
+
+<pre><code>A type that could move but is not listed fails, naming where it belongs
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs</p>
+
+<p>KernelCatalogueArchUnitTest.TheMoversCheck_NamesAFreeTypeLeftOffTheList_WithTheNamespaceItMovesTo</p>
+
+<pre><code>the failure named the owner context but not the layer the type moves to
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Look each mover up in the compiled code under its Models name and its new name
+</code></pre>
+
+<pre><code>Each mover is found in exactly one of the two places
+</code></pre>
+
+<pre><code>A move leaves no copy behind and no mover is lost by a rename
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs</p>
+
+<p>KernelCatalogueArchUnitTest.TheFreeType_IsFoundAsATopLevelTypeInExactlyItsModelsOrItsNewNamespace</p>
+
+<pre><code>a mover moved to a namespace other than the one listed, which fails here as found in neither place only when the old one is gone
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Ask every declared rule pattern whether it keeps its role when each free Models type moves to its owner
+</code></pre>
+
+<pre><code>Old locations such as the kernel pattern do not see a mover in its new place, and parts of the code keep seeing it; the Reports view of the Models is red until widened
+</code></pre>
+
+<pre><code>Architecture rules keep guarding a type while it moves out of the Models
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs</p>
+
+<p>KernelCatalogueArchUnitTest.TheRulePattern_KeepsItsDeclaredRole_WhenTheFreeModelsTypesMove</p>
+
+<pre><code>a pattern matched the mover&#x27;s new namespace only by accident through an over-wide alternative reaching other contexts
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Enumerate every string pattern of the test assembly that sees a mover under its old or new name
+</code></pre>
+
+<pre><code>Each one is declared with a role or as an owner pattern, and every declaration still names a rule pattern
+</code></pre>
+
+<pre><code>No rule that finds a free type by name is forgotten when the type moves
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs</p>
+
+<p>KernelCatalogueArchUnitTest.EveryRulePatternThatSeesAFreeModelsType_IsDeclared_AndEveryDeclaredPatternIsARulePattern</p>
+
+<pre><code>a rule built its pattern at run time from pieces that are not string fields, which the enumeration does not read
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the role check on a made-up rule class whose pattern takes in the context a planted type moves to, declared nowhere
+</code></pre>
+
+<pre><code>The check names the undeclared field
+</code></pre>
+
+<pre><code>A new rule pattern that sees a moving type fails until its role is declared
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs</p>
+
+<p>KernelCatalogueArchUnitTest.TheRoleCheck_NamesAnUndeclaredPatternThatSeesAFreeType</p>
+
+<pre><code>the check named undeclared patterns that see the new name but not ones that see only the old name
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Ask each pattern that takes in an owner whether it matches the new name of every mover of that owner
+</code></pre>
+
+<pre><code>Each owner pattern matches every listed owner&#x27;s movers in their new namespace
+</code></pre>
+
+<pre><code>A context&#x27;s rules guard the types that move into it from the first commit they land
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs</p>
+
+<p>KernelCatalogueArchUnitTest.TheRulePatternOfAnOwner_SeesEveryFreeTypeOfThatOwnerUnderItsNewName</p>
+
+<pre><code>the owners listed for a pattern were fewer than the owners it actually takes in
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Scan every string literal of the test project for a mover named by its Models name or Models file path
+</code></pre>
+
+<pre><code>Each such string is on the rename list with its new text, and every listed string is still found
+</code></pre>
+
+<pre><code>No test string keeps naming a moved type&#x27;s old place, so no rule quietly stops seeing it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs</p>
+
+<p>KernelCatalogueArchUnitTest.EveryTestStringThatNamesAFreeTypeByItsModelsName_IsOnTheRenameList_AndEveryListedStringIsFound</p>
+
+<pre><code>a string named the mover in a grouped alternation such as Models.(A|B), which the scan does not expand
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Compare the candidate with the revision before the Story
+</code></pre>
+
+<pre><code>No schema, migration, route, DTO, payload or answer differs
+</code></pre>
+
+<pre><code>Nothing a user or a client sees changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>S1 changes no production code; that no schema, migration, route, DTO, payload or usage-data event changes is observed by the unchanged backend suites and the EF model probe on the whole candidate
+</code></pre>
+
+<p>host verification and EXAMINE</p>
 
 <h2>Expectations</h2>
 

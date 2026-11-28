@@ -2,7 +2,411 @@
 
 ## Slices
 
-None.
+### S1
+
+##### Covers
+
+P1
+
+```text
+Compare the catalogue with every top-level type the compiled backend has in the Models namespaces
+```
+
+```text
+Each Models type has exactly one row and every row names a type that exists; a missing type is named with its measured row
+```
+
+```text
+A maintainer sees every Models type with one standing, and a new Models type fails naming itself
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelCatalogueArchUnitTest\.cs
+
+KernelCatalogueArchUnitTest\.EveryModelsType\_HasExactlyOneCatalogueRow\_AndEveryRowNamesAModelsType
+
+```text
+the catalogue matched the compiled types by short name only, so two same-named types in different Models namespaces would share one row
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Compare a made-up catalogue that misses a planted Models type used by one context and holds a row for a type nobody wrote
+```
+
+```text
+The check fails naming the planted type and the row for the missing type
+```
+
+```text
+A type added to the Models without a row, or a row left after its type is gone, is named in the failure
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelCatalogueArchUnitTest\.cs
+
+KernelCatalogueArchUnitTest\.TheCatalogueCheck\_NamesAPlantedTypeMissingFromTheCatalogue\_AndARowForATypeThatDoesNotExist
+
+```text
+the comparison named only the first difference of each direction when several types are missing
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Measure every owned row's blockers from the compiled code and the database model and compare them with the row
+```
+
+```text
+Every claimed blocker is true and every measured blocker is claimed; a free row names the one context that uses it as owner
+```
+
+```text
+Each row's reason to stay in the Models is true today, so no type stays without cause
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelCatalogueArchUnitTest\.cs
+
+KernelCatalogueArchUnitTest\.EveryOwnedRow\_ClaimsExactlyTheBlockersMeasuredFromTheCompiledCodeAndTheDatabaseModel
+
+```text
+a wire type was reached only through a controller helper the controller does not call directly, which the measurement cannot see
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Check made-up rows claiming Entity for a type the database does not store and Wire for a type no controller sends, and rows whose claims are true
+```
+
+```text
+The false claims fail naming the type and the blocker; the true claims pass
+```
+
+```text
+A row that keeps a type in the Models for a false reason fails, naming the type and the reason
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelCatalogueArchUnitTest\.cs
+
+KernelCatalogueArchUnitTest\.TheBlockerCheck\_AcceptsARowWhoseClaimIsTrue
+
+```text
+the check accepted any row whose claims are a superset of the measured blockers in one direction only
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Compare the movers list with every Models type that has no measured blocker
+```
+
+```text
+Each free type is on the list with its owner and the namespace it moves to (the owner's Domain or Application, or Platform for the platform lane), and nothing else is
+```
+
+```text
+The maintainer sees which Models types are free to move now and where each one goes
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelCatalogueArchUnitTest\.cs
+
+KernelCatalogueArchUnitTest\.EveryFreeType\_IsOnTheMoversList\_WithItsOwnerAndTheNamespaceItMovesTo
+
+```text
+the destination layer were chosen Domain for a type whose only non-kernel reference is to a mover bound for Application of another owner
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Compare an empty movers list with a made-up backend whose planted type is used by one context only
+```
+
+```text
+The check fails naming the planted type and the namespace it moves to
+```
+
+```text
+A type that could move but is not listed fails, naming where it belongs
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelCatalogueArchUnitTest\.cs
+
+KernelCatalogueArchUnitTest\.TheMoversCheck\_NamesAFreeTypeLeftOffTheList\_WithTheNamespaceItMovesTo
+
+```text
+the failure named the owner context but not the layer the type moves to
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Look each mover up in the compiled code under its Models name and its new name
+```
+
+```text
+Each mover is found in exactly one of the two places
+```
+
+```text
+A move leaves no copy behind and no mover is lost by a rename
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelCatalogueArchUnitTest\.cs
+
+KernelCatalogueArchUnitTest\.TheFreeType\_IsFoundAsATopLevelTypeInExactlyItsModelsOrItsNewNamespace
+
+```text
+a mover moved to a namespace other than the one listed, which fails here as found in neither place only when the old one is gone
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Ask every declared rule pattern whether it keeps its role when each free Models type moves to its owner
+```
+
+```text
+Old locations such as the kernel pattern do not see a mover in its new place, and parts of the code keep seeing it; the Reports view of the Models is red until widened
+```
+
+```text
+Architecture rules keep guarding a type while it moves out of the Models
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelCatalogueArchUnitTest\.cs
+
+KernelCatalogueArchUnitTest\.TheRulePattern\_KeepsItsDeclaredRole\_WhenTheFreeModelsTypesMove
+
+```text
+a pattern matched the mover's new namespace only by accident through an over-wide alternative reaching other contexts
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Enumerate every string pattern of the test assembly that sees a mover under its old or new name
+```
+
+```text
+Each one is declared with a role or as an owner pattern, and every declaration still names a rule pattern
+```
+
+```text
+No rule that finds a free type by name is forgotten when the type moves
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelCatalogueArchUnitTest\.cs
+
+KernelCatalogueArchUnitTest\.EveryRulePatternThatSeesAFreeModelsType\_IsDeclared\_AndEveryDeclaredPatternIsARulePattern
+
+```text
+a rule built its pattern at run time from pieces that are not string fields, which the enumeration does not read
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Run the role check on a made-up rule class whose pattern takes in the context a planted type moves to, declared nowhere
+```
+
+```text
+The check names the undeclared field
+```
+
+```text
+A new rule pattern that sees a moving type fails until its role is declared
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelCatalogueArchUnitTest\.cs
+
+KernelCatalogueArchUnitTest\.TheRoleCheck\_NamesAnUndeclaredPatternThatSeesAFreeType
+
+```text
+the check named undeclared patterns that see the new name but not ones that see only the old name
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Ask each pattern that takes in an owner whether it matches the new name of every mover of that owner
+```
+
+```text
+Each owner pattern matches every listed owner's movers in their new namespace
+```
+
+```text
+A context's rules guard the types that move into it from the first commit they land
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelCatalogueArchUnitTest\.cs
+
+KernelCatalogueArchUnitTest\.TheRulePatternOfAnOwner\_SeesEveryFreeTypeOfThatOwnerUnderItsNewName
+
+```text
+the owners listed for a pattern were fewer than the owners it actually takes in
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Scan every string literal of the test project for a mover named by its Models name or Models file path
+```
+
+```text
+Each such string is on the rename list with its new text, and every listed string is still found
+```
+
+```text
+No test string keeps naming a moved type's old place, so no rule quietly stops seeing it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/KernelCatalogueArchUnitTest\.cs
+
+KernelCatalogueArchUnitTest\.EveryTestStringThatNamesAFreeTypeByItsModelsName\_IsOnTheRenameList\_AndEveryListedStringIsFound
+
+```text
+a string named the mover in a grouped alternation such as Models.(A|B), which the scan does not expand
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Compare the candidate with the revision before the Story
+```
+
+```text
+No schema, migration, route, DTO, payload or answer differs
+```
+
+```text
+Nothing a user or a client sees changes
+```
+
+##### Disposition
+
+NotTested
+
+```text
+S1 changes no production code; that no schema, migration, route, DTO, payload or usage-data event changes is observed by the unchanged backend suites and the EF model probe on the whole candidate
+```
+
+host verification and EXAMINE
 
 ## Expectations
 

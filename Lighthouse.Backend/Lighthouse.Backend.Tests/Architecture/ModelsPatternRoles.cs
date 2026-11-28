@@ -1,0 +1,174 @@
+namespace Lighthouse.Backend.Tests.Architecture
+{
+    /// <summary>
+    /// Every rule pattern of the test assembly that sees a free Models type, under its Models name or the name it moves to,
+    /// with the subject its rule matches it against and the role it plays: an old location that must not see the type in
+    /// its new place, or a part of the code that must keep seeing it. A pattern is keyed by its class (nested classes joined
+    /// with dots) and field name.
+    /// </summary>
+    internal static class ModelsPatternRoles
+    {
+        private const PatternSubject Namespace = PatternSubject.Namespace;
+
+        private const PatternSubject FullName = PatternSubject.FullName;
+
+        private const string WholeBackendOrMore = "takes in the Models and the owner a free type moves to, or the whole backend, so it sees the type in either place";
+
+        private const string TheModelsTheFreeTypesLeave = "the shared kernel, which a free type leaves for its owner";
+
+        private const string TheReportsViewOfTheModels = "the Reports types that still sit in the Models, which Reports' rules treat as part of Reports; it must keep seeing them once they move into the module";
+
+        public static IReadOnlyDictionary<string, PatternDeclaration> PatternRoles { get; } = new Dictionary<string, PatternDeclaration>(StringComparer.Ordinal)
+        {
+            ["AccessAndLicensingMembershipArchUnitTest.KernelNamespaces"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["AccessAndLicensingUnitTestPlacementTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+            ["AccessApplicationLayoutArchUnitTest.WhereAccessLivedBefore"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["AccessHttpAdaptersLayoutArchUnitTest.TheWholeAssembly"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+            ["ApplicationCoreRules.DeliveryEntity"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["ApplicationCoreRules.FeatureEntity"] = PatternDeclaration.Place(FullName, TheModelsTheFreeTypesLeave),
+            ["ApplicationCoreRules.TheForecastModels"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["BlackoutForecastShiftSeamArchUnitTest.ForecastModelsNamespace"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["CalendarDayAnchorSeamArchUnitTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+            ["CategoryListOwnershipGuardTest.ProductionProject"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+            ["ConnectorsDeclareNoUnsupportedMembersArchUnitTest.AllOfTheBackend"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+            ["DeliveryGrainSeamArchUnitTest.DeliveryEntity"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["DependencySingleDecisionArchUnitTest.BackendProjectDirectory"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+            ["FastWithManyFeaturesArchUnitTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+            ["JiraRouteLiteralsTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+            ["KernelRules.TheModels"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["OverTimeReconstructionSeamArchUnitTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+            ["PlatformLaneMembershipArchUnitTest.KernelNamespaces"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["ProductionSource.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+            ["PromisesLayoutArchUnitTest.TheWholeAssembly"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+            ["PromisesLayoutArchUnitTest.WhereTheRecordsLivedBefore"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["PromisesMembershipArchUnitTest.DeliveryModelsNamespace"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["PromisesMembershipArchUnitTest.KernelNamespaces"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["PromisesUnitTestPlacementTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+            ["RealityCheckReadOnlyArchUnitTest.ModelsNamespace"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["RefinementMembershipArchUnitTest.KernelOrBaseLibrary"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["ReportsMembershipArchUnitTest.ReportsNamespacesThatStay"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["ReportsModuleArchUnitTest.ReportModelsPattern"] = PatternDeclaration.Context(Namespace, TheReportsViewOfTheModels),
+            ["SecretReadPathSourceStructureTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+            ["SecretRotationWriteSurfaceTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+            ["StalenessPolicyPurityArchUnitTest.StalenessNamespace"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["TrackerIntegrationApplicationLayoutArchUnitTest.TheWholeAssembly"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+            ["TrackerIntegrationMembershipArchUnitTest.CandidateModelsNamespaces"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["TrackerIntegrationMembershipArchUnitTest.KernelNamespaces"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.TheModels"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.WhereTheValueTypesLivedBefore"] = PatternDeclaration.Place(Namespace, TheModelsTheFreeTypesLeave),
+            ["TrackerIntegrationUnitTestPlacementTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+            ["UpdateCancellationContextWriterArchUnitTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+            ["ZonedTimestampParsingArchUnitTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, WholeBackendOrMore),
+        };
+
+        public static IReadOnlyDictionary<(string Field, string Type), string> FolderOnlyMatches { get; } = new Dictionary<(string Field, string Type), string>();
+
+        /// <summary>
+        /// A pattern that takes in the owner a free type moves to, and so sees the type only once it has moved there: it must
+        /// match the new name of every free type of each owner it lists. Keyed like <see cref="PatternRoles"/>.
+        /// </summary>
+        public static IReadOnlyDictionary<string, IReadOnlyList<string>> SeeTheFreeTypesOfTheseOwnersInTheirNewPlace { get; } = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
+        {
+            ["AccessAndLicensingMembershipArchUnitTest.KernelOrBaseLibrary"] = ["Access"],
+            ["PromisesModuleBoundariesArchUnitTest.OutsideTrackerIntegration"] = ["Access", "FlowMetrics", "Forecasting", "OrganisationSetup", "Platform", "Reports", "WorkItems"],
+            ["AccessAndLicensingMembershipArchUnitTest.AccessNamespaces"] = ["Access"],
+            ["AccessAndLicensingUnitTestPlacementTest.AModuleMapThatNoLongerSeesTheOldPlace.TheAccessModule"] = ["Access"],
+            ["AccessAndLicensingUnitTestPlacementTest.AModuleMapThatStillSeesTheOldPlace.TheAccessModule"] = ["Access"],
+            ["AccessAndLicensingUnitTestPlacementTest.AModuleMapThatStillSeesTheOldPlace.TheOldAndTheNewPlace"] = ["Access"],
+            ["AccessApplicationLayoutArchUnitTest.DomainNamespace"] = ["Access"],
+            ["AccessApplicationLayoutArchUnitTest.TheAccessDomain"] = ["Access"],
+            ["AccessModuleBoundariesArchUnitTest.AccessDomain"] = ["Access"],
+            ["AccessModuleBoundariesArchUnitTest.AccessDomainNamespace"] = ["Access"],
+            ["AccessModuleBoundariesArchUnitTest.RefinementAndReports"] = ["Reports"],
+            ["AccessModuleBoundariesArchUnitTest.TheOtherContexts"] = ["FlowMetrics", "Forecasting", "Reports", "TrackerIntegration", "WorkItems"],
+            ["AccessModuleBoundariesArchUnitTest.TheOtherModules"] = ["FlowMetrics", "Forecasting", "TrackerIntegration", "WorkItems"],
+            ["AccessModuleBoundariesArchUnitTest.ThePlatform"] = ["Platform"],
+            ["AdditionalFieldInUseRulePurityArchUnitTest.AnythingOfLighthouseOutsideModels"] = ["Access", "FlowMetrics", "Forecasting", "OrganisationSetup", "Platform", "Reports", "TrackerIntegration", "WorkItems"],
+            ["AnAnchoredReportsRule.Rule"] = ["Reports"],
+            ["AnUnanchoredReportsRule.Rule"] = ["Reports"],
+            ["ApplicationCoreRules.ApplicationCore"] = ["Access", "FlowMetrics", "Forecasting", "OrganisationSetup", "Platform", "Reports", "TrackerIntegration", "WorkItems"],
+            ["DependencySingleDecisionArchUnitTest.TheConnectors"] = ["TrackerIntegration"],
+            ["DependencySingleDecisionArchUnitTest.TheNamespaceThisEpicOwns"] = ["WorkItems"],
+            ["FlowMetricsInboundApplicationArchUnitTest.TheLegalCallerNamespaces"] = ["Forecasting", "Reports"],
+            ["FlowMetricsInboundDomainAndAdaptersArchUnitTest.BelowTheFlowMetricsStartUp"] = ["FlowMetrics"],
+            ["ForecastingDomainLayoutArchUnitTest.ForecastingDomain"] = ["Forecasting"],
+            ["ForecastingDomainLayoutArchUnitTest.ForecastingDomainNamespace"] = ["Forecasting"],
+            ["ForecastingModuleBoundariesArchUnitTest.BelowTheForecastingStartUp"] = ["Forecasting"],
+            ["ForecastingModuleBoundariesArchUnitTest.FlowMetricsLegalCallers"] = ["Forecasting", "Reports"],
+            ["ForecastingModuleBoundariesArchUnitTest.ForecastingDomain"] = ["Forecasting"],
+            ["ForecastingModuleBoundariesArchUnitTest.ForecastingModule"] = ["Forecasting"],
+            ["JointPatternKeepingOnlyTheGuard.Rule"] = ["Reports"],
+            ["JointPatternOffender.Rule"] = ["Reports"],
+            ["KernelRules.TheServices"] = ["Platform"],
+            ["LicensingModuleBoundariesArchUnitTest.AccessAndLicensing"] = ["Access"],
+            ["LicensingModuleBoundariesArchUnitTest.AccessAndTheOtherContexts"] = ["Access", "FlowMetrics", "Forecasting", "Reports", "TrackerIntegration", "WorkItems"],
+            ["LicensingModuleBoundariesArchUnitTest.RefinementAndReports"] = ["Reports"],
+            ["LicensingModuleBoundariesArchUnitTest.TheOtherModules"] = ["FlowMetrics", "Forecasting", "TrackerIntegration", "WorkItems"],
+            ["LicensingModuleBoundariesArchUnitTest.ThePlatform"] = ["Platform"],
+            ["MadeUpRuleKeys.APlatformAlternativeThatReachesOutside"] = ["Platform"],
+            ["MadeUpRuleKeys.Nested.ACompositeOfAContextThatSeesBothPlaces"] = ["Forecasting"],
+            ["MadeUpRuleKeys.Nested.ACompositeOfAContextThatSeesOnlyTheOldPlace"] = ["Forecasting"],
+            ["MadeUpRuleKeys.SeesNeitherPlace"] = ["Forecasting"],
+            ["MadeUpSetUpRuleKeys.Nested.ACompositeOfTheBlindContext"] = ["Forecasting"],
+            ["ModuleBoundariesArchUnitTest.ForecastingPattern"] = ["Forecasting"],
+            ["ModuleBoundariesArchUnitTest.PortfolioDeliveryPattern"] = ["Platform"],
+            ["ModuleBoundariesArchUnitTest.ReportsPattern"] = ["Reports"],
+            ["ModuleBoundariesArchUnitTest.TrackerIntegrationPattern"] = ["TrackerIntegration"],
+            ["ModuleBoundariesArchUnitTest.WorkItemsSyncPattern"] = ["WorkItems"],
+            ["ModuleRules.AccessModule"] = ["Access"],
+            ["ModuleRules.FlowMetricsDomain"] = ["FlowMetrics"],
+            ["ModuleRules.FlowMetricsDomainNamespace"] = ["FlowMetrics"],
+            ["ModuleRules.FlowMetricsModule"] = ["FlowMetrics"],
+            ["ModuleRules.ForecastingModule"] = ["Forecasting"],
+            ["ModulesOnlyRule.Rule"] = ["Reports"],
+            ["OrganisationSetupMembershipArchUnitTest.TheModuleNamespace"] = ["OrganisationSetup"],
+            ["OrganisationSetupMembershipArchUnitTest.TheParentNamespace"] = ["Access", "FlowMetrics", "Forecasting", "OrganisationSetup", "Reports", "TrackerIntegration", "WorkItems"],
+            ["OrganisationSetupType.NewRootNamespace"] = ["OrganisationSetup"],
+            ["PlatformLaneMembershipArchUnitTest.ModuleNamespaces"] = ["Access", "FlowMetrics", "Forecasting", "OrganisationSetup", "Reports", "TrackerIntegration", "WorkItems"],
+            ["PlatformLaneMembershipArchUnitTest.PlatformLaneNamespaces"] = ["Platform"],
+            ["PlatformLaneRulesSeeTheMoveArchUnitTest.ThePlatformNamespace"] = ["Platform"],
+            ["PromisesModuleBoundariesArchUnitTest.AccessAndLicensing"] = ["Access"],
+            ["PromisesModuleBoundariesArchUnitTest.TheNamespacedUpstreamCode"] = ["Access"],
+            ["PromisesModuleBoundariesArchUnitTest.ThePlatform"] = ["Platform"],
+            ["RealityCheckReadOnlyArchUnitTest.ImplementationPattern"] = ["Access", "FlowMetrics", "Forecasting", "OrganisationSetup", "Platform", "Reports", "TrackerIntegration", "WorkItems"],
+            ["RecurringBlackoutEventsSeamArchUnitTest.ServiceImplementationNamespace"] = ["OrganisationSetup"],
+            ["RefinementModuleArchUnitTest.BackgroundUpdatesPattern"] = ["Platform"],
+            ["RefinementModuleArchUnitTest.ServicesImplementationPattern"] = ["Platform"],
+            ["RefinementModuleBoundariesArchUnitTest.AccessSetUpPlatformAndRepositories"] = ["Access", "Platform"],
+            ["RefinementModuleBoundariesArchUnitTest.TheForbiddenCode"] = ["TrackerIntegration"],
+            ["RefinementModuleBoundariesArchUnitTest.TrackerIntegration"] = ["TrackerIntegration"],
+            ["ReportsMembershipArchUnitTest.ReportsNamespaces"] = ["Reports"],
+            ["ReportsModuleBoundariesArchUnitTest.ReportsDomain"] = ["Reports"],
+            ["ReportsModuleBoundariesArchUnitTest.ReportsDomainNamespace"] = ["Reports"],
+            ["ReportsModuleBoundariesArchUnitTest.ReportsModule"] = ["Reports"],
+            ["ReportsModuleBoundariesArchUnitTest.TrackerIntegration"] = ["TrackerIntegration"],
+            ["ReportsRulesNameOnlyTheModuleArchUnitTest.TheModulePrefix"] = ["Reports"],
+            ["ReportsType.NewRootNamespace"] = ["Reports"],
+            ["SimulatedRunIsolationArchUnitTest.TheForecastComponents"] = ["Forecasting"],
+            ["StalenessPolicyPurityArchUnitTest.ServicesPattern"] = ["Access", "FlowMetrics", "Forecasting", "OrganisationSetup", "Platform", "Reports", "TrackerIntegration", "WorkItems"],
+            ["TrackerIntegrationApplicationLayoutArchUnitTest.AnImplementationNamespace"] = ["OrganisationSetup", "Platform"],
+            ["TrackerIntegrationDomainLayoutArchUnitTest.DomainNamespace"] = ["TrackerIntegration"],
+            ["TrackerIntegrationDomainLayoutArchUnitTest.TrackerIntegrationDomain"] = ["TrackerIntegration"],
+            ["TrackerIntegrationMembershipArchUnitTest.TrackerIntegrationNamespaces"] = ["TrackerIntegration"],
+            ["TrackerIntegrationModuleBoundariesArchUnitTest.BelowTheTrackerIntegrationStartUp"] = ["TrackerIntegration"],
+            ["TrackerIntegrationModuleBoundariesArchUnitTest.OtherModules"] = ["FlowMetrics", "Forecasting", "WorkItems"],
+            ["TrackerIntegrationModuleBoundariesArchUnitTest.PromisesAndTheUpdateCode"] = ["Platform"],
+            ["TrackerIntegrationModuleBoundariesArchUnitTest.RefinementReportsAccessAndLicensing"] = ["Access", "Reports"],
+            ["TrackerIntegrationModuleBoundariesArchUnitTest.TrackerIntegrationDomain"] = ["TrackerIntegration"],
+            ["TrackerIntegrationModuleBoundariesArchUnitTest.TrackerIntegrationLegalCallers"] = ["WorkItems"],
+            ["TrackerIntegrationModuleBoundariesArchUnitTest.TrackerIntegrationModule"] = ["TrackerIntegration"],
+            ["TrackerIntegrationModuleBoundariesArchUnitTest.WorkItemsModule"] = ["WorkItems"],
+            ["TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.ModuleNamespace"] = ["TrackerIntegration"],
+            ["WorkItemsDoesNotCommandFlowMetricsArchUnitTest.WorkItemsModule"] = ["WorkItems"],
+            ["WorkItemsDomainLayoutArchUnitTest.WorkItemsDomain"] = ["WorkItems"],
+            ["WorkItemsDomainLayoutArchUnitTest.WorkItemsDomainNamespace"] = ["WorkItems"],
+            ["WorkItemsMembershipArchUnitTest.WorkItemsNamespaces"] = ["WorkItems"],
+            ["WorkItemsModuleBoundariesArchUnitTest.AccessAndLicensing"] = ["Access"],
+            ["WorkItemsModuleBoundariesArchUnitTest.FlowMetricsLegalCallers"] = ["Forecasting", "Reports"],
+            ["WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp"] = ["OrganisationSetup"],
+            ["WorkItemsModuleBoundariesArchUnitTest.WorkItemsDomain"] = ["WorkItems"],
+            ["WorkItemsModuleBoundariesArchUnitTest.WorkItemsLegalCallers"] = ["FlowMetrics", "Forecasting"],
+            ["WorkItemsModuleBoundariesArchUnitTest.WorkItemsModule"] = ["WorkItems"],
+        };
+    }
+}

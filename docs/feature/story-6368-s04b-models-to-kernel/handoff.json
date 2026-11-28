@@ -1,10 +1,237 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F228",
+"T3"
+],
+"still_passes_if": "F304",
+"test": "KernelCatalogueArchUnitTest.EveryModelsType_HasExactlyOneCatalogueRow_AndEveryRowNamesAModelsType",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs"
+},
+"expected": "F302",
+"stimulus": "F301",
+"user_result": "F303"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F229",
+"L4/F230"
+],
+"still_passes_if": "F308",
+"test": "KernelCatalogueArchUnitTest.TheCatalogueCheck_NamesAPlantedTypeMissingFromTheCatalogue_AndARowForATypeThatDoesNotExist",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs"
+},
+"expected": "F306",
+"stimulus": "F305",
+"user_result": "F307"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F233",
+"T3"
+],
+"still_passes_if": "F312",
+"test": "KernelCatalogueArchUnitTest.EveryOwnedRow_ClaimsExactlyTheBlockersMeasuredFromTheCompiledCodeAndTheDatabaseModel",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs"
+},
+"expected": "F310",
+"stimulus": "F309",
+"user_result": "F311"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F234",
+"L5/F235"
+],
+"still_passes_if": "F316",
+"test": "KernelCatalogueArchUnitTest.TheBlockerCheck_AcceptsARowWhoseClaimIsTrue",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs"
+},
+"expected": "F314",
+"stimulus": "F313",
+"user_result": "F315"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F320",
+"test": "KernelCatalogueArchUnitTest.EveryFreeType_IsOnTheMoversList_WithItsOwnerAndTheNamespaceItMovesTo",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs"
+},
+"expected": "F318",
+"stimulus": "F317",
+"user_result": "F319"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F236"
+],
+"still_passes_if": "F324",
+"test": "KernelCatalogueArchUnitTest.TheMoversCheck_NamesAFreeTypeLeftOffTheList_WithTheNamespaceItMovesTo",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs"
+},
+"expected": "F322",
+"stimulus": "F321",
+"user_result": "F323"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F328",
+"test": "KernelCatalogueArchUnitTest.TheFreeType_IsFoundAsATopLevelTypeInExactlyItsModelsOrItsNewNamespace",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs"
+},
+"expected": "F326",
+"stimulus": "F325",
+"user_result": "F327"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F239",
+"L6/F240",
+"T3"
+],
+"still_passes_if": "F332",
+"test": "KernelCatalogueArchUnitTest.TheRulePattern_KeepsItsDeclaredRole_WhenTheFreeModelsTypesMove",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs"
+},
+"expected": "F330",
+"stimulus": "F329",
+"user_result": "F331"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F336",
+"test": "KernelCatalogueArchUnitTest.EveryRulePatternThatSeesAFreeModelsType_IsDeclared_AndEveryDeclaredPatternIsARulePattern",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs"
+},
+"expected": "F334",
+"stimulus": "F333",
+"user_result": "F335"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F241"
+],
+"still_passes_if": "F340",
+"test": "KernelCatalogueArchUnitTest.TheRoleCheck_NamesAnUndeclaredPatternThatSeesAFreeType",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs"
+},
+"expected": "F338",
+"stimulus": "F337",
+"user_result": "F339"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F344",
+"test": "KernelCatalogueArchUnitTest.TheRulePatternOfAnOwner_SeesEveryFreeTypeOfThatOwnerUnderItsNewName",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs"
+},
+"expected": "F342",
+"stimulus": "F341",
+"user_result": "F343"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F348",
+"test": "KernelCatalogueArchUnitTest.EveryTestStringThatNamesAFreeTypeByItsModelsName_IsOnTheRenameList_AndEveryListedStringIsFound",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelCatalogueArchUnitTest.cs"
+},
+"expected": "F346",
+"stimulus": "F345",
+"user_result": "F347"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "host verification and EXAMINE",
+"reason": "F352"
+},
+"expected": "F350",
+"stimulus": "F349",
+"user_result": "F351"
+}
+]
+},
 "counters": {
 "B": 4,
 "C": 1,
 "D": 19,
 "E": 9,
-"F": 300,
+"F": 352,
 "K": 9,
 "L": 9,
 "P": 5,
@@ -1999,11 +2226,63 @@
 "F3": "Every type in Lighthouse.Backend.Models is on one catalogue, closed both ways: it stands as Kernel (one of the three base types ADR-270 Decision 7 allows) or as owned by a named context with a blocker that is true when measured from the compiled code and the EF model, and the Story that frees it.",
 "F30": "No formal model, exhaustive checks instead: every claim is a relation over a closed finite set (the Models types of one compiled assembly times the catalogue times measured IL and EF properties) with no shared mutable state, multi-step protocol, concurrency, retry, crash window or progress claim. Claim-to-checker: K1 to K5 and the move law are checked by native NUnit tests that evaluate the real assembly exhaustively (the executable projection is the check itself, in the default suite); no Quint, TLA+/TLC or Agda model, so no checker probe, install or waiver is needed. Property-based testing is not applicable: the domain is closed and enumerated in full.",
 "F300": "reading the two documents with examine read",
+"F301": "Compare the catalogue with every top-level type the compiled backend has in the Models namespaces",
+"F302": "Each Models type has exactly one row and every row names a type that exists; a missing type is named with its measured row",
+"F303": "A maintainer sees every Models type with one standing, and a new Models type fails naming itself",
+"F304": "the catalogue matched the compiled types by short name only, so two same-named types in different Models namespaces would share one row",
+"F305": "Compare a made-up catalogue that misses a planted Models type used by one context and holds a row for a type nobody wrote",
+"F306": "The check fails naming the planted type and the row for the missing type",
+"F307": "A type added to the Models without a row, or a row left after its type is gone, is named in the failure",
+"F308": "the comparison named only the first difference of each direction when several types are missing",
+"F309": "Measure every owned row's blockers from the compiled code and the database model and compare them with the row",
 "F31": "Algebra lives only on the test side: runtime layers (domain, application, adapters, infrastructure) keep their states, operations and observations unchanged. The test-side carriers are KernelCatalogue rows (records owned by KernelCatalogue in Tests/Architecture), KernelRuleVerdict for rule outcomes (owned by KernelRules), NamespaceMoveLaw's PatternBreak for move-law breaks, and NUnit failure messages as the error surface; there is no per-process state. Operations: measure a type's blockers from IL and EF model, compare catalogue and IL both ways, evaluate a pattern map over a move.",
+"F310": "Every claimed blocker is true and every measured blocker is claimed; a free row names the one context that uses it as owner",
+"F311": "Each row's reason to stay in the Models is true today, so no type stays without cause",
+"F312": "a wire type was reached only through a controller helper the controller does not call directly, which the measurement cannot see",
+"F313": "Check made-up rows claiming Entity for a type the database does not store and Wire for a type no controller sends, and rows whose claims are true",
+"F314": "The false claims fail naming the type and the blocker; the true claims pass",
+"F315": "A row that keeps a type in the Models for a false reason fails, naming the type and the reason",
+"F316": "the check accepted any row whose claims are a superset of the measured blockers in one direction only",
+"F317": "Compare the movers list with every Models type that has no measured blocker",
+"F318": "Each free type is on the list with its owner and the namespace it moves to (the owner's Domain or Application, or Platform for the platform lane), and nothing else is",
+"F319": "The maintainer sees which Models types are free to move now and where each one goes",
 "F32": "Keep the object-oriented paradigm: the repository is object-oriented (CLAUDE.md); the catalogue is a first-class collection of row records with the decision on each row (is its claim true), measured through IlDependencies; no new production type is created.",
+"F320": "the destination layer were chosen Domain for a type whose only non-kernel reference is to a mover bound for Application of another owner",
+"F321": "Compare an empty movers list with a made-up backend whose planted type is used by one context only",
+"F322": "The check fails naming the planted type and the namespace it moves to",
+"F323": "A type that could move but is not listed fails, naming where it belongs",
+"F324": "the failure named the owner context but not the layer the type moves to",
+"F325": "Look each mover up in the compiled code under its Models name and its new name",
+"F326": "Each mover is found in exactly one of the two places",
+"F327": "A move leaves no copy behind and no mover is lost by a rename",
+"F328": "a mover moved to a namespace other than the one listed, which fails here as found in neither place only when the old one is gone",
+"F329": "Ask every declared rule pattern whether it keeps its role when each free Models type moves to its owner",
 "F33": "Rigor per slice as proposed: S1 thorough (opus for acceptance designer and crafter, sonnet for reviewers) because the measured blockers and the move law are where earlier reviews found misses; S2, S3 and S4 standard (sonnet, reviewers haiku). Pass model explicitly on every dispatch.",
+"F330": "Old locations such as the kernel pattern do not see a mover in its new place, and parts of the code keep seeing it; the Reports view of the Models is red until widened",
+"F331": "Architecture rules keep guarding a type while it moves out of the Models",
+"F332": "a pattern matched the mover's new namespace only by accident through an over-wide alternative reaching other contexts",
+"F333": "Enumerate every string pattern of the test assembly that sees a mover under its old or new name",
+"F334": "Each one is declared with a role or as an owner pattern, and every declaration still names a rule pattern",
+"F335": "No rule that finds a free type by name is forgotten when the type moves",
+"F336": "a rule built its pattern at run time from pieces that are not string fields, which the enumeration does not read",
+"F337": "Run the role check on a made-up rule class whose pattern takes in the context a planted type moves to, declared nowhere",
+"F338": "The check names the undeclared field",
+"F339": "A new rule pattern that sees a moving type fails until its role is declared",
 "F34": "Confirm the open-question defaults: AC 1 restated as Kernel or owned with a measured blocker and freeing Story (S4 amends the slice-12 brief); kernel is the three base types; files of mixed standing are not split; a later Story that frees a row fails K2 until it updates or moves that row; ConnectionFetchShapeChanged and Models/WriteBack ownership follow where Stories 6382 and 6657 put them, as S1 measures.",
+"F340": "the check named undeclared patterns that see the new name but not ones that see only the old name",
+"F341": "Ask each pattern that takes in an owner whether it matches the new name of every mover of that owner",
+"F342": "Each owner pattern matches every listed owner's movers in their new namespace",
+"F343": "A context's rules guard the types that move into it from the first commit they land",
+"F344": "the owners listed for a pattern were fewer than the owners it actually takes in",
+"F345": "Scan every string literal of the test project for a mover named by its Models name or Models file path",
+"F346": "Each such string is on the rename list with its new text, and every listed string is still found",
+"F347": "No test string keeps naming a moved type's old place, so no rule quietly stops seeing it",
+"F348": "a string named the mover in a grouped alternation such as Models.(A|B), which the scan does not expand",
+"F349": "Compare the candidate with the revision before the Story",
 "F35": "Revise S2 and S3 targets after S1 measures: the recorded movers are the design's expected list; S1's IL measurement is the authority on which files are free and on each destination layer. Before the S2 and S3 acceptance-designer dispatches, the host reopens this design (design open --from-current) with S1's measured movers so the architect removes blocked files, corrects destination layers, and adds every consumer file whose using lines change.",
+"F350": "No schema, migration, route, DTO, payload or answer differs",
+"F351": "Nothing a user or a client sees changes",
+"F352": "S1 changes no production code; that no schema, migration, route, DTO, payload or usage-data event changes is observed by the unchanged backend suites and the EF model probe on the whole candidate",
 "F36": "S1 starts only after the predecessors are merged: for each of Stories 6365, 6366, 6468, 6657 and 6382, the ADO state is Closed, git log main --grep finds the Story's final commit and git merge-base --is-ancestor holds, and the content check holds (Modules/Refinement, Modules/Reports, Modules/OrganisationSetup present; no Services/{Implementation,Interfaces}/{Refinement,Reports}; Modules/*/Contracts with its contracts-only rule; no loose Services/Implementation/WriteBack*.cs). A failed check stops S1 and is reported with the Story, the check and its output.",
 "F37": "S1 re-measures R1 to R11 from the IL and the EF model (every Models type, entity names in both snapshots, wire reachability, held-by closure, users per context, Contracts placement, the write-back owner, rule-file literals, NamespaceMoveLaw shape, non-test path consumers, S12c and S13 state); every count in the feature-delta is a noisy text measurement and a difference is recorded, not argued.",
 "F38": "Contexts are read from Modules.<X> namespaces only; API, Data, Platform.*, repositories, the composition root and loose Services are not contexts.",
