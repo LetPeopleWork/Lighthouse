@@ -1246,7 +1246,41 @@ reading the two documents with examine read
 
 ### Waivers
 
-None.
+#### E6
+
+```text
+Benjamin Huser-Berta (maintainer)
+```
+
+```text
+2026-11-28T16:49:31Z
+```
+
+```text
+The deliveries, metrics, forecast and refresh answer comparisons are pinned to base revisions 1269 to 2369 commits old, so their differences (for example the hasNoChildWorkItemsYet field from Story 6504) cannot show whether this Story changed those answers. The maintainer waived rows EXAMINE cannot observe (2026-11-28).
+```
+
+```text
+The Story changes only namespace and using lines of 17 moved files, so no statement changed. The full backend suite ran 15900 passed and 0 failed on the candidate (O5), and the platform and access answer comparisons were identical (O3). CI run 46160993008 on af209fdfe was green.
+```
+
+#### E9
+
+```text
+Benjamin Huser-Berta (maintainer)
+```
+
+```text
+2026-11-28T16:49:31Z
+```
+
+```text
+ARCHITECTURE.md and ADR-270 are outside the examiner's public projection, so EXAMINE cannot read the kernel description. The maintainer waived rows EXAMINE cannot observe (2026-11-28).
+```
+
+```text
+The whole-candidate review (f93ea1391) re-counted the catalogue (331 rows: 3 Kernel, 328 Owned, and every blocker count) and matched it exactly to the ADR-270 Decision 7 status line. The S4 slice review checked ARCHITECTURE.md section 4 and the KPI 3 count (236 Models files).
+```
 
 ## Charter
 

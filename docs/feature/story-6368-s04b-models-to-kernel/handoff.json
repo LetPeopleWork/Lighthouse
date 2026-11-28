@@ -580,7 +580,7 @@
 "C": 1,
 "D": 20,
 "E": 9,
-"F": 546,
+"F": 552,
 "K": 10,
 "L": 9,
 "P": 5,
@@ -3011,7 +3011,21 @@
 ],
 "text": "F298"
 }
-]
+],
+"waivers": {
+"E6": {
+"by": "F547",
+"coverage": "F550",
+"reason": "F549",
+"waived_at": "F548"
+},
+"E9": {
+"by": "F547",
+"coverage": "F552",
+"reason": "F551",
+"waived_at": "F548"
+}
+}
 },
 "facts": {
 "F1": "Story 6368 S04b: reduce Models to the shared kernel and add a kernel-size rule. Every type under Lighthouse.Backend.Models is either the shared kernel ADR-270 Decision 7 allows (IDomainEvent, IEntity, IConcurrencyTokenEntity) or owned by a named context with a blocker measured from the compiled code and the Story that frees it; the free ones move to their owner (Platform/<Area> or Modules/<Owner>/{Domain,Application}); a rule keeps that catalogue true and shrinking. Behaviour-free. Design: docs/feature/story-6368-s04b-models-to-kernel/feature-delta.md (its slice S4, the event move, is already done by Story 6382 and is dropped; its S5 is this feature's S4).",
@@ -3386,7 +3400,13 @@
 "F544": "No schema, route or payload change",
 "F545": "Nothing a user sees changes",
 "F546": "Observed by the unchanged suites at the story end",
+"F547": "Benjamin Huser-Berta (maintainer)",
+"F548": "2026-11-28T16:49:31Z",
+"F549": "The deliveries, metrics, forecast and refresh answer comparisons are pinned to base revisions 1269 to 2369 commits old, so their differences (for example the hasNoChildWorkItemsYet field from Story 6504) cannot show whether this Story changed those answers. The maintainer waived rows EXAMINE cannot observe (2026-11-28).",
 "F55": "Names no mover; S1 re-greps it with .editorconfig, the Stryker config and appsettings files.",
+"F550": "The Story changes only namespace and using lines of 17 moved files, so no statement changed. The full backend suite ran 15900 passed and 0 failed on the candidate (O5), and the platform and access answer comparisons were identical (O3). CI run 46160993008 on af209fdfe was green.",
+"F551": "ARCHITECTURE.md and ADR-270 are outside the examiner's public projection, so EXAMINE cannot read the kernel description. The maintainer waived rows EXAMINE cannot observe (2026-11-28).",
+"F552": "The whole-candidate review (f93ea1391) re-counted the catalogue (331 rows: 3 Kernel, 328 Owned, and every blocker count) and matched it exactly to the ADR-270 Decision 7 status line. The S4 slice review checked ARCHITECTURE.md section 4 and the KPI 3 count (236 Models files).",
 "F56": "No shared wire, schema or configuration contract changes: System.Text.Json writes no type names, Swashbuckle uses short schema ids, no type-name reflection exists, and no entity moves, so no producer or consumer outside the compiled assembly sees a namespace.",
 "F57": "Every caller of a moved type is inside the one backend deployable and changes in the same commit; no persisted or wire data names a namespace, so the primary oracle and the unchanged suites cover them.",
 "F58": "Unchanged at runtime (controllers, the update queue, the event dispatcher). The oracles' driving port is the compiled Lighthouse.Backend assembly read through IlDependencies and the EF model of LighthouseAppContext, in-process; nearest argv: dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
