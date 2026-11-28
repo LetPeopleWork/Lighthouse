@@ -2187,3 +2187,16 @@ example tests on the pure planner.
 - **Maintainer decision, 2026-11-28: the 400 on an unmapped type starts with slice 04 (M1 kept, option a).** Between
   slice 04 and slices 08 and 09 no one can add a type to a mapping, so a write naming a type the mapping does not hold
   is refused until feature D. The maintainer accepted this because nothing is released before the whole Epic is done.
+
+## DEVOPS check for feature A (2026-11-28, AFK)
+
+Platform risk: none new. The DEVOPS wave of 2026-11-02 still holds for feature A: no new workflow, the startup
+migrator and its refuse-to-start signal as described in "Operator signals", the expand-only migrations and the
+rollback contract in "Deployment strategy and rollback contract" (the rollback now detects edits through
+`WorkItemTypesAsWritten`, see the DESIGN refresh above). The migrations run on SQLite and Postgres in CI as today.
+
+Usage data: **N/A for feature A**, because all five slices (01, 02, 03, 04, 07) are invisible to users; nothing in them
+shows that the feature is used. The level events stay with their slices: `LevelRenamed` with slice 06 and
+`LevelRemoved` (formerly `LevelSwitchedOff`) with slice 15, each taking the next free `UsageDataEventName` integer when
+it is emitted (22 and 23 are taken by the report events). Whether "Add a level above" needs its own event is decided
+at feature C.
