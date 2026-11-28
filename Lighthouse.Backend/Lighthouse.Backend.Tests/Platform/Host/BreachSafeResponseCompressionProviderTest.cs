@@ -21,10 +21,6 @@ namespace Lighthouse.Backend.Tests.Platform.Host
     {
         private const string Json = "application/json; charset=utf-8";
 
-        // The marker does not exist until the rule reads it, and a typed reference to a missing type would stop the
-        // whole test project from compiling. It is looked up by name until it exists; then it becomes typeof.
-        private const string TheMarkerName = "Lighthouse.Backend.Platform.Host.NeverCompressResponseAttribute";
-
         public enum AnsweringEndpoint
         {
             None,
@@ -68,7 +64,7 @@ namespace Lighthouse.Backend.Tests.Platform.Host
 
             var compressed = Compresses(rule, "GET", contentType, "br", endpoint);
 
-            Assert.That(compressed, Is.False, $"WHAT: a GET answering {contentType} to Accept-Encoding br from an endpoint '{endpoint}' with the never-compress marker is sent compressed. WHY: the hub, the logs and the embed handshake can hold secrets next to attacker text, and a renamed route must not drop their exclusion. HOW: answer no when the answering endpoint's metadata holds {TheMarkerName}, whatever the request path is.");
+            Assert.That(compressed, Is.False, $"WHAT: a GET answering {contentType} to Accept-Encoding br from an endpoint '{endpoint}' with the never-compress marker is sent compressed. WHY: the hub, the logs and the embed handshake can hold secrets next to attacker text, and a renamed route must not drop their exclusion. HOW: answer no when the answering endpoint's metadata holds {nameof(NeverCompressResponseAttribute)}, whatever the request path is.");
         }
 
         [Test]
@@ -126,18 +122,9 @@ namespace Lighthouse.Backend.Tests.Platform.Host
         private static object[] MetadataOf(AnsweringEndpoint endpoint) => endpoint switch
         {
             AnsweringEndpoint.Unmarked => [new AuthorizeAttribute()],
-            AnsweringEndpoint.Marked => [TheMarker()],
-            AnsweringEndpoint.MarkedAmongOtherMetadata => [new AuthorizeAttribute(), TheMarker(), new AllowAnonymousAttribute()],
+            AnsweringEndpoint.Marked => [new NeverCompressResponseAttribute()],
+            AnsweringEndpoint.MarkedAmongOtherMetadata => [new AuthorizeAttribute(), new NeverCompressResponseAttribute(), new AllowAnonymousAttribute()],
             _ => [],
         };
-
-        private static object TheMarker()
-        {
-            var markerType = typeof(BreachSafeResponseCompressionProvider).Assembly.GetType(TheMarkerName);
-
-            Assert.That(markerType, Is.Not.Null, $"WHAT: Lighthouse has no never-compress marker {TheMarkerName}. WHY: without a marker on the endpoint, the answers that can carry a secret are excluded only by a hand-typed route, which a renamed route silently drops. HOW: add the marker attribute in Platform/Host and let the rule read it from the answering endpoint's metadata.");
-
-            return Activator.CreateInstance(markerType!)!;
-        }
     }
 }
