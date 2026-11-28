@@ -169,13 +169,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h4>D2</h4>
 
-<pre><code>Open question 1 resolved (compression of the built frontend): compress at serve time with ASP.NET Core ResponseCompression (shared framework, no new package), Brotli and Gzip providers at CompressionLevel.Optimal, app.UseResponseCompression placed after UseForwardedHeaders and before UseDefaultFiles/UseStaticFiles so static files, the SPA fallback page and API answers pass through one mechanism. UseStaticFiles(staticFileOptions) and the UseSpa DefaultPageStaticFileOptions stay unchanged, so index.html and sw.js keep no-cache, no-store, must-revalidate on both paths. Measured on the current bundle (3361 KB of JavaScript): Optimal gives 3.22x gzip and 3.23x Brotli at 44-55 ms CPU for the whole bundle; Fastest gives only 2.32x gzip, which misses the about-a-third outcome. Rejected: MapStaticAssets (needs the static web assets manifest built after pnpm build fills wwwroot, replaces the StaticFileOptions path that the no-cache rule lives on, and is empty in dev); a Vite precompression plugin plus a custom precompressed-file provider (new dependency and hand-written content negotiation for a saving of about 50 ms CPU per cold load).
+<pre><code>Open question 1 resolved (compression of the built frontend): compress at serve time with ASP.NET Core ResponseCompression (shared framework, no new package), Brotli and Gzip providers both at CompressionLevel.Optimal, never SmallestSize (Brotli quality 11 is about 140 times slower: 3510 ms against 25 ms on the 2.43 MB largest JavaScript file, x86_64). No size threshold: a threshold can only act where Content-Length is known, which is the static files, where compression pays most. app.UseResponseCompression placed after UseForwardedHeaders and before UseDefaultFiles/UseStaticFiles so static files, the SPA fallback page and API answers pass through one mechanism. UseStaticFiles(staticFileOptions) and the UseSpa DefaultPageStaticFileOptions stay unchanged, so index.html and sw.js keep no-cache, no-store, must-revalidate on both paths. Measured on the current bundle (3361 KB of JavaScript): Optimal gives 3.22x gzip and 3.23x Brotli; Fastest gives only 2.32x gzip, which misses the about-a-third outcome. Server CPU is about 35 ms per cold load of the bundle in one encoding (measured in DEVOPS, x86_64). Rejected: MapStaticAssets (needs the static web assets manifest built after pnpm build fills wwwroot, replaces the StaticFileOptions path that the no-cache rule lives on, and is empty in dev); a Vite precompression plugin plus a custom precompressed-file provider (new dependency and hand-written content negotiation to save about 35 ms CPU per cold load).
 </code></pre>
 <p>Governed slices: S1</p>
 
 <h4>D3</h4>
 
-<pre><code>Open question 2 resolved (BREACH): the rule is that an answer is compressed only when the request method is GET or HEAD, the response MIME type is in ResponseCompressionDefaults.MimeTypes, the client sent Accept-Encoding, and the path is not the SignalR update-notification hub. Reason: BREACH needs a secret and attacker-reflected input in one compressed body. No GET answer carries a secret today: connection options blank secret values (WorkTrackingSystemConnectionOptionDto sets Value empty when IsSecret), session and embed cookies travel in headers, which ResponseCompression never compresses; the one body that carries a secret, the plain-text API key of ApiKeyCreationResult, answers a POST, and unsafe-method answers are where submitted text is echoed. EnableForHttps is true because the rule, not the scheme, is the mitigation, so TLS terminated at a proxy does not change the answer. Owner in code: BreachSafeResponseCompressionProvider in Platform/Host, a subclass of ResponseCompressionProvider overriding ShouldCompressResponse; the hub route is one named constant on UpdateNotificationHub read by both MapHub and the policy. DEVOPS must check: reverse proxies that already compress (a proxy must not double-encode; ResponseCompression skips a response that already has Content-Encoding, and nginx/Traefik/Caddy pass an encoded upstream answer through), proxies that strip Accept-Encoding (then answers go uncompressed, as today), the Docker image (no change, same Kestrel), the Standalone Tauri webview against the local backend (webview sends Accept-Encoding and decodes), and CPU on small hosts.
+<pre><code>Open question 2 resolved (BREACH): an answer is compressed only when ResponseCompression:Enabled is true, the request method is GET or HEAD, the response MIME type is in ResponseCompressionDefaults.MimeTypes, the client sent Accept-Encoding with br or gzip, and the path is not an excluded route. Excluded routes, matched on path segments, case-insensitive, by prefix: the SignalR hub api/updateNotificationHub (and everything under it, such as negotiate); the logs controller api/{v1|latest}/logs (tail, download, problems, level), because its answers hold log text an attacker can reach (logged paths, failed sign-ins, tracker queries) next to exception text from third-party libraries that this design cannot show is free of secrets, and an administrator can raise the log level at run time; and the embed handshake api/{v1|latest}/embed/handshake, the one GET whose body carries a secret (the single-use embed session token). The handshake body reflects no attacker text and its nonce is spent on first read, so it is not exploitable today; it is excluded so the rule stays simple: no compressed answer carries a secret, and the answer is a few hundred bytes. Every other GET carries no secret: connection options blank secret values (WorkTrackingSystemConnectionOptionDto sets Value empty when IsSecret), GET api-keys never returns the plaintext (ApiKeyController.GetApiKeys), the OAuth callback answers a redirect with a connection id, session and embed cookies travel in headers, which ResponseCompression never compresses; the plain-text API key of ApiKeyCreationResult answers a POST. The embed cookie is SameSite=None, so cross-site GETs carry it; no GET in embed scope other than the excluded handshake returns a token. EnableForHttps is true because the rule, not the scheme, is the mitigation, so TLS at a proxy does not change the answer. Owner in code: BreachSafeResponseCompressionProvider in Platform/Host, a subclass of ResponseCompressionProvider overriding ShouldCompressResponse; the hub route is one named constant on UpdateNotificationHub read by both MapHub and the policy; the logs and handshake prefixes are named constants in the provider. No PathBase is used, so the segments are matched on Request.Path. Platform facts (DEVOPS): the Docker image serves HTTPS 443 with nothing in front; the Helm chart&#x27;s plain Ingress (ingress-nginx, Traefik) does not compress by default and passes an already encoded answer through; a proxy that strips Accept-Encoding gets identity answers; the Standalone webview loads its UI from the app bundle and only its loopback API answers are compressed, about 1 ms each; one behaviour everywhere.
 </code></pre>
 <p>Governed slices: S1</p>
 
@@ -218,6 +218,24 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Page-move freshness (S2, S3): one owner, usePageFreshQuery in src/hooks/usePageFreshQuery.ts, wraps useQuery with staleTime Infinity, retry false and refetchOnMount false; its queryFn stores the answer together with the page it was asked on (carrier PageFreshAnswer of T: answer and askedOnPage). PageMoveRefresh in src/components/App/PageMoveRefresh/PageMoveRefresh.tsx, mounted inside the Router in App.tsx, holds the page counter (per-process state, a React context), advances it when location.pathname changes and invalidates the shared page reads once (invalidateQueries cancels a request still in flight from the previous page). A component records the page it mounted on; it is loading until an answer asked on or after that page arrives, failed when the shared query failed, ready otherwise. Components mounted later on the same page reuse the cached answer and ask nothing. Model shared_page_reads.qnt checks this protocol.
 </code></pre>
 <p>Governed slices: S2, S3</p>
+
+<h4>D11</h4>
+
+<pre><code>S1 switch: ResponseCompressionConfiguration in Configuration/ResponseCompressionConfiguration.cs (SectionName ResponseCompression, Enabled default true), read once at start-up in Program.cs the way RateLimitingConfiguration is (GetSection(SectionName).Get, else a new instance), registered as a singleton and given to BreachSafeResponseCompressionProvider, which answers no for every request when Enabled is false, so the switch is one row of the policy table and the pipeline shape is the same either way. Environment variable ResponseCompression__Enabled=false or --ResponseCompression:Enabled=false; a restart is needed; no Helm chart value. docs/Installation/configuration.md gets one section in the format of the Telemetry block: Lighthouse compresses its own answers, a reverse proxy needs no compression of its own, and how to turn it off.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>D12</h4>
+
+<pre><code>S1 accepted behaviours: an identity answer to a request without Accept-Encoding carries no Vary header (never wrong; at worst a shared cache serves identity to a client that could take br); StaticFiles gives one strong ETag for every encoding (harmless with Vary, no CDN in the repository); application/problem+json and image/svg+xml stay uncompressed because they are not on the default MIME list. Usage data: N/A, because nothing here is a user action; the outcome (bytes and calls per page) is measured by the spike&#x27;s probes, so no UsageDataEventName entry. Observability: the Content-Encoding and Vary response headers show it is on; no metric or alert, because no service-level promise changes.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>D13</h4>
+
+<pre><code>S1 test layers: unit rows in the default fast suite (no host) pin the rule as a table over DefaultHttpContext in BreachSafeResponseCompressionProviderTest; one named wire contract (ResponseCompressionWireContractTest on WireContractTest) pins pipeline order and headers through a real host; the Docker smoke step in .github/workflows/ci_docker.yml, after Check the container runs on .NET 11, covers real TLS and the real bundle: curl -k a built asset with Accept-Encoding br and fail unless content-encoding is br, and curl /api/latest/systeminfo without Accept-Encoding and fail if content-encoding is present. No other workflow change: E2E already runs Chromium, which sends Accept-Encoding, against the server. Host verification probe after S1 (the host runs it against a running instance LH): take the first /assets/*.js named in GET /; GET it with Accept-Encoding br (expect content-encoding br and vary Accept-Encoding) and without the header (no content-encoding); GET /api/latest/version/current with gzip, br (br); GET / with br (br, and Cache-Control no-cache, no-store, must-revalidate kept); POST api/updateNotificationHub/negotiate (no content-encoding).
+</code></pre>
+<p>Governed slices: S1</p>
 
 <h3>Constraints</h3>
 
@@ -577,10 +595,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>An encoded body without Content-Encoding, or double encoding
 </code></pre>
 
-<pre><code>DEVOPS checks nginx, Traefik, Caddy, IIS and the Standalone webview
+<pre><code>Checked in DEVOPS: Docker serves HTTPS with nothing in front; the Helm Ingress (ingress-nginx, Traefik) does not compress by default and passes encoded answers through; a stripping proxy gets identity; Standalone compresses only loopback API answers. No residue
 </code></pre>
 
-<p>DEVOPS</p>
+<p>BreachSafeResponseCompressionProvider</p>
 
 <h4>Y3</h4>
 
@@ -631,7 +649,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Second stressor set (walkthrough, not execution): server CPU spike under many cold loads; an answer that arrives after the user moved twice; a browser tab restored from bfcache; a licence import while on a page
 </code></pre>
 
-<pre><code>Compression CPU about 50 ms per cold bundle, assets reused from browser cache; late answer cancelled by invalidation; bfcache restore keeps the last page answers and the next move asks again; licence import sets the cache at once through useStoreImportedLicense
+<pre><code>Compression CPU about 35 ms per cold bundle at Optimal, assets reused from browser cache; late answer cancelled by invalidation; bfcache restore keeps the last page answers and the next move asks again; licence import sets the cache at once through useStoreImportedLicense
 </code></pre>
 
 <pre><code>Slower first byte under load
@@ -640,10 +658,31 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>A wrong or stale permission shown as ready
 </code></pre>
 
-<pre><code>No new residue; CPU on small hosts is a DEVOPS check
+<pre><code>An operator on a small host turns compression off with ResponseCompression__Enabled=false and a restart
 </code></pre>
 
-<p>DEVOPS</p>
+<p>ResponseCompressionConfiguration</p>
+
+<h4>Y6</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption negated: no compressible GET body holds a secret (a log line holds a token from library exception text, or a future GET returns a token)
+</code></pre>
+
+<pre><code>Log routes and the embed handshake are never compressed; POST answers stay uncompressed
+</code></pre>
+
+<pre><code>Log downloads go uncompressed
+</code></pre>
+
+<pre><code>A compressed body that mixes a secret with attacker-reachable text
+</code></pre>
+
+<pre><code>A new GET that returns a secret must answer a POST or be added to the excluded routes of BreachSafeResponseCompressionProvider; stated in ADR-004
+</code></pre>
+
+<p>BreachSafeResponseCompressionProvider</p>
 
 <h3>Architectural tests</h3>
 
@@ -677,6 +716,27 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<p>Lighthouse.Backend/Lighthouse.Backend/Configuration/ResponseCompressionConfiguration.cs</p>
+
+<p>Create</p>
+
+<pre><code>Start-up switch ResponseCompression:Enabled, default true
+</code></pre>
+
+<p>docs/Installation/configuration.md</p>
+
+<p>Extend</p>
+
+<pre><code>Prose target, verified by review and EXAMINE, no test pins its wording: Lighthouse compresses its own answers, no proxy compression needed, how to turn it off
+</code></pre>
+
+<p>.github/workflows/ci_docker.yml</p>
+
+<p>Extend</p>
+
+<pre><code>Docker smoke step: an asset answers br over real TLS; systeminfo without Accept-Encoding has no Content-Encoding
+</code></pre>
+
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/ResponseCompressionWireContractTest.cs</p>
 
 <h4>Verification</h4>
@@ -695,13 +755,13 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 
 <h4>Public oracle</h4>
 
-<pre><code>On a test host whose web root holds index.html and assets/app.js (a few KB of repetitive JavaScript), GET /assets/app.js with Accept-Encoding br, then gzip, then none; GET / with br; GET /api/latest/version/updateSupported with br; a POST with a JSON answer (the API-key creation answer when reachable, else a POST row at the policy unit)
+<pre><code>On a test host whose web root holds index.html and assets/app.js (a few KB of repetitive JavaScript): GET /assets/app.js with Accept-Encoding br, then gzip, then none; GET / with br; GET /api/latest/version/current with gzip, br, and again without Accept-Encoding; POST the API-key creation with br; POST api/updateNotificationHub/negotiate with br
 </code></pre>
 
-<pre><code>br and gzip rows carry Content-Encoding br or gzip, Vary contains Accept-Encoding and the body decodes to the file bytes exactly; the no-encoding row has no Content-Encoding and the file bytes; GET / is compressed and still Cache-Control no-store; the GET API answer is compressed; the POST answer has no Content-Encoding
+<pre><code>br and gzip rows carry Content-Encoding br or gzip, Vary contains Accept-Encoding and the body decodes to the file bytes exactly; the no-encoding row has no Content-Encoding and the file bytes; GET / is compressed and still Cache-Control no-cache, no-store, must-revalidate; the API GET with gzip, br carries Content-Encoding br and Vary Accept-Encoding, without Accept-Encoding it has no Content-Encoding; the API-key POST and the hub negotiate POST have no Content-Encoding
 </code></pre>
 
-<pre><code>Today’s pipeline: no Content-Encoding on any row, so the br and gzip rows fail; a compress-everything policy fails the POST row
+<pre><code>Today&#x27;s pipeline: no Content-Encoding on any row, so the br, gzip and API GET rows fail; a compress-everything policy fails the POST rows; a policy that matches the hub by exact path or case fails the negotiate row
 </code></pre>
 
 <h5>Promises</h5>
@@ -771,6 +831,60 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 <pre><code>One host per fixture for the wire rows; AdjustTheHost sets a temporary web root as SpaFallbackWebApplicationFactory does
 </code></pre>
 
+<p>RateLimitingConfiguration</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Configuration/RateLimitingConfiguration.cs:3</p>
+
+<p>Reuse</p>
+
+<pre><code>Pattern reused for the switch: SectionName constant, Enabled default true, read at start-up in Program.cs; its section is rate limiting, so it does not own compression
+</code></pre>
+
+<p>ResponseCompressionConfiguration</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Configuration/ResponseCompressionConfiguration.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No configuration section owns compression; one value object holds the switch and is read once
+</code></pre>
+
+<p>LogsController</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/LogsController.cs:85</p>
+
+<p>Reuse</p>
+
+<pre><code>Unchanged; its routes api/{v1|latest}/logs are an excluded prefix of the policy
+</code></pre>
+
+<p>Poll</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/EmbedHandshakeController.cs:24</p>
+
+<p>Reuse</p>
+
+<pre><code>Unchanged; the only GET whose body carries a token, so api/{v1|latest}/embed/handshake is an excluded prefix
+</code></pre>
+
+<p>Check the container runs on .NET 11</p>
+
+<p>.github/workflows/ci_docker.yml:99</p>
+
+<p>Extend</p>
+
+<pre><code>The existing Docker smoke job already runs the container over HTTPS 443; one step after it checks Content-Encoding
+</code></pre>
+
+<p>Telemetry</p>
+
+<p>docs/Installation/configuration.md:446</p>
+
+<p>Extend</p>
+
+<pre><code>The configuration page is where operators read switches; the new section follows the Telemetry block format
+</code></pre>
+
 <h5>Impact</h5>
 
 <p>composition-root</p>
@@ -779,7 +893,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 
 <p>Changed</p>
 
-<pre><code>Adds AddResponseCompression with providers, the policy registration and UseResponseCompression before UseDefaultFiles; MapHub reads the hub route constant
+<pre><code>Reads ResponseCompressionConfiguration at start-up, adds AddResponseCompression with Brotli and Gzip at Optimal and the policy registration, UseResponseCompression before UseDefaultFiles; MapHub reads the hub route constant
 </code></pre>
 
 <p>class</p>
@@ -807,6 +921,60 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 <p>UnchangedCompatible</p>
 
 <pre><code>Status, media type and no-store assertions hold with compression; test client sends no Accept-Encoding
+</code></pre>
+
+<p>configuration</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Configuration/ResponseCompressionConfiguration.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>New switch section; absent section means enabled
+</code></pre>
+
+<p>ci-workflow</p>
+
+<p>.github/workflows/ci_docker.yml:108</p>
+
+<p>Changed</p>
+
+<pre><code>One smoke step added after the runtime check
+</code></pre>
+
+<p>operator-docs</p>
+
+<p>docs/Installation/configuration.md:446</p>
+
+<p>Changed</p>
+
+<pre><code>One section on compression and its switch
+</code></pre>
+
+<p>controller</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/LogsController.cs:85</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Its answers stay identity, as today
+</code></pre>
+
+<p>controller</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/EmbedHandshakeController.cs:24</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Its answer stays identity, as today
+</code></pre>
+
+<p>helm-chart</p>
+
+<p>chart/values.yaml:21</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>No chart value for the switch; the Ingress passes encoded answers through
 </code></pre>
 
 <h5>Agreement</h5>
@@ -846,20 +1014,20 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 
 <p>HTTP content encoding of Lighthouse answers</p>
 
-<p>Self-hosted reverse proxies</p>
+<p>Self-hosted reverse proxies and the Helm Ingress (chart/templates/ingress.yaml)</p>
 
 <p>Consumer</p>
 
 <p>UnchangedCompatible</p>
 
-<pre><code>Encoded upstream answers pass through; checked in DEVOPS
+<pre><code>ingress-nginx and Traefik do not compress by default and pass an encoded answer through; a proxy that strips Accept-Encoding gets identity
 </code></pre>
 
 <h5>Not applicable</h5>
 
 <p>prefactoring</p>
 
-<pre><code>Program.cs holds one type (Program); UpdateNotificationHub.cs holds one type; BreachSafeResponseCompressionProvider.cs is new. No file holds several types, nothing moves.
+<pre><code>Program.cs holds one type (Program); UpdateNotificationHub.cs holds one type; BreachSafeResponseCompressionProvider.cs and ResponseCompressionConfiguration.cs are new; ci_docker.yml and configuration.md hold no types. No file holds several types, nothing moves.
 </code></pre>
 
 <h5>Boundaries</h5>
@@ -942,7 +1110,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 
 <h6>L2</h6>
 
-<pre><code>An answer is compressed iff method is GET or HEAD, MIME is compressible, Accept-Encoding offers br or gzip and the path is not the hub
+<pre><code>An answer is compressed iff the switch is on, method is GET or HEAD, MIME is compressible, Accept-Encoding offers br or gzip and no excluded route prefix (hub, logs, embed handshake) matches the path segments, case-insensitive
 </code></pre>
 
 <p>Invariant</p>
@@ -975,13 +1143,37 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 <pre><code>GET image/png br -&gt; not
 </code></pre>
 
-<pre><code>GET hub path br -&gt; not
+<pre><code>GET application/problem+json br -&gt; not
+</code></pre>
+
+<pre><code>GET api/updateNotificationHub br -&gt; not
+</code></pre>
+
+<pre><code>GET API/UPDATENOTIFICATIONHUB br -&gt; not
+</code></pre>
+
+<pre><code>POST api/updateNotificationHub/negotiate br -&gt; not
+</code></pre>
+
+<pre><code>GET api/latest/logs br -&gt; not
+</code></pre>
+
+<pre><code>GET api/v1/Logs/download br -&gt; not
+</code></pre>
+
+<pre><code>GET api/latest/embed/handshake/n1 br -&gt; not
+</code></pre>
+
+<pre><code>GET api/latest/logsx br -&gt; compressed (segment match, not substring)
 </code></pre>
 
 <pre><code>GET json no Accept-Encoding -&gt; not
 </code></pre>
 
-<pre><code>The domain is a closed finite set of cases, so native example rows cover every member
+<pre><code>GET json br with ResponseCompression:Enabled false -&gt; not
+</code></pre>
+
+<pre><code>The policy inputs form a closed finite table of method, MIME class, encoding offer, route class and switch, so native example rows cover every class
 </code></pre>
 
 <h6>Evidence</h6>
@@ -1015,6 +1207,29 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 </code></pre>
 
 <pre><code>A future GET answer carrying a secret; middleware placed before UseResponseCompression writing its own encoding
+</code></pre>
+
+<h6>C3</h6>
+
+<pre><code>No compressed answer carries a secret: log text and the embed handshake token are never compressed
+</code></pre>
+
+<pre><code>BREACH recovery of a token from a compressed body that also holds attacker-reachable text
+</code></pre>
+
+<p>BreachSafeResponseCompressionProvider</p>
+
+<pre><code>Any HTTP request reaching Kestrel
+</code></pre>
+
+<p>BreachSafeResponseCompressionProvider.ShouldCompressResponse</p>
+
+<p>ResponseCompressionMiddleware</p>
+
+<pre><code>Content-Encoding absent on api/{v1|latest}/logs and api/{v1|latest}/embed/handshake answers
+</code></pre>
+
+<pre><code>A future GET answer carrying a secret on a route not in the excluded prefixes
 </code></pre>
 
 <h5>States</h5>

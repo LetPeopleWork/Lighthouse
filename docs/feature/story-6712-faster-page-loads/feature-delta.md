@@ -79,3 +79,51 @@ Design facts live in `handoff.json` (rendered to `architecture.md`); the compres
   Footer: current, distribution and hasupdate together, then newest and updateSupported. The dialog has loading,
   loaded and could-not-load (message + Retry) states.
 - **Order:** S3 builds on S2's freshness owner, so S2 lands first.
+
+## Maintainer decisions (start of AFK, 2026-11-28)
+
+- **Rigor profile:** S1 (compression and the BREACH rule) and S2 (shared permissions) `thorough` (Opus crafter,
+  acceptance designer and architect; Sonnet reviewers and examiner). S3, S4, S5 `standard` (Sonnet; Haiku
+  reviewers). The final whole-candidate review and EXAMINE run on Sonnet, the stronger reviewer model in play.
+- **AFK options:** each slice wraps up with refactor and review; mutation runs once at the end. Nothing is pushed.
+- **S5 sketch (agreed):** the "Update Available" dialog stays as it is (install text, manual-update link, buttons).
+  New: a line `Lighthouse <version> is available.` at the top in all three states. The notes area shows a spinner
+  with `Loading release notes…` while loading, today's release sections when loaded, and a warning Alert
+  `Could not load the release notes.` with a `Retry` button when they cannot be loaded.
+
+  ```
+  ┌ Update Available ──────────────────────┐
+  │ Lighthouse v26.11.28 is available.     │
+  │ ⟳ Click "Install Update" ... (as today)│
+  │ ⤓ To update manually, see the docs...  │
+  │ LOADING:  ◌ Loading release notes…     │
+  │ LOADED:   ▾ v26.11.28 … (as today)     │
+  │ FAILED:   ⚠ Could not load the release │
+  │           notes.               [Retry] │
+  │          [Install Update]  [Close]     │
+  └────────────────────────────────────────┘
+  ```
+
+## DEVOPS (2026-11-28, AFK propose mode)
+
+Platform risk is material (compression in the host), so the platform lens ran. Findings, taken on the platform
+architect's recommendations and recorded in the design by the solution architect:
+
+- **No double compression anywhere.** Docker serves over HTTPS with nothing in front; the Helm Ingress
+  (ingress-nginx, Traefik) does not compress by default and skips answers that already carry `Content-Encoding`;
+  a proxy that strips `Accept-Encoding` gets uncompressed answers, as today. Standalone loads its UI from the app
+  bundle, so only its loopback API answers are compressed (~1 ms each); one behaviour everywhere.
+- **Switch:** `ResponseCompression:Enabled`, default on, like `RateLimiting`; env var
+  `ResponseCompression__Enabled=false`; no Helm value. Plus one paragraph in `docs/Installation/configuration.md`.
+- **Level:** `Optimal` (Brotli q4, gzip 6), never `SmallestSize` (~140× slower); no size threshold. About 35 ms
+  of CPU per cold load for the bundle (measured, x86).
+- **BREACH edges:** the whole logs controller (`api/{v1|latest}/logs`: tail, download, problems, level) is
+  excluded, because exception text from third-party libraries and a raised log level mean a log line cannot be
+  shown never to hold a secret. `GET embed/handshake/{nonce}` returns the embed session token in its body, so it is
+  excluded too (the first design's "no GET carries a secret" was wrong; not exploitable today, the nonce is used
+  once). The rule is now simple: no compressed answer carries a secret.
+- **CI:** one extra step in `ci_docker.yml` (asset answers `br` over real TLS; no `Accept-Encoding`, no
+  compression). No other workflow change.
+- **Observability:** `Content-Encoding` and `Vary` headers; no metric or alert.
+- **Usage-data event:** N/A, because nothing here is a user action. The outcome (bytes and calls per page) is
+  measured by the spike's probes, not by counting use.
