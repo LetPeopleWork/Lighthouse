@@ -40,6 +40,41 @@ namespace Lighthouse.Backend.Tests.Architecture
             ThenItIsFoundOnlyIn(name, expectedNamespace, places);
         }
 
+        [TestCaseSource(nameof(ThePublicMembersOfThePlatformTypes))]
+        public void ThePlatformType_KeepsTheSamePublicMembersAsBeforeItMoved(string name, string[] expectedMembers)
+        {
+            var members = WhenThePublicMembersOfTheTopLevelTypeAreRead(ProductionModule.Value, name);
+
+            ThenTheMembersAre(name, expectedMembers, members);
+        }
+
+        private static IEnumerable<TestCaseData> ThePublicMembersOfThePlatformTypes()
+        {
+            yield return new TestCaseData("UsageDataEmitPermit", (string[])["AnalyticsId"]).SetArgDisplayNames("UsageDataEmitPermit");
+            yield return new TestCaseData("UsageDataEventReported", (string[])["Deconstruct", "Enabled", "Equals", "FeaturesHeld", "GetHashCode", "Name", "OffsetMs", "OptionalFeature", "RefinementVerdict", "ReportTemplate", "Route", "Sequence", "SizingMoment", "ToString", "Updates", "WorkTrackingSystem"]).SetArgDisplayNames("UsageDataEventReported");
+            yield return new TestCaseData("UsageDataEventShapes", (string[])["Fits"]).SetArgDisplayNames("UsageDataEventShapes");
+            yield return new TestCaseData("UsageDataSuppressionReason", (string[])["BudgetExhausted", "DisabledByAdministrator", "EvaluationFailed", "NoLiveConsent", "RateLimited", "SendFailed"]).SetArgDisplayNames("UsageDataSuppressionReason");
+        }
+
+        private static List<string> WhenThePublicMembersOfTheTopLevelTypeAreRead(ModuleDefinition module, string name)
+        {
+            var type = module.Types.Single(candidate => candidate.Name == name && candidate.DeclaringType is null);
+
+            return [.. type.Fields.Where(field => field.IsPublic && !field.IsSpecialName).Select(field => field.Name)
+                .Concat(type.Properties.Where(property => property.GetMethod?.IsPublic == true).Select(property => property.Name))
+                .Concat(type.Methods.Where(method => method.IsPublic && !method.IsSpecialName && !method.Name.StartsWith('<')).Select(method => method.Name))
+                .Distinct().Order(StringComparer.Ordinal)];
+        }
+
+        private static void ThenTheMembersAre(string name, string[] expectedMembers, List<string> members)
+        {
+            Assert.That(
+                members,
+                Is.EqualTo(expectedMembers),
+                $"{name} must keep the public members it had before the move; it has [{string.Join(", ", members)}]. "
+                + "The move changes the namespace only: restore the member that was added, renamed or removed.");
+        }
+
         private static IEnumerable<TestCaseData> ThePlatformMovers()
             => TheUsageDataTypesThatLeftTheModels.Select(name => new TestCaseData(name, TheLanesUsageDataNamespace).SetArgDisplayNames(name));
 

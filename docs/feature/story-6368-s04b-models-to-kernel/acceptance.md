@@ -451,7 +451,7 @@ Run the Architecture tests after the platform-owned usage-data types left the sh
 ```
 
 ```text
-Each of the four types is found exactly once, under the platform lane's usage-data namespace, and nowhere under Models or in a module
+No catalogue row or movers entry names any of the four types; each is found exactly once, under Lighthouse.Backend.Platform.UsageData, and nowhere under Models or in a module
 ```
 
 ```text
@@ -532,6 +532,39 @@ PlatformLaneMembershipArchUnitTest
 
 ```text
 A rule edited so it no longer finds the moved types
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+P4
+
+```text
+Read the public members of each of the four usage-data types from the compiled backend after they moved to the platform lane
+```
+
+```text
+Each type has exactly the public member names it had before the move
+```
+
+```text
+Moving the types to the platform lane changes no member a caller relies on
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest\.cs
+
+ThePlatformType\_KeepsTheSamePublicMembersAsBeforeItMoved
+
+```text
+A member added to, renamed in or removed from a moved type; only member names are pinned, so a changed signature with the same name still passes
 ```
 
 ###### Obligations

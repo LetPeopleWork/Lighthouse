@@ -547,7 +547,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Run the Architecture tests after the platform-owned usage-data types left the shared Models; each type is looked up by name in the compiled backend
 </code></pre>
 
-<pre><code>Each of the four types is found exactly once, under the platform lane&#x27;s usage-data namespace, and nowhere under Models or in a module
+<pre><code>No catalogue row or movers entry names any of the four types; each is found exactly once, under Lighthouse.Backend.Platform.UsageData, and nowhere under Models or in a module
 </code></pre>
 
 <pre><code>The platform lane holds its own usage-data types; nothing is left behind in the shared kernel
@@ -618,6 +618,35 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>PlatformLaneMembershipArchUnitTest</p>
 
 <pre><code>A rule edited so it no longer finds the moved types
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<p>P4</p>
+
+<pre><code>Read the public members of each of the four usage-data types from the compiled backend after they moved to the platform lane
+</code></pre>
+
+<pre><code>Each type has exactly the public member names it had before the move
+</code></pre>
+
+<pre><code>Moving the types to the platform lane changes no member a caller relies on
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest.cs</p>
+
+<p>ThePlatformType_KeepsTheSamePublicMembersAsBeforeItMoved</p>
+
+<pre><code>A member added to, renamed in or removed from a moved type; only member names are pinned, so a changed signature with the same name still passes
 </code></pre>
 
 <h6>Obligations</h6>

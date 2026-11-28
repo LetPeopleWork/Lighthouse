@@ -259,7 +259,7 @@
 "test": "ThePlatformType_IsFoundOnlyInTheLanesNamespaceOfItsArea",
 "test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest.cs"
 },
-"expected": "F424",
+"expected": "F443",
 "stimulus": "F423",
 "user_result": "F425"
 },
@@ -296,6 +296,24 @@
 "expected": "F436",
 "stimulus": "F435",
 "user_result": "F437"
+},
+{
+"covers": [
+"P2",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F155"
+],
+"still_passes_if": "F447",
+"test": "ThePlatformType_KeepsTheSamePublicMembersAsBeforeItMoved",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformOwnedModelsTypesLiveInPlatformArchUnitTest.cs"
+},
+"expected": "F445",
+"stimulus": "F444",
+"user_result": "F446"
 }
 ]
 },
@@ -304,7 +322,7 @@
 "C": 1,
 "D": 19,
 "E": 9,
-"F": 442,
+"F": 447,
 "K": 9,
 "L": 9,
 "P": 5,
@@ -5148,7 +5166,6 @@
 "F421": "A pure move keeps each existing type unchanged; the destination modules and their Domain folders already exist and are reused; no new responsibility is created.",
 "F422": "Per touched file. Movers that hold several types move whole, because the accepted design keeps every commit a pure move and their split waits for S12c: AdditionalFieldInUse.cs (4 types), RbacOperationResult.cs (2), ConnectionFieldDefaults.cs (3), DeliverySourceOption.cs (2), StalenessPolicy.cs (2), StalenessVerdict.cs (2). All other movers hold one type and move whole, as do the seven moved unit tests. Rule files holding several types are not-applicable in this slice, because it changes only literal strings in them; a split is offered to the improvement backlog. Consumer files change only using lines and are not moved.",
 "F423": "Run the Architecture tests after the platform-owned usage-data types left the shared Models; each type is looked up by name in the compiled backend",
-"F424": "Each of the four types is found exactly once, under the platform lane's usage-data namespace, and nowhere under Models or in a module",
 "F425": "The platform lane holds its own usage-data types; nothing is left behind in the shared kernel",
 "F426": "A type left under Models, moved into a module instead of the platform lane, or copied so it exists in both places",
 "F43": "Non-test path consumers stay working: Scripts/test-selection/path-classifier.sh (SHARED_REGEX, JIRA_REGEX) and Lighthouse.Frontend/src/services/UsageData/usageDataRouteKeys.test.ts, which reads Models/UsageData/UsageDataRouteKey.cs and UsageDataRoutePatterns.cs by path; those two files stay (PathPinned).",
@@ -5161,6 +5178,11 @@
 "F440": "No catalogue row and no movers entry names any of the four usage-data types",
 "F441": "The catalogue that keeps Models shrinking lists only what is still in the Models",
 "F442": "A row or movers entry for a moved type left on the catalogue",
+"F443": "No catalogue row or movers entry names any of the four types; each is found exactly once, under Lighthouse.Backend.Platform.UsageData, and nowhere under Models or in a module",
+"F444": "Read the public members of each of the four usage-data types from the compiled backend after they moved to the platform lane",
+"F445": "Each type has exactly the public member names it had before the move",
+"F446": "Moving the types to the platform lane changes no member a caller relies on",
+"F447": "A member added to, renamed in or removed from a moved type; only member names are pinned, so a changed signature with the same name still passes",
 "F45": "Owns the kernel rules (Models does not depend on Services, Modules, Platform or the update queue) run on real and planted types; it gains the rule that every Kernel row is used by two or more contexts.",
 "F46": "Already carries examined types, offenders and the rule text for kernel-rule failures; the new rule returns the same verdict.",
 "F47": "Owns the both-ways compare of an inline list with a measured set; K1 and the shrink-only movers list use it rather than a second compare.",
