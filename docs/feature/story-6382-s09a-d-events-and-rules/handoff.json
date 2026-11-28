@@ -462,7 +462,7 @@
 "C": 1,
 "D": 8,
 "E": 4,
-"F": 360,
+"F": 364,
 "K": 7,
 "L": 6,
 "P": 3,
@@ -3582,7 +3582,15 @@
 ],
 "text": "F225"
 }
-]
+],
+"waivers": {
+"E2": {
+"by": "F361",
+"coverage": "F364",
+"reason": "F363",
+"waived_at": "F362"
+}
+}
 },
 "facts": {
 "F1": "Story 6382 S09a feature D, events and rules: the 15 domain event types move from Models/Events into the Contracts of their publishing context (IDomainEvent stays in the kernel); the one cross-context command inside the modules becomes a reaction, Work Items writing a forecast round's refresh-log entry on ForecastRoundFinished (RX1); the per-module boundary rules give up their module-to-module entries to the single contracts rule R-C1, and ADR-270 and ARCHITECTURE.md section 4 describe contracts and the CI test-selection payoff. Behaviour unchanged apart from who writes the refresh-log entry.",
@@ -3873,6 +3881,10 @@
 "F359": "The rename list holds exactly the old names the tests still write.",
 "F36": "code reached only by reflection or by string (no IL edge)",
 "F360": "A list that dropped an entry whose old name is still written would be named missing; one that kept a gone entry would be named as found in neither form.",
+"F361": "Benjamin Huser-Berta (maintainer), 2026-11-28 09:15",
+"F362": "2026-11-28T08:15:47Z",
+"F363": "No public probe can make a forecast round fail, be cancelled or be skipped, or make the refresh-log write throw; the compare probes against the parent 7bddf4ea4 show every answer identical (refresh 343/343, forecast 128/128, reactions 3/3).",
+"F364": "D2 oracle ForecastRoundsKeepTheirRefreshLogEntryTest drives the application-service port for succeeded, failed, cancelled and skipped rounds and a throwing refresh-log write (green in the full suite 15660/0 at cc508785b); Stryker killed 13 of 13 tested mutants of ForecastRoundFinishedRefreshLogHandler, 1 timeout, 0 survivors.",
 "F37": "The dispatcher's error log entry when a handler throws (handler type name, event type name)",
 "F38": "a handler that threw before writing from one that threw after a partial write",
 "F39": "Two RefreshLog rows are equal when Type, EntityId, EntityName, ItemCount, Mode, RecordsScanned, RecordsFetched, Success, Cancelled and Skipped are equal and ExecutedAt equals the round's finish instant on the scenario's TimeProvider; Id is ignored and DurationMs is compared as non-negative and taken from the round.",

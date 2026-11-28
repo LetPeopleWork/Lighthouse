@@ -920,7 +920,23 @@ refresh-answers-compare, forecast-answers-compare and backend-tests probes
 
 ### Waivers
 
-None.
+#### E2
+
+```text
+Benjamin Huser-Berta (maintainer), 2026-11-28 09:15
+```
+
+```text
+2026-11-28T08:15:47Z
+```
+
+```text
+No public probe can make a forecast round fail, be cancelled or be skipped, or make the refresh-log write throw; the compare probes against the parent 7bddf4ea4 show every answer identical (refresh 343/343, forecast 128/128, reactions 3/3).
+```
+
+```text
+D2 oracle ForecastRoundsKeepTheirRefreshLogEntryTest drives the application-service port for succeeded, failed, cancelled and skipped rounds and a throwing refresh-log write (green in the full suite 15660/0 at cc508785b); Stryker killed 13 of 13 tested mutants of ForecastRoundFinishedRefreshLogHandler, 1 timeout, 0 survivors.
+```
 
 ## Charter
 
