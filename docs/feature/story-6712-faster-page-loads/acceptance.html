@@ -265,7 +265,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>A_safe_api_answer_to_a_client_that_asks_for_no_compression_is_plain</p>
 
-<pre><code>A server compressing only the version route would pass; the rule rows over many routes cover other GETs
+<pre><code>A server compressing only the version route would pass; the rule rows over unmarked endpoints cover other GETs
 </code></pre>
 
 <h6>Obligations</h6>
@@ -294,11 +294,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>The_update_hub_handshake_is_never_sent_compressed</p>
 
-<pre><code>Today&#x27;s pipeline passes both; a rule that refuses POST but matches the hub only by exact path still passes the handshake row, so the hub GET rows in both cases in the rule table catch that
+<pre><code>Both answers are POSTs, so a rule that refuses POST passes them even with the hub unmarked; the marked-endpoint rule rows and the marker test on the hub class catch a missing marker
 </code></pre>
 
 <h6>Obligations</h6>
-
 
 
 
@@ -306,13 +305,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>The compression rule is asked about a GET of JSON with br, a HEAD of a script with gzip and a GET of a route that only starts with the letters logs
+<pre><code>The compression rule is asked about a GET of JSON with br and a HEAD of a script with gzip that no endpoint answers, as for a static file, and a GET of JSON with br from an endpoint without the never-compress marker
 </code></pre>
 
 <pre><code>Each answer is compressed
 </code></pre>
 
-<pre><code>Safe answers, including routes that only look like an excluded one, reach the browser compressed
+<pre><code>Static files and safe answers of ordinary endpoints reach the browser compressed
 </code></pre>
 
 <h5>Disposition</h5>
@@ -323,7 +322,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>A_safe_answer_to_a_client_that_accepts_compression_is_compressed</p>
 
-<pre><code>A rule that compresses everything passes these rows; the refusal rows fail it
+<pre><code>A rule that compresses everything passes these rows; the refusal and marked rows fail it
 </code></pre>
 
 <h6>Obligations</h6>
@@ -335,13 +334,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>The compression rule is asked about POST, PUT and DELETE of JSON, a PNG, a problem answer, the update hub in lower and upper case and its negotiate POST, the logs routes, the embed handshake, all with br, and a GET of JSON without Accept-Encoding
+<pre><code>The compression rule is asked about POST, PUT and DELETE of JSON with br, a PNG and a problem answer with br, and a GET of JSON without Accept-Encoding
 </code></pre>
 
 <pre><code>None of these answers is compressed
 </code></pre>
 
-<pre><code>Answers that can carry a secret, cannot be compressed, or were not asked for compressed go out as today
+<pre><code>Answers that can echo a secret, cannot be compressed, or were not asked for compressed go out as today
 </code></pre>
 
 <h5>Disposition</h5>
@@ -350,18 +349,12 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/BreachSafeResponseCompressionProviderTest.cs</p>
 
-<p>An_answer_that_could_carry_a_secret_or_is_not_asked_for_compressed_is_sent_as_it_is</p>
+<p>An_unsafe_or_uncompressible_or_not_asked_for_answer_is_sent_as_it_is</p>
 
 <pre><code>A rule that compresses nothing passes these rows; the compressed rows fail it. PATCH is not a separate row
 </code></pre>
 
 <h6>Obligations</h6>
-
-
-
-
-
-
 
 
 
@@ -391,6 +384,61 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Turning_compression_off_sends_a_safe_answer_as_it_is</p>
 
 <pre><code>A switch that is ignored when the section is absent passes; the safe-answer rows run with the section absent and pin the default on
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The compression rule is asked about a GET of plain text and a GET of JSON, both with br, on a route no list names, from an endpoint whose metadata holds the never-compress marker alone or among other metadata
+</code></pre>
+
+<pre><code>Neither answer is compressed
+</code></pre>
+
+<pre><code>The logs, the embed handshake and the update hub stay uncompressed even when their routes are renamed
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/BreachSafeResponseCompressionProviderTest.cs</p>
+
+<p>An_answer_of_an_endpoint_marked_never_compress_is_sent_as_it_is_whatever_its_route</p>
+
+<pre><code>A rule that still matches a hand-typed path list fails these rows, because the route is not on any list; a rule that looks for the marker only as the first metadata item fails the among-other-metadata row
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The classes that answer the logs, the embed handshake and the update hub are inspected for the never-compress marker on the class
+</code></pre>
+
+<pre><code>Each of the three classes carries the marker itself
+</code></pre>
+
+<pre><code>Removing the marker from any class whose answers can carry a secret or log text turns a test red before it ships
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SecretBearingAnswersAreNeverCompressedTest.cs</p>
+
+<p>Every_answer_that_can_carry_a_secret_or_log_text_is_marked_never_compress</p>
+
+<pre><code>A marker placed only on one action instead of the class passes for that class while its other actions stay unmarked; the class-level check and the wire handshake row narrow that
 </code></pre>
 
 <h6>Obligations</h6>

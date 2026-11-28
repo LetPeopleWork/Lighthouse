@@ -127,7 +127,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/ResponseCompressionW
 A\_safe\_api\_answer\_to\_a\_client\_that\_asks\_for\_no\_compression\_is\_plain
 
 ```text
-A server compressing only the version route would pass; the rule rows over many routes cover other GETs
+A server compressing only the version route would pass; the rule rows over unmarked endpoints cover other GETs
 ```
 
 ###### Obligations
@@ -160,11 +160,10 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/ResponseCompressionW
 The\_update\_hub\_handshake\_is\_never\_sent\_compressed
 
 ```text
-Today's pipeline passes both; a rule that refuses POST but matches the hub only by exact path still passes the handshake row, so the hub GET rows in both cases in the rule table catch that
+Both answers are POSTs, so a rule that refuses POST passes them even with the hub unmarked; the marked-endpoint rule rows and the marker test on the hub class catch a missing marker
 ```
 
 ###### Obligations
-
 
 
 
@@ -173,7 +172,7 @@ Today's pipeline passes both; a rule that refuses POST but matches the hub only 
 P2
 
 ```text
-The compression rule is asked about a GET of JSON with br, a HEAD of a script with gzip and a GET of a route that only starts with the letters logs
+The compression rule is asked about a GET of JSON with br and a HEAD of a script with gzip that no endpoint answers, as for a static file, and a GET of JSON with br from an endpoint without the never-compress marker
 ```
 
 ```text
@@ -181,7 +180,7 @@ Each answer is compressed
 ```
 
 ```text
-Safe answers, including routes that only look like an excluded one, reach the browser compressed
+Static files and safe answers of ordinary endpoints reach the browser compressed
 ```
 
 ##### Disposition
@@ -193,7 +192,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Platform\/Host\/BreachSafeRespo
 A\_safe\_answer\_to\_a\_client\_that\_accepts\_compression\_is\_compressed
 
 ```text
-A rule that compresses everything passes these rows; the refusal rows fail it
+A rule that compresses everything passes these rows; the refusal and marked rows fail it
 ```
 
 ###### Obligations
@@ -206,7 +205,7 @@ A rule that compresses everything passes these rows; the refusal rows fail it
 P2
 
 ```text
-The compression rule is asked about POST, PUT and DELETE of JSON, a PNG, a problem answer, the update hub in lower and upper case and its negotiate POST, the logs routes, the embed handshake, all with br, and a GET of JSON without Accept-Encoding
+The compression rule is asked about POST, PUT and DELETE of JSON with br, a PNG and a problem answer with br, and a GET of JSON without Accept-Encoding
 ```
 
 ```text
@@ -214,7 +213,7 @@ None of these answers is compressed
 ```
 
 ```text
-Answers that can carry a secret, cannot be compressed, or were not asked for compressed go out as today
+Answers that can echo a secret, cannot be compressed, or were not asked for compressed go out as today
 ```
 
 ##### Disposition
@@ -223,19 +222,13 @@ Tested
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Platform\/Host\/BreachSafeResponseCompressionProviderTest\.cs
 
-An\_answer\_that\_could\_carry\_a\_secret\_or\_is\_not\_asked\_for\_compressed\_is\_sent\_as\_it\_is
+An\_unsafe\_or\_uncompressible\_or\_not\_asked\_for\_answer\_is\_sent\_as\_it\_is
 
 ```text
 A rule that compresses nothing passes these rows; the compressed rows fail it. PATCH is not a separate row
 ```
 
 ###### Obligations
-
-
-
-
-
-
 
 
 
@@ -269,6 +262,69 @@ Turning\_compression\_off\_sends\_a\_safe\_answer\_as\_it\_is
 
 ```text
 A switch that is ignored when the section is absent passes; the safe-answer rows run with the section absent and pin the default on
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+The compression rule is asked about a GET of plain text and a GET of JSON, both with br, on a route no list names, from an endpoint whose metadata holds the never-compress marker alone or among other metadata
+```
+
+```text
+Neither answer is compressed
+```
+
+```text
+The logs, the embed handshake and the update hub stay uncompressed even when their routes are renamed
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Platform\/Host\/BreachSafeResponseCompressionProviderTest\.cs
+
+An\_answer\_of\_an\_endpoint\_marked\_never\_compress\_is\_sent\_as\_it\_is\_whatever\_its\_route
+
+```text
+A rule that still matches a hand-typed path list fails these rows, because the route is not on any list; a rule that looks for the marker only as the first metadata item fails the among-other-metadata row
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+The classes that answer the logs, the embed handshake and the update hub are inspected for the never-compress marker on the class
+```
+
+```text
+Each of the three classes carries the marker itself
+```
+
+```text
+Removing the marker from any class whose answers can carry a secret or log text turns a test red before it ships
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/SecretBearingAnswersAreNeverCompressedTest\.cs
+
+Every\_answer\_that\_can\_carry\_a\_secret\_or\_log\_text\_is\_marked\_never\_compress
+
+```text
+A marker placed only on one action instead of the class passes for that class while its other actions stay unmarked; the class-level check and the wire handshake row narrow that
 ```
 
 ###### Obligations
