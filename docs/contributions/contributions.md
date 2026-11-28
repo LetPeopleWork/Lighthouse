@@ -85,6 +85,9 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 - [**James Hattersley-Dykes**](https://www.linkedin.com/in/jameshd/)
 - **Tim Brencher**
 - [**Adam McKeever**](https://www.linkedin.com/in/adam-mckeever-55a24592/)
+- [**Martin Lienhard**](https://www.linkedin.com/in/martin-lienhard-48984665/)
+- [**Matt Milton**](https://www.linkedin.com/in/matt-milton-97a679109/)
+- [**Gunnar R. Fischer**](https://www.linkedin.com/in/gunnar-fischer/)
 
 
 ---

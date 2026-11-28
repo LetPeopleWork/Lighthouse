@@ -4,6 +4,78 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse vNext
+
+## Did We Keep Our Promise?
+
+A Service Level Expectation is a promise: *85 % of our Work Items finish within 7 days*. Lighthouse showed the SLE, but not whether you kept it, so the honest answer took a spreadsheet.
+
+The new **Within SLE** widget on the Flow Overview answers it directly: the share of Work Items closed in the range that finished within the SLE, judged against its target, with a trend against the period before. **View Data** lists the late ones first, the Work Items worth talking about. **Within SLE Over Time** on the Predictability tab shows how that share develops, filled in from the history Lighthouse already keeps, so you see on day one whether you are getting better or slipping.
+
+![Within SLE](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/withinSle.png)
+
+Full detail: [Within SLE](https://docs.lighthouse.letpeople.work/metrics/flow-overview.html#within-sle) and [Within SLE Over Time](https://docs.lighthouse.letpeople.work/metrics/predictability.html#within-sle-over-time).
+
+## Then and Now Reports That Tell the Whole Story
+
+A Then & Now report could compare a 30-day Then with a 45-day Now, and set up the wrong way it could not compare at all. And numbers without context get misread: a Team of three and a Team of ten have very different Throughput.
+
+Now is always as long as Then, so both sides compare like with like, and the wizard shows both windows by date before you create the report. A new **Arrivals** panel shows whether work comes in faster than it goes out. And people who may change a report can add **notes** to it, such as the Team's size or the training that started on a given day, and every reader sees them above the numbers.
+
+![Then and Now report](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/report_thenandnow.png)
+
+Full detail: [Then and Now](https://docs.lighthouse.letpeople.work/reports/thenandnow.html) and [Notes](https://docs.lighthouse.letpeople.work/reports/reports.html#notes).
+
+<!-- Assumes Story 6712 ships in this release. Check its final scope before the release. -->
+## Faster on a Slow Connection
+
+On a slow connection, a first visit to Lighthouse could take 8 to 20 seconds before the data showed, and a click to a Team or Portfolio page several more. Most of that time went into sending files uncompressed and asking for the same data again and again.
+
+Lighthouse now sends its pages and answers compressed, keeps the data every page uses in one shared cache, and checks for updates with a much smaller request. You see the same pages, sooner.
+
+## No Guessed Size for a Feature Without Child Work Items
+
+When a Feature has no child Work Items yet, Lighthouse gave it the Default Feature Size and spread it across the Teams, so a Feature showed *0 of 4* even though nobody had counted anything. Some of you would rather see nothing than a guess that looks like data.
+
+Each Portfolio now has a switch, **Infer a size for Features without child Work Items**. When it is off, such a Feature counts as 0 and says it has no child Work Items yet. New Portfolios start with it off, unless their connection names a size field. Existing Portfolios keep how they work today.
+
+Full detail: [Switching default Feature sizing on and off](https://docs.lighthouse.letpeople.work/portfolios/edit.html#switching-default-feature-sizing-on-and-off).
+
+## Find Any Feature in Seconds
+
+Finding one Feature in a long list meant knowing that the filter hides in a column's **⋮** menu, and that the Name filter ignored the Feature's ID.
+
+Every full Feature list now has a **Search Features** box. Type part of an ID, a name, a parent, a state or a Team, and the list narrows to what matches. A search that finds nothing says so.
+
+Full detail: [Searching the list](https://docs.lighthouse.letpeople.work/features/features.html#searching-the-list).
+
+## Bugfixes and Improvements
+
+- **Cycle Time outliers follow the Process Behaviour Chart.** An outlier is now a Work Item above the chart's upper natural process limit, not five times the median, and a **Hide outliers** switch shows every Work Item when you want to see them all. Full detail: [Outliers](https://docs.lighthouse.letpeople.work/metrics/flow-metrics.html#outliers).
+- **Tables fit the screen.** Long names are cut with a tooltip, *Delete* stays in view as the last column, and a shadow on an edge shows when columns are out of sight. On a phone, the Overview folds its actions into one menu.
+- **The query field grows with a long query.**
+- **OAuth sign-ins ask only for the rights they need.** Azure DevOps asks for read rights only, and for write rights once write-back is set up. Jira now asks for write rights when write-back is set up, so write-back on a Jira OAuth connection can write. The connection settings show what the sign-in allows and ask you to sign in again when it is not enough.
+- **Restore and Clear Database work on Windows with SQLite.** Before a restore changes anything, Lighthouse also checks that it can read the credentials stored in the backup.
+- **A named Cycle Time shows its own Work Items** in the scatterplot and its lists, not the ones of the default Cycle Time.
+- **Features show only where they have work.** A Feature with a size of 0, or a former parent that no longer has children, no longer appears on every Team's Features tab.
+- **Pasting a state adds that state**, not an earlier suggestion from the list.
+- **Each Work Item is listed once** in the data of the Over Time and Process Behaviour charts.
+- **Total Work Item Age Over Time draws its line** also when an in-progress Work Item has no start date, and Jira items get their start date from their whole history.
+- **Lighthouse runs on .NET 11.**
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Martin Lienhard](https://www.linkedin.com/in/martin-lienhard-48984665/)
+- [Nick Brown](https://www.linkedin.com/in/nicolasjmbrown/)
+- [Matt Milton](https://www.linkedin.com/in/matt-milton-97a679109/)
+- [Steve Pereira](https://www.linkedin.com/in/devopsto/)
+- [Gunnar R. Fischer](https://www.linkedin.com/in/gunnar-fischer/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.11.15.4...HEAD)
+
 # Lighthouse v26.11.15.4
 
 ## Access to All Teams and Portfolios in One Rule
