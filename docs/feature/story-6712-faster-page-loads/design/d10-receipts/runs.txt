@@ -1,36 +1,48 @@
-shared_page_reads allInvariants :: [ok] No violation found (4123ms at 4851 traces/second).
-shared_page_reads newComponentsSeeOnlyThisPage :: [ok] No violation found (3117ms at 6416 traces/second).
-shared_page_reads stayingComponentsKeepTheirAnswer :: [ok] No violation found (3074ms at 6506 traces/second).
-shared_page_reads oneRequestPerPage :: [ok] No violation found (5656ms at 3536 traces/second).
-shared_page_reads noEarlierPageRequestInFlight :: [ok] No violation found (5621ms at 3558 traces/second).
-shared_page_reads ownChangeIsAsked :: [ok] No violation found (2744ms at 7289 traces/second).
-N1 allInvariants :: [violation] Found an issue (20ms at 50 traces/second).
-N1 newComponentsSeeOnlyThisPage :: [violation] Found an issue (20ms at 50 traces/second).
-N1 stayingComponentsKeepTheirAnswer :: [ok] No violation found (2848ms at 7022 traces/second).
-N1 oneRequestPerPage :: [ok] No violation found (2584ms at 7740 traces/second).
-N1 noEarlierPageRequestInFlight :: [ok] No violation found (5693ms at 3513 traces/second).
-N1 ownChangeIsAsked :: [ok] No violation found (3371ms at 5933 traces/second).
-N2 allInvariants :: [violation] Found an issue (15ms at 67 traces/second).
-N2 newComponentsSeeOnlyThisPage :: [ok] No violation found (3508ms at 5701 traces/second).
-N2 stayingComponentsKeepTheirAnswer :: [ok] No violation found (2876ms at 6954 traces/second).
-N2 oneRequestPerPage :: [violation] Found an issue (14ms at 71 traces/second).
-N2 noEarlierPageRequestInFlight :: [ok] No violation found (2117ms at 9447 traces/second).
-N2 ownChangeIsAsked :: [ok] No violation found (2278ms at 8780 traces/second).
-N3 allInvariants :: [violation] Found an issue (14ms at 71 traces/second).
-N3 newComponentsSeeOnlyThisPage :: [ok] No violation found (2495ms at 8016 traces/second).
-N3 stayingComponentsKeepTheirAnswer :: [ok] No violation found (2400ms at 8333 traces/second).
-N3 oneRequestPerPage :: [ok] No violation found (2261ms at 8846 traces/second).
-N3 noEarlierPageRequestInFlight :: [violation] Found an issue (15ms at 67 traces/second).
-N3 ownChangeIsAsked :: [ok] No violation found (2508ms at 7974 traces/second).
-N4 allInvariants :: [violation] Found an issue (13ms at 77 traces/second).
-N4 newComponentsSeeOnlyThisPage :: [ok] No violation found (3037ms at 6585 traces/second).
-N4 stayingComponentsKeepTheirAnswer :: [ok] No violation found (3013ms at 6638 traces/second).
-N4 oneRequestPerPage :: [ok] No violation found (2669ms at 7493 traces/second).
-N4 noEarlierPageRequestInFlight :: [ok] No violation found (2853ms at 7010 traces/second).
-N4 ownChangeIsAsked :: [violation] Found an issue (20ms at 50 traces/second).
-N5 allInvariants :: [violation] Found an issue (14ms at 71 traces/second).
-N5 newComponentsSeeOnlyThisPage :: [ok] No violation found (2906ms at 6882 traces/second).
-N5 stayingComponentsKeepTheirAnswer :: [violation] Found an issue (17ms at 59 traces/second).
-N5 oneRequestPerPage :: [ok] No violation found (2633ms at 7596 traces/second).
-N5 noEarlierPageRequestInFlight :: [ok] No violation found (2688ms at 7440 traces/second).
-N5 ownChangeIsAsked :: [ok] No violation found (2797ms at 7151 traces/second).
+quint run ../shared_page_reads.qnt --main=shared_page_reads --invariant=newComponentsSeeOnlyThisPage --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3466ms at 5770 traces/second).
+quint run ../shared_page_reads.qnt --main=shared_page_reads --invariant=stayingComponentsKeepTheirAnswer --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3733ms at 5358 traces/second).
+quint run ../shared_page_reads.qnt --main=shared_page_reads --invariant=mountedComponentsNeverHang --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3784ms at 5285 traces/second).
+quint run ../shared_page_reads.qnt --main=shared_page_reads --invariant=oneRequestPerPage --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3434ms at 5824 traces/second).
+quint run ../shared_page_reads.qnt --main=shared_page_reads --invariant=noEarlierPageRequestInFlight --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3458ms at 5784 traces/second).
+quint run ../shared_page_reads.qnt --main=shared_page_reads --invariant=ownChangeIsAsked --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3250ms at 6154 traces/second).
+quint run N10.qnt --main=shared_page_reads --invariant=newComponentsSeeOnlyThisPage --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [violation] Found an issue (19ms at 158 traces/second).
+quint run N10.qnt --main=shared_page_reads --invariant=stayingComponentsKeepTheirAnswer --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3361ms at 5951 traces/second).
+quint run N10.qnt --main=shared_page_reads --invariant=mountedComponentsNeverHang --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3824ms at 5230 traces/second).
+quint run N10.qnt --main=shared_page_reads --invariant=oneRequestPerPage --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3198ms at 6254 traces/second).
+quint run N10.qnt --main=shared_page_reads --invariant=noEarlierPageRequestInFlight --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3218ms at 6215 traces/second).
+quint run N10.qnt --main=shared_page_reads --invariant=ownChangeIsAsked --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3171ms at 6307 traces/second).
+quint run N11.qnt --main=shared_page_reads --invariant=newComponentsSeeOnlyThisPage --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3744ms at 5342 traces/second).
+quint run N11.qnt --main=shared_page_reads --invariant=stayingComponentsKeepTheirAnswer --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3577ms at 5591 traces/second).
+quint run N11.qnt --main=shared_page_reads --invariant=mountedComponentsNeverHang --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3753ms at 5329 traces/second).
+quint run N11.qnt --main=shared_page_reads --invariant=oneRequestPerPage --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [violation] Found an issue (21ms at 95 traces/second).
+quint run N11.qnt --main=shared_page_reads --invariant=noEarlierPageRequestInFlight --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3104ms at 6443 traces/second).
+quint run N11.qnt --main=shared_page_reads --invariant=ownChangeIsAsked --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3208ms at 6234 traces/second).
+quint run N12.qnt --main=shared_page_reads --invariant=newComponentsSeeOnlyThisPage --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3497ms at 5719 traces/second).
+quint run N12.qnt --main=shared_page_reads --invariant=stayingComponentsKeepTheirAnswer --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3317ms at 6030 traces/second).
+quint run N12.qnt --main=shared_page_reads --invariant=mountedComponentsNeverHang --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [violation] Found an issue (20ms at 150 traces/second).
+quint run N12.qnt --main=shared_page_reads --invariant=oneRequestPerPage --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [violation] Found an issue (20ms at 700 traces/second).
+quint run N12.qnt --main=shared_page_reads --invariant=noEarlierPageRequestInFlight --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [violation] Found an issue (20ms at 50 traces/second).
+quint run N12.qnt --main=shared_page_reads --invariant=ownChangeIsAsked --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3003ms at 6660 traces/second).
+quint run N13.qnt --main=shared_page_reads --invariant=newComponentsSeeOnlyThisPage --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3516ms at 5688 traces/second).
+quint run N13.qnt --main=shared_page_reads --invariant=stayingComponentsKeepTheirAnswer --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3426ms at 5838 traces/second).
+quint run N13.qnt --main=shared_page_reads --invariant=mountedComponentsNeverHang --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3667ms at 5454 traces/second).
+quint run N13.qnt --main=shared_page_reads --invariant=oneRequestPerPage --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3316ms at 6031 traces/second).
+quint run N13.qnt --main=shared_page_reads --invariant=noEarlierPageRequestInFlight --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3153ms at 6343 traces/second).
+quint run N13.qnt --main=shared_page_reads --invariant=ownChangeIsAsked --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [violation] Found an issue (15ms at 67 traces/second).
+quint run N14.qnt --main=shared_page_reads --invariant=newComponentsSeeOnlyThisPage --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3535ms at 5658 traces/second).
+quint run N14.qnt --main=shared_page_reads --invariant=stayingComponentsKeepTheirAnswer --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [violation] Found an issue (15ms at 67 traces/second).
+quint run N14.qnt --main=shared_page_reads --invariant=mountedComponentsNeverHang --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3650ms at 5479 traces/second).
+quint run N14.qnt --main=shared_page_reads --invariant=oneRequestPerPage --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3192ms at 6266 traces/second).
+quint run N14.qnt --main=shared_page_reads --invariant=noEarlierPageRequestInFlight --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3085ms at 6483 traces/second).
+quint run N14.qnt --main=shared_page_reads --invariant=ownChangeIsAsked --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3162ms at 6325 traces/second).
+quint run N15.qnt --main=shared_page_reads --invariant=newComponentsSeeOnlyThisPage --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3685ms at 5427 traces/second).
+quint run N15.qnt --main=shared_page_reads --invariant=stayingComponentsKeepTheirAnswer --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3498ms at 5718 traces/second).
+quint run N15.qnt --main=shared_page_reads --invariant=mountedComponentsNeverHang --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [violation] Found an issue (16ms at 63 traces/second).
+quint run N15.qnt --main=shared_page_reads --invariant=oneRequestPerPage --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3124ms at 6402 traces/second).
+quint run N15.qnt --main=shared_page_reads --invariant=noEarlierPageRequestInFlight --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3112ms at 6427 traces/second).
+quint run N15.qnt --main=shared_page_reads --invariant=ownChangeIsAsked --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [violation] Found an issue (20ms at 950 traces/second).
+quint run N16.qnt --main=shared_page_reads --invariant=newComponentsSeeOnlyThisPage --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3760ms at 5319 traces/second).
+quint run N16.qnt --main=shared_page_reads --invariant=stayingComponentsKeepTheirAnswer --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [violation] Found an issue (19ms at 53 traces/second).
+quint run N16.qnt --main=shared_page_reads --invariant=mountedComponentsNeverHang --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3954ms at 5058 traces/second).
+quint run N16.qnt --main=shared_page_reads --invariant=oneRequestPerPage --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3294ms at 6072 traces/second).
+quint run N16.qnt --main=shared_page_reads --invariant=noEarlierPageRequestInFlight --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3270ms at 6116 traces/second).
+quint run N16.qnt --main=shared_page_reads --invariant=ownChangeIsAsked --max-samples=20000 --max-steps=15 --seed=0x1d10 :: [ok] No violation found (3374ms at 5928 traces/second).

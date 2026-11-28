@@ -1,4 +1,5 @@
-The outcome is: NoError                                           I@09:46:31.999
-[ok] No violation found (13054ms).
+quint verify ../shared_page_reads.qnt --main=shared_page_reads --invariant=allInvariants --max-steps=8
+[ok] No violation found (29514ms).
 You may increase --max-steps.
 Use --verbosity to produce more (or less) output.
+0.33.1

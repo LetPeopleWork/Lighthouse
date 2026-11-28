@@ -38,7 +38,7 @@ Governed slices: S4
 #### D5
 
 ```text
-S2: useRbac keeps the RbacState shape (isLoading, loadFailed, retry, isRbacEnabled, isSystemAdmin, canCreateTeam, canCreatePortfolio, isTeamAdmin, isPortfolioAdmin, summary) so its 20 consumers do not change. The permissions query key lives only in useRbac.ts; failure keeps today’s permissive fallback with loadFailed true for every component; retry calls refetch once for all. useRefreshPermissions, exported from useRbac.ts, is called after the user’s own grant actions (useScopedAccess, RbacSettings, EveryoneSignedInSection) and own Team or Portfolio creation (EditTeam, EditPortfolio).
+S2: useRbac keeps the RbacState shape (isLoading, loadFailed, retry, isRbacEnabled, isSystemAdmin, canCreateTeam, canCreatePortfolio, isTeamAdmin, isPortfolioAdmin, summary) so its 20 consumers do not change. The permissions query key lives only in useRbac.ts; failure gives today’s permissive fallback with loadFailed true to every component that has no good answer asked on or after its mount page, while a component that already shows an answer keeps it (D10); retry calls refetch once for all. useRefreshPermissions, exported from useRbac.ts, is called after the user’s own grant actions (useScopedAccess, RbacSettings, EveryoneSignedInSection) and own Team or Portfolio creation (EditTeam, EditPortfolio).
 ```
 Governed slices: S2
 
@@ -71,7 +71,7 @@ Tests: Lighthouse test-writing skill wins over nWave test rules (nine-run timing
 #### D10
 
 ```text
-Page-move freshness (S2, S3): one owner, usePageFreshQuery in src/hooks/usePageFreshQuery.ts, wraps useQuery with staleTime Infinity, retry false and refetchOnMount false; its queryFn stores the answer together with the page it was asked on (carrier PageFreshAnswer of T: answer and askedOnPage). PageMoveRefresh in src/components/App/PageMoveRefresh/PageMoveRefresh.tsx, mounted inside the Router in App.tsx, holds the page counter (per-process state, a React context). It advances the counter during render when location.pathname changes, so a component that first renders under the new path already reads the new page, and in an effect it invalidates the shared page reads once (invalidateQueries cancels a request still in flight from the previous page). Each component records its mount page once, in a state initializer, on its first render. React keeps a component of the same type in the same place mounted across a route change; such a component keeps its earlier mount page. Readiness per component: ready when the cached answer was asked on or after its mount page; failed when the latest ask failed (the permissive fallback with loadFailed true, the same for every component, as today); loading otherwise. Readiness is never decided by the page the user is on now. Consequences: a component that shows an answer and stays mounted keeps showing it, not loading, while the page-move ask or an own-change ask runs, and switches when the new answer lands (stale-while-revalidate; today such a component kept its answer and never asked again). A component that mounts on the new page is loading until the answer asked on that page arrives, as today a newly mounted component was loading until its own fetch answered: giving it the previous page's answer would show a right that may have been removed as current, and would show gated controls earlier than today. A component with no answer yet is loading. Components mounted later on the same page reuse the cached answer and ask nothing. Model shared_page_reads.qnt checks this protocol.
+Page-move freshness (S2, S3): one owner, usePageFreshQuery in src/hooks/usePageFreshQuery.ts, wraps useQuery with staleTime Infinity and retry false. Its queryFn returns the answer with the page it was asked on (carrier PageFreshAnswer of T: answer and askedOnPage) and on failure throws PageFreshFailure carrying askedOnPage; TanStack keeps the last good data when a later ask fails. refetchOnMount is a function: a mounting component asks only when no request is in flight and the latest settled ask (data or error) was asked on an earlier page than the current one, so a reader that mounts after a page with no reader asks once instead of waiting for ever; refetchType all was rejected because it would ask on pages that have no reader. PageMoveRefresh in src/components/App/PageMoveRefresh/PageMoveRefresh.tsx, mounted inside the Router in App.tsx, holds the page counter (per-process state, a React context) and the last pathname together in one useState value { lastPathname, page }, never in a ref or module variable. During render, only when location.pathname differs from lastPathname, it sets that value to { pathname, page + 1 } in one update, so a StrictMode double render or an abandoned concurrent render cannot advance one without the other or lose a move, and a component that first renders under the new path already reads the new page. In an effect keyed on page it invalidates the shared page reads once (invalidateQueries cancels a request still in flight and refetches the active queries). The own-change refresh (useRefreshPermissions, useUnitListsChanged) invalidates with refetchType all, so it asks once even when no reader is mounted. Each component records its mount page once, in a useState initializer, on its first render. React keeps a component of the same type in the same place mounted across a route change; such a component keeps its earlier mount page. Readiness per component: ready when the last good answer was asked on or after its mount page, whatever happened to later asks; failed when it has no such answer, nothing is in flight and the latest ask failed (the permissive fallback with loadFailed true); loading otherwise. Readiness is never decided by the page the user is on now. Consequences: a component that shows an answer and stays mounted keeps showing it, not loading and not the fallback, while a page-move or own-change ask runs and when that ask fails (today such a component never asked again, so a failure never touched it); it switches when a new good answer lands. A component that mounts on the new page is loading until the answer asked on that page arrives, as today a newly mounted component was loading until its own fetch answered: giving it the previous page's answer would show a right that may have been removed as current. If that ask fails it gets the fallback, and one retry asks once for every failed component. Components mounted later on the same page reuse that page's answer or failure and ask nothing. Model shared_page_reads.qnt checks this protocol; per-mutant receipts are in design/d10-receipts.
 ```
 Governed slices: S2, S3
 
@@ -225,7 +225,7 @@ None.
 Admitted
 
 ```text
-Shared read per component is loading (no answer asked on or after its mount page), ready (the latest answer asked on or after its mount page; a component that stays mounted across a page move keeps it while the move's ask runs) or failed (latest ask failed: permissive fallback for permissions)
+Shared read per component is ready (the last good answer was asked on or after its mount page, kept across later asks and failed asks), failed (no such answer, nothing in flight, latest ask failed: permissive fallback for permissions) or loading (no such answer and a request in flight)
 ```
 
 usePageFreshQuery
@@ -233,7 +233,7 @@ usePageFreshQuery
 Excluded
 
 ```text
-A component that mounts on the current page reports ready with an answer asked on an earlier page; or a component that shows an answer and stays mounted turns loading while the shared read still holds an answer
+A component that mounts on the current page reports ready with an answer asked on an earlier page; a component that shows an answer and stays mounted turns loading or failed; a mounted component is loading with no request in flight
 ```
 
 usePageFreshQuery
@@ -271,7 +271,19 @@ stayingComponentsKeepTheirAnswer
 Invariant
 
 ```text
-A component that showed an answer and stays mounted keeps showing one while the shared read holds an answer: no loading on a page move or an own change
+A component that showed an answer and stays mounted keeps showing it: no loading and no fallback on a page move, an own change or a failed ask
+```
+
+usePageFreshQuery
+
+Lighthouse\.Frontend\/src\/hooks\/usePageFreshQuery\.ts
+
+mountedComponentsNeverHang
+
+Invariant
+
+```text
+A mounted component with no request in flight is ready or failed, never loading for ever, also after a page with no reader
 ```
 
 usePageFreshQuery
@@ -307,7 +319,7 @@ ownChangeIsAsked
 Invariant
 
 ```text
-After the user’s own change an answer missing it is never the latest word without a refetch in flight
+After the user’s own change an answer missing it is never the latest word unless an ask carrying it is in flight or failed
 ```
 
 useRefreshPermissions
@@ -328,13 +340,25 @@ None.
 
 State
 
-cache
+good
 
 PageFreshAnswer
 
 Lighthouse\.Frontend\/src\/hooks\/usePageFreshQuery\.ts
 
 None.
+
+State
+
+settled
+
+PageFreshFailure
+
+Lighthouse\.Frontend\/src\/hooks\/usePageFreshQuery\.ts
+
+```text
+latest settled ask: data or error with askedOnPage
+```
 
 State
 
@@ -388,7 +412,9 @@ usePageFreshQuery
 
 Lighthouse\.Frontend\/src\/hooks\/usePageFreshQuery\.ts
 
-None.
+```text
+refetchOnMount function
+```
 
 Action
 
@@ -413,7 +439,7 @@ None.
 ##### Assumptions
 
 ```text
-TanStack invalidateQueries cancels a request in flight and starts one refetch for active observers
+TanStack invalidateQueries cancels a request in flight and refetches only active queries; with refetchType all it also asks when no reader is mounted; failed asks keep the last good data
 ```
 
 ```text
@@ -421,12 +447,12 @@ Bounded to 3 page moves, 3 observers, 2 retries and 2 own changes per page; netw
 ```
 
 ```text
-On a route change React keeps any page component of the same type in the same place mounted; such a component keeps its mount page
+On a route change React keeps any component of the same type in the same place mounted, and may unmount every reader; a kept component keeps its mount page
 ```
 
 ##### Mutants
 
-###### N5
+###### N10
 
 ```text
 Readiness ignores the page the answer was asked on
@@ -436,17 +462,17 @@ Readiness ignores the page the answer was asked on
 
 newComponentsSeeOnlyThisPage
 
-###### N6
+###### N11
 
 ```text
-A mounting component asks again when nothing is in flight (staleTime 0 behaviour)
+A mounting component asks although a request of its page is in flight
 ```
 
 ###### Kills
 
 oneRequestPerPage
 
-###### N7
+###### N12
 
 ```text
 A page move keeps a request still in flight from the previous page
@@ -456,7 +482,7 @@ A page move keeps a request still in flight from the previous page
 
 noEarlierPageRequestInFlight
 
-###### N8
+###### N13
 
 ```text
 An own change completes without asking again
@@ -466,10 +492,30 @@ An own change completes without asking again
 
 ownChangeIsAsked
 
-###### N9
+###### N14
 
 ```text
 Readiness by the page the user is on now instead of the mount page
+```
+
+###### Kills
+
+stayingComponentsKeepTheirAnswer
+
+###### N15
+
+```text
+A mounting component never asks (refetchOnMount false), so a reader after a page without readers waits for ever
+```
+
+###### Kills
+
+mountedComponentsNeverHang
+
+###### N16
+
+```text
+A failed ask replaces a shown answer with the permissive fallback
 ```
 
 ###### Kills
@@ -1591,15 +1637,15 @@ None.
 #### Public oracle
 
 ```text
-Render components that call useRbac() under one QueryClient, PageMoveRefresh and a MemoryRouter: a header outside the routes, and on each page components whose element type or key differs between the pages (so they mount on the new page) plus one page component of the same type in the same place on both pages (so React keeps it); change the route; change the mocked summary between moves; call useRefreshPermissions; make the summary reject then call retry
+Render components that call useRbac() under one QueryClient, PageMoveRefresh and a MemoryRouter: a header outside the routes, and on each page components whose element type or key differs between the pages (so they mount on the new page) plus one page component of the same type in the same place on both pages (so React keeps it); change the route; change the mocked summary between moves; make a page-move ask reject; call useRefreshPermissions; make the summary reject then call retry; repeat one move inside React StrictMode
 ```
 
 ```text
-getAuthorizationSummary called once for the components on a page and once per route change; after a move the components that mount on the new page are loading until the answer asked after the move, while the header and the kept component show their previous answer, not loading, and every component shows the new grants once it lands; a late answer of the left page is never shown; after useRefreshPermissions the new summary shows without a route change and without loading; on rejection every component has loadFailed true with the permissive fallback, and one retry calls the service once
+getAuthorizationSummary called once for the components on a page and once per route change; after a move the components that mount on the new page are loading until the answer asked after the move, while the header and the kept component show their previous answer, not loading, and every component shows the new grants once it lands; a late answer of the left page is never shown; when the page-move ask rejects, the header and the kept component keep their previous answer with loadFailed false, and the newly mounted ones get loadFailed true with the permissive fallback, and one retry calls the service once; after useRefreshPermissions the new summary shows without a route change and without loading; on a first-load rejection every component has loadFailed true with the permissive fallback, and one retry calls the service once; under StrictMode one move still calls the service once and moves one page
 ```
 
 ```text
-Today's useRbac: three calls for three components, and no refresh for components that stay mounted; readiness by the page the user is on: the header and the kept component turn loading after every move
+Today's useRbac: three calls for three components, and no refresh for components that stay mounted; readiness by the page the user is on: the header and the kept component turn loading after every move; a failed page-move ask that turns kept components to the fallback
 ```
 
 ##### Promises
@@ -1929,7 +1975,7 @@ None.
 ###### L4
 
 ```text
-Projection of model invariants on the hook: one call per page plus one per retry and own change; a component that mounts after a move is never ready with the answer asked before it; a component that stays mounted across a move or an own change keeps its answer, never loading, until the new one lands
+Projection of model invariants on the hook: one call per page plus one per retry and own change; a component that mounts after a move is never ready with the answer asked before it; a component that stays mounted keeps its answer across a move, an own change or a failed ask; a mounted component with nothing in flight is never loading
 ```
 
 Invariant
@@ -1961,11 +2007,19 @@ late answer of previous page after move -> never shown; components with no answe
 ```
 
 ```text
+page-move ask fails -> kept components keep their answer with loadFailed false; newly mounted ones loadFailed with the fallback; retry -> one call
+```
+
+```text
 own grant -> one call; components keep their answer, not loading, then show the new summary
 ```
 
 ```text
-failure -> all loadFailed with the permissive fallback, retry -> one call
+first-load failure -> all loadFailed with the permissive fallback, retry -> one call
+```
+
+```text
+under StrictMode one move -> one call and one page advance
 ```
 
 ```text
@@ -1987,7 +2041,7 @@ A component that React keeps mounted across a route change turns loading on ever
 ```
 
 ```text
-Mutant N5 of shared_page_reads.qnt: header ready with the page-0 answer, move to page 1, header not ready while the page-0 answer is cached; stayingComponentsKeepTheirAnswer violated
+Model mutant "Readiness by the page the user is on now instead of the mount page" (design/d10-receipts): a component ready with the page-0 answer stays mounted across the move to page 1 and is no longer ready; stayingComponentsKeepTheirAnswer violated
 ```
 
 ##### Claims
@@ -2041,12 +2095,16 @@ Pass
 DesignedNotBuilt
 
 ```text
-Quint model invariants newComponentsSeeOnlyThisPage, stayingComponentsKeepTheirAnswer, oneRequestPerPage, noEarlierPageRequestInFlight, ownChangeIsAsked: quint run 20000 samples 15 steps no violation; quint verify Apalache 8 steps NoError; each invariant killed by its own mutant and by no other
+Quint model invariants newComponentsSeeOnlyThisPage, stayingComponentsKeepTheirAnswer, mountedComponentsNeverHang, oneRequestPerPage, noEarlierPageRequestInFlight, ownChangeIsAsked: quint run 20000 samples 15 steps no violation; quint verify Apalache 8 steps NoError; each model mutant killed by the invariant it names; receipts in design/d10-receipts
 ```
 
 ###### Evidence
 
 docs\/feature\/story\-6712\-faster\-page\-loads\/design\/shared\_page\_reads\.qnt
+
+docs\/feature\/story\-6712\-faster\-page\-loads\/design\/d10\-receipts\/runs\.txt
+
+docs\/feature\/story\-6712\-faster\-page\-loads\/design\/d10\-receipts\/verify\.txt
 
 ```text
 shared permissions answer
@@ -2104,7 +2162,31 @@ None.
 
 ##### Risks
 
-None.
+###### Y7
+
+Stressor
+
+```text
+Assumption negated: the own-change ask succeeds (it fails after the user created a Team or changed a grant)
+```
+
+```text
+Components that show an answer keep it; the backend still refuses actions the user may not take
+```
+
+```text
+The actions that follow from the own change do not show until the next page move or a retry from a failed component
+```
+
+```text
+A shown answer replaced by the fallback; a component loading for ever
+```
+
+```text
+No retry is offered when no component is failed; the next page move asks again
+```
+
+useRbac
 
 ##### Architectural tests
 
@@ -2210,15 +2292,15 @@ None.
 #### Public oracle
 
 ```text
-Render several components using useTeamsQuery, usePortfoliosQuery, useLicenseRestrictions and SurveyNudge under one QueryClient with PageMoveRefresh; call useUnitListsChanged after a mocked create, rename and delete; change the route after a mocked change by someone else
+Render several components using useTeamsQuery, usePortfoliosQuery, useLicenseRestrictions and SurveyNudge under one QueryClient with PageMoveRefresh; call useUnitListsChanged after a mocked create, rename and delete; change the route after a mocked change by someone else; move to a page with no list reader and then to a page with one
 ```
 
 ```text
-getTeams, getPortfolios and getLicenseStatus each called once per page however many components read them; after useUnitListsChanged the lists show the change without a route change; the change by someone else shows after the route change
+getTeams, getPortfolios and getLicenseStatus each called once per page however many components read them; after useUnitListsChanged the lists show the change without a route change; the change by someone else shows after the route change; after a page with no list reader, the reader that mounts on the next page asks once and shows the list
 ```
 
 ```text
-Today: useLicenseRestrictions with staleTime 0 plus SurveyNudge and OverviewDashboard each call the services, so counts exceed one
+Today: useLicenseRestrictions with staleTime 0 plus SurveyNudge and OverviewDashboard each call the services, so counts exceed one; refetchOnMount false: the reader after a page with no reader stays loading
 ```
 
 ##### Promises
@@ -2615,6 +2697,10 @@ other user change -> shows after move
 
 ```text
 403 on lists -> empty list for counts, as today
+```
+
+```text
+page with no list reader between two pages with readers -> the reader that mounts on the third page asks once and shows the list, never loading for ever
 ```
 
 ```text
