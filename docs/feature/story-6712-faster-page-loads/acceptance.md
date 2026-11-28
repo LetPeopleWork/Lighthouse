@@ -960,6 +960,318 @@ A page that skips the refresh after its own change but whose navigation or anoth
 
 
 
+### S5
+
+##### Covers
+
+P10
+
+```text
+Open the footer while the installed version, distribution and update questions are all still unanswered, then answer them with an update available
+```
+
+```text
+All three questions were asked before any was answered; the update pop-up shows the newest version; no release notes were requested
+```
+
+```text
+The update check sends no release notes on page load and the footer's checks run at the same time
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/App\/LetPeopleWork\/LighthouseVersion\.updateCheck\.test\.tsx
+
+asks the footer\'s independent questions together and sends no release notes on page load
+
+```text
+Footer asks the questions one after another, or still fetches release notes and shows the first one's version
+```
+
+###### Obligations
+
+
+##### Covers
+
+P10
+
+```text
+Open the footer when no newer version exists
+```
+
+```text
+Installed version shown, no update icon, no footer error, no newest version and no release notes requested
+```
+
+```text
+Without an update the footer shows only the installed version
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/App\/LetPeopleWork\/LighthouseVersion\.updateCheck\.test\.tsx
+
+shows the installed version and no update\, asking for no newest version\, when nothing newer exists
+
+```text
+Newest version is asked for even when no update exists
+```
+
+###### Obligations
+
+
+##### Covers
+
+P11
+
+```text
+Open the update dialog while its release notes are still on their way, then deliver them
+```
+
+```text
+Dialog shows the line Lighthouse v2.0.0 is available., Loading release notes and a progress indicator; after delivery the release notes show, the loading look is gone and notes were asked for once
+```
+
+```text
+The dialog shows a loading look, then the release notes
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/App\/LetPeopleWork\/LighthouseVersion\.updateCheck\.test\.tsx
+
+shows the newest version and a progress indicator while the release notes load\, then the notes
+
+```text
+Notes are fetched on page load, or the dialog is blank while loading
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P12
+
+```text
+Open the update dialog when the first read of the release notes fails, then press Retry
+```
+
+```text
+Dialog shows the newest version and Could not load the release notes. with a Retry button and no loading look; Retry asks again and the notes then show
+```
+
+```text
+The dialog still shows the newest version, says the notes could not be loaded, and Retry loads them
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/App\/LetPeopleWork\/LighthouseVersion\.updateCheck\.test\.tsx
+
+says the release notes could not be loaded\, keeps the newest version and loads them when Retry is pressed
+
+```text
+Retry button present but does not ask again, or the failure shows an empty area
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P10
+
+```text
+Ask for the newest version when two releases are newer than the installed one
+```
+
+```text
+The first newer release version is returned and equals the first of the new releases
+```
+
+```text
+The pop-up names the same newest version as today
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Platform\/Releases\/LighthouseReleaseServiceNewestVersionTest\.cs
+
+NewestVersion\_TwoNewerReleases\_IsTheVersionTheUpdatePopUpShowsFirst
+
+```text
+Returns the oldest newer release or the latest tag
+```
+
+###### Obligations
+
+
+##### Covers
+
+P10
+
+```text
+Ask for the newest version when the installed version is the newest
+```
+
+```text
+No version is returned
+```
+
+```text
+No update, no newest version
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Platform\/Releases\/LighthouseReleaseServiceNewestVersionTest\.cs
+
+NewestVersion\_InstalledVersionIsTheNewest\_IsNone
+
+```text
+Returns the installed version
+```
+
+###### Obligations
+
+
+##### Covers
+
+P10
+
+```text
+Ask for the newest version on a development build
+```
+
+```text
+The newest of all releases is returned
+```
+
+```text
+A development build is offered the newest release
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Platform\/Releases\/LighthouseReleaseServiceNewestVersionTest\.cs
+
+NewestVersion\_DevelopmentBuild\_IsTheNewestOfAllReleases
+
+```text
+Returns none for a development build
+```
+
+###### Obligations
+
+
+##### Covers
+
+P10
+
+```text
+Ask the newest-version route when no release is newer, and ask it signed out
+```
+
+```text
+404 when none; refused when not signed in
+```
+
+```text
+Route behaves like the release-notes route
+```
+
+##### Disposition
+
+NotTested
+
+```text
+The design leaves the controller test unchanged and names no action name or wire-contract locator for the new route; the attribute scan covers only the authorization attribute once the route exists
+```
+
+design
+
+##### Covers
+
+P10
+
+```text
+Open the footer when, in turn, the installed version, distribution, update question, newest version or update support question cannot be answered
+```
+
+```text
+The footer shows its error and no update icon in each case
+```
+
+```text
+If any one version check fails the footer shows its error as today
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/App\/LetPeopleWork\/LighthouseVersion\.updateCheck\.test\.tsx
+
+shows the footer error when \%s
+
+```text
+A failure of one check is swallowed once checks run together
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P10
+
+```text
+Scan every API action of the protected controllers for an authorization attribute, including the new newest-version route once it exists
+```
+
+```text
+No protected action is open to signed-out callers
+```
+
+```text
+The new update check is available to signed-in users only
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/EndpointAuthorizationPolicyTest\.cs
+
+ProtectedControllers\_DoNotHaveAllowAnonymous
+
+```text
+The new route is added with an anonymous attribute that is not on the allow list is caught; a route with no attribute at all is not caught by this rule
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

@@ -994,6 +994,278 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h3>S5</h3>
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>Open the footer while the installed version, distribution and update questions are all still unanswered, then answer them with an update available
+</code></pre>
+
+<pre><code>All three questions were asked before any was answered; the update pop-up shows the newest version; no release notes were requested
+</code></pre>
+
+<pre><code>The update check sends no release notes on page load and the footer&#x27;s checks run at the same time
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.updateCheck.test.tsx</p>
+
+<p>asks the footer&#x27;s independent questions together and sends no release notes on page load</p>
+
+<pre><code>Footer asks the questions one after another, or still fetches release notes and shows the first one&#x27;s version
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>Open the footer when no newer version exists
+</code></pre>
+
+<pre><code>Installed version shown, no update icon, no footer error, no newest version and no release notes requested
+</code></pre>
+
+<pre><code>Without an update the footer shows only the installed version
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.updateCheck.test.tsx</p>
+
+<p>shows the installed version and no update, asking for no newest version, when nothing newer exists</p>
+
+<pre><code>Newest version is asked for even when no update exists
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P11</p>
+
+<pre><code>Open the update dialog while its release notes are still on their way, then deliver them
+</code></pre>
+
+<pre><code>Dialog shows the line Lighthouse v2.0.0 is available., Loading release notes and a progress indicator; after delivery the release notes show, the loading look is gone and notes were asked for once
+</code></pre>
+
+<pre><code>The dialog shows a loading look, then the release notes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.updateCheck.test.tsx</p>
+
+<p>shows the newest version and a progress indicator while the release notes load, then the notes</p>
+
+<pre><code>Notes are fetched on page load, or the dialog is blank while loading
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P12</p>
+
+<pre><code>Open the update dialog when the first read of the release notes fails, then press Retry
+</code></pre>
+
+<pre><code>Dialog shows the newest version and Could not load the release notes. with a Retry button and no loading look; Retry asks again and the notes then show
+</code></pre>
+
+<pre><code>The dialog still shows the newest version, says the notes could not be loaded, and Retry loads them
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.updateCheck.test.tsx</p>
+
+<p>says the release notes could not be loaded, keeps the newest version and loads them when Retry is pressed</p>
+
+<pre><code>Retry button present but does not ask again, or the failure shows an empty area
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>Ask for the newest version when two releases are newer than the installed one
+</code></pre>
+
+<pre><code>The first newer release version is returned and equals the first of the new releases
+</code></pre>
+
+<pre><code>The pop-up names the same newest version as today
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Releases/LighthouseReleaseServiceNewestVersionTest.cs</p>
+
+<p>NewestVersion_TwoNewerReleases_IsTheVersionTheUpdatePopUpShowsFirst</p>
+
+<pre><code>Returns the oldest newer release or the latest tag
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>Ask for the newest version when the installed version is the newest
+</code></pre>
+
+<pre><code>No version is returned
+</code></pre>
+
+<pre><code>No update, no newest version
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Releases/LighthouseReleaseServiceNewestVersionTest.cs</p>
+
+<p>NewestVersion_InstalledVersionIsTheNewest_IsNone</p>
+
+<pre><code>Returns the installed version
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>Ask for the newest version on a development build
+</code></pre>
+
+<pre><code>The newest of all releases is returned
+</code></pre>
+
+<pre><code>A development build is offered the newest release
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Releases/LighthouseReleaseServiceNewestVersionTest.cs</p>
+
+<p>NewestVersion_DevelopmentBuild_IsTheNewestOfAllReleases</p>
+
+<pre><code>Returns none for a development build
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>Ask the newest-version route when no release is newer, and ask it signed out
+</code></pre>
+
+<pre><code>404 when none; refused when not signed in
+</code></pre>
+
+<pre><code>Route behaves like the release-notes route
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>The design leaves the controller test unchanged and names no action name or wire-contract locator for the new route; the attribute scan covers only the authorization attribute once the route exists
+</code></pre>
+
+<p>design</p>
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>Open the footer when, in turn, the installed version, distribution, update question, newest version or update support question cannot be answered
+</code></pre>
+
+<pre><code>The footer shows its error and no update icon in each case
+</code></pre>
+
+<pre><code>If any one version check fails the footer shows its error as today
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.updateCheck.test.tsx</p>
+
+<p>shows the footer error when %s</p>
+
+<pre><code>A failure of one check is swallowed once checks run together
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>Scan every API action of the protected controllers for an authorization attribute, including the new newest-version route once it exists
+</code></pre>
+
+<pre><code>No protected action is open to signed-out callers
+</code></pre>
+
+<pre><code>The new update check is available to signed-in users only
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/EndpointAuthorizationPolicyTest.cs</p>
+
+<p>ProtectedControllers_DoNotHaveAllowAnonymous</p>
+
+<pre><code>The new route is added with an anonymous attribute that is not on the allow list is caught; a route with no attribute at all is not caught by this rule
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

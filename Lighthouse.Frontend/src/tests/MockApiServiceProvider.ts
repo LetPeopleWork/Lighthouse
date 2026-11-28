@@ -83,6 +83,22 @@ export const createMockApiServiceContext = (
 	};
 };
 
+// The return type is left to inference so that a check can reach every member as a mock; it stays assignable to the service's interface.
+export const createMockVersionService = () => {
+	return {
+		getCurrentVersion: vi.fn().mockResolvedValue("v1.0.0"),
+		isUpdateAvailable: vi.fn().mockResolvedValue(false),
+		getNewestVersion: vi.fn().mockResolvedValue("v2.0.0"),
+		getNewReleases: vi.fn().mockResolvedValue([]),
+		isUpdateSupported: vi.fn().mockResolvedValue(false),
+		installUpdate: vi.fn().mockResolvedValue(false),
+		getDistributionInfo: vi.fn().mockResolvedValue({
+			variantId: "linux.server",
+			updateOwner: "lighthouse-internal",
+		}),
+	};
+};
+
 export const createMockUsageDataService = (): IUsageDataService => {
 	return {
 		// Not sending, nobody has decided, and too new to be asked: the state a fresh instance is
