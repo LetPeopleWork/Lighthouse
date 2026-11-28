@@ -58,9 +58,10 @@ export function usePageFreshLoader<T>(
 	const queryClient = useQueryClient();
 	return useCallback(async () => {
 		try {
-			const fetched = await queryClient.fetchQuery<
+			const fetched = await queryClient.query<
 				PageFreshAnswer<T>,
 				PageFreshFailure,
+				PageFreshAnswer<T>,
 				PageFreshAnswer<T>,
 				QueryKey
 			>({

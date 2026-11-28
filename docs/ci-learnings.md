@@ -50,6 +50,7 @@ typescript:S4782 ::: ts,tsx ::: \w\?\s*:\s*[^;=(){}]*\|\s*undefined\b ::: S4782 
 vitest:storage-prototype-spy ::: ts,tsx ::: spyOn\(\s*Storage\.prototype ::: `vi.spyOn(Storage.prototype, …)` intercepts nothing in this jsdom setup, so the test passes against code without the guard. Spy on the storage object itself (`localStorage`), and restore it by hand in `afterEach`.
 mui-x:series-class ::: ts,tsx ::: MuiLineElement-series- ::: MUI-X 9 emits no per-series class. Target `& .MuiLineChart-line[data-series="<id>"]`, as `DeliveryBurnupChart.tsx` does.
 docker:S6506 ::: Dockerfile ::: \bcurl\s+(?!.*--proto)- ::: S6506 — curl may follow a redirect to plain HTTP. Drop `-L` when the URL does not redirect, and write `--proto "=https"` (double quotes; Sonar still flagged the single-quoted form) on the same line as `curl`.
+typescript:S1874-tanstack ::: ts,tsx ::: \.(fetchQuery|prefetchQuery|ensureQueryData)\s*[<(] ::: S1874 — TanStack Query 5.108 deprecates `fetchQuery`, `prefetchQuery` and `ensureQueryData`. Call `queryClient.query(options)` (add `.catch(noop)` for a prefetch, `staleTime: 'static'` for ensure).
 pnpm:settings-in-package-json ::: json ::: ^\s*"pnpm"\s*:\s*\{ ::: pnpm settings (`overrides`, `onlyBuiltDependencies`, …) belong in `pnpm-workspace.yaml`. In `package.json` they break CI's `--frozen-lockfile` install.
 <!-- LEDGER-CHECKS:END -->
 
