@@ -23,6 +23,8 @@ namespace Lighthouse.Backend.API
     [Route("api/latest/[controller]")]
     [ApiController]
     [RbacGuard(RbacGuardRequirement.SystemAdmin)]
+    // Log text holds attacker-reachable input next to library exception text, so it is never sent compressed.
+    [NeverCompressResponse]
     public class LogsController : ControllerBase
     {
         private readonly ILogConfiguration logConfiguration;

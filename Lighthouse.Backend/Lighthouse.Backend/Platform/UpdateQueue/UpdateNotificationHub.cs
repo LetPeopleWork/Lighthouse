@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.WorkItems.Contracts;
+using Lighthouse.Backend.Platform.Host;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Authorization;
@@ -8,6 +9,8 @@ using Microsoft.AspNetCore.SignalR;
 namespace Lighthouse.Backend.Platform.UpdateQueue
 {
     [Authorize]
+    // Its handshake answers carry a connection token, and no compressed answer may carry a secret.
+    [NeverCompressResponse]
     public class UpdateNotificationHub : Hub
     {
         public const string Route = "api/updateNotificationHub";

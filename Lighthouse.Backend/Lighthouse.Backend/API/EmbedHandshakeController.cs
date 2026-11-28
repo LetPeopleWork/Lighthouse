@@ -3,6 +3,7 @@ using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Modules.Access.Contracts;
+using Lighthouse.Backend.Platform.Host;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -16,6 +17,8 @@ namespace Lighthouse.Backend.API
     [Route("api/latest/embed")]
     [ApiController]
     [AllowAnonymous]
+    // Its answer carries the embed session token, and no compressed answer may carry a secret.
+    [NeverCompressResponse]
     public class EmbedHandshakeController(
         IAuthModeResolver authModeResolver,
         IEmbedSessionTokenService embedSessionTokenService,
