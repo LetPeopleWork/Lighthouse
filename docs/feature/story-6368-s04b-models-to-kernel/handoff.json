@@ -249,7 +249,7 @@
 "C": 1,
 "D": 19,
 "E": 9,
-"F": 356,
+"F": 422,
 "K": 9,
 "L": 9,
 "P": 5,
@@ -621,7 +621,7 @@
 "decision": "UnchangedCompatible",
 "kind": "ci-script",
 "locator": "Scripts/test-selection/path-classifier.sh:1",
-"reason": "F54"
+"reason": "F357"
 },
 {
 "decision": "UnchangedCompatible",
@@ -679,7 +679,7 @@
 },
 {
 "decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs:55",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRuleVerdict.cs:7",
 "reason": "F46",
 "symbol": "KernelRuleVerdict"
 },
@@ -998,62 +998,182 @@
 {
 "decision": "Migrated",
 "kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEmitPermit.cs:1",
-"reason": "F145"
-},
-{
-"decision": "Migrated",
-"kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataSuppressionReason.cs:1",
-"reason": "F146"
-},
-{
-"decision": "Migrated",
-"kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Encryption/SecretReadResult.cs:1",
-"reason": "F147"
-},
-{
-"decision": "Migrated",
-"kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Logging/RefreshSubject.cs:1",
-"reason": "F148"
-},
-{
-"decision": "Changed",
-"kind": "test-rule",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs:47",
-"reason": "F149"
-},
-{
-"decision": "Changed",
-"kind": "test-rule",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLanePatternRoles.cs:1",
-"reason": "F150"
-},
-{
-"decision": "Migrated",
-"kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEmitPermit.cs:1",
-"reason": "F151"
+"reason": "F366"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEmitPermit.cs:1",
+"reason": "F367"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEventReported.cs:1",
+"reason": "F366"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventReported.cs:1",
+"reason": "F368"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEventShapes.cs:1",
+"reason": "F366"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventShapes.cs:1",
+"reason": "F369"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataSuppressionReason.cs:1",
-"reason": "F151"
+"reason": "F366"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/Encryption/SecretReadResult.cs:1",
-"reason": "F151"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataSuppressionReason.cs:1",
+"reason": "F370"
 },
 {
 "decision": "Migrated",
-"kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/Logging/RefreshSubject.cs:1",
-"reason": "F151"
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/UsageDataEventShapesTests.cs:1",
+"reason": "F371"
+},
+{
+"decision": "Migrated",
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/UsageData/UsageDataEventShapesTests.cs:1",
+"reason": "F372"
+},
+{
+"decision": "Migrated",
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/OutlierListOpenedEventNameTests.cs:1",
+"reason": "F371"
+},
+{
+"decision": "Migrated",
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/UsageData/OutlierListOpenedEventNameTests.cs:1",
+"reason": "F373"
+},
+{
+"decision": "Migrated",
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/WithinSleListOpenedEventNameTests.cs:1",
+"reason": "F371"
+},
+{
+"decision": "Migrated",
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/UsageData/WithinSleListOpenedEventNameTests.cs:1",
+"reason": "F374"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLanePatternRoles.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformUsageLoggingReleasesLayoutArchUnitTest.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/UsageDataPayloadPurityTest.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/UsageDataControllerTests.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/UsageDataEventQueueTests.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/UsageDataForwardingServiceTests.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/UsageDataGateReportingTests.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/UsageDataMistypedCollectorAddressTests.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/UsageDataPublishedMessageTests.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/UsageDataController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/IUsageDataEventQueue.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/IUsageDataGate.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/IUsageDataPublisher.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/PostHogUsageDataPublisher.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataGate.cs:1",
+"reason": "F376"
 }
 ],
 "laws": [
@@ -1077,11 +1197,11 @@
 "not_applicable": [
 {
 "analysis": "reuse",
-"reason": "F152"
+"reason": "F377"
 },
 {
 "analysis": "prefactoring",
-"reason": "F153"
+"reason": "F378"
 }
 ]
 },
@@ -1092,52 +1212,152 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEmitPermit.cs",
-"reason": "F136"
+"reason": "F358"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEmitPermit.cs",
-"reason": "F137"
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEventReported.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventReported.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEventShapes.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventShapes.cs",
+"reason": "F359"
 },
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataSuppressionReason.cs",
-"reason": "F136"
+"reason": "F358"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataSuppressionReason.cs",
-"reason": "F138"
+"reason": "F359"
 },
 {
 "change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/Encryption/SecretReadResult.cs",
-"reason": "F136"
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/UsageDataEventShapesTests.cs",
+"reason": "F360"
 },
 {
 "change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Encryption/SecretReadResult.cs",
-"reason": "F139"
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/UsageData/UsageDataEventShapesTests.cs",
+"reason": "F361"
 },
 {
 "change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/Logging/RefreshSubject.cs",
-"reason": "F136"
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/OutlierListOpenedEventNameTests.cs",
+"reason": "F360"
 },
 {
 "change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Logging/RefreshSubject.cs",
-"reason": "F140"
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/UsageData/OutlierListOpenedEventNameTests.cs",
+"reason": "F362"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/WithinSleListOpenedEventNameTests.cs",
+"reason": "F360"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/UsageData/WithinSleListOpenedEventNameTests.cs",
+"reason": "F363"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs",
-"reason": "F141"
+"reason": "F364"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLanePatternRoles.cs",
-"reason": "F141"
+"reason": "F364"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformUsageLoggingReleasesLayoutArchUnitTest.cs",
+"reason": "F364"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/UsageDataPayloadPurityTest.cs",
+"reason": "F364"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/UsageDataControllerTests.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/UsageDataEventQueueTests.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/UsageDataForwardingServiceTests.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/UsageDataGateReportingTests.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/UsageDataMistypedCollectorAddressTests.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/UsageDataPublishedMessageTests.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/UsageDataController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/IUsageDataEventQueue.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/IUsageDataGate.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/IUsageDataPublisher.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/PostHogUsageDataPublisher.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataGate.cs",
+"reason": "F365"
 }
 ],
 "verification": [
@@ -1171,290 +1391,1682 @@
 {
 "decision": "Migrated",
 "kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Auth/EmbedSessionTokenRedemption.cs:1",
-"reason": "F185"
-},
-{
-"decision": "Migrated",
-"kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacGuardRequirement.cs:1",
-"reason": "F186"
-},
-{
-"decision": "Migrated",
-"kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacOperationResult.cs:1",
-"reason": "F187"
-},
-{
-"decision": "Migrated",
-"kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceDescriptor.cs:1",
-"reason": "F188"
-},
-{
-"decision": "Migrated",
-"kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceBindability.cs:1",
-"reason": "F189"
-},
-{
-"decision": "Migrated",
-"kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceOption.cs:1",
-"reason": "F190"
-},
-{
-"decision": "Migrated",
-"kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthCompleteResult.cs:1",
-"reason": "F191"
-},
-{
-"decision": "Migrated",
-"kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/RealityCheckVerdictTypes.cs:1",
-"reason": "F192"
-},
-{
-"decision": "Migrated",
-"kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/ManualRankComparer.cs:1",
-"reason": "F193"
-},
-{
-"decision": "Migrated",
-"kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/OwnersWhoseFetchMoved.cs:1",
-"reason": "F194"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AdditionalFieldInUse.cs:1",
+"reason": "F386"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/AdditionalFieldInUse.cs:1",
-"reason": "F195"
+"reason": "F387"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportOwnerGoneException.cs:1",
-"reason": "F196"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AppSettingKeys.cs:1",
+"reason": "F386"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportRefusalCodes.cs:1",
-"reason": "F197"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/AppSettings/AppSettingKeys.cs:1",
+"reason": "F388"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemRules/RuleSetSemantics.cs:1",
-"reason": "F198"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/CurrentUserProfileStatus.cs:1",
+"reason": "F386"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/SpecialCauseType.cs:1",
-"reason": "F199"
-},
-{
-"decision": "Migrated",
-"kind": "test-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ManualRankComparerTest.cs:1",
-"reason": "F200"
-},
-{
-"decision": "Migrated",
-"kind": "test-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/OwnersWhoseFetchMovedTest.cs:1",
-"reason": "F201"
-},
-{
-"decision": "Migrated",
-"kind": "test-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/AdditionalFieldInUseTest.cs:1",
-"reason": "F202"
-},
-{
-"decision": "Migrated",
-"kind": "test-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliverySourceBindabilityTest.cs:1",
-"reason": "F203"
-},
-{
-"decision": "Changed",
-"kind": "test-rule",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AdditionalFieldInUseRulePurityArchUnitTest.cs:1",
-"reason": "F204"
-},
-{
-"decision": "Changed",
-"kind": "test-rule",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs:1",
-"reason": "F204"
-},
-{
-"decision": "Changed",
-"kind": "test-rule",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingMembershipArchUnitTest.cs:1",
-"reason": "F204"
-},
-{
-"decision": "Changed",
-"kind": "test-rule",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs:1",
-"reason": "F204"
-},
-{
-"decision": "Changed",
-"kind": "test-rule",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs:1",
-"reason": "F204"
-},
-{
-"decision": "Changed",
-"kind": "test-rule",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs:1",
-"reason": "F204"
-},
-{
-"decision": "Changed",
-"kind": "test-rule",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPatternRoles.cs:1",
-"reason": "F204"
-},
-{
-"decision": "Changed",
-"kind": "test-rule",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs:1",
-"reason": "F204"
-},
-{
-"decision": "Changed",
-"kind": "test-rule",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureOrderingSingleSourceArchUnitTest.cs:1",
-"reason": "F204"
-},
-{
-"decision": "Changed",
-"kind": "test-rule",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs:1",
-"reason": "F204"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Auth/CurrentUserProfileStatus.cs:1",
+"reason": "F389"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/EmbedSessionTokenRedemption.cs:1",
-"reason": "F151"
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Auth/EmbedSessionTokenRedemption.cs:1",
+"reason": "F390"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs:1",
-"reason": "F151"
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacGuardRequirement.cs:1",
+"reason": "F391"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs:1",
-"reason": "F151"
+"reason": "F386"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceDescriptor.cs:1",
-"reason": "F151"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacOperationResult.cs:1",
+"reason": "F392"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DeliverySourceBindability.cs:1",
-"reason": "F151"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ConnectionFieldDefaults.cs:1",
+"reason": "F386"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DeliverySourceOption.cs:1",
-"reason": "F151"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/ConnectionFieldDefaults.cs:1",
+"reason": "F393"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthCompleteResult.cs:1",
-"reason": "F151"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceBindability.cs:1",
+"reason": "F386"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/RealityCheckVerdictTypes.cs:1",
-"reason": "F151"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceBindability.cs:1",
+"reason": "F394"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/ManualRankComparer.cs:1",
-"reason": "F151"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceOption.cs:1",
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceOption.cs:1",
+"reason": "F395"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/FeatureMoveVerdict.cs:1",
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/FeatureMoveVerdict.cs:1",
+"reason": "F396"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/FeatureOrderKey.cs:1",
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/FeatureOrderKey.cs:1",
+"reason": "F397"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastHorizon.cs:1",
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastHorizon.cs:1",
+"reason": "F398"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ManualRankComparer.cs:1",
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/ManualRankComparer.cs:1",
+"reason": "F399"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/EstimateNormalizationStatus.cs:1",
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/EstimateNormalizationStatus.cs:1",
+"reason": "F400"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/StateAsOf.cs:1",
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/StateAsOf.cs:1",
+"reason": "F401"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ThroughputFilterOverride.cs:1",
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/ThroughputFilterOverride.cs:1",
+"reason": "F402"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OptionalFeatureKeys.cs:1",
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/OptionalFeatures/OptionalFeatureKeys.cs:1",
+"reason": "F403"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnerTerms.cs:1",
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/OwnerTerms.cs:1",
+"reason": "F404"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMoved.cs:1",
-"reason": "F151"
+"reason": "F386"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AdditionalFieldInUse.cs:1",
-"reason": "F151"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/OwnersWhoseFetchMoved.cs:1",
+"reason": "F405"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportOwnerGoneException.cs:1",
-"reason": "F151"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/PortfolioSize.cs:1",
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/PortfolioSize.cs:1",
+"reason": "F406"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportOwnerGoneException.cs:1",
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportOwnerGoneException.cs:1",
+"reason": "F407"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportRefusalCodes.cs:1",
-"reason": "F151"
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportRefusalCodes.cs:1",
+"reason": "F408"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessVerdict.cs:1",
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Staleness/StalenessVerdict.cs:1",
+"reason": "F409"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessPolicy.cs:1",
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Staleness/StalenessPolicy.cs:1",
+"reason": "F410"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/SyncOutcome.cs:1",
+"reason": "F386"
+},
+{
+"decision": "Migrated",
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/SyncOutcome.cs:1",
+"reason": "F411"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs:1",
-"reason": "F151"
+"reason": "F386"
 },
 {
 "decision": "Migrated",
 "kind": "production-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/SpecialCauseType.cs:1",
-"reason": "F151"
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemRules/RuleSetSemantics.cs:1",
+"reason": "F412"
 },
 {
 "decision": "Migrated",
-"kind": "test-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/ManualRankComparerTest.cs:1",
-"reason": "F205"
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/WriteBackValueSources.cs:1",
+"reason": "F386"
 },
 {
 "decision": "Migrated",
-"kind": "test-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMovedTest.cs:1",
-"reason": "F205"
+"kind": "production-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/WriteBack/WriteBackValueSources.cs:1",
+"reason": "F413"
 },
 {
 "decision": "Migrated",
 "kind": "test-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/AdditionalFieldInUseTest.cs:1",
-"reason": "F205"
+"reason": "F371"
 },
 {
 "decision": "Migrated",
 "kind": "test-move",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/DeliverySourceBindabilityTest.cs:1",
-"reason": "F205"
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/AdditionalFieldInUseTest.cs:1",
+"reason": "F414"
+},
+{
+"decision": "Migrated",
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/ManualRankComparerTest.cs:1",
+"reason": "F371"
+},
+{
+"decision": "Migrated",
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ManualRankComparerTest.cs:1",
+"reason": "F415"
+},
+{
+"decision": "Migrated",
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMovedTest.cs:1",
+"reason": "F371"
+},
+{
+"decision": "Migrated",
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/OwnersWhoseFetchMovedTest.cs:1",
+"reason": "F416"
+},
+{
+"decision": "Migrated",
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/PortfolioSizeTest.cs:1",
+"reason": "F371"
+},
+{
+"decision": "Migrated",
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/PortfolioSizeTest.cs:1",
+"reason": "F417"
+},
+{
+"decision": "Migrated",
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/ThroughputFilterOverrideTest.cs:1",
+"reason": "F371"
+},
+{
+"decision": "Migrated",
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Metrics/ThroughputFilterOverrideTest.cs:1",
+"reason": "F418"
+},
+{
+"decision": "Migrated",
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Domain/StalenessPolicyTest.cs:1",
+"reason": "F371"
+},
+{
+"decision": "Migrated",
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Staleness/StalenessPolicyTest.cs:1",
+"reason": "F419"
+},
+{
+"decision": "Migrated",
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/DeliverySourceBindabilityTest.cs:1",
+"reason": "F371"
+},
+{
+"decision": "Migrated",
+"kind": "test-move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliverySourceBindabilityTest.cs:1",
+"reason": "F420"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingMembershipArchUnitTest.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AdditionalFieldInUseRulePurityArchUnitTest.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureOrderingSingleSourceArchUnitTest.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsStringsTheMoveRenames.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OverTimeReconstructionSeamArchUnitTest.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembershipArchUnitTest.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembership.cs:1",
+"reason": "F375"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ApiKeyControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/AppSettingsControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/AuthControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/AuthorizationControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/BlackoutPeriodsControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/CreateRightsControllerGuardTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkItemDtoTests.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DatabaseManagementControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerArchiveTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerUtcTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryNoteAuthorshipTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryNotesControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryRulesControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliverySourcesControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DemoControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeatureListRowsTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeaturesControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Slice02OneListOfSwitchesSpecifications.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/DeliverySourceRefreshAcceptanceTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/DeliverySourcesAcceptanceTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/Slice01aDeliverySourcePreviewSpecifications.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioDeleteSerialisationTests.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice05CancelAllScenarios.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice06TheWarningsWithoutTheLogSpecifications.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHostPerFixtureAcceptanceTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamDeleteSerialisationTests.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/LicenseControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/OptionalFeaturesControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioMetricsControllerTests.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfoliosControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/S4_DeliveriesDeleteGuardInversionTests.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/W1_VersionEndpointAuthorizationTests.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/SystemInfoControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamMetricsControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamReportsControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TerminologyControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WizardsControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/CreateReportWithEqualNowScenarios.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllSystemOnlyRefusalsTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/SystemWideAccessScenario.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Reports/ReportNotesWireContractTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/UsageDataAskEndpointsTests.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/UsageDataVetoEmitTests.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Auth/EmbedSessionContractShapeTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Forecast/FeatureForecastWindowTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ParentSourcesBridgeTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Access/Adapters/Http/RbacGuardAttributeTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Access/Application/CreateRightsAcceptanceTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Access/Application/FeatureMoveAuthorizationTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Access/Application/RbacAdministrationServiceTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/AppSettingServiceTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Connections/ConnectionSaveServiceTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/PortfolioReportMetricSeriesTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportBulkCommandsTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportBulkRemoverTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportCommandsTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportLoggingTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/TeamReportMetricSeriesTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ThenAndNowTemplateEditTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Domain/ReportWindowPolicyTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDeliverySourceProviderTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/IncrementalSourceCapabilityTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UpdateQueue/RefreshRoundSummaryLineSkippedForecastTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/Slice01SkippedEntityLogTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/EstimateNormalizerEstimateOfTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/EstimateNormalizerTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/FeatureListServiceTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Seeding/AppSettingSeederTests.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Seeding/OptionalFeatureSeederTests.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/SurveyNudgeSettingsTest.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ClaimsDrivenRbacAdministrationService.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/ApiKeyController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/AuthController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/BlackoutPeriodsController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/ConnectionHealthController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/ConnectionDefaultsDto.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/FeatureDto.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioSizeDto.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/StaleReasonDto.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WhenForecastDto.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemDto.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemEstimateDto.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DeliveriesController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DeliveryNotesController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DeliveryRulesController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DeliverySourcesController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/EncryptionController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/FeatureListController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/FeaturesController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/ForecastController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/ForecastRealityCheckController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/OwnerSettingRefusals.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/RbacAdministrationServiceExtensions.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/WriteBackMappingValidator.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/LicenseController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/LogsController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/OAuthController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/OptionalFeaturesController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioReportNotesController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioReportsController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/RecurringBlackoutRulesController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/RefinementController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/RefinementVotesController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/ReportNotesControllerBase.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/ReportsControllerBase.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/SystemInfoController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamFeatureSizeMetricsController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamReportNotesController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamReportsController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TerminologyController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/UpdateController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/VersionController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/WizardsController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Delivery.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/FeatureForecastWindow.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastPercentile.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastSimulationLimits.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportNote.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Adapters/Http/RbacGuardAttribute.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/EmbedSessionTokenService.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/FeatureMoveAuthorization.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/IEmbedSessionTokenService.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/IFeatureMoveAuthorization.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/RbacAdministrationService.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Contracts/IRbacAdministrationService.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BaseMetricsService.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PortfolioMetricsService.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Contracts/IPortfolioMetricsService.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackTriggerService.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/AppSettingService.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/ChangedConnectionDefault.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/ConnectionSaveService.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/IConnectionSaveService.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/WorkTrackingSystemConnectionUsage.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureOrdering.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureOrderingPolicyProvider.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankSeeder.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankingService.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/FeatureOrderingApplier.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/IFeatureOrdering.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryForecastBlockRenderer.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/PortfolioReportMetricSeries.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportBulkCommands.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportBulkRemover.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportCommands.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportNoteCommands.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportQueries.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/TeamReportMetricSeries.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ThenAndNowTemplate.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportWindowPolicy.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraReleaseVersionReader.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Contracts/IDeliverySourceProvider.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/ITeamDataService.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/IWorkItemService.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ForecastRoundFinishedRefreshLogHandler.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/TeamDataService.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/RefreshRoundSummary.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataMasterSwitch.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/EstimateNormalizer.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeaturePositionMap.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/AppSettingSeeder.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/OptionalFeatureSeeder.cs:1",
+"reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IFeatureListService.cs:1",
+"reason": "F376"
 }
 ],
 "laws": [
@@ -1479,11 +3091,11 @@
 "not_applicable": [
 {
 "analysis": "reuse",
-"reason": "F206"
+"reason": "F421"
 },
 {
 "analysis": "prefactoring",
-"reason": "F207"
+"reason": "F422"
 }
 ]
 },
@@ -1493,243 +3105,1403 @@
 "targets": [
 {
 "change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/EmbedSessionTokenRedemption.cs",
-"reason": "F160"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Auth/EmbedSessionTokenRedemption.cs",
-"reason": "F161"
-},
-{
-"change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs",
-"reason": "F160"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacGuardRequirement.cs",
-"reason": "F162"
-},
-{
-"change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs",
-"reason": "F160"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacOperationResult.cs",
-"reason": "F163"
-},
-{
-"change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceDescriptor.cs",
-"reason": "F160"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceDescriptor.cs",
-"reason": "F164"
-},
-{
-"change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DeliverySourceBindability.cs",
-"reason": "F160"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceBindability.cs",
-"reason": "F165"
-},
-{
-"change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DeliverySourceOption.cs",
-"reason": "F160"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceOption.cs",
-"reason": "F166"
-},
-{
-"change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthCompleteResult.cs",
-"reason": "F160"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthCompleteResult.cs",
-"reason": "F167"
-},
-{
-"change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/RealityCheckVerdictTypes.cs",
-"reason": "F160"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/RealityCheckVerdictTypes.cs",
-"reason": "F168"
-},
-{
-"change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/ManualRankComparer.cs",
-"reason": "F160"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Models/ManualRankComparer.cs",
-"reason": "F169"
-},
-{
-"change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMoved.cs",
-"reason": "F160"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Models/OwnersWhoseFetchMoved.cs",
-"reason": "F170"
-},
-{
-"change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AdditionalFieldInUse.cs",
-"reason": "F160"
+"reason": "F358"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Models/AdditionalFieldInUse.cs",
-"reason": "F171"
+"reason": "F359"
 },
 {
 "change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportOwnerGoneException.cs",
-"reason": "F160"
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AppSettingKeys.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/AppSettings/AppSettingKeys.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/CurrentUserProfileStatus.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Auth/CurrentUserProfileStatus.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/EmbedSessionTokenRedemption.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Auth/EmbedSessionTokenRedemption.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacGuardRequirement.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacOperationResult.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ConnectionFieldDefaults.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/ConnectionFieldDefaults.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceBindability.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceBindability.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceOption.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceOption.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/FeatureMoveVerdict.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/FeatureMoveVerdict.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/FeatureOrderKey.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/FeatureOrderKey.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastHorizon.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastHorizon.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ManualRankComparer.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/ManualRankComparer.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/EstimateNormalizationStatus.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/EstimateNormalizationStatus.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/StateAsOf.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/StateAsOf.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ThroughputFilterOverride.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/ThroughputFilterOverride.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OptionalFeatureKeys.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/OptionalFeatures/OptionalFeatureKeys.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnerTerms.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/OwnerTerms.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMoved.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/OwnersWhoseFetchMoved.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/PortfolioSize.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/PortfolioSize.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportOwnerGoneException.cs",
+"reason": "F358"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportOwnerGoneException.cs",
-"reason": "F172"
+"reason": "F359"
 },
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportRefusalCodes.cs",
-"reason": "F160"
+"reason": "F358"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportRefusalCodes.cs",
-"reason": "F173"
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessVerdict.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Staleness/StalenessVerdict.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessPolicy.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Staleness/StalenessPolicy.cs",
+"reason": "F359"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/SyncOutcome.cs",
+"reason": "F358"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/SyncOutcome.cs",
+"reason": "F359"
 },
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs",
-"reason": "F160"
+"reason": "F358"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemRules/RuleSetSemantics.cs",
-"reason": "F174"
+"reason": "F359"
 },
 {
 "change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/SpecialCauseType.cs",
-"reason": "F160"
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/WriteBackValueSources.cs",
+"reason": "F358"
 },
 {
 "change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/SpecialCauseType.cs",
-"reason": "F175"
-},
-{
-"change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/ManualRankComparerTest.cs",
-"reason": "F176"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ManualRankComparerTest.cs",
-"reason": "F177"
-},
-{
-"change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMovedTest.cs",
-"reason": "F176"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/OwnersWhoseFetchMovedTest.cs",
-"reason": "F178"
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/WriteBack/WriteBackValueSources.cs",
+"reason": "F359"
 },
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/AdditionalFieldInUseTest.cs",
-"reason": "F176"
+"reason": "F360"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/AdditionalFieldInUseTest.cs",
-"reason": "F179"
+"reason": "F379"
 },
 {
 "change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/DeliverySourceBindabilityTest.cs",
-"reason": "F176"
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/ManualRankComparerTest.cs",
+"reason": "F360"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ManualRankComparerTest.cs",
+"reason": "F380"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMovedTest.cs",
+"reason": "F360"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/OwnersWhoseFetchMovedTest.cs",
+"reason": "F381"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/PortfolioSizeTest.cs",
+"reason": "F360"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/PortfolioSizeTest.cs",
+"reason": "F382"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/ThroughputFilterOverrideTest.cs",
+"reason": "F360"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Metrics/ThroughputFilterOverrideTest.cs",
+"reason": "F383"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Domain/StalenessPolicyTest.cs",
+"reason": "F360"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Staleness/StalenessPolicyTest.cs",
+"reason": "F384"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/DeliverySourceBindabilityTest.cs",
+"reason": "F360"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliverySourceBindabilityTest.cs",
-"reason": "F180"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AdditionalFieldInUseRulePurityArchUnitTest.cs",
-"reason": "F181"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs",
-"reason": "F181"
+"reason": "F385"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingMembershipArchUnitTest.cs",
-"reason": "F181"
+"reason": "F364"
 },
 {
 "change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs",
-"reason": "F181"
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs",
+"reason": "F364"
 },
 {
 "change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs",
-"reason": "F181"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs",
-"reason": "F181"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPatternRoles.cs",
-"reason": "F181"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs",
-"reason": "F181"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureOrderingSingleSourceArchUnitTest.cs",
-"reason": "F181"
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AdditionalFieldInUseRulePurityArchUnitTest.cs",
+"reason": "F364"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs",
-"reason": "F181"
+"reason": "F364"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureOrderingSingleSourceArchUnitTest.cs",
+"reason": "F364"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs",
+"reason": "F364"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsStringsTheMoveRenames.cs",
+"reason": "F364"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs",
+"reason": "F364"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OverTimeReconstructionSeamArchUnitTest.cs",
+"reason": "F364"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembershipArchUnitTest.cs",
+"reason": "F364"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs",
+"reason": "F364"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs",
+"reason": "F364"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs",
+"reason": "F364"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs",
+"reason": "F364"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs",
+"reason": "F364"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs",
+"reason": "F364"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembership.cs",
+"reason": "F364"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ApiKeyControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/AppSettingsControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/AuthControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/AuthorizationControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/BlackoutPeriodsControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/CreateRightsControllerGuardTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkItemDtoTests.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DatabaseManagementControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerArchiveTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerUtcTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryNoteAuthorshipTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryNotesControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryRulesControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliverySourcesControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DemoControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeatureListRowsTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeaturesControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Slice02OneListOfSwitchesSpecifications.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/DeliverySourceRefreshAcceptanceTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/DeliverySourcesAcceptanceTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/Slice01aDeliverySourcePreviewSpecifications.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioDeleteSerialisationTests.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice05CancelAllScenarios.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice06TheWarningsWithoutTheLogSpecifications.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHostPerFixtureAcceptanceTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamDeleteSerialisationTests.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/LicenseControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/OptionalFeaturesControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioMetricsControllerTests.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfoliosControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/S4_DeliveriesDeleteGuardInversionTests.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/W1_VersionEndpointAuthorizationTests.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/SystemInfoControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamMetricsControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamReportsControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TerminologyControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WizardsControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/CreateReportWithEqualNowScenarios.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteChangeScenarios.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/ReportNotes/ReportNoteScenarios.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllSystemOnlyRefusalsTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/SystemWideAccessScenario.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Reports/ReportNotesWireContractTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/UsageDataAskEndpointsTests.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/UsageDataVetoEmitTests.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Auth/EmbedSessionContractShapeTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Forecast/FeatureForecastWindowTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ParentSourcesBridgeTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Access/Adapters/Http/RbacGuardAttributeTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Access/Application/CreateRightsAcceptanceTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Access/Application/FeatureMoveAuthorizationTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Access/Application/RbacAdministrationServiceTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/AppSettingServiceTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/Connections/ConnectionSaveServiceTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/PortfolioReportMetricSeriesTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportBulkCommandsTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportBulkRemoverTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportCommandsTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportLoggingTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/TeamReportMetricSeriesTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ThenAndNowTemplateEditTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Domain/ReportWindowPolicyTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDeliverySourceProviderTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/IncrementalSourceCapabilityTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UpdateQueue/RefreshRoundSummaryLineSkippedForecastTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/Slice01SkippedEntityLogTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/EstimateNormalizerEstimateOfTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/EstimateNormalizerTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/FeatureListServiceTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Seeding/AppSettingSeederTests.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Seeding/OptionalFeatureSeederTests.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/SurveyNudgeSettingsTest.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ClaimsDrivenRbacAdministrationService.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/ApiKeyController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/AuthController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/BlackoutPeriodsController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/ConnectionHealthController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/ConnectionDefaultsDto.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/FeatureDto.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioSizeDto.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/StaleReasonDto.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WhenForecastDto.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemDto.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemEstimateDto.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DeliveriesController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DeliveryNotesController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DeliveryRulesController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DeliverySourcesController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/EncryptionController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/FeatureListController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/FeaturesController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/ForecastController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/ForecastRealityCheckController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/OwnerSettingRefusals.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/RbacAdministrationServiceExtensions.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/WriteBackMappingValidator.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/LicenseController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/LogsController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/OAuthController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/OptionalFeaturesController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioReportNotesController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioReportsController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/RecurringBlackoutRulesController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/RefinementController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/RefinementVotesController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/ReportNotesControllerBase.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/ReportsControllerBase.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/SystemInfoController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamFeatureSizeMetricsController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamReportNotesController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamReportsController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TerminologyController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/UpdateController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/VersionController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/WizardsController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Delivery.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/FeatureForecastWindow.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastPercentile.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastSimulationLimits.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportNote.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Adapters/Http/RbacGuardAttribute.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/EmbedSessionTokenService.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/FeatureMoveAuthorization.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/IEmbedSessionTokenService.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/IFeatureMoveAuthorization.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/RbacAdministrationService.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Contracts/IRbacAdministrationService.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BaseMetricsService.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PortfolioMetricsService.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Contracts/IPortfolioMetricsService.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackTriggerService.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/AppSettingService.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/ChangedConnectionDefault.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/ConnectionSaveService.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/IConnectionSaveService.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/Connections/WorkTrackingSystemConnectionUsage.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureOrdering.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureOrderingPolicyProvider.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankSeeder.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/FeatureRankingService.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/OptionalFeatures/FeatureOrderingApplier.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Contracts/IFeatureOrdering.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryForecastBlockRenderer.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/PortfolioReportMetricSeries.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportBulkCommands.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportBulkRemover.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportCommands.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportNoteCommands.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportQueries.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/TeamReportMetricSeries.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ThenAndNowTemplate.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportWindowPolicy.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraReleaseVersionReader.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Contracts/IDeliverySourceProvider.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/ITeamDataService.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/IWorkItemService.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ForecastRoundFinishedRefreshLogHandler.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/TeamDataService.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/RefreshRoundSummary.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataMasterSwitch.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/EstimateNormalizer.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeaturePositionMap.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/AppSettingSeeder.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/OptionalFeatureSeeder.cs",
+"reason": "F365"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IFeatureListService.cs",
+"reason": "F365"
 }
 ],
 "verification": [
@@ -2060,26 +4832,12 @@
 "F133": "Stored values, API document and registrations unchanged.",
 "F134": "Changed persisted value, schema id or registration.",
 "F135": "None found: no entity moves and enum values are unchanged; schema ids are short names; registrations name types, not namespaces.",
-"F136": "Expected Platform mover; S1's measurement confirms it or the design revision removes it.",
-"F137": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEmitPermit.cs with only namespace and using lines changed.",
-"F138": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataSuppressionReason.cs with only namespace and using lines changed.",
-"F139": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/Encryption/SecretReadResult.cs with only namespace and using lines changed.",
 "F14": "Each context holds its own types.",
-"F140": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/Logging/RefreshSubject.cs with only namespace and using lines changed.",
-"F141": "Names a Platform mover by its Models full name; renamed per S1's rename list.",
 "F142": "Run the Architecture tests after the Platform-owned movers moved: the oracle reads each Platform mover's catalogue row and looks the type up in the compiled assembly.",
 "F143": "Each Platform mover exists only under Lighthouse.Backend.Platform.<Area> with the same public members, its row names that namespace, and the Platform lane rules pass. RED before the move (the type is still under Models); GREEN after; the unchanged backend suites pass.",
 "F144": "Leaving a mover under Models, or moving it into a module instead of Platform/<Area>, fails naming the type and its expected namespace.",
-"F145": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEmitPermit.cs; consumers change only using lines.",
-"F146": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataSuppressionReason.cs; consumers change only using lines.",
-"F147": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Platform/Encryption/SecretReadResult.cs; consumers change only using lines.",
-"F148": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Platform/Logging/RefreshSubject.cs; consumers change only using lines.",
-"F149": "Lane membership names the movers under Platform.<Area>.",
 "F15": "The rules name moved types by namespace only (movers list empty), a planted Models type off the catalogue fails naming itself, and ARCHITECTURE.md section 4 and ADR-270 D7 describe the kernel.",
 "F150": "Pattern-role literal for a mover renamed (S2) or its widened Models alternative removed (S4).",
-"F151": "Receives the moved file; only namespace and using lines differ from the Models original.",
-"F152": "A pure move keeps each existing type unchanged; its destination folders Platform/UsageData, Platform/Encryption and Platform/Logging already exist and are reused; no new responsibility is created.",
-"F153": "Per touched file. UsageDataEmitPermit.cs, UsageDataSuppressionReason.cs, SecretReadResult.cs, RefreshSubject.cs: one type each, not-applicable, they move whole. PlatformLanePatternRoles.cs: one type, not-applicable. PlatformLaneMembership.cs: holds several declarations of the lane map; not-applicable in this slice because the slice changes only full-name strings in it, and the accepted design keeps this Story to pure moves plus literal renames; a split is offered to the improvement backlog.",
 "F154": "Each Platform mover exists only under its Platform.<Area> namespace and its catalogue row names that namespace.",
 "F155": "each mover found at Platform.<Area>",
 "F156": "a mover still under Models: fails",
@@ -2087,59 +4845,14 @@
 "F158": "The domain is the finite list of Platform movers S1 measured.",
 "F159": "The Platform lane keeps holding its types after the move.",
 "F16": "A new type in Models cannot land unseen.",
-"F160": "Expected context mover; S1's measurement confirms it and its layer (Domain or Application by IL edges), or the design revision corrects or removes it.",
-"F161": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/EmbedSessionTokenRedemption.cs with only namespace and using lines changed.",
-"F162": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs with only namespace and using lines changed.",
-"F163": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs with only namespace and using lines changed.",
-"F164": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceDescriptor.cs with only namespace and using lines changed.",
-"F165": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DeliverySourceBindability.cs with only namespace and using lines changed.",
-"F166": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DeliverySourceOption.cs with only namespace and using lines changed.",
-"F167": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthCompleteResult.cs with only namespace and using lines changed.",
-"F168": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/RealityCheckVerdictTypes.cs with only namespace and using lines changed.",
-"F169": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/ManualRankComparer.cs with only namespace and using lines changed.",
 "F17": "No schema or behaviour change: the Story only moves types; no entity, DbSet, migration, model snapshot, route, DTO shape, payload, usage-data event or configuration key changes, so Lighthouse.Migrations.*, Lighthouse.Frontend and Lighthouse.EndToEndTests stay byte-identical.",
-"F170": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMoved.cs with only namespace and using lines changed.",
-"F171": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AdditionalFieldInUse.cs with only namespace and using lines changed.",
-"F172": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportOwnerGoneException.cs with only namespace and using lines changed.",
-"F173": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportRefusalCodes.cs with only namespace and using lines changed.",
-"F174": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs with only namespace and using lines changed.",
-"F175": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/SpecialCauseType.cs with only namespace and using lines changed.",
-"F176": "Unit test moves beside its production type, namespace equal to folder, kept there by the module's unit-test placement rule.",
-"F177": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/ManualRankComparerTest.cs with only namespace and using lines changed.",
-"F178": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMovedTest.cs with only namespace and using lines changed.",
-"F179": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/AdditionalFieldInUseTest.cs with only namespace and using lines changed.",
 "F18": "Kernel is the three base types: ADR-270 Decision 7 allows shared ids, truly shared value objects and the event base type; Lighthouse has no shared id or value object type (ids are int), so the Kernel rows are IDomainEvent, IEntity and IConcurrencyTokenEntity only. Widely used types (StateCategories, InstanceCalendar, WorkTrackingSystems) are not promoted: each has an owner in ADR-270's context table, and calling them kernel would hide that owner's published language.",
-"F180": "Removed by the move; the file's bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/DeliverySourceBindabilityTest.cs with only namespace and using lines changed.",
-"F181": "Names a context mover or its Models namespace by literal; renamed per S1's rename list.",
 "F182": "Run the Architecture tests after the context-owned movers and their unit tests moved: the oracle reads each context mover's catalogue row and looks the type up in the compiled assembly.",
 "F183": "Each context mover exists only under Lighthouse.Backend.Modules.<Owner>.Domain or .Application as its row names, its unit tests sit under Tests/Modules/<Owner> in the matching layer, and every module's boundary and placement rules pass. RED before the move; GREEN after; the unchanged backend suites and the path-classifier test pass.",
 "F184": "Leaving a mover under Models, putting it in another module or the wrong layer, or leaving its unit test under Tests/Models, fails naming the type and its expected place.",
-"F185": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/EmbedSessionTokenRedemption.cs; consumers change only using lines.",
-"F186": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs; consumers change only using lines.",
-"F187": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs; consumers change only using lines.",
-"F188": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceDescriptor.cs; consumers change only using lines.",
-"F189": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DeliverySourceBindability.cs; consumers change only using lines.",
 "F19": "One catalogue row per Models type: KernelCatalogue (test side, Tests/Architecture) holds one row per top-level Models type, standing Kernel or Owned(owner context or Platform lane, blockers, freeing Story). Blockers are a closed set, each a property measured from the IL or the EF model, never a name: Entity (in LighthouseAppContext's model), Wire (reachable from a controller action signature or an API.DTO public property, transitively), HeldBy(type) (a staying Models type references it), Shared (IL users in two or more Modules.<X> contexts), InfraReached (named by Data, a repository or the composition root), PathPinned(consumer) (a non-test consumer reads its file by path), Event (implements IDomainEvent). A row with no blocker is a mover and is allowed only while it is on the shrink-only movers list.",
-"F190": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DeliverySourceOption.cs; consumers change only using lines.",
-"F191": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthCompleteResult.cs; consumers change only using lines.",
-"F192": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/RealityCheckVerdictTypes.cs; consumers change only using lines.",
-"F193": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Application/ManualRankComparer.cs; consumers change only using lines.",
-"F194": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMoved.cs; consumers change only using lines.",
-"F195": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AdditionalFieldInUse.cs; consumers change only using lines.",
-"F196": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportOwnerGoneException.cs; consumers change only using lines.",
-"F197": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportRefusalCodes.cs; consumers change only using lines.",
-"F198": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs; consumers change only using lines.",
-"F199": "Pure move to Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/SpecialCauseType.cs; consumers change only using lines.",
 "F2": "A maintainer sees for every Models type who owns it and why it still sits there, and a new context type placed in Models fails the architecture rules and names itself.",
 "F20": "Move whole files only: a file moves only if all its top-level types are free and share one owner; no file split and no rename, so each move commit is a pure move (refactor(kernel): move ...). Files of mixed standing wait for S12c.",
-"F200": "Pure move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Application/ManualRankComparerTest.cs; consumers change only using lines.",
-"F201": "Pure move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMovedTest.cs; consumers change only using lines.",
-"F202": "Pure move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/AdditionalFieldInUseTest.cs; consumers change only using lines.",
-"F203": "Pure move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/DeliverySourceBindabilityTest.cs; consumers change only using lines.",
-"F204": "Literal for a mover renamed to its module namespace.",
-"F205": "Receives the moved unit test beside its production type; assertions unchanged.",
-"F206": "A pure move keeps each existing type unchanged; the destination modules and their Domain and Application folders already exist and are reused; no new responsibility is created.",
-"F207": "Per touched file. Movers with one type each (EmbedSessionTokenRedemption.cs, RbacGuardRequirement.cs, DeliverySourceDescriptor.cs, DeliverySourceBindability.cs, OAuthCompleteResult.cs, ManualRankComparer.cs, OwnersWhoseFetchMoved.cs, ReportOwnerGoneException.cs, ReportRefusalCodes.cs, RuleSetSemantics.cs, SpecialCauseType.cs) and the four moved unit tests: not-applicable, they move whole. Movers holding several types (RbacOperationResult.cs, DeliverySourceOption.cs, RealityCheckVerdictTypes.cs, AdditionalFieldInUse.cs): not-applicable in this slice, because the accepted design moves a file whole and keeps every commit a pure move; their split waits for S12c. Rule files holding one type (AdditionalFieldInUseRulePurityArchUnitTest.cs, OrganisationSetupPatternRoles.cs, FeatureOrderingSingleSourceArchUnitTest.cs): not-applicable. Rule files holding several types (AccessApplicationLayoutArchUnitTest.cs, AccessAndLicensingMembershipArchUnitTest.cs, TrackerIntegrationMembershipArchUnitTest.cs, TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs, OrganisationSetupMembership.cs, ReportsMembership.cs, EveryActionDeclaresItsAccessArchitectureTest.cs): not-applicable in this slice, because the slice changes only literal strings in them and their extra types are planted fixtures of the rule; a split is offered to the improvement backlog.",
 "F208": "Each context mover exists only under Modules.<Owner>.Domain or .Application as its catalogue row names, and its unit tests sit in the matching Tests/Modules/<Owner> layer.",
 "F209": "each mover found at its row's namespace",
 "F21": "Destination follows measured IL edges: a context-owned mover goes to Modules/<Owner>/Domain when its IL edges reach only the three kernel types, the BCL and that module's Domain, otherwise to Modules/<Owner>/Application; a Platform-owned mover goes to Platform/<Area>. No Contracts folder receives a mover and no new module folder is created; an owner without a module keeps its row Owned with its blocker.",
@@ -2305,14 +5018,80 @@
 "F354": "The Kernel rows are exactly the domain-event base type and the two entity markers; a Kernel row for any other type, or a missing one, fails naming the type and the fix",
 "F355": "No type escapes the blocker check by being called kernel, and the kernel cannot grow unseen",
 "F356": "the declared list itself were widened with an ordinary type in the same change, which only review of that list can catch",
+"F357": "Its Models regexes name files that stay; the movers land in Modules/<Owner>/Domain and Platform/UsageData, which it already treats as module and platform paths; S3 checks with test-selection-show.",
+"F358": "Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.",
+"F359": "Removed by the move with git mv; the file is the mover S1 measured free.",
 "F36": "S1 starts only after the predecessors are merged: for each of Stories 6365, 6366, 6468, 6657 and 6382, the ADO state is Closed, git log main --grep finds the Story's final commit and git merge-base --is-ancestor holds, and the content check holds (Modules/Refinement, Modules/Reports, Modules/OrganisationSetup present; no Services/{Implementation,Interfaces}/{Refinement,Reports}; Modules/*/Contracts with its contracts-only rule; no loose Services/Implementation/WriteBack*.cs). A failed check stops S1 and is reported with the Story, the check and its output.",
+"F360": "Unit test moves beside its production type; namespace equal to folder.",
+"F361": "Removed by the move with git mv; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/UsageDataEventShapesTests.cs with only namespace and using lines changed.",
+"F362": "Removed by the move with git mv; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/OutlierListOpenedEventNameTests.cs with only namespace and using lines changed.",
+"F363": "Removed by the move with git mv; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/WithinSleListOpenedEventNameTests.cs with only namespace and using lines changed.",
+"F364": "Rule file that names a mover or its Models namespace or path by literal or by type; renamed to the new place.",
+"F365": "Consumer found by text search for a mover name together with its old namespace; only using lines change.",
+"F366": "Pure move of the whole file to its Platform/UsageData namespace; its catalogue row names the new namespace. Consumers change only using lines.",
+"F367": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEmitPermit.cs with only the namespace line changed.",
+"F368": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEventReported.cs with only the namespace line changed.",
+"F369": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEventShapes.cs with only the namespace line changed.",
 "F37": "S1 re-measures R1 to R11 from the IL and the EF model (every Models type, entity names in both snapshots, wire reachability, held-by closure, users per context, Contracts placement, the write-back owner, rule-file literals, NamespaceMoveLaw shape, non-test path consumers, S12c and S13 state); every count in the feature-delta is a noisy text measurement and a difference is recorded, not argued.",
+"F370": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataSuppressionReason.cs with only the namespace line changed.",
+"F371": "Unit test of a mover, moved with it; same assertions.",
+"F372": "Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/UsageDataEventShapesTests.cs.",
+"F373": "Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/OutlierListOpenedEventNameTests.cs.",
+"F374": "Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/WithinSleListOpenedEventNameTests.cs.",
+"F375": "Literal or using line naming a mover is renamed to its new namespace; no rule is weakened.",
+"F376": "Using line for the old namespace is replaced by the mover's new namespace; no behaviour changes.",
+"F377": "A pure move keeps each existing type unchanged; the destination folder Platform/UsageData already exists and is reused; no new responsibility is created.",
+"F378": "Per touched file. The four movers (UsageDataEmitPermit.cs, UsageDataEventReported.cs, UsageDataEventShapes.cs, UsageDataSuppressionReason.cs) hold one type each and move whole; the three moved unit tests move whole. PlatformLanePatternRoles.cs holds one type. PlatformLaneMembership.cs and PlatformUsageLoggingReleasesLayoutArchUnitTest.cs may hold several declarations: not-applicable in this slice, because it changes only literal strings in them and this Story stays pure moves plus renames. Consumer files change only using lines and are not moved.",
+"F379": "Removed by the move with git mv; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/AdditionalFieldInUseTest.cs with only namespace and using lines changed.",
 "F38": "Contexts are read from Modules.<X> namespaces only; API, Data, Platform.*, repositories, the composition root and loose Services are not contexts.",
+"F380": "Removed by the move with git mv; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/ManualRankComparerTest.cs with only namespace and using lines changed.",
+"F381": "Removed by the move with git mv; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMovedTest.cs with only namespace and using lines changed.",
+"F382": "Removed by the move with git mv; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/PortfolioSizeTest.cs with only namespace and using lines changed.",
+"F383": "Removed by the move with git mv; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/ThroughputFilterOverrideTest.cs with only namespace and using lines changed.",
+"F384": "Removed by the move with git mv; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Domain/StalenessPolicyTest.cs with only namespace and using lines changed.",
+"F385": "Removed by the move with git mv; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/DeliverySourceBindabilityTest.cs with only namespace and using lines changed.",
+"F386": "Pure move of the whole file to its owner module Domain; its catalogue row names the new namespace. Consumers change only using lines.",
+"F387": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AdditionalFieldInUse.cs with only the namespace line changed.",
+"F388": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AppSettingKeys.cs with only the namespace line changed.",
+"F389": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/CurrentUserProfileStatus.cs with only the namespace line changed.",
 "F39": "No bound on catalogue size is set by any authority; the catalogue starts at the IL count S1 measures and may only shrink (rows leave when their type leaves Models).",
+"F390": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/EmbedSessionTokenRedemption.cs with only the namespace line changed.",
+"F391": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs with only the namespace line changed.",
+"F392": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs with only the namespace line changed.",
+"F393": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ConnectionFieldDefaults.cs with only the namespace line changed.",
+"F394": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceBindability.cs with only the namespace line changed.",
+"F395": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceOption.cs with only the namespace line changed.",
+"F396": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/FeatureMoveVerdict.cs with only the namespace line changed.",
+"F397": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/FeatureOrderKey.cs with only the namespace line changed.",
+"F398": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastHorizon.cs with only the namespace line changed.",
+"F399": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ManualRankComparer.cs with only the namespace line changed.",
 "F4": "The Models types that nothing blocks leave Models: Platform-owned ones to Platform/<Area>, context-owned ones to Modules/<Owner>/Domain or Application, with their unit tests beside them, and every module's boundary and placement rules still green.",
 "F40": "At most four slices in one nwdes feature, each about one day or less; slices run in order S1, S2, S3, S4.",
+"F400": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/EstimateNormalizationStatus.cs with only the namespace line changed.",
+"F401": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/StateAsOf.cs with only the namespace line changed.",
+"F402": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ThroughputFilterOverride.cs with only the namespace line changed.",
+"F403": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OptionalFeatureKeys.cs with only the namespace line changed.",
+"F404": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnerTerms.cs with only the namespace line changed.",
+"F405": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMoved.cs with only the namespace line changed.",
+"F406": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/PortfolioSize.cs with only the namespace line changed.",
+"F407": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportOwnerGoneException.cs with only the namespace line changed.",
+"F408": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportRefusalCodes.cs with only the namespace line changed.",
+"F409": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessVerdict.cs with only the namespace line changed.",
 "F41": "Tests follow .claude/skills/test-writing/SKILL.md and references/backend.md, which win over nWave's own timing and PBT-density rules; architecture rules are native NUnit plus ArchUnitNET or IL tests under Tests/Architecture; behaviour is observed through the unchanged acceptance tests at the application-service port; no nWave scenario tags in code, so an untagged test is correct here.",
+"F410": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessPolicy.cs with only the namespace line changed.",
+"F411": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/SyncOutcome.cs with only the namespace line changed.",
+"F412": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs with only the namespace line changed.",
+"F413": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/WriteBackValueSources.cs with only the namespace line changed.",
+"F414": "Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/AdditionalFieldInUseTest.cs.",
+"F415": "Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/ManualRankComparerTest.cs.",
+"F416": "Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMovedTest.cs.",
+"F417": "Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/PortfolioSizeTest.cs.",
+"F418": "Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/ThroughputFilterOverrideTest.cs.",
+"F419": "Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Domain/StalenessPolicyTest.cs.",
 "F42": "Inside a slice the fast loop is Lighthouse.Backend/Test-Fast.ps1 (builds first) plus the slice oracle; the slice's verification commands run once at its end. Live connector categories are never run.",
+"F420": "Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/DeliverySourceBindabilityTest.cs.",
+"F421": "A pure move keeps each existing type unchanged; the destination modules and their Domain folders already exist and are reused; no new responsibility is created.",
+"F422": "Per touched file. Movers that hold several types move whole, because the accepted design keeps every commit a pure move and their split waits for S12c: AdditionalFieldInUse.cs (4 types), RbacOperationResult.cs (2), ConnectionFieldDefaults.cs (3), DeliverySourceOption.cs (2), StalenessPolicy.cs (2), StalenessVerdict.cs (2). All other movers hold one type and move whole, as do the seven moved unit tests. Rule files holding several types are not-applicable in this slice, because it changes only literal strings in them; a split is offered to the improvement backlog. Consumer files change only using lines and are not moved.",
 "F43": "Non-test path consumers stay working: Scripts/test-selection/path-classifier.sh (SHARED_REGEX, JIRA_REGEX) and Lighthouse.Frontend/src/services/UsageData/usageDataRouteKeys.test.ts, which reads Models/UsageData/UsageDataRouteKey.cs and UsageDataRoutePatterns.cs by path; those two files stay (PathPinned).",
 "F44": "Comments are rare and written for a stranger; no internal id (decision, slice or ADR number) is the only reason in a comment.",
 "F45": "Owns the kernel rules (Models does not depend on Services, Modules, Platform or the update queue) run on real and planted types; it gains the rule that every Kernel row is used by two or more contexts.",
@@ -2325,7 +5104,6 @@
 "F51": "Decides cross-context references through Contracts; the catalogue decides only Models standing, so they do not decide the same fact; S1 checks the actual scope and records any overlap.",
 "F52": "No entity moves, so the model snapshot and migrations stay byte-identical.",
 "F53": "Reads Models/UsageData/UsageDataRouteKey.cs and UsageDataRoutePatterns.cs by path; both files stay.",
-"F54": "Its Models regexes name files that stay; the only mover it can see (Models/OAuth/OAuthCompleteResult.cs) lands in Modules/TrackerIntegration/Application, already in SHARED_REGEX; S3 checks with test-selection-show.",
 "F55": "Names no mover; S1 re-greps it with .editorconfig, the Stryker config and appsettings files.",
 "F56": "No shared wire, schema or configuration contract changes: System.Text.Json writes no type names, Swashbuckle uses short schema ids, no type-name reflection exists, and no entity moves, so no producer or consumer outside the compiled assembly sees a namespace.",
 "F57": "Every caller of a moved type is inside the one backend deployable and changes in the same commit; no persisted or wire data names a namespace, so the primary oracle and the unchanged suites cover them.",
