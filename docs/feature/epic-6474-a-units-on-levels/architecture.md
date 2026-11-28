@@ -86,6 +86,24 @@ Examine proof: each slice's oracle lives in Lighthouse.Backend.Tests/Acceptance/
 Kept as decided: no usage-data event in feature A (all slices invisible); an item maps to exactly one owning unit of its level (2026-11-24) is not built now; connector port fetching generically per unit stays a candidate for slice 12 (owner maintainer); whether a re-added level 2 gets seeded or last names stays open for slice 15 (owner maintainer).
 ```
 
+#### D14
+
+```text
+LevelId is the stored level key, not a database number: public readonly record struct LevelId(string Key) in Modules/OrganisationSetup/Contracts, with LevelId.Team ("Team") and LevelId.Portfolio ("Portfolio"), the values the five stored discriminators already hold (ADR-273 decision 2). It is stable and distinct from the ordinal; a level added later (#6455) gets a new key. A test builds a LevelId with LevelId.Team or LevelId.Portfolio; no lookup is needed.
+```
+
+#### D15
+
+```text
+A compile-safe RED in C#: each slice starts with a prefactoring step that adds the public signatures its oracle names (types, interfaces, members, the DI registration extension) with no behaviour: an empty answer where one is safe, NotImplementedException otherwise. The oracle then compiles and fails on its assertions. The signatures are declared per slice as constructor records and named file by file in the slice's prefactoring move.
+```
+
+#### D16
+
+```text
+Test composition: every new service is registered by a module extension that Program.cs and the tests both call: OrganisationSetupModule.AddOrganisationSetup (existing; gains IUnitLifecycle in S3 and IUnitSettings in S4), OrganisationSetupModule.AddOrganisationStructure (new in S2: IOrganisationStructureStore, IConnectionMappingStore, IOrganisationStructureQuery, and OrganisationStructureMigrator as an ISeeder; Program.cs calls it right after registering TerminologySeeder) and ForecastingModule.AddLeafCapacity (new in S5: ILeafCapacityStore, and LeafCapacitySeeder as an ISeeder after the structure migrator). A port scenario passes services => services.AddOrganisationSetup().AddOrganisationStructure() (plus TerminologySeeder and AddLeafCapacity where needed) to ServicePortHarness and runs the resolved ISeeder instances in registration order. The Postgres scenarios build LighthouseAppContext on SharedPostgresContainer's connection string and register the same extensions.
+```
+
 ### Constraints
 
 #### K1
@@ -545,6 +563,14 @@ ResolveOutcome Resolve\(LevelId level\, IEnumerable\<string\> requested\) \-\> M
 OrganisationStructureMigrationPlan\.From
 
 static OrganisationStructureMigrationPlan From\(IReadOnlyList\<Team\>\, IReadOnlyList\<Portfolio\>\, TerminologyWords\)
+
+LevelId
+
+public readonly record struct LevelId\(string Key\)\; static LevelId Team\; static LevelId Portfolio
+
+TermPair
+
+public sealed record TermPair\(string Singular\, string Plural\)  \(Modules\/OrganisationSetup\/Contracts\)
 
 ### Laws
 
@@ -1808,6 +1834,118 @@ Create
 Purity law of the planner
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/TermPair\.cs
+
+Create
+
+```text
+declared public signature of slice 02
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/LevelView\.cs
+
+Create
+
+```text
+declared public signature of slice 02
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/OrganisationStructureView\.cs
+
+Create
+
+```text
+declared public signature of slice 02
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/StructureRead\.cs
+
+Create
+
+```text
+declared public signature of slice 02
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/ConnectionMappingView\.cs
+
+Create
+
+```text
+declared public signature of slice 02
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/IOrganisationStructureQuery\.cs
+
+Create
+
+```text
+declared public signature of slice 02
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/OrganisationStructureQuery\.cs
+
+Create
+
+```text
+declared public signature of slice 02
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/IOrganisationStructureStore\.cs
+
+Create
+
+```text
+declared public signature of slice 02
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/IConnectionMappingStore\.cs
+
+Create
+
+```text
+declared public signature of slice 02
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/TerminologyWords\.cs
+
+Create
+
+```text
+declared public signature of slice 02
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/PlannedLevel\.cs
+
+Create
+
+```text
+declared public signature of slice 02
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/PlannedMapping\.cs
+
+Create
+
+```text
+declared public signature of slice 02
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Domain\/Structure\/RenameOutcome\.cs
+
+Create
+
+```text
+declared public signature of slice 02
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/OrganisationSetupModule\.cs
+
+Extend
+
+```text
+gains AddOrganisationStructure, called by Program.cs and the tests
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/TwoLevelsFromTerminologyTest\.cs
 
 #### Verification
@@ -1851,11 +1989,11 @@ P1
 #### Prefactoring
 
 ```text
-L1: TerminologyService.cs holds one type; Program.cs and LighthouseAppContext.cs are composition and mapping roots with one type each; HistoricalSchemaPatch.cs one type. not-applicable per file: each touched file holds one type, nothing moves; the follow-up change is the level-backed terminology read
+Signature step, no behaviour, its own commit before the oracle: create Contracts/TermPair.cs, LevelId.cs, LevelView.cs, OrganisationStructureView.cs, StructureRead.cs, ConnectionMappingView.cs, IOrganisationStructureQuery.cs; Domain/Structure/OrganisationStructure.cs, Level.cs, RenameOutcome.cs; Domain/Mapping/ConnectionMapping.cs, ResolveOutcome.cs; Application/Structure/IOrganisationStructureStore.cs, IConnectionMappingStore.cs, OrganisationStructureQuery.cs, TerminologyWords.cs, OrganisationStructureMigrationPlan.cs, PlannedLevel.cs, PlannedMapping.cs; Adapters/Startup/OrganisationStructureMigrator.cs; Adapters/Persistence/OrganisationStructureStore.cs, ConnectionMappingStore.cs (all under Modules/OrganisationSetup); add AddOrganisationStructure to OrganisationSetupModule.cs registering them (not yet called by Program.cs). Bodies: Seed returns a completed task, Structure returns NotMigrated, Mappings and All return empty lists, the rest throw NotImplementedException. Per touched existing file: OrganisationSetupModule.cs holds one type, nothing moves. Follow-up change: the migrator, the stores and the level-backed terminology
 ```
 
 ```text
-Terminology answers
+Every existing answer: nothing calls the new types yet
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TerminologyControllerTest\.cs
@@ -1863,6 +2001,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TerminologyControllerTest\
 ##### Verification
 
 ```text
+dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TerminologyControllerTest
 ```
 
@@ -2008,6 +2147,146 @@ CreateNew
 
 ```text
 No existing type owns OrganisationStructurePlanPurityArchUnitTest's responsibility (searched the module and its Contracts); see the shared reuse rows
+```
+
+TermPair
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/TermPair\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 02
+```
+
+LevelView
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/LevelView\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 02
+```
+
+OrganisationStructureView
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/OrganisationStructureView\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 02
+```
+
+StructureRead
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/StructureRead\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 02
+```
+
+ConnectionMappingView
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/ConnectionMappingView\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 02
+```
+
+IOrganisationStructureQuery
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/IOrganisationStructureQuery\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 02
+```
+
+OrganisationStructureQuery
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/OrganisationStructureQuery\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 02
+```
+
+IOrganisationStructureStore
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/IOrganisationStructureStore\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 02
+```
+
+IConnectionMappingStore
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/IConnectionMappingStore\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 02
+```
+
+TerminologyWords
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/TerminologyWords\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 02
+```
+
+PlannedLevel
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/PlannedLevel\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 02
+```
+
+PlannedMapping
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/PlannedMapping\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 02
+```
+
+RenameOutcome
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Domain\/Structure\/RenameOutcome\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 02
+```
+
+OrganisationSetupModule
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/OrganisationSetupModule\.cs\:1
+
+Extend
+
+```text
+Existing owner: gains AddOrganisationStructure, called by Program.cs and the tests
 ```
 
 ##### Impact
@@ -2172,6 +2451,146 @@ Changed
 New test for slice S2; consumers listed in the slice's agreements change in the same commit
 ```
 
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/TermPair\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/LevelView\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/OrganisationStructureView\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/StructureRead\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/ConnectionMappingView\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/IOrganisationStructureQuery\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/OrganisationStructureQuery\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/IOrganisationStructureStore\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/IConnectionMappingStore\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/TerminologyWords\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/PlannedLevel\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/PlannedMapping\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Domain\/Structure\/RenameOutcome\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/OrganisationSetupModule\.cs\:1
+
+Changed
+
+```text
+gains AddOrganisationStructure, called by Program.cs and the tests
+```
+
 ##### Agreement
 
 None.
@@ -2236,7 +2655,73 @@ None.
 
 ##### Constructors
 
-None.
+LevelView
+
+public sealed record LevelView\(LevelId Id\, int Ordinal\, TermPair UnitName\, TermPair ItemName\)  \(Contracts\; read model\)
+
+OrganisationStructureView
+
+public sealed record OrganisationStructureView\(IReadOnlyList\<LevelView\> Levels\)  \(Contracts\; Levels ordered by Ordinal\)
+
+StructureRead
+
+public abstract record StructureRead\; sealed record NotMigrated\(\) \: StructureRead\; sealed record Migrated\(OrganisationStructureView Structure\) \: StructureRead  \(Contracts\, one file\)
+
+ConnectionMappingView
+
+public sealed record ConnectionMappingView\(int ConnectionId\, IReadOnlyDictionary\<LevelId\, IReadOnlyList\<string\>\> TypesByLevel\, IReadOnlyList\<string\> TypesOnBothLevels\)  \(Contracts\; a level without a row is absent from TypesByLevel\)
+
+IOrganisationStructureQuery
+
+public interface IOrganisationStructureQuery \{ Task\<StructureRead\> Structure\(CancellationToken cancellationToken\)\; Task\<IReadOnlyList\<ConnectionMappingView\>\> Mappings\(CancellationToken cancellationToken\)\; \}  \(Contracts\; read side for the oracle and later GET \/levels\)
+
+OrganisationStructure
+
+public sealed class OrganisationStructure \{ static OrganisationStructure Seed\(TermPair teamUnit\, TermPair workItem\, TermPair portfolioUnit\, TermPair feature\)\; RenameOutcome Rename\(LevelId level\, TermPair unitName\, TermPair itemName\)\; OrganisationStructureView ToView\(\)\; \}  \(Domain\/Structure\)
+
+Level
+
+public sealed class Level \{ Level\(LevelId id\, int ordinal\, TermPair unitName\, TermPair itemName\)\; LevelView ToView\(\)\; \}  \(Domain\/Structure\)
+
+ConnectionMapping
+
+public sealed class ConnectionMapping \{ static ConnectionMapping WithCreateDefaults\(int connectionId\, bool connectorUsesItemTypes\)\; static ConnectionMapping From\(int connectionId\, IReadOnlyDictionary\<LevelId\, IReadOnlyList\<string\>\> typesByLevel\)\; ResolveOutcome Resolve\(LevelId level\, IEnumerable\<string\> requested\)\; ConnectionMappingView ToView\(\)\; \}  \(Domain\/Mapping\)
+
+ResolveOutcome
+
+public abstract record ResolveOutcome\; sealed record MappedSubset\(IReadOnlyList\<string\> Types\) \: ResolveOutcome\; sealed record TypeNotMapped\(string Type\, LevelId Level\, int ConnectionId\) \: ResolveOutcome  \(Domain\/Mapping\, one file\)
+
+IOrganisationStructureStore
+
+public interface IOrganisationStructureStore \{ Task\<OrganisationStructure\?\> Load\(CancellationToken cancellationToken\)\; Task Save\(OrganisationStructure structure\, CancellationToken cancellationToken\)\; \}  \(Application\/Structure\; null only before the first upgrade\)
+
+IConnectionMappingStore
+
+public interface IConnectionMappingStore \{ Task\<ConnectionMapping\> ForConnection\(int connectionId\, CancellationToken cancellationToken\)\; Task\<IReadOnlyList\<ConnectionMapping\>\> All\(CancellationToken cancellationToken\)\; Task Save\(ConnectionMapping mapping\, CancellationToken cancellationToken\)\; \}  \(Application\/Structure\; ForConnection returns the stored mapping or a new one with the create defaults\, saved with the caller\'s unit of work\)
+
+TerminologyWords
+
+public sealed record TerminologyWords\(TermPair Team\, TermPair WorkItem\, TermPair Portfolio\, TermPair Feature\)\; static TerminologyWords From\(IEnumerable\<TerminologyEntry\> entries\)  \(Application\/Structure\)
+
+OrganisationStructureMigrationPlan
+
+public sealed class OrganisationStructureMigrationPlan \{ static OrganisationStructureMigrationPlan From\(IReadOnlyList\<Team\> teams\, IReadOnlyList\<Portfolio\> portfolios\, IReadOnlyList\<WorkTrackingSystemConnection\> connections\, TerminologyWords words\)\; IReadOnlyList\<PlannedLevel\> Levels\; IReadOnlyList\<PlannedMapping\> Mappings\; \}  \(Application\/Structure\; pure\)
+
+PlannedLevel
+
+public sealed record PlannedLevel\(LevelId Id\, int Ordinal\, TermPair UnitName\, TermPair ItemName\)
+
+PlannedMapping
+
+public sealed record PlannedMapping\(int ConnectionId\, LevelId Level\, IReadOnlyList\<string\> Types\)  \(mapping spelling\, first\-appearance order\)
+
+OrganisationStructureMigrator
+
+public sealed class OrganisationStructureMigrator \: ISeeder \{ Task Seed\(\)\; \}  \(Adapters\/Startup\)
+
+AddOrganisationStructure
+
+public static IServiceCollection AddOrganisationStructure\(this IServiceCollection services\)  \(OrganisationSetupModule\)
 
 ##### Laws
 
@@ -2366,6 +2851,62 @@ Extend
 
 None.
 
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/UnitView\.cs
+
+Create
+
+```text
+declared public signature of slice 03
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/IUnitLifecycle\.cs
+
+Create
+
+```text
+declared public signature of slice 03
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/UnitLifecycleService\.cs
+
+Create
+
+```text
+declared public signature of slice 03
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/DeletionOutcome\.cs
+
+Create
+
+```text
+declared public signature of slice 03
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/OrganisationSetupModule\.cs
+
+Extend
+
+```text
+AddOrganisationSetup registers IUnitLifecycle and IUnitDirectory
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/TeamsController\.cs
+
+Extend
+
+```text
+create logic moves into UnitLifecycleService
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/PortfoliosController\.cs
+
+Extend
+
+```text
+create logic moves into UnitLifecycleService
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/UnitsOnLevelsTest\.cs
 
 #### Verification
@@ -2407,18 +2948,21 @@ P1
 #### Prefactoring
 
 ```text
-Per file: TeamController.cs, PortfolioController.cs, the three handler files, TeamDeleted.cs and PortfolioDeleted.cs each hold one type (not-applicable, nothing moves); Program.cs is the composition root (not-applicable). Follow-up change: publish UnitDeleted
+Two commits before the oracle. (1) Behaviour-preserving move: the create logic of TeamsController.CreateTeam and PortfoliosController and the delete logic of TeamController.DeleteTeam and PortfolioController move unchanged into Application/Units/UnitLifecycleService.cs behind IUnitLifecycle.cs, with DeletionOutcome.cs; the controllers call the port and still publish TeamDeleted and PortfolioDeleted through it. (2) Signature step, no behaviour: create Contracts/UnitId.cs, UnitCreated.cs, UnitDeleted.cs, UnitView.cs, IUnitDirectory.cs and Application/Units/UnitDirectory.cs (UnitsOn returns an empty list); AddOrganisationSetup registers both. Per touched existing file: each controller and OrganisationSetupModule.cs holds one type, nothing moves. Follow-up change: publish UnitCreated and UnitDeleted
 ```
 
 ```text
-Deletion clean-up
+Create and delete answers and clean-up
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/WorkItems\/Application\/Policies\/TeamDeletedRefreshLogCleanupHandlerTest\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamsControllerTest\.cs
 
 ##### Verification
 
 ```text
+dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamsControllerTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfoliosControllerTest
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamDeletedRefreshLogCleanupHandlerTest
 ```
 
@@ -2428,6 +2972,10 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 ```text
 Unit lifecycle: TeamController and PortfolioController create and delete through Organisation set-up services that publish UnitCreated(UnitId) and UnitDeleted(UnitId, UnitsThatReferencedIt) after commit; TeamDeleted and PortfolioDeleted are removed from the publishers and their three handlers re-subscribe to UnitDeleted in today's order. A unit directory query (IUnitDirectory in Organisation set-up Contracts) lists units per level with UnitId; ids and routes unchanged.
+```
+
+```text
+Read side and composition for slice 03: the oracle drives IUnitLifecycle and reads IUnitDirectory, both registered by AddOrganisationSetup; it observes the clean-up through the existing repositories and the refresh log service, and UnitCreated and UnitDeleted through a recording IDomainEventHandler it registers itself. Today the create and delete logic sits in TeamsController, TeamController, PortfoliosController and PortfolioController; the prefactoring step moves it unchanged into UnitLifecycleService, so the controllers call the port.
 ```
 
 ##### Constraints
@@ -2574,6 +3122,76 @@ Extend
 
 ```text
 EventTypesTheCompositionRootNames already owns this responsibility in slice S3; extended in place, no parallel owner
+```
+
+UnitView
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/UnitView\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 03
+```
+
+IUnitLifecycle
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/IUnitLifecycle\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 03
+```
+
+UnitLifecycleService
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/UnitLifecycleService\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 03
+```
+
+DeletionOutcome
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/DeletionOutcome\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 03
+```
+
+OrganisationSetupModule
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/OrganisationSetupModule\.cs\:1
+
+Extend
+
+```text
+Existing owner: AddOrganisationSetup registers IUnitLifecycle and IUnitDirectory
+```
+
+TeamsController
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/TeamsController\.cs\:1
+
+Extend
+
+```text
+Existing owner: create logic moves into UnitLifecycleService
+```
+
+PortfoliosController
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/PortfoliosController\.cs\:1
+
+Extend
+
+```text
+Existing owner: create logic moves into UnitLifecycleService
 ```
 
 ##### Impact
@@ -2728,6 +3346,76 @@ Changed
 Extended test for slice S3; consumers listed in the slice's agreements change in the same commit
 ```
 
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Contracts\/UnitView\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/IUnitLifecycle\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/UnitLifecycleService\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/DeletionOutcome\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/OrganisationSetupModule\.cs\:1
+
+Changed
+
+```text
+AddOrganisationSetup registers IUnitLifecycle and IUnitDirectory
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/TeamsController\.cs\:1
+
+Changed
+
+```text
+create logic moves into UnitLifecycleService
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/PortfoliosController\.cs\:1
+
+Changed
+
+```text
+create logic moves into UnitLifecycleService
+```
+
 ##### Agreement
 
 None.
@@ -2754,7 +3442,29 @@ None.
 
 ##### Constructors
 
-None.
+UnitCreated
+
+public sealed record UnitCreated\(UnitId Unit\) \: IDomainEvent  \(Contracts\)
+
+UnitDeleted
+
+public sealed record UnitDeleted\(UnitId Unit\, IReadOnlyList\<UnitId\> UnitsThatReferencedIt\) \: IDomainEvent  \(Contracts\)
+
+UnitView
+
+public sealed record UnitView\(UnitId Id\, string Name\, int ConnectionId\)  \(Contracts\)
+
+IUnitDirectory
+
+public interface IUnitDirectory \{ Task\<IReadOnlyList\<UnitView\>\> UnitsOn\(LevelId level\, CancellationToken cancellationToken\)\; \}  \(Contracts\; ordered by number\)
+
+IUnitLifecycle
+
+public interface IUnitLifecycle \{ Task\<UnitId\> CreateTeam\(Team team\, CancellationToken cancellationToken\)\; Task\<UnitId\> CreatePortfolio\(Portfolio portfolio\, CancellationToken cancellationToken\)\; Task\<DeletionOutcome\> Delete\(UnitId unit\, CancellationToken cancellationToken\)\; \}  \(Application\/Units\; the port the controllers call\)
+
+DeletionOutcome
+
+public abstract record DeletionOutcome\; sealed record Deleted\(UnitId Unit\, IReadOnlyList\<UnitId\> UnitsThatReferencedIt\) \: DeletionOutcome\; sealed record UnitNotFound\(UnitId Unit\) \: DeletionOutcome  \(Application\/Units\, one file\)
 
 ##### Laws
 
@@ -2902,6 +3612,62 @@ Extend
 ForConnection creates the create-defaults row when first needed
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/IUnitSettings\.cs
+
+Create
+
+```text
+declared public signature of slice 04
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/UnitSettingsService\.cs
+
+Create
+
+```text
+declared public signature of slice 04
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/UnitSaveOutcome\.cs
+
+Create
+
+```text
+declared public signature of slice 04
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/RefreshRequest\.cs
+
+Create
+
+```text
+declared public signature of slice 04
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/PlannedSubset\.cs
+
+Create
+
+```text
+declared public signature of slice 04
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/TeamController\.cs
+
+Extend
+
+```text
+update and manual refresh logic move into UnitSettingsService; maps outcomes to 400 and 409
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/PortfolioController\.cs
+
+Extend
+
+```text
+update and manual refresh logic move into UnitSettingsService; maps outcomes to 400 and 409
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/UnitReadsItsSubsetTest\.cs
 
 #### Verification
@@ -2943,18 +3709,21 @@ P1
 #### Prefactoring
 
 ```text
-Per file: WorkTrackingSystemOptionsOwner.cs, Team.cs, Portfolio.cs, TeamsController.cs, PortfoliosController.cs, UpdateController.cs, WorkItemService.cs, FetchFingerprint.cs, the DTO base and the extensions file each hold one type (not-applicable, nothing moves). Follow-up change: read the effective list
+Two commits before the oracle. (1) Behaviour-preserving move: TeamController.UpdateTeam and UpdateTeamData, PortfolioController's update and refresh actions, and the DTO-to-entity create path of TeamsController and PortfoliosController move unchanged into Application/Units/UnitSettingsService.cs behind IUnitSettings.cs, with UnitSaveOutcome.cs and RefreshRequest.cs (only UnitSaved, RefreshQueued and the not-found variants produced yet). (2) Signature step, no behaviour: add ItemTypeSubset, NeedsItemTypes and WorkItemTypesAsWritten to Models/WorkTrackingSystemOptionsOwner.cs (unmapped until the migration), create Application/Structure/PlannedSubset.cs and Domain/UnitTypeLossNotice.cs, add Subsets (empty) to OrganisationStructureMigrationPlan. Per touched existing file: TeamController.cs, PortfolioController.cs, TeamsController.cs, PortfoliosController.cs and WorkTrackingSystemOptionsOwner.cs each hold one type, nothing moves. Follow-up change: resolve the subset and refuse unmapped types
 ```
 
 ```text
-Fetch fingerprints of non-respelled units
+Every save, create and manual refresh answer
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/WorkItems\/Domain\/FetchFingerprintPinnedDigestTest\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamsControllerTest\.cs
 
 ##### Verification
 
 ```text
+dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamsControllerTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfoliosControllerTest
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~FetchFingerprintPinnedDigestTest
 ```
 
@@ -2972,6 +3741,10 @@ Maintainer decision, 2026-11-28: the 400 on an unmapped type starts with slice 0
 
 ```text
 DemoDataFactory writes Teams and Portfolios at runtime; it sets each unit's subset through ConnectionMapping.Resolve and the dual-write, so the demo connections get their mapping rows (create defaults when first needed) and the demo types resolve; a demo type outside the defaults is mapped by the migrator only for demo data present at the first upgrade.
+```
+
+```text
+Read side and composition for slice 04: the oracle drives IUnitSettings (registered by AddOrganisationSetup) for saves, creates and the manual refresh request; it reads the effective types through today's Team and Portfolio repositories (WorkItemTypes, ItemTypeSubset, NeedsItemTypes), the mappings through IOrganisationStructureQuery.Mappings, and fingerprints through FetchFingerprint.For. The manual refresh is TeamController.UpdateTeamData and PortfolioController's update action (POST /teams/{id} and /portfolios/{id}); UpdateController is not involved. The wire contract test covers the 400 and 409 codes on the host.
 ```
 
 ##### Constraints
@@ -3138,6 +3911,76 @@ CreateNew
 
 ```text
 Created by slice 02 as the only store of mapping rows; slice 04 gives it the create-on-first-need rule, so no second owner of mapping rows appears
+```
+
+IUnitSettings
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/IUnitSettings\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 04
+```
+
+UnitSettingsService
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/UnitSettingsService\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 04
+```
+
+UnitSaveOutcome
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/UnitSaveOutcome\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 04
+```
+
+RefreshRequest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/RefreshRequest\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 04
+```
+
+PlannedSubset
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/PlannedSubset\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 04
+```
+
+TeamController
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/TeamController\.cs\:1
+
+Extend
+
+```text
+Existing owner: update and manual refresh logic move into UnitSettingsService; maps outcomes to 400 and 409
+```
+
+PortfolioController
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/PortfolioController\.cs\:1
+
+Extend
+
+```text
+Existing owner: update and manual refresh logic move into UnitSettingsService; maps outcomes to 400 and 409
 ```
 
 ##### Impact
@@ -3322,6 +4165,76 @@ Changed
 Creates a missing mapping row with the create defaults inside the caller's transaction
 ```
 
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/IUnitSettings\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/UnitSettingsService\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/UnitSaveOutcome\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Units\/RefreshRequest\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Application\/Structure\/PlannedSubset\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/TeamController\.cs\:1
+
+Changed
+
+```text
+update and manual refresh logic move into UnitSettingsService; maps outcomes to 400 and 409
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/PortfolioController\.cs\:1
+
+Changed
+
+```text
+update and manual refresh logic move into UnitSettingsService; maps outcomes to 400 and 409
+```
+
 ##### Agreement
 
 None.
@@ -3394,7 +4307,29 @@ None.
 
 ##### Constructors
 
-None.
+WorkTrackingSystemOptionsOwner
+
+gains\: public List\<string\> ItemTypeSubset \{ get\; set\; \} \= \[\]\; public bool NeedsItemTypes \{ get\; set\; \}\; public List\<string\> WorkItemTypesAsWritten \{ get\; set\; \} \= \[\]  \(EF entity\, persistence\-shaped\)
+
+IUnitSettings
+
+public interface IUnitSettings \{ Task\<UnitSaveOutcome\> SaveTeam\(int teamId\, TeamSettingDto settings\, CancellationToken cancellationToken\)\; Task\<UnitSaveOutcome\> SavePortfolio\(int portfolioId\, PortfolioSettingDto settings\, CancellationToken cancellationToken\)\; Task\<UnitSaveOutcome\> CreateTeam\(TeamSettingDto settings\, CancellationToken cancellationToken\)\; Task\<UnitSaveOutcome\> CreatePortfolio\(PortfolioSettingDto settings\, CancellationToken cancellationToken\)\; Task\<RefreshRequest\> RequestRefresh\(UnitId unit\, CancellationToken cancellationToken\)\; \}  \(Application\/Units\)
+
+UnitSaveOutcome
+
+public abstract record UnitSaveOutcome\; sealed record UnitSaved\(UnitId Unit\) \: UnitSaveOutcome\; sealed record ItemTypeNotMapped\(string Type\, string LevelName\, string ConnectionName\) \: UnitSaveOutcome\; sealed record UnitToSaveNotFound\(UnitId Unit\) \: UnitSaveOutcome  \(Application\/Units\, one file\; the controller maps ItemTypeNotMapped to 400 team\-item\-type\-not\-on\-level \/ portfolio\-item\-type\-not\-on\-level\)
+
+RefreshRequest
+
+public abstract record RefreshRequest\; sealed record RefreshQueued\(UnitId Unit\) \: RefreshRequest\; sealed record UnitNeedsItemTypes\(UnitId Unit\) \: RefreshRequest\; sealed record UnitToRefreshNotFound\(UnitId Unit\) \: RefreshRequest  \(Application\/Units\, one file\; the controller maps UnitNeedsItemTypes to 409 unit\-needs\-item\-types\)
+
+PlannedSubset
+
+public sealed record PlannedSubset\(UnitId Unit\, IReadOnlyList\<string\> Types\, bool NeedsItemTypes\)\; OrganisationStructureMigrationPlan gains IReadOnlyList\<PlannedSubset\> Subsets
+
+UnitTypeLossNotice
+
+public sealed class UnitTypeLossNotice \{ int Id\; string StoredKind\; int UnitNumber\; string LostType\; DateTime RecordedAt \}  \(EF entity\, Domain\)
 
 ##### Laws
 
@@ -3508,6 +4443,30 @@ Extend
 
 None.
 
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Forecasting\/Contracts\/LeafCapacityView\.cs
+
+Create
+
+```text
+declared public signature of slice 07
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Forecasting\/ForecastingModule\.cs
+
+Extend
+
+```text
+gains AddLeafCapacity, called by Program.cs and the tests
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/TeamController\.cs
+
+Extend
+
+```text
+GET settings logic moves into UnitSettingsService.ReadTeamSettings
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/OneStructure\/LeafCapacityInForecastingTest\.cs
 
 #### Verification
@@ -3548,7 +4507,7 @@ P1
 #### Prefactoring
 
 ```text
-Per file: Team.cs holds one type; TeamExtensions.cs one static mapper; ForecastFilterRuleService.cs and ForecastService.cs one type each; TeamsController.cs one type (not-applicable, nothing moves). Follow-up change: read capacity from LeafCapacity
+Two commits before the oracle. (1) Behaviour-preserving move: TeamController's GET settings logic moves unchanged into UnitSettingsService.ReadTeamSettings (Modules/OrganisationSetup/Application/Units). (2) Signature step, no behaviour: create Modules/Forecasting/Contracts/LeafCapacityView.cs and ILeafCapacityStore.cs, Domain/LeafCapacity.cs, Adapters/Persistence/LeafCapacityStore.cs (All returns an empty list, Write throws NotImplementedException), Adapters/Startup/LeafCapacitySeeder.cs (Seed returns a completed task), and AddLeafCapacity in ForecastingModule.cs (not yet called by Program.cs). Per touched existing file: TeamController.cs and ForecastingModule.cs each hold one type, nothing moves. Follow-up change: copy and read capacity from LeafCapacity
 ```
 
 ```text
@@ -3560,6 +4519,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamsControllerTest\.cs
 ##### Verification
 
 ```text
+dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TeamsControllerTest
 ```
 
@@ -3569,6 +4529,10 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 ```text
 LeafCapacity (Forecasting Domain) holds Feature WIP, automatically adjust Feature WIP, fixed-dates flag, throughput start/end and days, forecast filter rule set; table LeafCapacities keyed by Team id with cascading FK; ILeafCapacityStore in Forecasting Contracts; LeafCapacitySeeder copies today's Team values at start where no row exists or where the Team columns differ (rollback); the Team settings save writes the record through the Forecasting contract and dual-writes the old columns in one unit of work under the Team's concurrency token. Forecast reads (Team.GetThroughputSettings callers, ForecastFilterRuleService, Feature WIP readers) read LeafCapacity.
+```
+
+```text
+Read side and composition for slice 07: the oracle registers AddOrganisationSetup, AddOrganisationStructure and AddLeafCapacity, runs the seeders in order, reads capacities through ILeafCapacityStore.All, reads and saves settings through IUnitSettings.ReadTeamSettings and SaveTeam (payload compared as serialized JSON), reads the old Team columns through today's Team repository, and runs a manual When forecast through IForecastService with a pinned IDrawStreamFactory.
 ```
 
 ##### Constraints
@@ -3695,6 +4659,36 @@ Extend
 
 ```text
 HistoricalSchemaPatch already owns this responsibility in slice S5; extended in place, no parallel owner
+```
+
+LeafCapacityView
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Forecasting\/Contracts\/LeafCapacityView\.cs\:1
+
+CreateNew
+
+```text
+No existing type declares this: declared public signature of slice 07
+```
+
+ForecastingModule
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Forecasting\/ForecastingModule\.cs\:1
+
+Extend
+
+```text
+Existing owner: gains AddLeafCapacity, called by Program.cs and the tests
+```
+
+TeamController
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/TeamController\.cs\:1
+
+Extend
+
+```text
+Existing owner: GET settings logic moves into UnitSettingsService.ReadTeamSettings
 ```
 
 ##### Impact
@@ -3829,6 +4823,36 @@ Changed
 Extended test for slice S5; consumers listed in the slice's agreements change in the same commit
 ```
 
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Forecasting\/Contracts\/LeafCapacityView\.cs\:1
+
+Changed
+
+```text
+New public signature the oracle compiles against
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Forecasting\/ForecastingModule\.cs\:1
+
+Changed
+
+```text
+gains AddLeafCapacity, called by Program.cs and the tests
+```
+
+public\-signature
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/TeamController\.cs\:1
+
+Changed
+
+```text
+GET settings logic moves into UnitSettingsService.ReadTeamSettings
+```
+
 ##### Agreement
 
 Teams capacity columns
@@ -3873,7 +4897,29 @@ None.
 
 ##### Constructors
 
-None.
+LeafCapacityView
+
+public sealed record LeafCapacityView\(UnitId Team\, int FeatureWip\, bool AutomaticallyAdjustFeatureWip\, bool UseFixedDatesForThroughput\, int ThroughputHistoryDays\, DateTime\? ThroughputHistoryStartDate\, DateTime\? ThroughputHistoryEndDate\, string\? ForecastFilterRuleSetJson\)  \(Forecasting\/Contracts\)
+
+ILeafCapacityStore
+
+public interface ILeafCapacityStore \{ Task\<IReadOnlyList\<LeafCapacityView\>\> All\(CancellationToken cancellationToken\)\; Task Write\(LeafCapacityView capacity\, CancellationToken cancellationToken\)\; \}  \(Forecasting\/Contracts\; Write joins the caller\'s unit of work\)
+
+LeafCapacity
+
+public sealed class LeafCapacity \{ static LeafCapacity From\(LeafCapacityView view\)\; ThroughputSettings ThroughputSettings\(DateOnly today\)\; LeafCapacityView ToView\(\)\; \}  \(Forecasting\/Domain\; EF entity keyed by TeamId\)
+
+LeafCapacitySeeder
+
+public sealed class LeafCapacitySeeder \: ISeeder \{ Task Seed\(\)\; \}  \(Forecasting\/Adapters\/Startup\)
+
+AddLeafCapacity
+
+public static IServiceCollection AddLeafCapacity\(this IServiceCollection services\)  \(ForecastingModule\)
+
+IUnitSettings\.ReadTeamSettings
+
+Task\<TeamSettingDto\> ReadTeamSettings\(int teamId\, CancellationToken cancellationToken\) added to IUnitSettings\; the GET settings logic of TeamController moves into it
 
 ##### Laws
 

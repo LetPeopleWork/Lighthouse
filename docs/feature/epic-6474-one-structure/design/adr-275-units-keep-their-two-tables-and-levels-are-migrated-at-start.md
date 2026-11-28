@@ -31,6 +31,23 @@ lowest-number tie-break, first-appearance order, a union per level in which a ty
    new tables (ADR-274, revised 2026-11-06): `ConnectionMappings` (one row per connection: connection id, concurrency
    token) and `ConnectionLevelMappings` (connection id, level id, item types), with the list stored as units store
    theirs. The second table is where parent sources and shared defaults can later be keyed by level.
+   Columns (all added by an additive migration):
+   - `OrganisationStructures`: `Id` (integer key, always 1), `ConcurrencyToken`.
+   - `Levels`: `Id` (text key: the stored level key, `Team` or `Portfolio`), `OrganisationStructureId` (foreign key),
+     `Ordinal` (integer, 1 = where the work is done), `UnitSingular`, `UnitPlural`, `ItemSingular`, `ItemPlural` (text).
+   - `ConnectionMappings`: `ConnectionId` (key, foreign key to `WorkTrackingSystemConnections`, cascading),
+     `ConcurrencyToken`.
+   - `ConnectionLevelMappings`: `ConnectionId` and `LevelId` (composite key, foreign keys), `ItemTypes` (list, stored
+     as units store theirs).
+   - `Teams` and `Portfolios`: `ItemTypeSubset` (list), `WorkItemTypesAsWritten` (list), `NeedsItemTypes` (boolean,
+     default false).
+   - `UnitTypeLossNotices`: `Id`, `StoredKind`, `UnitNumber`, `LostType`, `RecordedAt`.
+   - `LeafCapacities` (slice 07): `TeamId` (key, cascading foreign key to `Teams`), `FeatureWip`,
+     `AutomaticallyAdjustFeatureWip`, `UseFixedDatesForThroughput`, `ThroughputHistoryDays`,
+     `ThroughputHistoryStartDate`, `ThroughputHistoryEndDate`, `ForecastFilterRuleSetJson`.
+   Oracles read these through the declared query ports (`IOrganisationStructureQuery`, `ILeafCapacityStore`), never
+   by column name.
+
 3. **A unit's subset gets a new column** (`ItemTypeSubset`, authoritative) on both tables, plus `WorkItemTypesAsWritten` (the list this release last wrote into `WorkItemTypes`, which the start compares to
    detect a previous release's edit, ADR-274 rule 13) and `NeedsItemTypes`
    (MD7, set by any save that leaves a Jira, Azure DevOps or CSV unit with no types, and at upgrade for every such

@@ -27,7 +27,7 @@ these rules any more: each connection's mapping guards them (ADR-274).
    Portfolio numbers. `/teams/3` is (leaf, 3) and `/portfolios/3` is (Feature level, 3).
 2. **The stored kind discriminators are read as the level key and never rewritten.** `Team` means the leaf level,
    `Portfolio` the Feature level, in all five enums. A level above the Feature level (#6455) gets its own key there.
-3. **Levels have a stable `LevelId`, distinct from their ordinal.** Adding a level above changes no existing id.
+3. **Levels have a stable `LevelId`, distinct from their ordinal.** The `LevelId` is the stored level key itself (`Team`, `Portfolio`, the values the five discriminators hold), so a test or an adapter builds it without a lookup. Adding a level above changes no existing id.
    Code says "leaf" and "Feature level" (the leaf's direct parent), never "level 2".
 4. **`OrganisationStructure` is one aggregate per installation**, holding the `Level` entities (names). It guards the cross-level rules above. Item types are not here: each
    connection maps them onto the levels (ADR-274). `Unit` is its own aggregate and refers to its level by
