@@ -26,12 +26,13 @@ Now is always as long as Then, so both sides compare like with like, and the wiz
 
 Full detail: [Then and Now](https://docs.lighthouse.letpeople.work/reports/thenandnow.html) and [Notes](https://docs.lighthouse.letpeople.work/reports/reports.html#notes).
 
-<!-- Assumes Story 6712 ships in this release. Check its final scope before the release. -->
 ## Faster on a Slow Connection
 
 On a slow connection, a first visit to Lighthouse could take 8 to 20 seconds before the data showed, and a click to a Team or Portfolio page several more. Most of that time went into sending files uncompressed and asking for the same data again and again.
 
 Lighthouse now sends its pages and answers compressed, keeps the data every page uses in one shared cache, and checks for updates with a much smaller request. You see the same pages, sooner.
+
+Full detail: [Response Compression](https://docs.lighthouse.letpeople.work/Installation/configuration.html#response-compression).
 
 ## No Guessed Size for a Feature Without Child Work Items
 
