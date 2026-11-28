@@ -749,10 +749,11 @@ a word changes meaning.
 | Report created | Live numbers become a frozen record for others | Reports | **Target.** Today a usage-data name only |
 | Licence expired (and loaded, in its last 30 days) | An upstream gate on everything | Licensing | **Target.** Today derived on read |
 
-The other event types that exist today and where they move: `WorkItemTransitioned`, `WorkItemBlocked`,
-`WorkItemUnblocked`, `WorkItemBecameStale`, `FeatureBlocked`, `FeatureUnblocked` to Work Items; `ConnectionFetchShapeChanged`
-to Tracker integration; `TeamDeleted`, `PortfolioDeleted` (Bug 6665), `BlackoutConfigurationChanged`,
-`FeatureOrderingPolicyChanged` to Organisation set-up. `FeatureRankChanged` follows Feature ranking to Organisation set-up (Story 6468 moved the ranking service; the four set-up events still sit in `Models.Events`).
+The other event types that existed before this decision now live in the `Contracts` of their publisher, as the
+"Where each event lives" table below shows: `WorkItemTransitioned`, `WorkItemBlocked`, `WorkItemUnblocked`,
+`WorkItemBecameStale`, `FeatureBlocked` and `FeatureUnblocked` in Work Items; `TeamDeleted`, `PortfolioDeleted`
+(Bug 6665), `BlackoutConfigurationChanged`, `FeatureOrderingPolicyChanged`, `FeatureRankChanged` and
+`ConnectionFetchShapeChanged` in Organisation set-up. Only `IDomainEvent` stays in the shared kernel.
 
 **Gaps the board found.** They are recorded so the features that need them know where they start; closing them is
 feature work, not packaging, unless a packaging Story needs one to remove a ratchet item.

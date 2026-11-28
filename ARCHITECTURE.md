@@ -235,7 +235,7 @@ graph TD
 
 A lightweight in-house seam (ADO #5098/#5099, ADR-027 D1–D3) that decouples "a thing happened" from "the reactions to it":
 
-- **`IDomainEventDispatcher.PublishAsync<TEvent>(evt, ct)`** — a thin router. It resolves handlers via the **typed `IEnumerable<IDomainEventHandler<TEvent>>`** from a fresh DI scope (`GetServices`, **never** `GetRequiredService`), and invokes each. Event records are POCO `record`s under `Models/Events/` (kernel — below both API and Services).
+- **`IDomainEventDispatcher.PublishAsync<TEvent>(evt, ct)`** — a thin router. It resolves handlers via the **typed `IEnumerable<IDomainEventHandler<TEvent>>`** from a fresh DI scope (`GetServices`, **never** `GetRequiredService`), and invokes each. Event records are POCO `record`s that live in their publisher's `Contracts` namespace (for example `Modules/WorkItems/Contracts`); only the `IDomainEvent` marker stays in the kernel under `Models/Events/`.
 - **Events live in their publisher's `Contracts`.** `ForecastRoundFinished` (Forecasting) is how a finished forecast round reaches Work Items, which writes the round's refresh-log entry in a handler; Forecasting does not call Work Items for it.
 - **After-commit by default.** Heavy work routes onto the existing update queue; the dispatcher does not open transactions.
 - **Per-handler isolation.** Each handler runs in its own try/catch (log-and-continue). A throwing handler neither aborts its siblings nor loses the already-committed fact; **recovery is the next scheduled re-sync — there is no outbox** (an accepted trade, valid because facts are DB-derivable).
