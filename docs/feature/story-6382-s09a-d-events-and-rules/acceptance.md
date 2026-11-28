@@ -636,6 +636,192 @@ a left-out list that is only checked for existence
 
 
 
+##### Covers
+
+P3
+
+```text
+The Tracker integration list of edges into other contexts is read by value from the compiled tests while the connection health cadence reads the settings port through set-up's Contracts.
+```
+
+```text
+The list names no edge into set-up; a list naming one fails with the list, the entry and the way out.
+```
+
+```text
+A reader sees that Tracker integration's per-module list holds no set-up edge, because set-up's Contracts are open to every context.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest\.cs
+
+TrackerIntegrationListsNoEdgeIntoOrganisationSetup\_TheCadenceReadsTheSettingsPortThroughItsContracts
+
+```text
+A list that keeps the cadence edge under another spelling still passes only if the list is emptied of every entry; the check does not inspect edges that the list never names, which the one-owner law and the contracts rule cover.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+An empty Tracker integration list is checked for edges into set-up.
+```
+
+```text
+No problem is named.
+```
+
+```text
+An empty list is accepted as the correct state.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest\.cs
+
+AnEmptyTrackerIntegrationList\_IsNamedNoProblem
+
+```text
+A checker that names nothing for any list would pass this row; the next row falls to such a checker.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+A made-up Tracker integration list naming the cadence edge into set-up is checked.
+```
+
+```text
+Exactly one problem is named and it names the connection health cadence.
+```
+
+```text
+A list that brings the old edge back is named with the offending entry.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest\.cs
+
+ATrackerIntegrationListNamingTheCadenceEdge\_IsNamedAsHoldingAnEdge
+
+```text
+A checker that names every listed edge, whatever its target, passes; the live-list row above is what ties it to set-up, and the contracts rule owns the rest.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Every downstream outbound rule that reads set-up's code as foreign is checked, over the rules that read both its Adapters and its Application; Refinement's forbidden code, which reads only set-up's Adapters, is no longer asked to read the rest.
+```
+
+```text
+No rule lets set-up's Application or Domain through, and every rule lets its Contracts through; a planted exclusion of set-up's Domain turns the check red.
+```
+
+```text
+Set-up stays the open host through its Contracts only, and the contracts rule alone owns the other edges into it.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupPublishesItsContractsArchUnitTest\.cs
+
+NoDownstreamRuleReadingOrganisationSetupLetsItsApplicationOrDomainThrough\_AndEveryOneLetsItsContractsThrough
+
+```text
+A rule that reads only set-up's Adapters and wrongly lets its Application through is not asked; the contracts rule owns that edge.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Every rule pattern of the test assembly is compared with the declared roles after the Tracker integration pattern became a computed property and left the declared list.
+```
+
+```text
+Every pattern is declared once and no declaration is stale, in both directions.
+```
+
+```text
+No rule pattern is judged without a role, and no role names a pattern that is gone.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ContextContractsMembershipArchUnitTest\.cs
+
+EveryRulePatternThatSeesAPublishedType\_IsDeclared\_AndEveryDeclaredPatternIsARulePattern
+
+```text
+A role table that kept the dropped Tracker integration entry would be named stale; a table that dropped a still-existing pattern would be named undeclared.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Every test string naming a published type by its old name is compared with the rename list after eight entries left it, because their module-to-module list entries are gone.
+```
+
+```text
+Each remaining old-name string is on the list in exactly one form, and no listed string is missing from its file.
+```
+
+```text
+The rename list holds exactly the old names the tests still write.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ContextContractsMembershipArchUnitTest\.cs
+
+EveryTestStringThatNamesAPublishedTypeByItsOldName\_WrittenOutOrGrouped\_IsOnTheRenameList\_InExactlyOneOfItsForms
+
+```text
+A list that dropped an entry whose old name is still written would be named missing; one that kept a gone entry would be named as found in neither form.
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

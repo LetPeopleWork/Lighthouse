@@ -352,6 +352,108 @@
 "expected": "F334",
 "stimulus": "F333",
 "user_result": "F335"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F340",
+"test": "TrackerIntegrationListsNoEdgeIntoOrganisationSetup_TheCadenceReadsTheSettingsPortThroughItsContracts",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest.cs"
+},
+"expected": "F338",
+"stimulus": "F337",
+"user_result": "F339"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F344",
+"test": "AnEmptyTrackerIntegrationList_IsNamedNoProblem",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest.cs"
+},
+"expected": "F342",
+"stimulus": "F341",
+"user_result": "F343"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F348",
+"test": "ATrackerIntegrationListNamingTheCadenceEdge_IsNamedAsHoldingAnEdge",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest.cs"
+},
+"expected": "F346",
+"stimulus": "F345",
+"user_result": "F347"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F352",
+"test": "NoDownstreamRuleReadingOrganisationSetupLetsItsApplicationOrDomainThrough_AndEveryOneLetsItsContractsThrough",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPublishesItsContractsArchUnitTest.cs"
+},
+"expected": "F350",
+"stimulus": "F349",
+"user_result": "F351"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F356",
+"test": "EveryRulePatternThatSeesAPublishedType_IsDeclared_AndEveryDeclaredPatternIsARulePattern",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs"
+},
+"expected": "F354",
+"stimulus": "F353",
+"user_result": "F355"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F360",
+"test": "EveryTestStringThatNamesAPublishedTypeByItsOldName_WrittenOutOrGrouped_IsOnTheRenameList_InExactlyOneOfItsForms",
+"test_path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ContextContractsMembershipArchUnitTest.cs"
+},
+"expected": "F358",
+"stimulus": "F357",
+"user_result": "F359"
 }
 ]
 },
@@ -360,7 +462,7 @@
 "C": 1,
 "D": 8,
 "E": 4,
-"F": 336,
+"F": 360,
 "K": 7,
 "L": 6,
 "P": 3,
@@ -3744,9 +3846,33 @@
 "F334": "Only the edge behind the Contracts is named, with its list, the entry and the contracts rule as owner; the real list of legal edges targets only Contracts",
 "F335": "A list left out of the one-owner check cannot hide a second owner",
 "F336": "a left-out list that is only checked for existence",
+"F337": "The Tracker integration list of edges into other contexts is read by value from the compiled tests while the connection health cadence reads the settings port through set-up's Contracts.",
+"F338": "The list names no edge into set-up; a list naming one fails with the list, the entry and the way out.",
+"F339": "A reader sees that Tracker integration's per-module list holds no set-up edge, because set-up's Contracts are open to every context.",
 "F34": "which type wrote the row; that is observed separately on the IL (ForecastUpdater names no IRefreshLogService)",
+"F340": "A list that keeps the cadence edge under another spelling still passes only if the list is emptied of every entry; the check does not inspect edges that the list never names, which the one-owner law and the contracts rule cover.",
+"F341": "An empty Tracker integration list is checked for edges into set-up.",
+"F342": "No problem is named.",
+"F343": "An empty list is accepted as the correct state.",
+"F344": "A checker that names nothing for any list would pass this row; the next row falls to such a checker.",
+"F345": "A made-up Tracker integration list naming the cadence edge into set-up is checked.",
+"F346": "Exactly one problem is named and it names the connection health cadence.",
+"F347": "A list that brings the old edge back is named with the offending entry.",
+"F348": "A checker that names every listed edge, whatever its target, passes; the live-list row above is what ties it to set-up, and the contracts rule owns the rest.",
+"F349": "Every downstream outbound rule that reads set-up's code as foreign is checked, over the rules that read both its Adapters and its Application; Refinement's forbidden code, which reads only set-up's Adapters, is no longer asked to read the rest.",
 "F35": "Architecture test verdict: exit code and the failure message naming WHAT (source, target, list), WHY and HOW",
+"F350": "No rule lets set-up's Application or Domain through, and every rule lets its Contracts through; a planted exclusion of set-up's Domain turns the check red.",
+"F351": "Set-up stays the open host through its Contracts only, and the contracts rule alone owns the other edges into it.",
+"F352": "A rule that reads only set-up's Adapters and wrongly lets its Application through is not asked; the contracts rule owns that edge.",
+"F353": "Every rule pattern of the test assembly is compared with the declared roles after the Tracker integration pattern became a computed property and left the declared list.",
+"F354": "Every pattern is declared once and no declaration is stale, in both directions.",
+"F355": "No rule pattern is judged without a role, and no role names a pattern that is gone.",
+"F356": "A role table that kept the dropped Tracker integration entry would be named stale; a table that dropped a still-existing pattern would be named undeclared.",
+"F357": "Every test string naming a published type by its old name is compared with the rename list after eight entries left it, because their module-to-module list entries are gone.",
+"F358": "Each remaining old-name string is on the list in exactly one form, and no listed string is missing from its file.",
+"F359": "The rename list holds exactly the old names the tests still write.",
 "F36": "code reached only by reflection or by string (no IL edge)",
+"F360": "A list that dropped an entry whose old name is still written would be named missing; one that kept a gone entry would be named as found in neither form.",
 "F37": "The dispatcher's error log entry when a handler throws (handler type name, event type name)",
 "F38": "a handler that threw before writing from one that threw after a partial write",
 "F39": "Two RefreshLog rows are equal when Type, EntityId, EntityName, ItemCount, Mode, RecordsScanned, RecordsFetched, Success, Cancelled and Skipped are equal and ExecutedAt equals the round's finish instant on the scenario's TimeProvider; Id is ignored and DurationMs is compared as non-negative and taken from the round.",
