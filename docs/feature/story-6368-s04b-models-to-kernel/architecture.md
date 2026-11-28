@@ -1240,7 +1240,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Platform\/UsageData\/UsageDataEmitPerm
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataEmitPermit\.cs
@@ -1256,7 +1256,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Platform\/UsageData\/UsageDataEventRep
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataEventReported\.cs
@@ -1272,7 +1272,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Platform\/UsageData\/UsageDataEventSha
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataEventShapes\.cs
@@ -1288,7 +1288,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Platform\/UsageData\/UsageDataSuppress
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataSuppressionReason\.cs
@@ -1551,7 +1551,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataEmitPermit
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEmitPermit.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEmitPermit.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -1571,7 +1571,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataEventRepor
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEventReported.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEventReported.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -1591,7 +1591,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataEventShape
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEventShapes.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEventShapes.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -1611,7 +1611,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataSuppressio
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataSuppressionReason.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataSuppressionReason.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 test\-move
@@ -1959,7 +1959,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Domain\/Ad
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/AdditionalFieldInUse\.cs
@@ -1975,7 +1975,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Domain\/Ap
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/AppSettings\/AppSettingKeys\.cs
@@ -1991,7 +1991,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Access\/Domain\/CurrentUserPr
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Auth\/CurrentUserProfileStatus\.cs
@@ -2007,7 +2007,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Access\/Domain\/EmbedSessionT
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Auth\/EmbedSessionTokenRedemption\.cs
@@ -2023,7 +2023,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Access\/Domain\/RbacGuardRequ
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Authorization\/RbacGuardRequirement\.cs
@@ -2039,7 +2039,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Access\/Domain\/RbacOperation
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Authorization\/RbacOperationResult\.cs
@@ -2055,7 +2055,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Domain\/Co
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/ConnectionFieldDefaults\.cs
@@ -2071,7 +2071,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/TrackerIntegration\/Domain\/D
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/DeliverySources\/DeliverySourceBindability\.cs
@@ -2087,7 +2087,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/TrackerIntegration\/Domain\/D
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/DeliverySources\/DeliverySourceOption\.cs
@@ -2103,7 +2103,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Access\/Domain\/FeatureMoveVe
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/FeatureMoveVerdict\.cs
@@ -2119,7 +2119,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Domain\/Fe
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/FeatureOrderKey\.cs
@@ -2135,7 +2135,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Forecasting\/Domain\/Forecast
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Forecast\/ForecastHorizon\.cs
@@ -2151,7 +2151,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Domain\/Ma
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/ManualRankComparer\.cs
@@ -2167,7 +2167,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/FlowMetrics\/Domain\/Estimate
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Metrics\/EstimateNormalizationStatus\.cs
@@ -2183,7 +2183,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/FlowMetrics\/Domain\/StateAsO
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Metrics\/StateAsOf\.cs
@@ -2199,7 +2199,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/FlowMetrics\/Domain\/Throughp
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Metrics\/ThroughputFilterOverride\.cs
@@ -2215,7 +2215,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Domain\/Op
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/OptionalFeatures\/OptionalFeatureKeys\.cs
@@ -2231,7 +2231,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Domain\/Ow
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/OwnerTerms\.cs
@@ -2247,7 +2247,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Domain\/Ow
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/OwnersWhoseFetchMoved\.cs
@@ -2263,7 +2263,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/OrganisationSetup\/Domain\/Po
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/PortfolioSize\.cs
@@ -2279,7 +2279,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Domain\/ReportOwnerG
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Reports\/ReportOwnerGoneException\.cs
@@ -2295,7 +2295,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Reports\/Domain\/ReportRefusa
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Reports\/ReportRefusalCodes\.cs
@@ -2311,7 +2311,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Domain\/StalenessV
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Staleness\/StalenessVerdict\.cs
@@ -2327,7 +2327,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Domain\/StalenessP
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Staleness\/StalenessPolicy\.cs
@@ -2343,7 +2343,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Domain\/SyncOutcom
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/SyncOutcome\.cs
@@ -2359,7 +2359,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Domain\/RuleSetSem
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/WorkItemRules\/RuleSetSemantics\.cs
@@ -2375,7 +2375,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Forecasting\/Domain\/WriteBac
 Create
 
 ```text
-Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.
+Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/WriteBack\/WriteBackValueSources\.cs
@@ -4271,7 +4271,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/AdditionalFieldInUse\.cs\:1
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AdditionalFieldInUse.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AdditionalFieldInUse.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4291,7 +4291,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/AppSettings\/AppSettingKeys\.c
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AppSettingKeys.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AppSettingKeys.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4311,7 +4311,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Auth\/CurrentUserProfileStatus
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/CurrentUserProfileStatus.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/CurrentUserProfileStatus.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4331,7 +4331,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Auth\/EmbedSessionTokenRedempt
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/EmbedSessionTokenRedemption.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/EmbedSessionTokenRedemption.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4351,7 +4351,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Authorization\/RbacGuardRequir
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4371,7 +4371,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Authorization\/RbacOperationRe
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4391,7 +4391,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/ConnectionFieldDefaults\.cs\:1
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ConnectionFieldDefaults.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ConnectionFieldDefaults.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4411,7 +4411,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/DeliverySources\/DeliverySourc
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceBindability.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceBindability.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4431,7 +4431,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/DeliverySources\/DeliverySourc
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceOption.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceOption.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4451,7 +4451,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/FeatureMoveVerdict\.cs\:1
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/FeatureMoveVerdict.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/FeatureMoveVerdict.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4471,7 +4471,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/FeatureOrderKey\.cs\:1
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/FeatureOrderKey.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/FeatureOrderKey.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4491,7 +4491,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Forecast\/ForecastHorizon\.cs\
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastHorizon.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastHorizon.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4511,7 +4511,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/ManualRankComparer\.cs\:1
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ManualRankComparer.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ManualRankComparer.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4531,7 +4531,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Metrics\/EstimateNormalization
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/EstimateNormalizationStatus.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/EstimateNormalizationStatus.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4551,7 +4551,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Metrics\/StateAsOf\.cs\:1
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/StateAsOf.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/StateAsOf.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4571,7 +4571,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Metrics\/ThroughputFilterOverr
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ThroughputFilterOverride.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ThroughputFilterOverride.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4591,7 +4591,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/OptionalFeatures\/OptionalFeat
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OptionalFeatureKeys.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OptionalFeatureKeys.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4611,7 +4611,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/OwnerTerms\.cs\:1
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnerTerms.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnerTerms.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4631,7 +4631,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/OwnersWhoseFetchMoved\.cs\:1
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMoved.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMoved.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4651,7 +4651,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/PortfolioSize\.cs\:1
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/PortfolioSize.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/PortfolioSize.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4671,7 +4671,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Reports\/ReportOwnerGoneExcept
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportOwnerGoneException.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportOwnerGoneException.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4691,7 +4691,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Reports\/ReportRefusalCodes\.c
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportRefusalCodes.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportRefusalCodes.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4711,7 +4711,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Staleness\/StalenessVerdict\.c
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessVerdict.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessVerdict.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4731,7 +4731,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Staleness\/StalenessPolicy\.cs
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessPolicy.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessPolicy.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4751,7 +4751,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/SyncOutcome\.cs\:1
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/SyncOutcome.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/SyncOutcome.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4771,7 +4771,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/WorkItemRules\/RuleSetSemantic
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 production\-move
@@ -4791,7 +4791,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/WriteBack\/WriteBackValueSourc
 Migrated
 
 ```text
-Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/WriteBackValueSources.cs with only the namespace line changed.
+Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/WriteBackValueSources.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.
 ```
 
 test\-move

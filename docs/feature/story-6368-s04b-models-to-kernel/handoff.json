@@ -322,7 +322,7 @@
 "C": 1,
 "D": 19,
 "E": 9,
-"F": 447,
+"F": 479,
 "K": 9,
 "L": 9,
 "P": 5,
@@ -1078,7 +1078,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEmitPermit.cs:1",
-"reason": "F367"
+"reason": "F449"
 },
 {
 "decision": "Migrated",
@@ -1090,7 +1090,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventReported.cs:1",
-"reason": "F368"
+"reason": "F450"
 },
 {
 "decision": "Migrated",
@@ -1102,7 +1102,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventShapes.cs:1",
-"reason": "F369"
+"reason": "F451"
 },
 {
 "decision": "Migrated",
@@ -1114,7 +1114,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataSuppressionReason.cs:1",
-"reason": "F370"
+"reason": "F452"
 },
 {
 "decision": "Migrated",
@@ -1285,7 +1285,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEmitPermit.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -1295,7 +1295,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEventReported.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -1305,7 +1305,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEventShapes.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -1315,7 +1315,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataSuppressionReason.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -1471,7 +1471,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/AdditionalFieldInUse.cs:1",
-"reason": "F387"
+"reason": "F453"
 },
 {
 "decision": "Migrated",
@@ -1483,7 +1483,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/AppSettings/AppSettingKeys.cs:1",
-"reason": "F388"
+"reason": "F454"
 },
 {
 "decision": "Migrated",
@@ -1495,7 +1495,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Auth/CurrentUserProfileStatus.cs:1",
-"reason": "F389"
+"reason": "F455"
 },
 {
 "decision": "Migrated",
@@ -1507,7 +1507,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Auth/EmbedSessionTokenRedemption.cs:1",
-"reason": "F390"
+"reason": "F456"
 },
 {
 "decision": "Migrated",
@@ -1519,7 +1519,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacGuardRequirement.cs:1",
-"reason": "F391"
+"reason": "F457"
 },
 {
 "decision": "Migrated",
@@ -1531,7 +1531,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacOperationResult.cs:1",
-"reason": "F392"
+"reason": "F458"
 },
 {
 "decision": "Migrated",
@@ -1543,7 +1543,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/ConnectionFieldDefaults.cs:1",
-"reason": "F393"
+"reason": "F459"
 },
 {
 "decision": "Migrated",
@@ -1555,7 +1555,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceBindability.cs:1",
-"reason": "F394"
+"reason": "F460"
 },
 {
 "decision": "Migrated",
@@ -1567,7 +1567,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliverySourceOption.cs:1",
-"reason": "F395"
+"reason": "F461"
 },
 {
 "decision": "Migrated",
@@ -1579,7 +1579,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/FeatureMoveVerdict.cs:1",
-"reason": "F396"
+"reason": "F462"
 },
 {
 "decision": "Migrated",
@@ -1591,7 +1591,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/FeatureOrderKey.cs:1",
-"reason": "F397"
+"reason": "F463"
 },
 {
 "decision": "Migrated",
@@ -1603,7 +1603,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastHorizon.cs:1",
-"reason": "F398"
+"reason": "F464"
 },
 {
 "decision": "Migrated",
@@ -1615,7 +1615,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/ManualRankComparer.cs:1",
-"reason": "F399"
+"reason": "F465"
 },
 {
 "decision": "Migrated",
@@ -1627,7 +1627,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/EstimateNormalizationStatus.cs:1",
-"reason": "F400"
+"reason": "F466"
 },
 {
 "decision": "Migrated",
@@ -1639,7 +1639,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/StateAsOf.cs:1",
-"reason": "F401"
+"reason": "F467"
 },
 {
 "decision": "Migrated",
@@ -1651,7 +1651,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/ThroughputFilterOverride.cs:1",
-"reason": "F402"
+"reason": "F468"
 },
 {
 "decision": "Migrated",
@@ -1663,7 +1663,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/OptionalFeatures/OptionalFeatureKeys.cs:1",
-"reason": "F403"
+"reason": "F469"
 },
 {
 "decision": "Migrated",
@@ -1675,7 +1675,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/OwnerTerms.cs:1",
-"reason": "F404"
+"reason": "F470"
 },
 {
 "decision": "Migrated",
@@ -1687,7 +1687,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/OwnersWhoseFetchMoved.cs:1",
-"reason": "F405"
+"reason": "F471"
 },
 {
 "decision": "Migrated",
@@ -1699,7 +1699,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/PortfolioSize.cs:1",
-"reason": "F406"
+"reason": "F472"
 },
 {
 "decision": "Migrated",
@@ -1711,7 +1711,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportOwnerGoneException.cs:1",
-"reason": "F407"
+"reason": "F473"
 },
 {
 "decision": "Migrated",
@@ -1723,7 +1723,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportRefusalCodes.cs:1",
-"reason": "F408"
+"reason": "F474"
 },
 {
 "decision": "Migrated",
@@ -1735,7 +1735,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Staleness/StalenessVerdict.cs:1",
-"reason": "F409"
+"reason": "F475"
 },
 {
 "decision": "Migrated",
@@ -1747,7 +1747,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Staleness/StalenessPolicy.cs:1",
-"reason": "F410"
+"reason": "F476"
 },
 {
 "decision": "Migrated",
@@ -1759,7 +1759,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/SyncOutcome.cs:1",
-"reason": "F411"
+"reason": "F477"
 },
 {
 "decision": "Migrated",
@@ -1771,7 +1771,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemRules/RuleSetSemantics.cs:1",
-"reason": "F412"
+"reason": "F478"
 },
 {
 "decision": "Migrated",
@@ -1783,7 +1783,7 @@
 "decision": "Migrated",
 "kind": "production-move",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/WriteBack/WriteBackValueSources.cs:1",
-"reason": "F413"
+"reason": "F479"
 },
 {
 "decision": "Migrated",
@@ -3179,7 +3179,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AdditionalFieldInUse.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3189,7 +3189,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AppSettingKeys.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3199,7 +3199,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/CurrentUserProfileStatus.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3209,7 +3209,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/EmbedSessionTokenRedemption.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3219,7 +3219,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3229,7 +3229,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3239,7 +3239,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ConnectionFieldDefaults.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3249,7 +3249,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceBindability.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3259,7 +3259,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceOption.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3269,7 +3269,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/FeatureMoveVerdict.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3279,7 +3279,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/FeatureOrderKey.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3289,7 +3289,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastHorizon.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3299,7 +3299,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ManualRankComparer.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3309,7 +3309,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/EstimateNormalizationStatus.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3319,7 +3319,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/StateAsOf.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3329,7 +3329,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ThroughputFilterOverride.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3339,7 +3339,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OptionalFeatureKeys.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3349,7 +3349,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnerTerms.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3359,7 +3359,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMoved.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3369,7 +3369,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/PortfolioSize.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3379,7 +3379,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportOwnerGoneException.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3389,7 +3389,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportRefusalCodes.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3399,7 +3399,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessVerdict.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3409,7 +3409,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessPolicy.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3419,7 +3419,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/SyncOutcome.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3429,7 +3429,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -3439,7 +3439,7 @@
 {
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/WriteBackValueSources.cs",
-"reason": "F358"
+"reason": "F448"
 },
 {
 "change": "Extend",
@@ -5092,7 +5092,6 @@
 "F355": "No type escapes the blocker check by being called kernel, and the kernel cannot grow unseen",
 "F356": "the declared list itself were widened with an ordinary type in the same change, which only review of that list can catch",
 "F357": "Its Models regexes name files that stay; the movers land in Modules/<Owner>/Domain and Platform/UsageData, which it already treats as module and platform paths; S3 checks with test-selection-show.",
-"F358": "Destination of a mover S1 measured free; the file keeps its bytes, only the namespace line changes.",
 "F359": "Removed by the move with git mv; the file is the mover S1 measured free.",
 "F36": "S1 starts only after the predecessors are merged: for each of Stories 6365, 6366, 6468, 6657 and 6382, the ADO state is Closed, git log main --grep finds the Story's final commit and git merge-base --is-ancestor holds, and the content check holds (Modules/Refinement, Modules/Reports, Modules/OrganisationSetup present; no Services/{Implementation,Interfaces}/{Refinement,Reports}; Modules/*/Contracts with its contracts-only rule; no loose Services/Implementation/WriteBack*.cs). A failed check stops S1 and is reported with the Story, the check and its output.",
 "F360": "Unit test moves beside its production type; namespace equal to folder.",
@@ -5102,11 +5101,7 @@
 "F364": "Rule file that names a mover or its Models namespace or path by literal or by type; renamed to the new place.",
 "F365": "Consumer found by text search for a mover name together with its old namespace; only using lines change.",
 "F366": "Pure move of the whole file to its Platform/UsageData namespace; its catalogue row names the new namespace. Consumers change only using lines.",
-"F367": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEmitPermit.cs with only the namespace line changed.",
-"F368": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEventReported.cs with only the namespace line changed.",
-"F369": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEventShapes.cs with only the namespace line changed.",
 "F37": "S1 re-measures R1 to R11 from the IL and the EF model (every Models type, entity names in both snapshots, wire reachability, held-by closure, users per context, Contracts placement, the write-back owner, rule-file literals, NamespaceMoveLaw shape, non-test path consumers, S12c and S13 state); every count in the feature-delta is a noisy text measurement and a difference is recorded, not argued.",
-"F370": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataSuppressionReason.cs with only the namespace line changed.",
 "F371": "Unit test of a mover, moved with it; same assertions.",
 "F372": "Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/UsageDataEventShapesTests.cs.",
 "F373": "Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UsageData/OutlierListOpenedEventNameTests.cs.",
@@ -5124,37 +5119,10 @@
 "F384": "Removed by the move with git mv; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Domain/StalenessPolicyTest.cs with only namespace and using lines changed.",
 "F385": "Removed by the move with git mv; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/DeliverySourceBindabilityTest.cs with only namespace and using lines changed.",
 "F386": "Pure move of the whole file to its owner module Domain; its catalogue row names the new namespace. Consumers change only using lines.",
-"F387": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AdditionalFieldInUse.cs with only the namespace line changed.",
-"F388": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AppSettingKeys.cs with only the namespace line changed.",
-"F389": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/CurrentUserProfileStatus.cs with only the namespace line changed.",
 "F39": "No bound on catalogue size is set by any authority; the catalogue starts at the IL count S1 measures and may only shrink (rows leave when their type leaves Models).",
-"F390": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/EmbedSessionTokenRedemption.cs with only the namespace line changed.",
-"F391": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs with only the namespace line changed.",
-"F392": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs with only the namespace line changed.",
-"F393": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ConnectionFieldDefaults.cs with only the namespace line changed.",
-"F394": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceBindability.cs with only the namespace line changed.",
-"F395": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceOption.cs with only the namespace line changed.",
-"F396": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/FeatureMoveVerdict.cs with only the namespace line changed.",
-"F397": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/FeatureOrderKey.cs with only the namespace line changed.",
-"F398": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastHorizon.cs with only the namespace line changed.",
-"F399": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ManualRankComparer.cs with only the namespace line changed.",
 "F4": "The Models types that nothing blocks leave Models: Platform-owned ones to Platform/<Area>, context-owned ones to Modules/<Owner>/Domain or Application, with their unit tests beside them, and every module's boundary and placement rules still green.",
 "F40": "At most four slices in one nwdes feature, each about one day or less; slices run in order S1, S2, S3, S4.",
-"F400": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/EstimateNormalizationStatus.cs with only the namespace line changed.",
-"F401": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/StateAsOf.cs with only the namespace line changed.",
-"F402": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ThroughputFilterOverride.cs with only the namespace line changed.",
-"F403": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OptionalFeatureKeys.cs with only the namespace line changed.",
-"F404": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnerTerms.cs with only the namespace line changed.",
-"F405": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMoved.cs with only the namespace line changed.",
-"F406": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/PortfolioSize.cs with only the namespace line changed.",
-"F407": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportOwnerGoneException.cs with only the namespace line changed.",
-"F408": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportRefusalCodes.cs with only the namespace line changed.",
-"F409": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessVerdict.cs with only the namespace line changed.",
 "F41": "Tests follow .claude/skills/test-writing/SKILL.md and references/backend.md, which win over nWave's own timing and PBT-density rules; architecture rules are native NUnit plus ArchUnitNET or IL tests under Tests/Architecture; behaviour is observed through the unchanged acceptance tests at the application-service port; no nWave scenario tags in code, so an untagged test is correct here.",
-"F410": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessPolicy.cs with only the namespace line changed.",
-"F411": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/SyncOutcome.cs with only the namespace line changed.",
-"F412": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs with only the namespace line changed.",
-"F413": "Removed by the move; its bytes reappear at Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/WriteBackValueSources.cs with only the namespace line changed.",
 "F414": "Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/AdditionalFieldInUseTest.cs.",
 "F415": "Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/ManualRankComparerTest.cs.",
 "F416": "Removed by the move to Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMovedTest.cs.",
@@ -5183,9 +5151,41 @@
 "F445": "Each type has exactly the public member names it had before the move",
 "F446": "Moving the types to the platform lane changes no member a caller relies on",
 "F447": "A member added to, renamed in or removed from a moved type; only member names are pinned, so a changed signature with the same name still passes",
+"F448": "Destination of a mover S1 measured free; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F449": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEmitPermit.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
 "F45": "Owns the kernel rules (Models does not depend on Services, Modules, Platform or the update queue) run on real and planted types; it gains the rule that every Kernel row is used by two or more contexts.",
+"F450": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEventReported.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F451": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataEventShapes.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F452": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Platform/UsageData/UsageDataSuppressionReason.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F453": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AdditionalFieldInUse.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F454": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/AppSettingKeys.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F455": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/CurrentUserProfileStatus.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F456": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/EmbedSessionTokenRedemption.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F457": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacGuardRequirement.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F458": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/RbacOperationResult.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F459": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ConnectionFieldDefaults.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
 "F46": "Already carries examined types, offenders and the rule text for kernel-rule failures; the new rule returns the same verdict.",
+"F460": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceBindability.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F461": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DeliverySourceOption.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F462": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Domain/FeatureMoveVerdict.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F463": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/FeatureOrderKey.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F464": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastHorizon.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F465": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/ManualRankComparer.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F466": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/EstimateNormalizationStatus.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F467": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/StateAsOf.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F468": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/ThroughputFilterOverride.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F469": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OptionalFeatureKeys.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
 "F47": "Owns the both-ways compare of an inline list with a measured set; K1 and the shrink-only movers list use it rather than a second compare.",
+"F470": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnerTerms.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F471": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/OwnersWhoseFetchMoved.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F472": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/OrganisationSetup/Domain/PortfolioSize.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F473": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportOwnerGoneException.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F474": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportRefusalCodes.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F475": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessVerdict.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F476": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/StalenessPolicy.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F477": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/SyncOutcome.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F478": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleSetSemantics.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
+"F479": "Removed by the move; the file reappears at Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/WriteBackValueSources.cs; the file keeps its body; only the namespace line and the using lines the file needs to compile change.",
 "F48": "Owns IL edge reading through Mono.Cecil, async bodies included; HeldBy, Shared, Wire and InfraReached are measured with it.",
 "F49": "Already generic over a NamespaceMove and a PatternRoleMap and used by several moves; the Models move adds a role map and a rename list, not a second law.",
 "F5": "A type added to Models that is not on the catalogue, or a catalogue row whose claim is false, fails the architecture rules and names itself and the fix; the rules name the moved types by their new namespace only, with no old-path allowance left.",
